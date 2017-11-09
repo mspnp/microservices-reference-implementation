@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: deliveryscheduler
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: deliveryscheduler
+        app: deliveryscheduler
+    spec:
+      containers:
+      - name: deliveryscheduler
+        image: dronedelivery.azurecr.io/mockdeliveryscheduler
+        ports:
+          - containerPort: 80
