@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: thirdpartyservice
+spec:
+  replicas: 5
+  template:
+    metadata:
+      labels:
+        run: thirdpartyservice
+        app: thirdpartyservice
+    spec:
+      containers:
+      - name: thirdpartyservice
+        image: dronedelivery.azurecr.io/mockthirdpartyservice
+        ports:
+          - containerPort: 80
