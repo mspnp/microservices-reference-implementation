@@ -1,0 +1,17 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: accountservice
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: accountservice
+        app: accountservice
+    spec:
+      containers:
+      - name: accountservice
+        image: dronedelivery.azurecr.io/mockaccountservice
+        ports:
+          - containerPort: 80
