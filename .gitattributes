@@ -1,0 +1,3 @@
+# Preserve Unix-style line endings for scripts
+# Otherwise they may break in Bash for Windows
+*.sh text eol=lf
