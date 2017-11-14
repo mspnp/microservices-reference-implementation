@@ -134,9 +134,9 @@ function cleanup() {
 trap err_handler ERR
 trap cleanup EXIT
 
-sed -i "s/value: \"CosmosDB_DatabaseId\"/value: \"${CosmosDB_DatabaseId}\"/g"      "$SCRIPTDIR/dronedelivery.yaml" >> ${OUTPUT} 2>&1
-sed -i "s/value: \"CosmosDB_CollectionId\"/value: \"${CosmosDB_CollectionId}\"/g"  "$SCRIPTDIR/dronedelivery.yaml" >> ${OUTPUT} 2>&1
-sed -i "s/value: \"EH_EntityPath\"/value: \"${EH_EntityPath}\"/g"                  "$SCRIPTDIR/dronedelivery.yaml" >> ${OUTPUT} 2>&1
+sed -i "s/value: \"CosmosDB_DatabaseId\"/value: \"${CosmosDB_DatabaseId}\"/g"      "$SCRIPTDIR/delivery.yaml" >> ${OUTPUT} 2>&1
+sed -i "s/value: \"CosmosDB_CollectionId\"/value: \"${CosmosDB_CollectionId}\"/g"  "$SCRIPTDIR/delivery.yaml" >> ${OUTPUT} 2>&1
+sed -i "s/value: \"EH_EntityPath\"/value: \"${EH_EntityPath}\"/g"                  "$SCRIPTDIR/delivery.yaml" >> ${OUTPUT} 2>&1
 
 echo 
 echo "Fabrikam Drone Delivery Reference Implementation provisioning started..."
@@ -144,12 +144,12 @@ echo
 echo "NAMESPACE: ${NAMESPACE}"
 echo >> ${OUTPUT} 
 # Create Secrets
-kubectl create --save-config=true secret generic delivery-storageconf --from-literal=CosmosDB_Key=${CosmosDB_Key} --from-literal=CosmosDB_Endpoint=${CosmosDB_Endpoint} --from-literal=Redis_HostName=${Redis_HostName} --from-literal=Redis_PrimaryKey=${Redis_PrimaryKey} --from-literal=EH_ConnectionString=${EH_ConnectionString} --from-literal=Redis_SecondaryKey= > ${OUTPUT} 2>&1
+kubectl create -n ${NAMESPACE} --save-config=true secret generic delivery-storageconf --from-literal=CosmosDB_Key=${CosmosDB_Key} --from-literal=CosmosDB_Endpoint=${CosmosDB_Endpoint} --from-literal=Redis_HostName=${Redis_HostName} --from-literal=Redis_PrimaryKey=${Redis_PrimaryKey} --from-literal=EH_ConnectionString=${EH_ConnectionString} --from-literal=Redis_SecondaryKey= > ${OUTPUT} 2>&1
 # Deploy Services
-kubectl apply -n ${NAMESPACE} -f $SCRIPTDIR/dronedelivery.yaml >> ${OUTPUT} 2>&1
+kubectl apply -n ${NAMESPACE} -f $SCRIPTDIR/ >> ${OUTPUT} 2>&1
 echo >> ${OUTPUT}
 # Print summary
-kubectl get all -l bc=shipping >> ${OUTPUT} 2>&1
+kubectl get all -n ${NAMESPACE} -l bc=shipping >> ${OUTPUT} 2>&1
 echo >> ${OUTPUT} 
 
 echo "Fabrikam Drone Delivery Reference Implementation provisioning done!" >> ${OUTPUT} 

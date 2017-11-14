@@ -21,8 +21,8 @@ echo "NAMESPACE: ${NAMESPACE}"
 
 export OUTPUT=$(mktemp)
 echo "Fabrikam Drone Delivery Reference Implementation cleanup..."
-kubectl delete secret delivery-storageconf  > ${OUTPUT} 2>&1
-kubectl delete -n ${NAMESPACE} -f $SCRIPTDIR/dronedelivery.yaml >> ${OUTPUT} 2>&1
+kubectl delete -n ${NAMESPACE} secret delivery-storageconf  > ${OUTPUT} 2>&1
+kubectl delete -n ${NAMESPACE} -f $SCRIPTDIR/ >> ${OUTPUT} 2>&1
 ret=$?
 function cleanup() {
   rm -f ${OUTPUT}
