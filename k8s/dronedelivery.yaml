@@ -29,17 +29,9 @@ metadata:
   labels:                 # In API version apps/v1beta2, .metadata.labels no longer default to .spec.template.metadata.labels. 
     app: account
     version: 0.1.0
-    release: stable
-    tier: backend
     bc: shipping
 spec:
   replicas: 1
-  revisionHistoryLimit: 14 # 14 rollouts are allowed. Its value depends on the frequency and stability of  Deployments.
-  strategy:
-    type: RollingUpdate    
-    rollingUpdate:
-       maxSurge: 1         # slow roll-update: we deploy one pod at a time 
-       maxUnavailable: 0   # 0 desired replicas can be unavailable
   selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels. 
     matchLabels:           # spec.selector is immutable after creation of the Deployment in apps/v1beta2.
       app: account         
@@ -47,9 +39,8 @@ spec:
     metadata:
       labels:
         app: account
-        bc: shipping
         version: 0.1.0
-        tier: backend
+        bc: shipping
       annotations:
         commit: 
         team: accountservice
@@ -102,17 +93,9 @@ metadata:
   labels:                 # In API version apps/v1beta2, .metadata.labels no longer default to .spec.template.metadata.labels. 
     app: delivery
     version: 0.1.0
-    release: stable
-    tier: backend
     bc: shipping
 spec:
   replicas: 1
-  revisionHistoryLimit: 14 # 14 rollouts are allowed. Its value depends on the frequency and stability of  Deployments.
-  strategy:
-    type: RollingUpdate    
-    rollingUpdate:
-       maxSurge: 1         # slow roll-update: we deploy one pod at a time 
-       maxUnavailable: 0   # 0 desired replicas can be unavailable
   selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels. 
     matchLabels:           # spec.selector is immutable after creation of the Deployment in apps/v1beta2.
       app: delivery         
@@ -120,9 +103,8 @@ spec:
     metadata:
       labels:
         app: delivery
-        bc: shipping
         version: 0.1.0
-        tier: backend
+        bc: shipping
       annotations:
         commit: 
         team: deliveryservice
@@ -220,17 +202,9 @@ metadata:
   labels:                 # In API version apps/v1beta2, .metadata.labels no longer default to .spec.template.metadata.labels. 
     app: deliveryscheduler
     version: 0.1.0
-    release: stable
-    tier: backend
     bc: shipping
 spec:
   replicas: 1
-  revisionHistoryLimit: 14 # 14 rollouts are allowed. Its value depends on the frequency and stability of  Deployments.
-  strategy:
-    type: RollingUpdate    
-    rollingUpdate:
-       maxSurge: 1         # slow roll-update: we deploy one pod at a time 
-       maxUnavailable: 0   # 0 desired replicas can be unavailable
   selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels. 
     matchLabels:           # spec.selector is immutable after creation of the Deployment in apps/v1beta2.
       app: deliveryscheduler         
@@ -238,9 +212,8 @@ spec:
     metadata:
       labels:
         app: deliveryscheduler
-        bc: shipping
         version: 0.1.0
-        tier: backend
+        bc: shipping
       annotations:
         commit: 
         team: deliveryschedulerservice
@@ -303,17 +276,9 @@ metadata:
   labels:                 # In API version apps/v1beta2, .metadata.labels no longer default to .spec.template.metadata.labels. 
     app: dronescheduler
     version: 0.1.0
-    release: stable
-    tier: backend
     bc: shipping
 spec:
   replicas: 1
-  revisionHistoryLimit: 14 # 14 rollouts are allowed. Its value depends on the frequency and stability of  Deployments.
-  strategy:
-    type: RollingUpdate    
-    rollingUpdate:
-       maxSurge: 1         # slow roll-update: we deploy one pod at a time 
-       maxUnavailable: 0   # 0 desired replicas can be unavailable
   selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels. 
     matchLabels:           # spec.selector is immutable after creation of the Deployment in apps/v1beta2.
       app: dronescheduler         
@@ -321,9 +286,8 @@ spec:
     metadata:
       labels:
         app: dronescheduler
-        bc: shipping
         version: 0.1.0
-        tier: backend
+        bc: shipping
       annotations:
         commit: 
         team: droneschedulerservice
@@ -381,17 +345,9 @@ metadata:
   labels:                 # In API version apps/v1beta2, .metadata.labels no longer default to .spec.template.metadata.labels. 
     app: thirdparty
     version: 0.1.0
-    release: stable
-    tier: backend
     bc: shipping
 spec:
   replicas: 1
-  revisionHistoryLimit: 14 # 14 rollouts are allowed. Its value depends on the frequency and stability of  Deployments.
-  strategy:
-    type: RollingUpdate    
-    rollingUpdate:
-       maxSurge: 1         # slow roll-update: we deploy one pod at a time 
-       maxUnavailable: 0   # 0 desired replicas can be unavailable
   selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels. 
     matchLabels:           # spec.selector is immutable after creation of the Deployment in apps/v1beta2.
       app: thirdparty         
@@ -401,7 +357,6 @@ spec:
         app: thirdparty
         bc: shipping
         version: 0.1.0
-        tier: backend
       annotations:
         commit: 
         team: thirdpartyservice
