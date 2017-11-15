@@ -15,7 +15,7 @@ The Drone Delivery Reference Implementation is composed by 7 microservices:
 
 ### Prerequisites
 
-a. install [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) 
+a. install [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 
 b. install kubeclt
    ```bash
@@ -29,9 +29,9 @@ c. set the following environment variables:
     export RESOURCE_GROUP=your_resource_group_here && \
     export CLUSTER_NAME=your_cluster_name_here && \
    ```
-   Note: the creation of your cluster might take some time  
+   Note: the creation of your cluster might take some time
 
-d. login in your azure subscription: 
+d. login in your azure subscription:
    ```bash
    az login
    ```
@@ -65,11 +65,15 @@ i. test the cluster is up and running:
    ```
 
 j. Deploy the following Azure Resources:
-   delivery microservice:
-   [TBD]
 
-k. package microservice
-   [TBD]
+   1. delivery microservice:
+   [TBD] azure templates or az steps
+
+   2. package microservice:
+   [TBD] azure templates or az steps
+
+   3. ingestion/scheduler:
+   [TBD] azure templates or az steps
 
 ### Deploying the application
 
@@ -83,7 +87,7 @@ k. package microservice
    ./microservices-reference-implementation/k8s/provisioning.sh
    ```
 
-3. Check Drone Deliveru is up and running:
+3. Check Drone Delivery is up and running:
    ```bash
    Fabrikam Drone Delivery Reference Implementation provisioning started...
 
@@ -129,6 +133,35 @@ k. package microservice
    rs/thirdparty-3105374237          1         1         1         3s
 
    Fabrikam Drone Delivery Reference Implementation provisioning done!
+   ```
+
+### Deploying the application (the hard way)
+this section is just walkthrough of the steps being executed in the provisioning script:
+
+1. clone the repository
+   ```bash
+   git clone https://github.com/mspnp/microservices-reference-implementation.git
+   ```
+
+2. Create the required secrets in your cluster:
+   ```bash
+   kubectl create --save-config=true secret generic delivery-storageconf | \
+                  --from-literal=CosmosDB_Key=your_cosmosdb_key | \
+                  --from-literal=CosmosDB_Endpoint=your_cosmosdb_endpoint | \
+                  --from-literal=Redis_HostName=your_redis_hostname | \
+                  --from-literal=Redis_PrimaryKey=your_redis_primarykey | \
+                  --from-literal=EH_ConnectionString=your_eventhub_connstr | \
+                  --from-literal=Redis_SecondaryKey=your_redis_secondarykey
+   ```
+
+3. Deploy the Drone Delivery microservices in your cluster:
+   ```bash
+   kubectl apply -f ./microservices-reference-implementation/k8s/
+   ```
+
+4. Check Drone Delivery is up and running:
+   ```bash
+   kubectl get all -l bc=shipping
    ```
 
 ### Testing Drone Delivery in your ACS Kubernetes cluster
