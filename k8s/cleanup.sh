@@ -9,35 +9,41 @@ SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
 # only ask if in interactive mode
 if [[ -t 0 ]];then
-   echo -n "namespace ? [default] "
+   echo -n "namespace ? [bc-shipping] "
    read NAMESPACE
 fi
 
 if [[ -z ${NAMESPACE} ]];then
-   NAMESPACE=default
+   NAMESPACE=bc-shipping
 fi
 
 echo "NAMESPACE: ${NAMESPACE}"
 
-export OUTPUT=$(mktemp)
+OUTPUT=$(mktemp)
 echo "Fabrikam Drone Delivery Reference Implementation cleanup..."
-kubectl delete -n ${NAMESPACE} secret delivery-storageconf  > ${OUTPUT} 2>&1
-kubectl delete -n ${NAMESPACE} -f $SCRIPTDIR/ >> ${OUTPUT} 2>&1
+{
+  kubectl delete -n "${NAMESPACE}" secret delivery-storageconf 
+  kubectl delete -n "${NAMESPACE}" -f "$SCRIPTDIR"/ 
+  if [[ "${NAMESPACE}" != default ]];then
+      kubectl delete namespace  "${NAMESPACE}"
+  fi
+} >> "${OUTPUT}" 2>&1
+
 ret=$?
 function cleanup() {
-  rm -f ${OUTPUT}
+  rm -f "${OUTPUT}"
 }
 
 trap cleanup EXIT
 
-if [[ ${ret} -eq 0 ]];then
-  cat ${OUTPUT}
+if [[ "${ret}" -eq 0 ]];then
+  cat "${OUTPUT}"
 else
 # ignore NotFound errors
-  OUT2=$(grep -v NotFound ${OUTPUT})
-  if [[ ! -z ${OUT2} ]];then
-    cat ${OUTPUT}
-    exit ${ret}
+  OUT2=$(grep -v NotFound "${OUTPUT}")
+  if [[ ! -z "${OUT2}" ]];then
+    cat "${OUTPUT}"
+    exit "${ret}"
   fi
 fi
 
