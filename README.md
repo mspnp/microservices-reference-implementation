@@ -157,6 +157,8 @@ this section is just walkthrough of the steps being executed in the provisioning
                   --from-literal=Redis_PrimaryKey=your_redis_primarykey | \
                   --from-literal=EH_ConnectionString=your_eventhub_connstr | \
                   --from-literal=Redis_SecondaryKey=your_redis_secondarykey
+
+   kubectl create secret generic package-secrets --from-literal=mongodb-pwd=your_mongodb_connection_string
    ```
 
 3. Deploy the Drone Delivery microservices in your cluster:

@@ -1,0 +1,54 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+apiVersion: apps/v1beta1 
+kind: Deployment
+metadata:
+  name: package
+  labels:
+    app: package
+    version: 0.1.0
+    bc: shipping
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: package
+  template:
+    metadata:
+      labels:
+        app: package
+        version: 0.1.0
+        bc: shipping
+    spec:
+      containers:
+      - name: package
+        image: <container repo>/package:0.1.0
+        env:
+        - name: CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: package-secrets
+              key: mongodb-pwd
+        - name: COLLECTION_NAME
+          value: packages
+        - name: CORRELATION_HEADER
+          value: l5d-ctx-trace
+        - name: LOG_LEVEL
+          value: error
+        ports:
+        - containerPort: 80
+        imagePullPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: package
+spec:
+  selector:
+    app: package
+  ports:
+    - port: 80
+ 
