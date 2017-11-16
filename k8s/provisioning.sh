@@ -16,12 +16,13 @@ echo "                                                           |___/ "
 
 # get script path
 SCRIPTDIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-
+echo
 echo "Welcome to the Microsoft Fabrikam Drone Delivery Reference Implementation provisioning!"
+echo 
 # only ask if in interactive mode
 if [[ -t 0 ]];then
 
-   echo -n "namespace ? [default] "
+   echo -n "namespace ? [bc-shipping] "
    read NAMESPACE
 
    echo "Please enter the following data/secrets:"
@@ -68,10 +69,10 @@ if [[ -t 0 ]];then
 fi
 
 if [[ -z ${NAMESPACE} ]];then
-  NAMESPACE=default
+  NAMESPACE=bc-shipping
 fi
 
-export MISSINGINFO=0
+MISSINGINFO=0
 if [[ -z ${CosmosDB_Key} ]];then
   echo >&2 'error: missing Azure Cosmos Db key secret value'
   MISSINGINFO=1;
@@ -116,40 +117,48 @@ if [[ ${MISSINGINFO} !=  0 ]];then
     exit ${MISSINGINFO}
 fi
 
-export OUTPUT=$(mktemp)
+OUTPUT=$(mktemp)
 
 function err_handler()
 {
-  echo 
-  echo "Fabrikam Drone Delivery Reference Implementation provisioning finished with errors!" >> ${OUTPUT} 
-  echo 
+  echo  >> "${OUTPUT}"
+  echo "Fabrikam Drone Delivery Reference Implementation provisioning finished with errors!" >> "${OUTPUT}"
+  echo  >> "${OUTPUT}"
   exit 1
 }
 
 function cleanup() {
-  cat ${OUTPUT}
-  rm -f ${OUTPUT}
+  cat "${OUTPUT}"
+  rm -f "${OUTPUT}"
 }
 
-trap err_handler ERR
-trap cleanup EXIT
-
-sed -i "s/value: \"CosmosDB_DatabaseId\"/value: \"${CosmosDB_DatabaseId}\"/g"      "$SCRIPTDIR/delivery.yaml" >> ${OUTPUT} 2>&1
-sed -i "s/value: \"CosmosDB_CollectionId\"/value: \"${CosmosDB_CollectionId}\"/g"  "$SCRIPTDIR/delivery.yaml" >> ${OUTPUT} 2>&1
-sed -i "s/value: \"EH_EntityPath\"/value: \"${EH_EntityPath}\"/g"                  "$SCRIPTDIR/delivery.yaml" >> ${OUTPUT} 2>&1
+trap "err_handler" ERR
+trap "cleanup" EXIT
 
 echo 
 echo "Fabrikam Drone Delivery Reference Implementation provisioning started..."
 echo 
 echo "NAMESPACE: ${NAMESPACE}"
-echo >> ${OUTPUT} 
-# Create Secrets
-kubectl create -n ${NAMESPACE} --save-config=true secret generic delivery-storageconf --from-literal=CosmosDB_Key=${CosmosDB_Key} --from-literal=CosmosDB_Endpoint=${CosmosDB_Endpoint} --from-literal=Redis_HostName=${Redis_HostName} --from-literal=Redis_PrimaryKey=${Redis_PrimaryKey} --from-literal=EH_ConnectionString=${EH_ConnectionString} --from-literal=Redis_SecondaryKey= > ${OUTPUT} 2>&1
-# Deploy Services
-kubectl apply -n ${NAMESPACE} -f $SCRIPTDIR/ >> ${OUTPUT} 2>&1
-echo >> ${OUTPUT}
-# Print summary
-kubectl get all -n ${NAMESPACE} -l bc=shipping >> ${OUTPUT} 2>&1
-echo >> ${OUTPUT} 
+echo 
 
-echo "Fabrikam Drone Delivery Reference Implementation provisioning done!" >> ${OUTPUT} 
+sed -i "s/value: \"CosmosDB_DatabaseId\"/value: \"${CosmosDB_DatabaseId}\"/g"      "$SCRIPTDIR/delivery.yaml"
+sed -i "s/value: \"CosmosDB_CollectionId\"/value: \"${CosmosDB_CollectionId}\"/g"  "$SCRIPTDIR/delivery.yaml"
+sed -i "s/value: \"EH_EntityPath\"/value: \"${EH_EntityPath}\"/g"                  "$SCRIPTDIR/delivery.yaml"
+
+echo
+# Create namespace
+if [[ "${NAMESPACE}" != default ]];then
+    kubectl create namespace "${NAMESPACE}" >> "${OUTPUT}" 2>&1
+fi
+# Create Secrets
+kubectl create -n "${NAMESPACE}" --save-config=true secret generic delivery-storageconf --from-literal=CosmosDB_Key="${CosmosDB_Key}" --from-literal=CosmosDB_Endpoint="${CosmosDB_Endpoint}" --from-literal=Redis_HostName="${Redis_HostName}" --from-literal=Redis_PrimaryKey="${Redis_PrimaryKey}" --from-literal=EH_ConnectionString="${EH_ConnectionString}" --from-literal=Redis_SecondaryKey= >> "${OUTPUT}" 2>&1
+# Deploy Services
+kubectl apply -n "${NAMESPACE}" -f "$SCRIPTDIR"/ >> "${OUTPUT}" 2>&1
+echo  >> "${OUTPUT}" 2>&1
+# Print summary
+kubectl get all -n "${NAMESPACE}" -l bc=shipping >> "${OUTPUT}" 2>&1
+echo >> "${OUTPUT}" 2>&1
+
+echo 
+echo "Fabrikam Drone Delivery Reference Implementation provisioning done!"
+echo

@@ -143,9 +143,14 @@ this section is just walkthrough of the steps being executed in the provisioning
    git clone https://github.com/mspnp/microservices-reference-implementation.git
    ```
 
+2. Create the bc-shipping namespace:
+   ```bash
+   kubeclt create namespace bc-shipping
+   ```
+
 2. Create the required secrets in your cluster:
    ```bash
-   kubectl create --save-config=true secret generic delivery-storageconf | \
+   kubectl --namespace bc-shipping create --save-config=true secret generic delivery-storageconf | \
                   --from-literal=CosmosDB_Key=your_cosmosdb_key | \
                   --from-literal=CosmosDB_Endpoint=your_cosmosdb_endpoint | \
                   --from-literal=Redis_HostName=your_redis_hostname | \
@@ -156,7 +161,7 @@ this section is just walkthrough of the steps being executed in the provisioning
 
 3. Deploy the Drone Delivery microservices in your cluster:
    ```bash
-   kubectl apply -f ./microservices-reference-implementation/k8s/
+   kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/
    ```
 
 4. Check Drone Delivery is up and running:
