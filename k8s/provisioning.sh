@@ -66,6 +66,14 @@ if [[ -t 0 ]];then
 
    echo -n "  Azure Event Hub Entity Path ? "
    read EH_EntityPath 
+
+   echo "Package Service"
+
+   stty -echo
+   printf "  MongoDB connection string ? "
+   read MongoDB_ConnectionString
+   stty echo
+   printf "\n"
 fi
 
 if [[ -z ${NAMESPACE} ]];then
@@ -113,6 +121,11 @@ if [[ -z ${EH_EntityPath} ]];then
   MISSINGINFO=1;
 fi
 
+if [[ -z ${MongoDB_ConnectionString} ]];then
+  echo >&2 'error: missing MongoDB connection string'
+  MISSINGINFO=1;
+fi
+
 if [[ ${MISSINGINFO} !=  0 ]];then
     exit ${MISSINGINFO}
 fi
@@ -152,6 +165,9 @@ if [[ "${NAMESPACE}" != default ]];then
 fi
 # Create Secrets
 kubectl create -n "${NAMESPACE}" --save-config=true secret generic delivery-storageconf --from-literal=CosmosDB_Key="${CosmosDB_Key}" --from-literal=CosmosDB_Endpoint="${CosmosDB_Endpoint}" --from-literal=Redis_HostName="${Redis_HostName}" --from-literal=Redis_PrimaryKey="${Redis_PrimaryKey}" --from-literal=EH_ConnectionString="${EH_ConnectionString}" --from-literal=Redis_SecondaryKey= >> "${OUTPUT}" 2>&1
+
+kubectl create -n ${NAMESPACE} secret generic package-secrets --from-literal=mongodb-pwd=${MongoDB_ConnectionString} > ${OUTPUT} 2>&1
+
 # Deploy Services
 kubectl apply -n "${NAMESPACE}" -f "$SCRIPTDIR"/ >> "${OUTPUT}" 2>&1
 echo  >> "${OUTPUT}" 2>&1
