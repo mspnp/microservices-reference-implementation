@@ -166,7 +166,7 @@ fi
 # Create Secrets
 kubectl create -n "${NAMESPACE}" --save-config=true secret generic delivery-storageconf --from-literal=CosmosDB_Key="${CosmosDB_Key}" --from-literal=CosmosDB_Endpoint="${CosmosDB_Endpoint}" --from-literal=Redis_HostName="${Redis_HostName}" --from-literal=Redis_PrimaryKey="${Redis_PrimaryKey}" --from-literal=EH_ConnectionString="${EH_ConnectionString}" --from-literal=Redis_SecondaryKey= >> "${OUTPUT}" 2>&1
 
-kubectl create -n ${NAMESPACE} secret generic package-secrets --from-literal=mongodb-pwd=${MongoDB_ConnectionString} > ${OUTPUT} 2>&1
+kubectl create -n "${NAMESPACE}" secret generic package-secrets --from-literal=mongodb-pwd="${MongoDB_ConnectionString}" > "${OUTPUT}" 2>&1
 
 # Deploy Services
 kubectl apply -n "${NAMESPACE}" -f "$SCRIPTDIR"/ >> "${OUTPUT}" 2>&1
