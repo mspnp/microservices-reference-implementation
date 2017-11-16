@@ -3,22 +3,29 @@
 #   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 #  ------------------------------------------------------------
 
-apiVersion: apps/v1beta1 # for versions before 1.6.0 use extensions/v1beta1
+apiVersion: apps/v1beta1 
 kind: Deployment
 metadata:
-  name: package-service
+  name: package
+  labels:
+    app: package
+    version: 0.1.0
+    bc: shipping
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: package
   template:
     metadata:
       labels:
-        app: package-service
+        app: package
         version: 0.1.0
         bc: shipping
     spec:
       containers:
-      - name: package-service
-        image: <container repo>/package-service:0.1.0
+      - name: package
+        image: <container repo>/package:0.1.0
         env:
         - name: CONNECTION_STRING
           valueFrom:
@@ -38,10 +45,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: package-service
+  name: package
 spec:
   selector:
-    app: package-service
+    app: package
   ports:
     - port: 80
  
