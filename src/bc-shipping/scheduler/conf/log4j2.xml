@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="warn" name="deliveryscheduler.delivery-dispatcher-service-akka" packages="">
+	<Appenders>
+		<Console name="STDOUT" target="SYSTEM_OUT">
+			<JsonLayout complete="false" compact="true"
+				properties="true" locationInfo="false" eventEol="true" />
+		</Console>
+	</Appenders>
+	<Loggers>
+		<Root level="info">
+			<AppenderRef ref="STDOUT" />
+		</Root>
+	</Loggers>
+</Configuration>
