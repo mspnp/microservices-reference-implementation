@@ -1,0 +1,24 @@
+{
+  "bindings": [
+    {
+      "type": "eventHubTrigger",
+      "name": "EventHubMessages",
+      "direction": "in",
+      "path": "deliveryeventstream",
+      "connection": "Your shared access policy",
+      "consumerGroup": "Your consumer group",
+      "cardinality": "many"
+    },
+    {
+      "type": "documentDB",
+      "name": "outputDocument",
+      "databaseName": "outDatabase",
+      "collectionName": "MyCollection",
+      "createIfNotExists": false,
+      "partitionKey": "/PartitionKey",
+      "connection": "Your DocumentDB",
+      "direction": "out"
+    }
+  ],
+  "disabled": false
+}
