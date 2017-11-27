@@ -75,6 +75,13 @@ j. Deploy the following Azure Resources:
    3. ingestion/scheduler:
    [TBD] azure templates or az steps
 
+k. (Optional) add linkerd to your cluster:
+   ```bash
+   wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd.yml && \
+   sed -i "s/default/bc-shipping/g" linkerd.yml && \
+   kubectl apply -f linkerd.yml
+   ```
+
 ### Deploying the application
 
 1. Clone the repository
