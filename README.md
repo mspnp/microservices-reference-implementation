@@ -108,7 +108,12 @@ j. Deploy the following Azure Resources:
     2. package microservice: [TBD] azure templates or az steps 
     3. ingestion/scheduler: [TBD] azure templates or az steps
 
-k. (Optional) add linkerd to your cluster:
+k. build docker image for Delivery Service
+```bash
+docker build -t your_repo/fabrikam.dronedelivery.deliveryservice:0.1.0 ./microservices-reference-implementation/src/bc-shipping/delivery/Fabrikam.DroneDelivery.DeliveryService/. && \
+sed -i "s#image:#image: your_repo/fabrikam.dronedelivery.deliveryservice:0.1.0#g" ./microservices-reference-implementation/k8s/delivery.yaml
+```
+l. (Optional) add linkerd to your cluster:
    ```bash
    wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd.yml && \
    sed -i "s/default/bc-shipping/g" linkerd.yml && \

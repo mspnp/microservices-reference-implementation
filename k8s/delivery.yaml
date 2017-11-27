@@ -48,10 +48,9 @@ spec:
     spec:
       containers:
       - name: delivery
-        image: dronedelivery.azurecr.io/fabrikam.dronedelivery.deliveryservice:0.1.0
+        image:
         env:
         # Export K8s secrets
-        # TODO: change to connection string style
         - name: DOCDB_KEY
           valueFrom:
             secretKeyRef:
