@@ -28,6 +28,8 @@ c. set the following environment variables:
     export LOCATION=your_location_here && \
     export RESOURCE_GROUP=your_resource_group_here && \
     export CLUSTER_NAME=your_cluster_name_here && \
+    export RESOURCE_GROUP_STO=your_resource_group_4storage_here && \
+    export DS_STO_NAME=your_deliveries_storage_name_here
    ```
    Note: the creation of your cluster might take some time
 
@@ -38,7 +40,8 @@ d. login in your azure subscription:
 
 e. create the resource group:
    ```bash
-   az group create --name=$RESOURCE_GROUP --location=$LOCATION
+   az group create --name=$RESOURCE_GROUP --location=$LOCATION && \
+   az group create --name=$RESOURCE_GROUP_STO --location=$LOCATION
    ```
 
 f. create your ACS Cluster:
@@ -67,13 +70,43 @@ i. test the cluster is up and running:
 j. Deploy the following Azure Resources:
 
    1. delivery microservice:
-   [TBD] azure templates or az steps
+   ```bash
+   #! bin/bash
+   export redis_name="${DS_STO_NAME}-redis"
+   export cosmosdb_name="${DS_STO_NAME}-cosmosdb"
+   export database_name="${cosmosdb_name}-db"
+   export collection_name="${database_name}-col"
+    
+   #Create Delivery Service Azure Redis 
+   az redis create --location $LOCATION \
+                --name $redis_name \
+                --resource-group $RESOURCE_GROUP_STO \
+                --sku Premium \
+                --vm-size P4
 
-   2. package microservice:
-   [TBD] azure templates or az steps
-
-   3. ingestion/scheduler:
-   [TBD] azure templates or az steps
+   #Create Delivery Service DocumentDB API Cosmos DB account
+   az cosmosdb create \
+       --name $cosmosdb_name \
+       --kind GlobalDocumentDB \
+       --resource-group $RESOURCE_GROUP_STO \
+       --max-interval 10 \
+       --max-staleness-prefix 200 
+   
+   # Create a database 
+   az cosmosdb database create \
+       --name $cosmosdb_name \
+       --db-name $database_name \
+       --resource-group $RESOURCE_GROUP_STO
+   
+   # Create a collection
+   az cosmosdb collection create \
+       --collection-name $collection_name \
+       --name $cosmosdb_name \
+       --db-name $database_name \
+       --resource-group $RESOURCE_GROUP_STO
+   ```
+    2. package microservice: [TBD] azure templates or az steps 
+    3. ingestion/scheduler: [TBD] azure templates or az steps
 
 k. (Optional) add linkerd to your cluster:
    ```bash
@@ -121,13 +154,7 @@ k. (Optional) add linkerd to your cluster:
    NAME                    CLUSTER-IP   EXTERNAL-IP   PORT(S)        AGE
    svc/account             None         <none>        80/TCP         7s
    svc/delivery            None         <none>        80/TCP         6s
-   svc/deliveryscheduler   10.0.1.134   <pending>     80:30734/TCP   5s
-   svc/dronescheduler      None         <none>        80/TCP         4s
-   svc/thirdparty          None         <none>        80/TCP         3s
-
-   NAME                       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
-   deploy/account             1         1         1            1           6s
-   deploy/delivery            1         1         1            1           5s
+   svc/deliveryscheduler   10.0.1.134   <pending>     80:30734/TCP   5s svc/dronescheduler      None         <none>        80/TCP         4s svc/thirdparty          None         <none>        80/TCP         3s NAME                       DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE deploy/account             1         1         1            1           6s deploy/delivery            1         1         1            1           5s
    deploy/deliveryscheduler   1         1         1            1           5s
    deploy/dronescheduler      1         1         1            1           4s
    deploy/thirdparty          1         1         1            1           3s
@@ -155,19 +182,17 @@ this section is just walkthrough of the steps being executed in the provisioning
    kubeclt create namespace bc-shipping
    ```
 
-2. Create the required secrets in your cluster:
+2. Create the required secrets 
    ```bash
    kubectl --namespace bc-shipping create --save-config=true secret generic delivery-storageconf | \
-                  --from-literal=CosmosDB_Key=your_cosmosdb_key | \
-                  --from-literal=CosmosDB_Endpoint=your_cosmosdb_endpoint | \
-                  --from-literal=Redis_HostName=your_redis_hostname | \
-                  --from-literal=Redis_PrimaryKey=your_redis_primarykey | \
-                  --from-literal=EH_ConnectionString=your_eventhub_connstr | \
-                  --from-literal=Redis_SecondaryKey=your_redis_secondarykey
-
+                  --from-literal=CosmosDB_Key=$(az cosmosdb list-keys --name $cosmosdb_name --resource-group $RESOURCE_GROUP_STO --query "primaryMasterKey") | \
+                  --from-literal=CosmosDB_Endpoint=$(az cosmosdb show --name $cosmosdb_name --resource-group $RESOURCE_GROUP_STO --query documentEndpoint) | \
+                  --from-literal=Redis_HostName=$(az cosmosdb show --name $cosmosdb_name --resource-group $RESOURCE_GROUP_STO --query documentEndpoint) | \
+                  --from-literal=Redis_PrimaryKey=$(az redis list-keys --name $redis_name --resource-group $RESOURCE_GROUP_STO --query primaryKey) | \
+                  --from-literal=EH_ConnectionString= | \
+                  --from-literal=Redis_SecondaryKey=
    kubectl create secret generic package-secrets --from-literal=mongodb-pwd=your_mongodb_connection_string
    ```
-
 3. Deploy the Drone Delivery microservices in your cluster:
    ```bash
    kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/
