@@ -6,6 +6,7 @@
 import { Package } from "./package"
 import { Settings } from '../util/settings';
 import * as Logger from '../util/logging';      
+import { MongoErrors } from '../util/mongo-err';
 
 var MongoClient = require('mongodb').MongoClient;
 
@@ -28,25 +29,22 @@ export class Repository
       return Repository.db.collection(Repository.collectionName);
   }
 
-  async addPackage(p: Package) {
-
-      //this.logger.info('Repository.addPackage', p);
-
-      var collection = this.collection();
-      await collection.insertOne(p);
+  async addPackage(p: Package) : Promise<UpsertStatus> {
+    try {
+        var collection = this.collection();
+        var result = await collection.insertOne(p);
+        return UpsertStatus.Created;
+    } catch (ex) {
+        if (ex.code == MongoErrors.DuplicateKey) {
+            var result = await collection.updateOne({"_id": p._id, "tag": p.tag}, {$set: p}, {upsert:true});
+            return result.upsertedCount > 0 ? UpsertStatus.Created : UpsertStatus.Updated;
+        }
+        else {
+            throw ex;
+        }
+    }
   }
   
-  async upsertPackage(p: Package) : Promise<UpsertStatus> {
-    var collection = this.collection();
-    var result = await collection.updateOne({"_id": p._id, "tag": p.tag}, {$set: p}, {upsert:true});
-
-    if (result.upsertedCount > 0) {
-        return UpsertStatus.Created;
-    }
-
-    return UpsertStatus.Updated;
-  }
-
   async updatePackage(p: Package) {
       await this.collection().update({_id:p._id}, p);
   }

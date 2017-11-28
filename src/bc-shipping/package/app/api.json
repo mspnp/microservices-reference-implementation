@@ -28,8 +28,7 @@
               "in": "path",
               "description": "ID of package to return",
               "required": true,
-              "type": "string",
-              "pattern": "^[0-9a-fA-F]{24}$"
+              "type": "string"
             }
           ],
           "responses": {
@@ -57,8 +56,7 @@
               "in": "path",
               "description": "ID of package to patch",
               "required": true,
-              "type": "string",
-              "pattern": "^[0-9a-fA-F]{24}$"
+              "type": "string"
             }
           ],
           "responses": {
@@ -75,22 +73,29 @@
               "description": "Validation exception"
             }
           }
-        }
-      },
-      "/packages": {
-        "post": {
-          "summary": "Create a package",
+        },
+        "put": {
+          "summary": "Create or update a package",
           "description": "",
-          "operationId": "create",
+          "operationId": "createOrUpdate",
+          "parameters": [
+            {
+              "name": "packageId",
+              "in": "path",
+              "description": "ID of package",
+              "required": true,
+              "type": "string"
+            }
+          ],
           "responses": {
-            "200": {
-              "description": "successful operation",
+            "201": {
+              "description": "Created new package",
               "schema": {
                 "$ref": "#/definitions/Package"
               }
             },
-            "400": {
-              "description": "Invalid package value"
+            "204": {
+              "description": "Updated existing package"
             }
           }
         }

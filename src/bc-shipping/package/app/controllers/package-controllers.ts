@@ -60,7 +60,7 @@ export class PackageControllers {
 
     var logger : ILogger = ctx.state.logger;
     var packageId = ctx.params.packageId;
-    logger.info('getById', packageId);
+    logger.info('updateById', packageId);
 
     try {
       await next();
@@ -81,46 +81,6 @@ export class PackageControllers {
     return;
   }
 
-  async create(ctx: any, next: any) {
-
-    var logger: ILogger = ctx.state.logger;
-    logger.info('create', ctx.request.body)
-
-    try {
-      await next();
-
-      let apiPkg = <apiModels.Package>ctx.request.body;
-      let pkg = this.mapPackageApiToDb(apiPkg);
-
-
-      await this.repository.addPackage(pkg);
-
-      ctx.body = this.mapPackageDbToApi(pkg);
-      ctx.response.status = 201;
-
-      return;
-    }
-    catch (ex) {
-      switch (ex.code) {
-        case MongoErrors.ShardKeyNotFound:
-        logger.error('Missing shard key', ctx.request.body)
-        ctx.response.status = 400;
-          ctx.response.message = "Missing 'tag' in package";
-          break;
-
-        case MongoErrors.TooManyRequests:
-          logger.error('Too many requests', ctx.request.body)
-          ctx.response.status, 429;
-          break;
-
-        default:
-          ctx.throw(ex.message, 500);
-      }
-    }
-  }
-      
-
-
   // Creates or updates a package using the data provided in the API
   async createOrUpdate(ctx: any, next: any) {
 
@@ -134,7 +94,7 @@ export class PackageControllers {
       let apiPkg = <apiModels.Package>ctx.request.body;
       let pkg = this.mapPackageApiToDb(apiPkg, packageId);
 
-      var result = await this.repository.upsertPackage(pkg);
+      var result = await this.repository.addPackage(pkg);
 
       switch (result) {
         case UpsertStatus.Created:

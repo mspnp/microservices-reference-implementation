@@ -46,6 +46,20 @@ describe('Repository', function() {
         assert.equal(package2.tag, "tag1");
     });
 
+    it('addDuplicatePackage', async function() {
+        var package1 = new Package('1');
+        package1.size = "small";
+        await repository.addPackage(package1);
+
+        package1.size = "large";
+        await repository.addPackage(package1);
+       
+        // Verify the package was updated
+        var package2  = (await repository.findPackage(package1._id));
+        assert.ok(package1._id == package2._id);
+        assert.equal(package2.size, "large");
+    });
+
     it('updatePackage', async function() {
         var package1 = new Package('1');
         package1.tag = "tag1";
