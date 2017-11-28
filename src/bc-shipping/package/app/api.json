@@ -89,7 +89,10 @@
           ],
           "responses": {
             "201": {
-              "description": "Created new package"
+              "description": "Created new package",
+              "schema": {
+                "$ref": "#/definitions/Package"
+              }
             },
             "204": {
               "description": "Updated existing package"
