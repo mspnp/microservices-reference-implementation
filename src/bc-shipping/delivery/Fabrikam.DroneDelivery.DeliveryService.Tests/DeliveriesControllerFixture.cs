@@ -123,7 +123,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
         }
 
         [TestMethod]
-        public async Task Put_Returns200_IfDeliveryIdExists()
+        public async Task Put_Returns204_IfDeliveryIdExists()
         {
             // Arrange
             var deliveryRepository = new Mock<IDeliveryRepository>();
@@ -147,7 +147,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
 
             // Assert
             Assert.IsNotNull(statusCodeResult);
-            Assert.AreEqual(200, statusCodeResult.StatusCode);
+            Assert.AreEqual(204, statusCodeResult.StatusCode);
         }
 
         [TestMethod]
