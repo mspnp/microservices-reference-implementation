@@ -99,6 +99,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
         // PUT api/deliveries/5
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(Delivery), 201)]
+        [ProducesResponseType(typeof(void), 204)]
         public async Task<IActionResult> Put([FromBody]Delivery delivery, string id)
         {
             logger.LogInformation("In Put action with delivery {Id}: {@DeliveryInfo}", id, delivery.ToLogInfo());
@@ -126,7 +127,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
                 // Updates inflight delivery 
                 await deliveryRepository.UpdateAsync(id, internalDelivery);
 
-                return Ok();
+                return NoContent();
             }
         }
 
