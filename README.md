@@ -1,3 +1,10 @@
+# Microservices  Reference Implementation
+Microsoft patterns & practices
+
+https://docs.microsoft.com/azure/architecture/microservices
+
+---
+
 ## Provisioning
 
 this section is meant to provide guidance on how to get provisioned Drone Delivery Reference Implementation
@@ -105,14 +112,16 @@ j. Deploy the following Azure Resources:
        --db-name $database_name \
        --resource-group $RESOURCE_GROUP_STO
    ```
-    2. package microservice: [TBD] azure templates or az steps 
-    3. ingestion/scheduler: [TBD] azure templates or az steps
+
+   2. package microservice: [TBD] azure templates or az steps 
+   3. ingestion/scheduler: [TBD] azure templates or az steps
 
 k. build docker image for Delivery Service
-```bash
-docker build -t your_repo/fabrikam.dronedelivery.deliveryservice:0.1.0 ./microservices-reference-implementation/src/bc-shipping/delivery/Fabrikam.DroneDelivery.DeliveryService/. && \
-sed -i "s#image:#image: your_repo/fabrikam.dronedelivery.deliveryservice:0.1.0#g" ./microservices-reference-implementation/k8s/delivery.yaml
-```
+   ```bash
+   docker build -t your_repo/fabrikam.dronedelivery.deliveryservice:0.1.0 ./microservices-reference-implementation/src/bc-shipping/delivery/Fabrikam.DroneDelivery.DeliveryService/. && \
+   sed -i "s#image:#image: your_repo/fabrikam.dronedelivery.deliveryservice:0.1.0#g" ./microservices-reference-implementation/k8s/delivery.yaml
+   ```
+
 l. (Optional) add linkerd to your cluster:
    ```bash
    wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd.yml && \
@@ -132,7 +141,7 @@ l. (Optional) add linkerd to your cluster:
    kubeclt create namespace bc-shipping
    ```
 
-2. Create the required secrets 
+3. Create the required secrets 
    ```bash
    kubectl --namespace bc-shipping create --save-config=true secret generic delivery-storageconf | \
                   --from-literal=CosmosDB_Key=$(az cosmosdb list-keys --name $cosmosdb_name --resource-group $RESOURCE_GROUP_STO --query "primaryMasterKey") | \
@@ -144,7 +153,7 @@ l. (Optional) add linkerd to your cluster:
    kubectl create secret generic package-secrets --from-literal=mongodb-pwd=your_mongodb_connection_string
    ```
 
-3. Add values to database and collection env variables in the k8s delivery configuration file:
+4. Add values to database and collection env variables in the k8s delivery configuration file:
 
    ```bash
    sed -i "s/value: \"CosmosDB_DatabaseId\"/value: your_database_name_here/g" "./microservices-reference-implementation/k8s/delivery.yaml" && \
@@ -152,7 +161,7 @@ l. (Optional) add linkerd to your cluster:
    sed -i "s/value: \"EH_EntityPath\"/value:/g"                               "./microservices-reference-implementation/k8s/delivery.yaml"
    ```
 
-4. Deploy the Drone Delivery microservices in your cluster:
+5. Deploy the Drone Delivery microservices in your cluster:
    ```bash
    kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/
    ```
@@ -165,3 +174,7 @@ l. (Optional) add linkerd to your cluster:
 ### Testing Drone Delivery in your ACS Kubernetes cluster
 
   [TBD]
+
+---
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
