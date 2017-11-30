@@ -9,7 +9,7 @@ https://docs.microsoft.com/azure/architecture/microservices
 
 - Azure suscription
 - [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
-- Docker
+- [Docker](https://docs.docker.com/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
 
 Clone or download this repo locally.
@@ -140,8 +140,6 @@ docker build -t $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0 ./micro
 az acr login --name $ACR_NAME
 docker push $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0
 
-# Update the deployment YAML with the image tag.
-sed -i "s#image:#image: $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0#g" ./microservices-reference-implementation/k8s/delivery.yaml
 ```
 
 Create Kubernetes secrets
@@ -161,18 +159,19 @@ kubectl --namespace bc-shipping create --save-config=true secret generic deliver
     --from-literal=Redis_SecondaryKey=
 ```
 
-Update Delivery service YAML with environment variables for database and collection name.
-
-```bash
-sed -i "s/value: \"CosmosDB_DatabaseId\"/value: $DATABASE_NAME/g" "./microservices-reference-implementation/k8s/delivery.yaml" && \
-sed -i "s/value: \"CosmosDB_CollectionId\"/value: $COLLECTION_NAME/g"  "./microservices-reference-implementation/k8s/delivery.yaml" && \
-sed -i "s/value: \"EH_EntityPath\"/value:/g"                               "./microservices-reference-implementation/k8s/delivery.yaml"
-```
-
 Deploy the Delivery service:
 
 ```bash
-kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/
+# Update the image tag in the deployment YAML
+sed -i "s#image:#image: $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0#g" ./microservices-reference-implementation/k8s/delivery.yaml
+
+## Update config values in the deployment YAML
+sed -i "s/value: \"CosmosDB_DatabaseId\"/value: $DATABASE_NAME/g" "./microservices-reference-implementation/k8s/delivery.yaml" && \
+sed -i "s/value: \"CosmosDB_CollectionId\"/value: $COLLECTION_NAME/g"  "./microservices-reference-implementation/k8s/delivery.yaml" && \
+sed -i "s/value: \"EH_EntityPath\"/value:/g"                               "./microservices-reference-implementation/k8s/delivery.yaml"
+
+# Deploy the service
+kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/delivery.yaml
 ```
 
 Verify the service is running:
@@ -183,7 +182,43 @@ kubectl get all -n bc-shipping
 
 ## Deploy the Package service
 
-TBD
+Provision Azure resources
+
+```bash
+export PACKAGE_SERVICE_PREFIX=package_service_prefix_here && \
+export COSMOSDB_NAME="${PACKAGE_SERVICE_PREFIX}-cosmosdb"
+az cosmosdb create --name $COSMOSDB_NAME --kind MongoDB --resource-group $RESOURCE_GROUP_SVC
+```
+
+Build the Package service
+
+```bash
+export PACKAGE_PATH=microservices-reference-implementation/src/bc-shipping/package
+
+# Build the app
+docker-compose -f $PACKAGE_PATH/docker-compose.ci.build.yml up
+
+# Build the docker image
+docker build -f $PACKAGE_PATH/build/prod.dockerfile -t $ACR_SERVER/package-service:0.1.0 $PACKAGE_PATH
+
+# Push the docker image to ACR
+az acr login --name $ACR_NAME
+docker push $ACR_SERVER/package-service:0.1.0
+```
+
+Deploy the Package service
+
+```bash
+# Update deployment YAML with image tage
+sed -i "s#image:#image: $ACR_SERVER/package-service:0.1.0#g" ./microservices-reference-implementation/k8s/package.yml
+
+# Create secret
+export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP_SVC --query "connectionStrings[0].connectionString")
+kubectl -n bc-shipping create secret generic package-secrets --from-literal=mongodb-pwd=${COSMOSDB_CONNECTION[@]//\"/}
+
+# Deploy service
+kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/package.yml
+```
 
 ### Deploy the Ingestion and Scheduler services 
 
