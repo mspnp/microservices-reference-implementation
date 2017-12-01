@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: package
-        image: <container repo>/package:0.1.0
+        image: 
         env:
         - name: CONNECTION_STRING
           valueFrom:
