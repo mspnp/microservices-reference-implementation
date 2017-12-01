@@ -108,12 +108,12 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
             {
                 var internalDelivery = delivery.ToInternal();
 
+                // Adds new inflight delivery 
+                await deliveryRepository.CreateAsync(internalDelivery);
+
                 // Adds the delivery created status event
                 var deliveryStatusEvent = new DeliveryStatusEvent { DeliveryId = delivery.Id, Stage = DeliveryEventType.Created };
                 await deliveryStatusEventRepository.AddAsync(deliveryStatusEvent);
-
-                // Adds new inflight delivery 
-                await deliveryRepository.CreateAsync(internalDelivery);
 
                 return CreatedAtRoute("GetDelivery", new { id= delivery.Id }, delivery);
             }
