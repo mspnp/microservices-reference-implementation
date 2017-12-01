@@ -174,11 +174,6 @@ sed -i "s/value: \"EH_EntityPath\"/value:/g"                               "./mi
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/delivery.yaml
 ```
 
-Verify the service is running:
-
-```bash
-kubectl get all -n bc-shipping
-```
 
 ## Deploy the Package service
 
@@ -220,9 +215,19 @@ kubectl -n bc-shipping create secret generic package-secrets --from-literal=mong
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/package.yml
 ```
 
-### Deploy the Ingestion and Scheduler services 
+## Deploy the Ingestion and Scheduler services 
 
 TBD
+
+## Deploy mock services
+
+TBD
+
+Verify all services are running:
+
+```bash
+kubectl get all -n bc-shipping
+```
 
 ---
 
