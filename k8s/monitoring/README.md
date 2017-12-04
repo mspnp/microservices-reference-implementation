@@ -1,4 +1,4 @@
-# Monitoring Microservices  with Prometheus node-exporter linkerd and Kubernetes statistics
+# Monitoring Microservices  with Prometheus: for node-exporter linkerd and Kubernetes statistics
 Microsoft patterns & practices
 
 https://docs.microsoft.com/azure/architecture/microservices
@@ -9,7 +9,8 @@ https://docs.microsoft.com/azure/architecture/microservices
 
 - Azure storage account
 
-## Create the storage account
+## Create the storage account.
+
 The storage account has to be created in the same resource group of prometheus 
 
 Set the account name in storage.yaml under prometheus folder.
@@ -28,30 +29,43 @@ Set the persistent volume claim name in files prometheus.yaml and grafana.yaml
 			
 Create username and password encoded in base64 for grafana by running
 below commands:
+
 echo -n grafanausername | base64
+
 echo -n grafanapassword  | base24
 
-Open secret.yaml under grafana folder replace above encoded values
+Open secret.yaml under grafana folder replace  with above encoded values
+
 grafana-admin-password
+
 grafana-admin-user
 
-Install Prometheus and grafana
-Prometheus
+##Install Prometheus and grafana
+
+###Prometheus
 
 kubectl apply -f storage.yaml
+
 kubectl apply -f persistentVolumeClaim.yaml
+
 kubectl apply -f kube-state-metrics.yaml
+
 kubectl apply -f node-exporter.yaml
+
 kubectl apply -f prometheusconfigmap.yaml
+
 kubectl apply -f prometheus.yaml
 
 
-Grafana
+###Grafana
 
 
 kubectl apply -f persistentVolumeClaim.yaml
+
 kubectl apply -f secret.yaml
+
 kubectl apply -f grafanaconfigmap.yaml
+
 kubectl apply -f grafana.yaml
   
 
