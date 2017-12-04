@@ -20,9 +20,12 @@ storageaccount:  storageaccountName
 Set the persistent volume claim name in files persistenVolumeClaim.yaml in monitoring under prometheus 
 and grafana folders. Persistent volume claim names have to be different for prometheus and grafana.
 
-  name: PersistentVolumeClaimName
   
-Set the persistent volume claim name in files prometheus.yaml and grafana.yaml
+  
+  name: PersistenVolumeClaimName
+
+  
+  Set the persistent volume claim name in files prometheus.yaml and grafana.yaml
   
          persistentVolumeClaim:
             claimName: PersistentVolumeClaimName
