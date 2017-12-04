@@ -1,0 +1,79 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: prometheus
+    component: prometheus
+  name: prometheus
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: prometheus
+        component: prometheus
+    spec:
+      containers:
+        - name: prometheus-server-configmap-reload
+          image: "jimmidyson/configmap-reload:v0.1"
+          imagePullPolicy: IfNotPresent
+          args:
+            - --volume-dir=/etc/config
+            - --webhook-url=http://localhost:9090/-/reload
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+              readOnly: true
+
+        - name: prometheus-server
+          image: "prom/prometheus:v1.7.1"
+          imagePullPolicy: IfNotPresent
+          args:
+            - --storage.local.retention=1440h
+            - --alertmanager.url=http://alertmanager:80
+            - --config.file=/etc/config/prometheus.yml
+            - --storage.local.path=/data
+            - --web.console.libraries=/etc/prometheus/console_libraries
+            - --web.console.templates=/etc/prometheus/consoles
+          ports:
+            - containerPort: 9090
+          readinessProbe:
+            httpGet:
+              path: /status
+              port: 9090
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/config
+            - name: storage-volume
+              mountPath: /data
+              subPath: ""
+      terminationGracePeriodSeconds: 300
+      volumes:
+        - name: config-volume
+          configMap:
+            name: prometheus
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: PersistentVolumeClaimName
+            
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: prometheus
+    component: prometheus
+  name: prometheus
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 9090
+  selector:
+    app: prometheus
+    component: prometheus
+  type: LoadBalancer     

@@ -1,0 +1,80 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: grafana
+    component: server
+  name: grafana
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+      labels:
+        app: grafana
+        component: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:4.6.2
+          imagePullPolicy: Always
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana
+                  key: grafana-admin-user
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana
+                  key: grafana-admin-password
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 3000
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          volumeMounts:
+            - name: config-volume
+              mountPath: "/etc/grafana"
+            - name: storage-volume
+              mountPath: "/var/lib/grafana/data"
+              subPath: ""
+      terminationGracePeriodSeconds: 300
+      volumes:
+        - name: config-volume
+          configMap:
+            name: grafana-config
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: persistentVolumeClaimNameGrafana
+            
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: grafana
+    component: grafana
+  name: grafana
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: grafana
+    component: grafana
+  type: LoadBalancer        
