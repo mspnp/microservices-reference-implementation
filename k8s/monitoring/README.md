@@ -40,9 +40,9 @@ grafana-admin-password
 
 grafana-admin-user
 
-##Install Prometheus and grafana
+## Install Prometheus and grafana
 
-###Prometheus
+### Prometheus
 
 kubectl apply -f storage.yaml
 
@@ -57,7 +57,7 @@ kubectl apply -f prometheusconfigmap.yaml
 kubectl apply -f prometheus.yaml
 
 
-###Grafana
+### Grafana
 
 
 kubectl apply -f persistentVolumeClaim.yaml
