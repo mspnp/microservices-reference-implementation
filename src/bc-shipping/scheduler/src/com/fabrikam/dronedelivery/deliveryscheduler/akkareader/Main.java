@@ -1,23 +1,23 @@
 package com.fabrikam.dronedelivery.deliveryscheduler.akkareader;
 
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.CompletableFuture;
+
 
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.web.context.request.async.DeferredResult;
-import org.springframework.web.context.request.async.DeferredResult.DeferredResultHandler;
+
 
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.DeliveryRequestEventProcessor;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.SchedulerSettings;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DeliverySchedule;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ConfigReader;
+
 import com.microsoft.azure.iot.iothubreact.MessageFromDevice;
 import com.microsoft.azure.iot.iothubreact.SourceOptions;
 import com.microsoft.azure.iot.iothubreact.javadsl.IoTHub;
@@ -30,8 +30,6 @@ import akka.stream.javadsl.Source;
 public class Main extends ReactiveStreamingApp {
 
 	private static final Logger Log = LogManager.getLogger(Main.class);
-	private static AtomicLong deliveryCounter = new AtomicLong(0);
-	private static AtomicLong nullDeliveryCounter = new AtomicLong(0);
 
 	public static void main(String args[]) {
 		Map<String, String> configSet = ConfigReader.readAllConfigurationValues("Config.properties");
@@ -47,13 +45,18 @@ public class Main extends ReactiveStreamingApp {
 		SchedulerSettings.HostNameValue = System.getenv(configSet.get("env.hostname.key"));
 		SchedulerSettings.HttpProxyValue = System.getenv(configSet.get("env.proxyname.key"));
 
+		SchedulerSettings.storageQueueConnectionString = System.getenv(configSet.get("env.storage.queue.connection.string"));
+		SchedulerSettings.storageQueueName = System.getenv(configSet.get("env.storage.queue.name"));
+
 		List<Integer> partitionsList = getPartitionsList();
-		String partitions = partitionsList.stream().map(Object::toString).collect(Collectors.joining(","));
-		Log.info("Reading from partitions: {}", partitions);
+		String partitionNumber = partitionsList.stream().map(Object::toString).collect(Collectors.joining(","));
+
+		Log.info("Reading from partitions: {}", partitionNumber);
 
 		// Read from the saved offsets if any else from the specified time
 		SourceOptions options = new SourceOptions().partitions(partitionsList)
-				.fromCheckpoint(java.time.Instant.now().minus(4, ChronoUnit.HOURS));
+				.fromCheckpoint(null);
+		//java.time.Instant.now().minus(4, ChronoUnit.HOURS)
 
 		IoTHub iotHub = new IoTHub();
 		Source<MessageFromDevice, NotUsed> messages = iotHub.source(options);
@@ -86,26 +89,35 @@ public class Main extends ReactiveStreamingApp {
 	}
 
 	/*
-	 * Implementation of workflow using fluent api
+	 * Implementation of Akka workflow in fluent mode
 	 */
+	
+	
 	private static Flow<AkkaDelivery, MessageFromDevice, NotUsed> deliveryProcessor() {
 		return Flow.of(AkkaDelivery.class).map(delivery -> {
-			DeferredResult<DeliverySchedule> schedule = DeliveryRequestEventProcessor
-					.processDeliveryRequestAsync(delivery.getDelivery(), delivery.getMessageFromDevice().properties());
-			schedule.setResultHandler(new DeferredResultHandler() {
-
-				@Override
-				public void handleResult(Object result) {
-					final DeliverySchedule deliverySchedule = (DeliverySchedule) result;
-					if (deliverySchedule == null) {
-						Log.info("Failed Deliveries: {}", nullDeliveryCounter.incrementAndGet());
-					} else {
-						Log.info("Successful Deliveries: {}", deliveryCounter.incrementAndGet());
-					}
+			CompletableFuture<DeliverySchedule> completableSchedule = DeliveryRequestEventProcessor
+					.processDeliveryRequestAsync(delivery.getDelivery(), 
+							delivery.getMessageFromDevice().properties());
+			
+			completableSchedule.whenComplete((deliverySchedule,error) -> {
+				if (error!=null){
+					Log.info("failed delivery" + error.getStackTrace());
 				}
+				else{
+					Log.info("Completed Delivery",deliverySchedule.toString());
+				}
+									
 			});
-
+			
+			completableSchedule = null;
 			return delivery.getMessageFromDevice();
 		});
 	}
+	
+		
+	
+	/*
+	 * Implementation of workflow using fluent api
+	 */
+
 }

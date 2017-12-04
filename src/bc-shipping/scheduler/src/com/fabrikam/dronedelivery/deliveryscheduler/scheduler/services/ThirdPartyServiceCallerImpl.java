@@ -10,15 +10,16 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
-import org.springframework.web.context.request.async.DeferredResult;
 
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.Location;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.LocationRandomizer;
 
 public class ThirdPartyServiceCallerImpl extends ServiceCallerImpl {
+	
+	private Boolean isThirdPartyRequired = true;
 
 	public ThirdPartyServiceCallerImpl() {
 		super();
@@ -50,11 +51,9 @@ public class ThirdPartyServiceCallerImpl extends ServiceCallerImpl {
 		ListenableFuture<?> response = this.postData(uri, pickup);
 		return Boolean.valueOf(((ResponseEntity<String>) response.get()).getBody().toString());
 	}
-
+	
 	@SuppressWarnings("unchecked")
-	public DeferredResult<Boolean> isThirdPartyServiceRequiredAsync(String dropOffLocation, String uri) {
-		// Create DeferredResult with timeout 5s
-		final DeferredResult<Boolean> result = new DeferredResult<Boolean>();
+	public Boolean isThirdPartyServiceRequiredAsync(String dropOffLocation, String uri) {
 
 		Location pickup = LocationRandomizer.getRandomLocation();
 
@@ -64,28 +63,19 @@ public class ThirdPartyServiceCallerImpl extends ServiceCallerImpl {
 
 		CompletableFuture<ResponseEntity<String>> cfuture = toCompletableFuture(future);
 
-		cfuture.thenAcceptAsync(response -> result.setResult(Boolean.valueOf(response.getBody()))).exceptionally(e -> {
-			result.setErrorResult(ExceptionUtils.getStackTrace(e));
-			result.setResult(null);
-			return null;
+		cfuture.thenAcceptAsync(response -> {
+			if (response.getStatusCode() == HttpStatus.OK) {
+				isThirdPartyRequired = Boolean.valueOf(response.getBody());
+			} else {
+				throw new BackendServiceCallFailedException(response.getStatusCode().getReasonPhrase());
+			}
+		}).exceptionally(e -> {
+			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
 		});
+		
+		future = null;
+		cfuture = null;
 
-//		future.addCallback(new ListenableFutureCallback<ResponseEntity<String>>() {
-//			@Override
-//			public void onSuccess(ResponseEntity<String> response) {
-//				// Will be called in HttpClient thread
-//				result.setResult(Boolean.valueOf(response.getBody()));
-//			}
-//
-//			@Override
-//			public void onFailure(Throwable t) {
-//				result.setErrorResult(ExceptionUtils.getStackTrace(t));
-//				result.setResult(null);
-//			}
-//		});
-
-		// Return the thread to servlet container, the response will be
-		// processed by another thread.
-		return result;
+		return isThirdPartyRequired;
 	}
 }

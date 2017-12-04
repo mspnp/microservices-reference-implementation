@@ -2,10 +2,8 @@ package com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services.tests;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -34,9 +32,7 @@ public class PostDeliveryRequests {
 	
 	private final String Locations[] = {"Austin", "Seattle", "Berkley", "Oregon", "Florida", "Blaine", "Renton"}; 
 	private static Random random = new Random();
-	
-	private final static List<String> Headers = Arrays.asList("l5d-ctx-deadline,l5d-ctx-trace".split("\\s*,\\s*"));
-	
+		
 	private final ContainerSize[] containers = ContainerSize.values();
 	private final ConfirmationRequired[] confirmations = ConfirmationRequired.values();
 	
@@ -90,10 +86,5 @@ public class PostDeliveryRequests {
 		return delivery;
 	}
 	
-	private void addMockServiceMeshHeaders(){
-		int counter=100;
-		for (String headerName : Headers) {
-			requestHeaders.add(headerName, "header-"+counter++);
-		}
-	}
+
 }

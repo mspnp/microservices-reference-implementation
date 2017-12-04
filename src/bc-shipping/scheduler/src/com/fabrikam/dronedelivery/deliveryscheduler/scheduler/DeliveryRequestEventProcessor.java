@@ -1,304 +1,250 @@
 package com.fabrikam.dronedelivery.deliveryscheduler.scheduler;
 
-import java.util.Arrays;
-import java.util.EnumMap;
-import java.util.Map;
-
-import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.logging.log4j.CloseableThreadContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import org.springframework.http.HttpHeaders;
-import org.springframework.web.context.request.async.DeferredResult;
-import org.springframework.web.context.request.async.DeferredResult.DeferredResultHandler;
-
 import com.fabrikam.dronedelivery.deliveryscheduler.akkareader.AkkaDelivery;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.StorageQueue.StorageQueueClientFactory;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DeliverySchedule;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.PackageGen;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.Delivery;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.PackageInfo;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services.AccountServiceCallerImpl;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services.DeliveryServiceCallerImpl;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services.DroneSchedulerServiceCallerImpl;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services.PackageServiceCallerImpl;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services.ServiceCallerImpl;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services.ThirdPartyServiceCallerImpl;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services.*;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.microsoft.azure.iot.iothubreact.MessageFromDevice;
+import com.microsoft.azure.storage.StorageException;
+import com.microsoft.azure.storage.queue.CloudQueue;
+import com.microsoft.azure.storage.queue.CloudQueueClient;
+import com.microsoft.azure.storage.queue.CloudQueueMessage;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.logging.log4j.CloseableThreadContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.http.HttpHeaders;
+
+import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 public class DeliveryRequestEventProcessor {
-	private static final Logger Log = LogManager.getLogger(DeliveryRequestEventProcessor.class);
-	
-	private static final String CorrelationHeaderTag = "CorrelationId";
+    private static final Logger Log = LogManager.getLogger(DeliveryRequestEventProcessor.class);
 
-	private static Gson deserializer = new GsonBuilder().setPrettyPrinting().create();
+    private static final String CorrelationHeaderTag = "CorrelationId";
 
-	private static String droneId = null;
-	private static boolean isAccountActive = false;
-	private static boolean isThirdPartyRequired = true;
-	private static PackageGen packageGen = null; 
+    private static Gson deserializer = new GsonBuilder().setPrettyPrinting().create();
 
-	private static final EnumMap<ServiceName, ServiceCallerImpl> backendServicesMap = new EnumMap<ServiceName, ServiceCallerImpl>(
-			ServiceName.class);
+    //private static String droneId = null;
+    //private static boolean isAccountActive = false;
+    //private static boolean isThirdPartyRequired = true;
+    //private static PackageGen packageGen = null;
 
-	// Ensures that only one instance of each backend service is created with
-	// it's own connection pool
-	static {
-		backendServicesMap.put(ServiceName.AccountService, new AccountServiceCallerImpl());
-		backendServicesMap.put(ServiceName.DeliveryService, new DeliveryServiceCallerImpl());
-		backendServicesMap.put(ServiceName.DroneSchedulerService, new DroneSchedulerServiceCallerImpl());
-		backendServicesMap.put(ServiceName.PackageService, new PackageServiceCallerImpl());
-		backendServicesMap.put(ServiceName.ThirdPartyService, new ThirdPartyServiceCallerImpl());
-	}
-	
-	public static AkkaDelivery parseDeliveryRequest(MessageFromDevice message) {
-		AkkaDelivery deliveryRequest = null;
+    private static final EnumMap<ServiceName, ServiceCallerImpl> backendServicesMap = new EnumMap<ServiceName, ServiceCallerImpl>(
+            ServiceName.class);
 
-		try {
+    // Ensures that only one instance of each backend service is created with
+    // it's own connection pool
+    static {
+        backendServicesMap.put(ServiceName.AccountService, new AccountServiceCallerImpl());
+        backendServicesMap.put(ServiceName.DeliveryService, new DeliveryServiceCallerImpl());
+        backendServicesMap.put(ServiceName.DroneSchedulerService, new DroneSchedulerServiceCallerImpl());
+        backendServicesMap.put(ServiceName.PackageService, new PackageServiceCallerImpl());
+        backendServicesMap.put(ServiceName.ThirdPartyService, new ThirdPartyServiceCallerImpl());
+    }
 
-			String dataReceived = message.contentAsString();
+    public static AkkaDelivery parseDeliveryRequest(MessageFromDevice message) {
+        AkkaDelivery deliveryRequest = null;
 
-			// TODO: Hacker's delight! String is the whole body, all we need is
-			// json
-			// dataReceived = dataReceived.substring(dataReceived.indexOf('{'),
-			// dataReceived.lastIndexOf('}') + 1);
+        try {
 
-			// Log.info("Eventhub string is: " + dataReceived);
-			Delivery delivery = deserializer.fromJson(dataReceived, Delivery.class);
-			deliveryRequest = new AkkaDelivery();
-			deliveryRequest.setDelivery(delivery);
-			deliveryRequest.setMessageFromDevice(message);
-		} catch (JsonSyntaxException e) {
-			Log.error("throwable: {}", ExceptionUtils.getStackTrace(e).toString());
-		}
+            String dataReceived = message.contentAsString();
+            Delivery delivery = deserializer.fromJson(dataReceived, Delivery.class);
+            deliveryRequest = new AkkaDelivery();
+            deliveryRequest.setDelivery(delivery);
+            deliveryRequest.setMessageFromDevice(message);
+        } catch (JsonSyntaxException e) {
+            Log.error("throwable: {}", ExceptionUtils.getStackTrace(e).toString());
+        }
 
-		return deliveryRequest;
-	}
-	
-	/*
-	 * Workflow that calls all the backend services asynchronously and parallelize first four services
-	 */
-	public static DeferredResult<DeliverySchedule> processDeliveryRequestAsyncParallel(Delivery deliveryRequest, Map<String, String> properties) {
-		final DeferredResult<DeliverySchedule> deliveryScheduleCaller = new DeferredResult<DeliverySchedule>(
-				(long) 5000);
+        return deliveryRequest;
+    }
 
-		// Extract the correlation id and log it
-		String correlationId = properties.get(SchedulerSettings.CorrelationHeader);
-		try (final CloseableThreadContext.Instance ctc = CloseableThreadContext.put(CorrelationHeaderTag,
-				correlationId)) {
+    public static CompletableFuture<DeliverySchedule> processDeliveryRequestAsync(Delivery deliveryRequest,
+                                                               Map<String, String> properties) {
+        DeliverySchedule deliverySchedule = null;
+        // Extract the correlation id and log it
+        String correlationId = properties.get(SchedulerSettings.CorrelationHeader);
+        try (final CloseableThreadContext.Instance ctc = CloseableThreadContext.put(CorrelationHeaderTag,
+                correlationId)) {
+            Log.info("Processing delivery request: Calling backend services for delivery id: {}",
+                    deliveryRequest.getDeliveryId());
 
-			Log.info("Processing delivery request: Calling backend services for delivery id: {}", deliveryRequest.getDeliveryId());
+            Boolean isAccountActive = invokeAccountServiceAsync(deliveryRequest, properties);
 
-			invokeAccountServiceAsync(deliveryRequest, properties).setResultHandler(new DeferredResultHandler() {
-				@Override
-				public void handleResult(Object result) {
-					isAccountActive = (boolean) result;
-					Log.info("Account is {}", (isAccountActive ? "active." : "suspended."));
-				}
-			});
-			
-			invokeThirdPartyServiceAsync(deliveryRequest, properties).setResultHandler(new DeferredResultHandler() {
-				@Override
-				public void handleResult(Object result) {
-					isThirdPartyRequired = (boolean) result;
-					Log.info("Third party is {}", (isThirdPartyRequired ? "required." : "not required."));
-				}
-			});
+            if (isAccountActive) {
+                Log.info("Account is {}", (isAccountActive ? "active." : "suspended."));
+                Boolean isThirdPartyRequired = invokeThirdPartyServiceAsync(deliveryRequest, properties);
+                Log.info("Third party is {}", (isThirdPartyRequired ? "required." : "not required."));
 
-			invokePackageServiceAsync(deliveryRequest, properties).setResultHandler(new DeferredResultHandler() {
-				@Override
-				public void handleResult(Object result) {
-					packageGen = (PackageGen) result;
-					if (packageGen != null) {
-						Log.info("Package generated: {}", packageGen.toString());
-					}
-				}
-			});
+                if (!isThirdPartyRequired) {
+                    PackageGen packageGen = invokePackageServiceAsync(deliveryRequest, properties);
+                    if (packageGen != null) {
+                        Log.info("Package generated: {}", packageGen.toString());
+                        String droneId = invokeDroneSchedulerServiceAsync(deliveryRequest, properties);
 
-			invokeDroneSchedulerServiceAsync(deliveryRequest, properties).setResultHandler(new DeferredResultHandler() {
-				@Override
-				public void handleResult(Object result) {
-					droneId = (String) result;
-					Log.info("Drone assigned: {}", droneId);
-				}
-			});
+                        if (droneId != null) {
+                            Log.info("Drone assigned: {}", droneId);
+                            deliverySchedule = invokeDeliverySchedulerServiceAsync(deliveryRequest, droneId, properties);
+                        }
+                    }
+                }
+            }
+        }
+        
+        return CompletableFuture.completedFuture(deliverySchedule);
 
-			if (isAccountActive && !isThirdPartyRequired && packageGen != null && droneId != null) {
-				invokeDeliverySchedulerServiceAsync(deliveryRequest, droneId, properties)
-						.setResultHandler(new DeferredResultHandler() {
-							@Override
-							public void handleResult(Object result) {
-								deliveryScheduleCaller.setResult((DeliverySchedule) result);
-							}
-						});
-			}
+    }
 
-		}
-		
-		return deliveryScheduleCaller;
-	}
-	
-	public static DeferredResult<DeliverySchedule> processDeliveryRequestAsync(Delivery deliveryRequest,
-			Map<String, String> properties) {
-		final DeferredResult<DeliverySchedule> deliveryScheduleCaller = new DeferredResult<DeliverySchedule>(
-				(long) 5000);
-		// Extract the correlation id and log it
-		String correlationId = properties.get(SchedulerSettings.CorrelationHeader);
-		try (final CloseableThreadContext.Instance ctc = CloseableThreadContext.put(CorrelationHeaderTag,
-				correlationId)) {
-			Log.info("Processing delivery request: Calling backend services for delivery id: {}",
-					deliveryRequest.getDeliveryId());
+    public static Boolean invokeAccountServiceAsync(Delivery deliveryRequest, Map<String, String> properties) {
+        Boolean accountResult = new Boolean(false);
+        try {
+            AccountServiceCallerImpl backendService = (AccountServiceCallerImpl) backendServicesMap.get(ServiceName.AccountService);
+            appendServiceMeshHeaders(backendService, properties);
+            accountResult = backendService.isAccountActiveAsync(deliveryRequest.getOwnerId(), SchedulerSettings.AccountServiceUri);
+        } catch (Exception e) {
+            // Assume failure of service here - a crude supervisor
+            // implementation
+            superviseFailureAsync(deliveryRequest, ServiceName.AccountService, ExceptionUtils.getMessage(e))
+                    .thenRunAsync(() -> {
+                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                    });
 
-			invokeAccountServiceAsync(deliveryRequest, properties).setResultHandler(new DeferredResultHandler() {
-				@Override
-				public void handleResult(Object result) {
-					boolean isAccountActive = (boolean) result;
-					Log.info("Account is {}", (isAccountActive ? "active." : "suspended."));
-					if (isAccountActive) {
-						invokeThirdPartyServiceAsync(deliveryRequest, properties)
-								.setResultHandler(new DeferredResultHandler() {
-									@Override
-									public void handleResult(Object result) {
-										boolean isThirdPartyRequired = (boolean) result;
-										Log.info("Third party is {}",
-												(isThirdPartyRequired ? "required." : "not required."));
-										if (!isThirdPartyRequired) {
-											invokePackageServiceAsync(deliveryRequest, properties)
-													.setResultHandler(new DeferredResultHandler() {
+            throw e;
+        }
 
-														@Override
-														public void handleResult(Object result) {
-															PackageGen packageGen = (PackageGen) result;
-															if (packageGen != null) {
-																Log.info("Package generated: {}", packageGen.toString());
-																invokeDroneSchedulerServiceAsync(deliveryRequest,
-																		properties).setResultHandler(
-																				new DeferredResultHandler() {
-																					@Override
-																					public void handleResult(
-																							Object result) {
-																						droneId = (String) result;
-																						if (droneId != null) {
-																							Log.info(
-																									"Drone assigned: {}",
-																									droneId);
-																							invokeDeliverySchedulerServiceAsync(
-																									deliveryRequest,
-																									droneId, properties)
-																											.setResultHandler(
-																													new DeferredResultHandler() {
-																														@Override
-																														public void handleResult(
-																																Object result) {
-																															deliveryScheduleCaller
-																																	.setResult(
-																																			(DeliverySchedule) result);
-																														}
-																													});
-																						}
-																					}
-																				});
-															}
-														}
-													});
-										}
-									}
-								});
-					}
-				}
-			});
-		}
+        return accountResult;
+    }
 
-		return deliveryScheduleCaller;
-	}
+    private static Boolean invokeThirdPartyServiceAsync(Delivery deliveryRequest, Map<String, String> properties) {
+        Boolean thirdPartyResult = new Boolean(false);
+        try {
+            ThirdPartyServiceCallerImpl backendService = (ThirdPartyServiceCallerImpl) backendServicesMap
+                    .get(ServiceName.ThirdPartyService);
+            appendServiceMeshHeaders(backendService, properties);
+            thirdPartyResult = backendService.isThirdPartyServiceRequiredAsync(deliveryRequest.getDropOffLocation(),
+                    SchedulerSettings.ThirdPartyServiceUri);
+        } catch (Exception e) {
+            // Assume failure of service here - a crude supervisor
+            // implementation
+            superviseFailureAsync(deliveryRequest, ServiceName.ThirdPartyService, ExceptionUtils.getMessage(e))
+                    .thenRunAsync(() -> {
+                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                    });
 
+            throw e;
+        }
 
-	private static DeferredResult<Boolean> invokeAccountServiceAsync(Delivery deliveryRequest, Map<String,String> properties) {
-		DeferredResult<Boolean> accountResult = new DeferredResult<Boolean>((long) 5000);
-		try {
-			AccountServiceCallerImpl backendService = (AccountServiceCallerImpl) backendServicesMap.get(ServiceName.AccountService);
-			appendServiceMeshHeaders(backendService, properties);
-			accountResult = backendService.isAccountActiveAsync(deliveryRequest.getOwnerId(), SchedulerSettings.AccountServiceUri);
-		} catch (Exception e) {
-			Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-		}
+        return thirdPartyResult;
+    }
 
-		return accountResult;
-	}
+    private static String invokeDroneSchedulerServiceAsync(Delivery deliveryRequest, Map<String, String> properties) {
+        String droneScheduleResult = null;
+        try {
+            DroneSchedulerServiceCallerImpl backendService = (DroneSchedulerServiceCallerImpl) backendServicesMap
+                    .get(ServiceName.DroneSchedulerService);
+            appendServiceMeshHeaders(backendService, properties);
+            droneScheduleResult = backendService.getDroneIdAsync(deliveryRequest,
+                    SchedulerSettings.DroneSchedulerServiceUri);
+        } catch (Exception e) {
+            // Assume failure of service here - a crude supervisor
+            // implementation
+            superviseFailureAsync(deliveryRequest, ServiceName.DroneSchedulerService, ExceptionUtils.getMessage(e))
+                    .thenRunAsync(() -> {
+                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                    });
 
-	private static DeferredResult<Boolean> invokeThirdPartyServiceAsync(Delivery deliveryRequest,
-			Map<String, String> properties) {
-		DeferredResult<Boolean> thirdPartyResult = new DeferredResult<Boolean>((long) 5000);
-		try {
-			ThirdPartyServiceCallerImpl backendService = (ThirdPartyServiceCallerImpl) backendServicesMap
-					.get(ServiceName.ThirdPartyService);
-			appendServiceMeshHeaders(backendService, properties);
-			thirdPartyResult = backendService.isThirdPartyServiceRequiredAsync(deliveryRequest.getDropOffLocation(),
-					SchedulerSettings.ThirdPartyServiceUri);
-		} catch (Exception e) {
-			Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-		}
+            throw e;
+        }
 
-		return thirdPartyResult;
-	}
+        return droneScheduleResult;
+    }
 
-	private static DeferredResult<String> invokeDroneSchedulerServiceAsync(Delivery deliveryRequest, Map<String,String> properties) {
-		DeferredResult<String> droneScheduleResult = new DeferredResult<String>((long) 5000);
-		try {
-			DroneSchedulerServiceCallerImpl backendService = (DroneSchedulerServiceCallerImpl) backendServicesMap
-					.get(ServiceName.DroneSchedulerService);
-			appendServiceMeshHeaders(backendService, properties);
-			droneScheduleResult = backendService.getDroneIdAsync(deliveryRequest,
-							SchedulerSettings.DroneSchedulerServiceUri);
-		} catch (Exception e) {
-			Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-		}
+    public static PackageGen invokePackageServiceAsync(Delivery deliveryRequest, Map<String, String> properties) {
+        PackageGen packageResult = new PackageGen();
+        try {
+            PackageInfo packageInfo = deliveryRequest.getPackageInfo();
+            PackageServiceCallerImpl backendService = (PackageServiceCallerImpl) backendServicesMap.get(ServiceName.PackageService);
+            appendServiceMeshHeaders(backendService, properties);
+            packageResult = backendService.createPackageAsync(packageInfo, SchedulerSettings.PackageServiceUri);
+        } catch (Exception e) {
+            // Assume failure of service here - a crude supervisor
+            // implementation
+            superviseFailureAsync(deliveryRequest, ServiceName.PackageService, ExceptionUtils.getMessage(e))
+                    .thenRunAsync(() -> {
+                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                    });
+            throw e;
+        }
 
-		return droneScheduleResult;
-	}
+        return packageResult;
+    }
 
-	public static DeferredResult<PackageGen> invokePackageServiceAsync(Delivery deliveryRequest, Map<String,String> properties) {
-		DeferredResult<PackageGen> packageResult = new DeferredResult<PackageGen>((long) 5000);
-		try {
-			PackageInfo packageInfo = deliveryRequest.getPackageInfo();
-			PackageServiceCallerImpl backendService = (PackageServiceCallerImpl) backendServicesMap.get(ServiceName.PackageService);
-			appendServiceMeshHeaders(backendService, properties);
-			packageResult = backendService.createPackageAsync(packageInfo, SchedulerSettings.PackageServiceUri);
-		} catch (Exception e) {
-			Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-		}
+    private static DeliverySchedule invokeDeliverySchedulerServiceAsync(Delivery deliveryRequest,
+                                                                        String droneId, Map<String, String> properties) {
+        DeliverySchedule deliveryResult = null;
+        try {
+            DeliveryServiceCallerImpl backendService = (DeliveryServiceCallerImpl) backendServicesMap.get(ServiceName.DeliveryService);
+            appendServiceMeshHeaders(backendService, properties);
+            deliveryResult = backendService.scheduleDeliveryAsync(deliveryRequest, droneId, SchedulerSettings.DeliveryServiceUri);
+        } catch (Exception e) {
+            // Assume failure of service here - a crude supervisor
+            // implementation
+            superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getMessage(e))
+                    .thenRunAsync(() -> {
+                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                    });
 
-		return packageResult;
-	}
+            throw e;
+        }
 
-	private static DeferredResult<DeliverySchedule> invokeDeliverySchedulerServiceAsync(Delivery deliveryRequest,
-			String droneId, Map<String,String> properties) {
-		DeferredResult<DeliverySchedule> deliveryResult = new DeferredResult<DeliverySchedule>((long) 5000);
-		try {
-			DeliveryServiceCallerImpl backendService = (DeliveryServiceCallerImpl) backendServicesMap.get(ServiceName.DeliveryService);
-			appendServiceMeshHeaders(backendService, properties);
-			deliveryResult = backendService.scheduleDeliveryAsync(deliveryRequest, droneId, SchedulerSettings.DeliveryServiceUri);
-		} catch (Exception e) {
-			Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-		}
+        return deliveryResult;
+    }
 
-		return deliveryResult;
-	}
-	
-	private static void appendServiceMeshHeaders(ServiceCallerImpl service, Map<String, String> properties) {
-		HttpHeaders httpHeaders = service.getRequestHeaders();
-		for (String headerName : SchedulerSettings.ServiceMeshHeaders) {
-			String headerValue = properties.get(headerName);
-			if (headerValue != null) {
-				if (httpHeaders.containsKey(headerName)) {
-					httpHeaders.replace(headerName, Arrays.asList(headerValue));
-				} else {
-					httpHeaders.add(headerName, headerValue);
-				}
-			}
-		}
-	}
+    private static void appendServiceMeshHeaders(ServiceCallerImpl service, Map<String, String> properties) {
+        HttpHeaders httpHeaders = service.getRequestHeaders();
+        for (String headerName : SchedulerSettings.ServiceMeshHeaders) {
+            String headerValue = properties.get(headerName);
+            if (headerValue != null) {
+                if (httpHeaders.containsKey(headerName)) {
+                    httpHeaders.replace(headerName, Arrays.asList(headerValue));
+                } else {
+                    httpHeaders.add(headerName, headerValue);
+                }
+            }
+        }
+    }
+
+    /*
+     * Supervisor implementation
+     */
+    private static CompletableFuture<Void> superviseFailureAsync(Delivery deliveryRequest, ServiceName serviceName, String errorMessage) {
+        CloudQueueClient queueClient = StorageQueueClientFactory.get();
+        try {
+            CloudQueue queueReference = queueClient.getQueueReference(SchedulerSettings.storageQueueName);
+            queueReference.createIfNotExists();
+
+            String requestInJson = deserializer.toJson(deliveryRequest, Delivery.class);
+            byte[] requestInJsonBytes = requestInJson.getBytes(StandardCharsets.UTF_8);
+            CloudQueueMessage message = new CloudQueueMessage(requestInJsonBytes);
+
+            queueReference.addMessage(message);
+
+        } catch (URISyntaxException | StorageException e) {
+            e.printStackTrace();
+        } finally {
+            return null;
+        }
+
+    }
 }

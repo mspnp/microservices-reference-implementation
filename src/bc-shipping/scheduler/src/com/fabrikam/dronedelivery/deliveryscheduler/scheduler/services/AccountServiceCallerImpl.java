@@ -5,16 +5,17 @@ import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 //import org.apache.http.nio.reactor.IOReactorException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
-//import org.springframework.util.concurrent.ListenableFutureCallback;
-import org.springframework.web.context.request.async.DeferredResult;
+
 
 import static net.javacrumbs.futureconverter.springjava.FutureConverter.*;
 
 public final class AccountServiceCallerImpl extends ServiceCallerImpl {
 
+	private Boolean isAccountActive = false;
+	
 	// Calls the super constructor and sets the HTTP context
 	public AccountServiceCallerImpl() {
 		super();
@@ -32,42 +33,28 @@ public final class AccountServiceCallerImpl extends ServiceCallerImpl {
 		return Boolean.valueOf(((ResponseEntity<?>) accountMock.get()).getBody().toString());
 	}
 
+	
 	@SuppressWarnings("unchecked")
-	public DeferredResult<Boolean> isAccountActiveAsync(String accountId, String uri) {
-		// Create DeferredResult with timeout 5s
-		final DeferredResult<Boolean> result = new DeferredResult<Boolean>();
-
+	public Boolean isAccountActiveAsync(String accountId, String uri) {
 		// Let's call the backend
 		ListenableFuture<ResponseEntity<String>> future = (ListenableFuture<ResponseEntity<String>>) this
 				.getData(uri + '/', accountId);
 		
 		CompletableFuture<ResponseEntity<String>> cfuture = toCompletableFuture(future);
 		
-		cfuture.thenAcceptAsync(response ->	result.setResult(Boolean.valueOf(response.getBody())))
-			   .exceptionally(e -> {
-					result.setErrorResult(ExceptionUtils.getStackTrace(e));
-					result.setResult(null);
-					return null;
-			   });
+		cfuture.thenAcceptAsync(response -> {
+			if (response.getStatusCode() == HttpStatus.OK) {
+				isAccountActive = Boolean.valueOf(response.getBody());
+			} else {
+				throw new BackendServiceCallFailedException(response.getStatusCode().getReasonPhrase());
+			}
+		}).exceptionally(e -> {
+			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
+		});
 		
-//		future.addCallback(new ListenableFutureCallback<ResponseEntity<String>>() {
-//			@Override
-//			public void onSuccess(ResponseEntity<String> response) {
-//				// Will be called in HttpClient thread
-//				result.setResult(Boolean.valueOf(response.getBody()));
-//			}
-//
-//			@Override
-//			public void onFailure(Throwable t) {
-//				result.setErrorResult(ExceptionUtils.getStackTrace(t));
-//				result.setResult(null);
-//			}
-//		});
+		future = null;
+		cfuture = null;
 		
-
-		
-		// Return the thread to servlet container, the response will be
-		// processed by another thread.
-		return result;
+		return isAccountActive;
 	}
 }

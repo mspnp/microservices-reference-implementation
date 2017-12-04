@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration status="warn" name="deliveryscheduler.delivery-dispatcher-service-akka" packages="">
+<Configuration status="warn" name="deliveryscheduler.scheduler.service" packages="">
 	<Appenders>
 		<Console name="STDOUT" target="SYSTEM_OUT">
 			<JsonLayout complete="false" compact="true"

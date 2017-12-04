@@ -79,7 +79,7 @@ public abstract class ServiceCallerImpl implements ServiceCaller {
 					}
 				})
 				// .setKeepAliveStrategy(KeepAliveStrategy.getCustomKeepAliveStrategy())
-				.setMaxConnPerRoute(10000).setMaxConnTotal(Integer.MAX_VALUE);
+				.setMaxConnPerRoute(Integer.MAX_VALUE).setMaxConnTotal(Integer.MAX_VALUE);
 
 		if (httpProxy != null) {
 			builder.setProxy(httpProxy);
@@ -91,10 +91,10 @@ public abstract class ServiceCallerImpl implements ServiceCaller {
 		worker.start();
 				
 		HttpComponentsAsyncClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsAsyncClientHttpRequestFactory();
-		clientHttpRequestFactory.setConnectionRequestTimeout(5000);
-		clientHttpRequestFactory.setConnectTimeout(5000);
+		clientHttpRequestFactory.setConnectionRequestTimeout(0);
+		clientHttpRequestFactory.setConnectTimeout(0);
 		clientHttpRequestFactory.setBufferRequestBody(false);
-		clientHttpRequestFactory.setReadTimeout(5000);
+		clientHttpRequestFactory.setReadTimeout(0);
 
 		clientHttpRequestFactory.setHttpAsyncClient(client);
 		asyncRestTemplate = new AsyncRestTemplate(clientHttpRequestFactory);

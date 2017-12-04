@@ -13,9 +13,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
-//import org.springframework.util.concurrent.ListenableFutureCallback;
-import org.springframework.web.context.request.async.DeferredResult;
+
 
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DeliverySchedule;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.UserAccount;
@@ -24,6 +22,9 @@ import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.LocationRand
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsConverter;
 
 public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
+
+	private DeliverySchedule  deliverySchedule = null;
+	
 	// Calls the super constructor and sets the HTTP context
 	public DeliveryServiceCallerImpl() {
 		super();
@@ -55,11 +56,10 @@ public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
 		return entity.getStatusCode() == HttpStatus.CREATED ? entity.getBody() : null;
 	}
 
+	
 	@SuppressWarnings("unchecked")
-	public DeferredResult<DeliverySchedule> scheduleDeliveryAsync(Delivery deliveryRequest, String droneId,
+	public DeliverySchedule scheduleDeliveryAsync(Delivery deliveryRequest, String droneId,
 			String uri) {
-		// Create DeferredResult with timeout 5s
-		final DeferredResult<DeliverySchedule> result = new DeferredResult<DeliverySchedule>();
 
 		// Create delivery schedule to post as data
 		DeliverySchedule schedule = this.createDeliverySchedule(deliveryRequest, droneId);
@@ -71,40 +71,20 @@ public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
 		CompletableFuture<ResponseEntity<DeliverySchedule>> cfuture = toCompletableFuture(future);
 
 		cfuture.thenAcceptAsync(response -> {
-			if (response.getStatusCode() == HttpStatus.CREATED) {
-				result.setResult(response.getBody());
-			} else {
-				result.setResult(null);
-				result.setErrorResult(response.getStatusCode());
+			deliverySchedule = response.getBody();
+			if (response.getStatusCode() != HttpStatus.CREATED) {
+				throw new BackendServiceCallFailedException(response.getStatusCode().getReasonPhrase());
 			}
 		}).exceptionally(e -> {
-			result.setErrorResult(ExceptionUtils.getStackTrace(e));
-			result.setResult(null);
-			return null;
+			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
 		});
+		
+		future = null;
+		cfuture = null;
+		deliveryRequest = null;
+		schedule = null;
 
-//		future.addCallback(new ListenableFutureCallback<ResponseEntity<DeliverySchedule>>() {
-//			@Override
-//			public void onSuccess(ResponseEntity<DeliverySchedule> response) {
-//				// Will be called in HttpClient thread
-//				if (response.getStatusCode() == HttpStatus.CREATED) {
-//					result.setResult(response.getBody());
-//				}else {
-//					result.setResult(null);
-//					result.setErrorResult(response.getStatusCode());
-//				}
-//			}
-//
-//			@Override
-//			public void onFailure(Throwable t) {
-//				result.setErrorResult(ExceptionUtils.getStackTrace(t));
-//				result.setResult(null);
-//			}
-//		});
-
-		// Return the thread to servlet container, the response will be
-		// processed by another thread.
-		return result;
+		return deliverySchedule;
 	}
 	
 	private DeliverySchedule createDeliverySchedule(Delivery deliveryRequest, String droneId) {

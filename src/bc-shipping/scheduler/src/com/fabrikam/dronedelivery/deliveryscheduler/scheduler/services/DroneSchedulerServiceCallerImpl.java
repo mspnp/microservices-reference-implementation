@@ -12,9 +12,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
-//import org.springframework.util.concurrent.ListenableFutureCallback;
-import org.springframework.web.context.request.async.DeferredResult;
 
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DroneDelivery;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.Delivery;
@@ -23,6 +20,7 @@ import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsConver
 
 public class DroneSchedulerServiceCallerImpl extends ServiceCallerImpl {
 
+	private String droneId = null;
 	// Calls the super constructor and sets the HTTP context
 	public DroneSchedulerServiceCallerImpl() {
 		super();
@@ -54,56 +52,6 @@ public class DroneSchedulerServiceCallerImpl extends ServiceCallerImpl {
 		return entity.getStatusCode() == HttpStatus.OK ? entity.getBody().toString() : null;
 	}
 
-	@SuppressWarnings("unchecked")
-	public DeferredResult<String> getDroneIdAsync(Delivery deliveryRequest, String uri) {
-		// Create DeferredResult with timeout 5s
-		final DeferredResult<String> result = new DeferredResult<String>();
-
-		// Create drone delivery to post data
-		DroneDelivery delivery = createDroneDelivery(deliveryRequest);
-
-		// Let's call the backend
-		ListenableFuture<ResponseEntity<String>> future = (ListenableFuture<ResponseEntity<String>>) this.putData(uri+"/"+delivery.getDeliveryId(),
-				delivery);
-		
-		CompletableFuture<ResponseEntity<String>> cfuture = toCompletableFuture(future);
-
-		cfuture.thenAcceptAsync(response -> {
-			if (response.getStatusCode() == HttpStatus.OK) {
-				result.setResult(response.getBody());
-			} else {
-				result.setResult(null);
-				result.setErrorResult(response.getStatusCode());
-			}
-		}).exceptionally(e -> {
-			result.setErrorResult(ExceptionUtils.getStackTrace(e));
-			result.setResult(null);
-			return null;
-		});
-		
-//		future.addCallback(new ListenableFutureCallback<ResponseEntity<String>>() {
-//			@Override
-//			public void onSuccess(ResponseEntity<String> response) {
-//				// Will be called in HttpClient thread
-//				if (response.getStatusCode() == HttpStatus.OK) {
-//					result.setResult(response.getBody());
-//				}else {
-//					result.setResult(null);
-//					result.setErrorResult(response.getStatusCode());
-//				}
-//			}
-//
-//			@Override
-//			public void onFailure(Throwable t) {
-//				result.setErrorResult(ExceptionUtils.getStackTrace(t));
-//				result.setResult(null);
-//			}
-//		});
-
-		// Return the thread to servlet container, the response will be
-		// processed by another thread.
-		return result;
-	}
 
 	private DroneDelivery createDroneDelivery(Delivery deliveryRequest) {
 		DroneDelivery delivery = new DroneDelivery();
@@ -117,5 +65,31 @@ public class DroneSchedulerServiceCallerImpl extends ServiceCallerImpl {
 		delivery.setPackageDetail(ModelsConverter.getPackageDetail(deliveryRequest.getPackageInfo()));
 
 		return delivery;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public String getDroneIdAsync(Delivery deliveryRequest, String uri) {
+		// Create drone delivery to post data
+		DroneDelivery delivery = createDroneDelivery(deliveryRequest);
+
+		// Let's call the backend
+		ListenableFuture<ResponseEntity<String>> future = (ListenableFuture<ResponseEntity<String>>) this.putData(uri+"/"+delivery.getDeliveryId(),
+				delivery);
+		
+		CompletableFuture<ResponseEntity<String>> cfuture = toCompletableFuture(future);
+
+		cfuture.thenAcceptAsync(response -> {
+			droneId = response.getBody();
+			if (response.getStatusCode() != HttpStatus.OK) {
+				throw new BackendServiceCallFailedException(response.getStatusCode().getReasonPhrase());
+			}
+		}).exceptionally(e -> {
+			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
+		});
+		
+		future = null;
+		cfuture = null;
+		
+		return droneId;
 	}
 }
