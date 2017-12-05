@@ -38,6 +38,17 @@ spec:
           value: l5d-ctx-trace
         - name: LOG_LEVEL
           value: error
+        # Integration with l5d Daemon Sets
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: http_proxy
+          value: $(NODE_NAME):4140
         ports:
         - containerPort: 80
         imagePullPolicy: Always

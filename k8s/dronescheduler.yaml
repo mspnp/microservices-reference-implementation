@@ -51,18 +51,18 @@ spec:
         image: dronedelivery.azurecr.io/mockdronescheduler:0.1.0
         env:
         # Integration with l5d Daemon Sets
-        # - name: NODE_NAME
-        #   valueFrom:
-        #     fieldRef:
-        #       fieldPath: spec.nodeName
-        # - name: POD_IP
-        #   valueFrom:
-        #     fieldRef:
-        #       fieldPath: status.podIP
-        # - name: http_proxy
-        #   value: $(NODE_NAME):4140
-        # - name: CORRELATION_HEADER
-        #   value: l5d-ctx-trace
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: http_proxy
+          value: $(NODE_NAME):4140
+        - name: CORRELATION_HEADER
+          value: l5d-ctx-trace
         ports:
         - name: service
           containerPort: 80
