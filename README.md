@@ -89,9 +89,6 @@ export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-cosmosdb" && \
 export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
 export COLLECTION_NAME="${DATABASE_NAME}-col"
 
-# Create a resource group
-az group create --name $RESOURCE_GROUP_DELIVERY --location $LOCATION
-
 # Create Azure Redis Cache
 az redis create --location $LOCATION \
             --name $REDIS_NAME \
