@@ -82,9 +82,8 @@ Deploy linkerd. For more information, see https://linkerd.io/getting-started/k8s
 Provision Azure resources
 
 ```bash
-export DELIVERY_SERVICE_PREFIX=delivery_service_prefix_here && \
-export REDIS_NAME="${DELIVERY_SERVICE_PREFIX}-redis" && \
-export COSMOSDB_NAME="${DELIVERY_SERVICE_PREFIX}-cosmosdb" && \
+export REDIS_NAME="delivery-service-redis" && \
+export COSMOSDB_NAME="delivery-service-cosmosdb" && \
 export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
 export COLLECTION_NAME="${DATABASE_NAME}-col"
 
@@ -176,8 +175,7 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 Provision Azure resources
 
 ```bash
-export PACKAGE_SERVICE_PREFIX=package_service_prefix_here && \
-export COSMOSDB_NAME="${PACKAGE_SERVICE_PREFIX}-cosmosdb"
+export COSMOSDB_NAME="package-service-cosmosdb"
 az cosmosdb create --name $COSMOSDB_NAME --kind MongoDB --resource-group $RESOURCE_GROUP
 ```
 
