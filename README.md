@@ -26,7 +26,6 @@ Set environment variables.
 export LOCATION=your_location_here && \
 export RESOURCE_GROUP=your_resource_group_here && \
 export CLUSTER_NAME=your_cluster_name_here && 
-export RESOURCE_GROUP_SVC=services_resource_group_here
 ```
 
 Provision a Kubernetes cluster in ACS
@@ -37,9 +36,6 @@ az login
 
 # Create a resource group for ACS
 az group create --name $RESOURCE_GROUP --location $LOCATION
-
-# Create a resource group for other Azure services
-az group create --name $RESOURCE_GROUP_SVC --location $LOCATION
 
 # Create the ACS cluster
 az acs create --orchestrator-type kubernetes --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --generate-ssh-keys
@@ -98,7 +94,7 @@ az group create --name $RESOURCE_GROUP_DELIVERY --location $LOCATION
 # Create Azure Redis Cache
 az redis create --location $LOCATION \
             --name $REDIS_NAME \
-            --resource-group $RESOURCE_GROUP_SVC \
+            --resource-group $RESOURCE_GROUP \
             --sku Premium \
             --vm-size P4
 
@@ -106,7 +102,7 @@ az redis create --location $LOCATION \
 az cosmosdb create \
     --name $COSMOSDB_NAME \
     --kind GlobalDocumentDB \
-    --resource-group $RESOURCE_GROUP_SVC \
+    --resource-group $RESOURCE_GROUP \
     --max-interval 10 \
     --max-staleness-prefix 200 
 
@@ -114,14 +110,14 @@ az cosmosdb create \
 az cosmosdb database create \
     --name $COSMOSDB_NAME \
     --db-name=$DATABASE_NAME \
-    --resource-group $RESOURCE_GROUP_SVC
+    --resource-group $RESOURCE_GROUP
 
 # Create a Cosmos DB collection
 az cosmosdb collection create \
     --collection-name $COLLECTION_NAME \
     --name $COSMOSDB_NAME \
     --db-name $DATABASE_NAME \
-    --resource-group $RESOURCE_GROUP_SVC
+    --resource-group $RESOURCE_GROUP
 ```
 
 Build the Delivery service
@@ -145,10 +141,10 @@ docker push $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0
 Create Kubernetes secrets
 
 ```bash
-export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP_SVC --query primaryMasterKey) && \
-export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP_SVC --query documentEndpoint) && \
-export REDIS_HOSTNAME=$(az redis show -n $REDIS_NAME -g $RESOURCE_GROUP_SVC --query hostName) && \
-export REDIS_KEY=$(az redis list-keys --name $REDIS_NAME --resource-group $RESOURCE_GROUP_SVC --query primaryKey)
+export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query primaryMasterKey) && \
+export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint) && \
+export REDIS_HOSTNAME=$(az redis show -n $REDIS_NAME -g $RESOURCE_GROUP --query hostName) && \
+export REDIS_KEY=$(az redis list-keys --name $REDIS_NAME --resource-group $RESOURCE_GROUP --query primaryKey)
 
 kubectl --namespace bc-shipping create --save-config=true secret generic delivery-storageconf \
     --from-literal=CosmosDB_Key=${COSMOSDB_KEY[@]//\"/} \
@@ -182,7 +178,7 @@ Provision Azure resources
 ```bash
 export PACKAGE_SERVICE_PREFIX=package_service_prefix_here && \
 export COSMOSDB_NAME="${PACKAGE_SERVICE_PREFIX}-cosmosdb"
-az cosmosdb create --name $COSMOSDB_NAME --kind MongoDB --resource-group $RESOURCE_GROUP_SVC
+az cosmosdb create --name $COSMOSDB_NAME --kind MongoDB --resource-group $RESOURCE_GROUP
 ```
 
 Build the Package service
@@ -208,7 +204,7 @@ Deploy the Package service
 sed -i "s#image:#image: $ACR_SERVER/package-service:0.1.0#g" ./microservices-reference-implementation/k8s/package.yml
 
 # Create secret
-export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP_SVC --query "connectionStrings[0].connectionString")
+export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString")
 kubectl -n bc-shipping create secret generic package-secrets --from-literal=mongodb-pwd=${COSMOSDB_CONNECTION[@]//\"/}
 
 # Deploy service
