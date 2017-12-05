@@ -221,9 +221,40 @@ TBD
 
 ## Deploy mock services
 
-TBD
+Build the mock services
 
-Verify all services are running:
+```
+docker-compose -f ./microservices-reference-implementation/src/bc-shipping/delivery/docker-compose.ci.build.yml up
+```
+
+Build and publish the container image 
+
+```bash
+# Build the Docker image
+docker build -t $ACR_SERVER/account:0.1.0 ./microservices-reference-implementation/src/bc-shipping/delivery/MockAccountService/. && \
+docker build -t $ACR_SERVER/dronescheduler:0.1.0 ./microservices-reference-implementation/src/bc-shipping/delivery/MockDroneScheduler/. && \
+docker build -t $ACR_SERVER/thirdparty:0.1.0 ./microservices-reference-implementation/src/bc-shipping/delivery/MockThirdPartyService/. 
+
+# Push the image to ACR
+az acr login --name $ACR_NAME
+docker push $ACR_SERVER/account:0.1.0 && \
+docker push $ACR_SERVER/dronescheduler:0.1.0 && \
+docker push $ACR_SERVER/thridparty:0.1.0
+```
+
+Deploy the mock services:
+
+```bash
+# Update the image tag in the deployment YAML
+sed -i "s#image:#image: $ACR_SERVER/account:0.1.0#g" ./microservices-reference-implementation/k8s/account.yaml && \
+sed -i "s#image:#image: $ACR_SERVER/dronescheduler:0.1.0#g" ./microservices-reference-implementation/k8s/dronescheduler.yaml && \
+sed -i "s#image:#image: $ACR_SERVER/thirdparty:0.1.0#g" ./microservices-reference-implementation/k8s/thirdparty.yaml 
+
+# Deploy the service
+kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/account.yaml ./microservices-reference-implementation/k8s/dronescheduler.yaml ./microservices-reference-implementation/k8s/thirdparty.yaml
+```
+
+## Verify all services are running:
 
 ```bash
 kubectl get all -n bc-shipping
