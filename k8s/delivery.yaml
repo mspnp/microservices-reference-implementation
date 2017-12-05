@@ -108,3 +108,10 @@ spec:
         ports:
         - name: service
           containerPort: 80
+        resources:
+           requests:
+             cpu: 1
+             memory: 2G
+           limits:
+             cpu: 1
+             memory: 3G
