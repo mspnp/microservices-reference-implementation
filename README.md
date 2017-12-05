@@ -24,8 +24,10 @@ Set environment variables.
 
 ```bash
 export LOCATION=your_location_here && \
-export RESOURCE_GROUP=your_resource_group_here && \
-export CLUSTER_NAME=your_cluster_name_here && 
+export UNIQUE_APP_NAME_PREFIX=you_unique_application_name_here && \
+
+export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
+export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster" && \
 ```
 
 Provision a Kubernetes cluster in ACS
@@ -82,9 +84,8 @@ Deploy linkerd. For more information, see https://linkerd.io/getting-started/k8s
 Provision Azure resources
 
 ```bash
-export DELIVERY_SERVICE_PREFIX=delivery_service_prefix_here && \
-export REDIS_NAME="${DELIVERY_SERVICE_PREFIX}-redis" && \
-export COSMOSDB_NAME="${DELIVERY_SERVICE_PREFIX}-cosmosdb" && \
+export REDIS_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-redis" && \
+export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-cosmosdb" && \
 export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
 export COLLECTION_NAME="${DATABASE_NAME}-col"
 
@@ -176,8 +177,7 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 Provision Azure resources
 
 ```bash
-export PACKAGE_SERVICE_PREFIX=package_service_prefix_here && \
-export COSMOSDB_NAME="${PACKAGE_SERVICE_PREFIX}-cosmosdb"
+export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-package-service-cosmosdb"
 az cosmosdb create --name $COSMOSDB_NAME --kind MongoDB --resource-group $RESOURCE_GROUP
 ```
 
