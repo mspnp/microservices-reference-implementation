@@ -25,7 +25,6 @@ Set environment variables.
 ```bash
 export LOCATION=your_location_here && \
 export UNIQUE_APP_NAME_PREFIX=you_unique_application_name_here && \
-
 export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
 export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster" && \
 ```
@@ -171,7 +170,6 @@ sed -i "s/value: \"EH_EntityPath\"/value:/g"                               "./mi
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/delivery.yaml
 ```
 
-
 ## Deploy the Package service
 
 Provision Azure resources
@@ -211,9 +209,89 @@ kubectl -n bc-shipping create secret generic package-secrets --from-literal=mong
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/package.yml
 ```
 
-## Deploy the Ingestion and Scheduler services 
+## Deploy the Ingestion service 
+Provision Azure resources
 
-TBD
+```bash
+export INGESTION_EH_NS=ingestion_event_hub_namespace_here && \
+export INGESTION_EH_NAME=ingestion_event_hub_name_here && \
+export INGESTION_EH_CONSUMERGROUP_NAME=ingestion_event_hub_consumerGroup_name_here
+wget https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-event-hubs-create-event-hub-and-consumer-group/azuredeploy.json && \
+sed -i 's#"partitionCount": "4"#"partitionCount": "32"#g' azuredeploy.json && \
+az group deployment create -g $RESOURCE_GROUP_SVC --template-file azuredeploy.json  --parameters \
+'{ \
+  "namespaceName": {"value": "'${INGESTION_EH_NS}'"}, \
+  "eventHubName": {"value": "'${INGESTION_EH_NAME}'"}, \
+  "consumerGroupName": {"value": "'${INGESTION_EH_CONSUMERGROUP_NAME}'"} \
+}'
+```
+Note: you could also create this from [the Azure Portal](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-create)
+
+Build the Ingestion service
+
+```bash
+export INGESTION_PATH=microservices-reference-implementation/src/bc-shipping/ingestion
+
+# Build the app
+[TBC] MVN using docker-compose ideally 
+
+# Build the docker image
+docker build -f $INGESTION_PATH/Dockerfile -t $ACR_SERVER/ingestion:0.1.0 $INGESTION_PATH
+
+# Push the docker image to ACR
+az acr login --name $ACR_NAME
+docker push $ACR_SERVER/ingestion:0.1.0
+```
+
+Deploy the Ingestion service
+
+```bash
+# Update deployment YAML with image tage
+sed -i "s#image:#image: $ACR_SERVER/ingestion:0.1.0#g" ./microservices-reference-implementation/k8s/ingestion.yaml
+
+# Create secret
+kubectl -n bc-shipping create secret generic ingestion-secrets --from-literal=eventhub_namespace=${INGESTION_EH_NS} \
+--from-literal=eventhub_name=${INGESTION_EH_NAME} \
+--from-literal=eventhub_keyname=your_sas_token_name_here \ # Azure Portal --> Event Hubs --> select your event hub namespace --> shared keys
+--from-literal=eventhub_keyvalue=your_sas_token_key_here # Azure Portal --> Event Hubs --> select your event hub namespace --> shared keys
+
+# Deploy service
+kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/ingestion.yaml
+```
+
+## Deploy the Scheduler service 
+
+Provision Azure resources
+```bash
+export SCHEDULER_STORAGE_ACCOUNT_NAME=ingestion_storage_account_name_here 
+az storage account create --resource-group $RESOURCE_GROUP_SVC --name $SCHEDULER_STORAGE_ACCOUNT_NAME --sku Standard_LRS
+```
+
+Build the Scheduler service
+
+```bash
+export SCHEDULER_PATH=microservices-reference-implementation/src/bc-shipping/scheduler
+
+# Build the app
+[TBC] MVN using docker-compose ideally 
+
+# Build the docker image
+docker build -f $SCHEDULER_PATH/Dockerfile -t $ACR_SERVER/scheduler:0.1.0 $SCHEDULER_PATH
+
+Deploy the Scheduler service
+
+# Update deployment YAML with image tage
+sed -i "s#image:#image: $ACR_SERVER/scheduler:0.1.0#g" ./microservices-reference-implementation/k8s/scheduler.yaml
+
+# Create secret
+kubectl -n bc-shipping create secret generic scheduler-secrets --from-literal=eventhub_name=${INGESTION_EH_NAME} \
+--from-literal=eventhub_sas_connection_string=your_sas_connection_string_here \ # Azure Portal --> Event Hubs --> select your event hub namespace --> shared keys
+--from-literal=storageaccount_name=${SCHEDULER_STORAGE_ACCOUNT_NAME} \  
+--from-literal=storageaccount_key=your_storageaccount_accesskeys_here # Azure Portal --> Storage Account --> select your storage account --> access keys 
+
+# Deploy service
+kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/scheduler.yaml
+```
 
 ## Deploy mock services
 
