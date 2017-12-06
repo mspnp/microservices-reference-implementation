@@ -254,8 +254,8 @@ Deploy the Ingestion service
 sed -i "s#image:#image: $ACR_SERVER/ingestion:0.1.0#g" ./microservices-reference-implementation/k8s/ingestion.yaml
 
 # Get the EventHub shared access policy name and key from the Azure Portal
-export EH_ACCESS_KEY_NAME=your_shared_access_policy_name_here
-export EH_ACCESS_KEY_VALUE=your_shared_access_policy_value_here
+export EH_ACCESS_KEY_NAME=[YOUR_SHARED_ACCESS_POLICY_NAME_HERE]
+export EH_ACCESS_KEY_VALUE=[YOUR_SHARED_ACCESS_POLICY_VALUE_HERE]
 
 # Create secret
 kubectl -n bc-shipping create secret generic ingestion-secrets --from-literal=eventhub_namespace=${INGESTION_EH_NS} \
