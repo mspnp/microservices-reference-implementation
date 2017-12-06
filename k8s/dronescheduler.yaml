@@ -42,13 +42,11 @@ spec:
         version: 0.1.0
         bc: shipping
       annotations:
-        commit: 
         team: droneschedulerservice
-        imagecreationdate:
     spec:
       containers:
       - name: dronescheduler
-        image: dronedelivery.azurecr.io/mockdronescheduler:0.1.0
+        image: 
         env:
         # Integration with l5d Daemon Sets
         - name: NODE_NAME

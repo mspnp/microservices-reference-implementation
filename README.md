@@ -288,6 +288,10 @@ docker run -it --rm -v $( cd "${SCHEDULER_PATH}" && pwd )/:/sln openjdk_and_mvn-
 
 # Build the docker image
 docker build -f $SCHEDULER_PATH/Dockerfile -t $ACR_SERVER/scheduler:0.1.0 $SCHEDULER_PATH
+
+# Push the docker image to ACR
+az acr login --name $ACR_NAME
+docker push $ACR_SERVER/scheduler:0.1.0
 ```
 
 Deploy the Scheduler service
@@ -303,7 +307,7 @@ export STORAGE_ACCOUNT_ACCESS_KEY=[YOUR_STORAGE_ACCOUNT_ACCESS_KEY_HERE]
 # Create secrets
 kubectl -n bc-shipping create secret generic scheduler-secrets --from-literal=eventhub_name=${INGESTION_EH_NAME} \
 --from-literal=eventhub_sas_connection_string={$EH_CONNECTION_STRING} \
---from-literal=storageaccount_name=${SCHEDULER_STORAGE_ACCOUNT_NAME} \  
+--from-literal=storageaccount_name=${SCHEDULER_STORAGE_ACCOUNT_NAME} \
 --from-literal=storageaccount_key=${STORAGE_ACCOUNT_ACCESS_KEY}
 
 

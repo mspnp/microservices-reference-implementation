@@ -42,13 +42,11 @@ spec:
         bc: shipping
         version: 0.1.0
       annotations:
-        commit: 
         team: thirdpartyservice
-        imagecreationdate:
     spec:
       containers:
       - name: thirdparty
-        image: dronedelivery.azurecr.io/mockthirdpartyservice:0.1.0
+        image: 
         env:
         # Integration with l5d Daemon Sets
         - name: NODE_NAME
