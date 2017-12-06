@@ -122,15 +122,16 @@ az cosmosdb collection create \
 
 Build the Delivery service
 
-```
-docker-compose -f ./microservices-reference-implementation/src/bc-shipping/delivery/docker-compose.ci.build.yml up
+```bash
+export DELIVERY_PATH=./microservices-reference-implementation/src/bc-shipping/delivery
+docker-compose -f $DELIVERY_PATH/docker-compose.ci.build.yml up
 ```
 
 Build and publish the container image 
 
 ```bash
 # Build the Docker image
-docker build -t $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0 ./microservices-reference-implementation/src/bc-shipping/delivery/Fabrikam.DroneDelivery.DeliveryService/.
+docker build -t $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0 $DELIVERY_PATH/Fabrikam.DroneDelivery.DeliveryService/.
 
 # Push the image to ACR
 az acr login --name $ACR_NAME
@@ -162,9 +163,9 @@ Deploy the Delivery service:
 sed -i "s#image:#image: $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0#g" ./microservices-reference-implementation/k8s/delivery.yaml
 
 ## Update config values in the deployment YAML
-sed -i "s/value: \"CosmosDB_DatabaseId\"/value: $DATABASE_NAME/g" "./microservices-reference-implementation/k8s/delivery.yaml" && \
+sed -i "s/value: \"CosmosDB_DatabaseId\"/value: $DATABASE_NAME/g"      "./microservices-reference-implementation/k8s/delivery.yaml" && \
 sed -i "s/value: \"CosmosDB_CollectionId\"/value: $COLLECTION_NAME/g"  "./microservices-reference-implementation/k8s/delivery.yaml" && \
-sed -i "s/value: \"EH_EntityPath\"/value:/g"                               "./microservices-reference-implementation/k8s/delivery.yaml"
+sed -i "s/value: \"EH_EntityPath\"/value:/g"                           "./microservices-reference-implementation/k8s/delivery.yaml"
 
 # Deploy the service
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/delivery.yaml
@@ -303,17 +304,18 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 
 Build the mock services
 
-```
-docker-compose -f ./microservices-reference-implementation/src/bc-shipping/delivery/docker-compose.ci.build.yml up
+```bash
+export MOCKS_PATH=microservices-reference-implementation/src/bc-shipping/delivery
+docker-compose -f $MOCKS_PATH/docker-compose.ci.build.yml up
 ```
 
 Build and publish the container image 
 
 ```bash
 # Build the Docker image
-docker build -t $ACR_SERVER/account:0.1.0 ./microservices-reference-implementation/src/bc-shipping/delivery/MockAccountService/. && \
-docker build -t $ACR_SERVER/dronescheduler:0.1.0 ./microservices-reference-implementation/src/bc-shipping/delivery/MockDroneScheduler/. && \
-docker build -t $ACR_SERVER/thirdparty:0.1.0 ./microservices-reference-implementation/src/bc-shipping/delivery/MockThirdPartyService/. 
+docker build -t $ACR_SERVER/account:0.1.0 $MOCKS_PATH/MockAccountService/. && \
+docker build -t $ACR_SERVER/dronescheduler:0.1.0 $MOCKS_PATH/MockDroneScheduler/. && \
+docker build -t $ACR_SERVER/thirdparty:0.1.0 $MOCKS_PATH/MockThirdPartyService/. 
 
 # Push the image to ACR
 az acr login --name $ACR_NAME
