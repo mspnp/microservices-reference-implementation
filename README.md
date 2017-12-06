@@ -72,14 +72,13 @@ export ACR_SERVER=$(az acr show -g $RESOURCE_GROUP -n $ACR_NAME --query "loginSe
 export ACR_SERVER=("${ACR_SERVER[@]//\"/}")
 ```
 
-Deploy Prometheus, Grafana [TBD]
-
 Deploy Elasticsearch. For more information, see https://github.com/kubernetes/examples/tree/master/staging/elasticsearch
 
 Deploy Fluend. For more information, see https://docs.fluentd.org/v0.12/articles/kubernetes-fluentd
 
 Deploy linkerd. For more information, see https://linkerd.io/getting-started/k8s/
 
+Deploy Prometheus and Grafana. For more information, see https://github.com/linkerd/linkerd-viz#kubernetes-deploy
 
 ## Deploy the Delivery service
 
