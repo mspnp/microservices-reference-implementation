@@ -74,7 +74,9 @@ export ACR_SERVER=("${ACR_SERVER[@]//\"/}")
 
 Deploy Prometheus, Grafana [TBD]
 
-Deploy Elasticsearch [TBD]
+Deploy Elasticsearch. For more information, see https://github.com/kubernetes/examples/tree/master/staging/elasticsearch
+
+Deploy Fluend. For more information, see https://docs.fluentd.org/v0.12/articles/kubernetes-fluentd
 
 Deploy linkerd. For more information, see https://linkerd.io/getting-started/k8s/
 
