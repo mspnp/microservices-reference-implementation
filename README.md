@@ -230,23 +230,11 @@ Note: you could also create this from [the Azure Portal](https://docs.microsoft.
 Build the Ingestion service
 
 ```bash
-export INGESTION_PATH=microservices-reference-implementation/src/bc-shipping/ingestion
-export SOURCE=folderName_on_maven_container_for_ingestion
-export FULLPATHSOURCE=fullpath_for_ingestion_folder
-export JAR_BUILD_IMAGE=imageName_to_build_java_jar
+export INGESTION_PATH=./microservices-reference-implementation/src/bc-shipping/ingestion
 
-note:
-SOURCE is a folder name of your choice without back or forward slashes
-FULLPATHSOURCE is the full path of ingestion folder
-JAR_BUILD_IMAGE is the image name of your choice, that will run maven and compile java source into jar binaries
-
-# Build the image that compiles java source code and generates the java jar binaries
-cd FULLPATHSOURCE
-
-docker  build -t $JAR_BUILD_IMAGE:1 -f  microservices-reference-implementation/src/bc-shipping/ingestion/Dockerfilemaven .
-
-# Build the app. this will gerate jars under target folder
-docker run -it --rm -e  SOURCEPATH=/$SOURCE -v $FULLPATHSOURCE:/$SOURCE -v $FULLPATHSOURCE/target:/$SOURCE/target $JAR_BUILD_IMAGE:1
+# Build the app 
+docker build -t openjdk_and_mvn-build:8-jdk -f $INGESTION_PATH/Dockerfilemaven $INGESTION_PATH && \
+docker run -it --rm -v $( cd "${INGESTION_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
 
 # Build the docker image
 docker build -f $INGESTION_PATH/Dockerfile -t $ACR_SERVER/ingestion:0.1.0 $INGESTION_PATH
@@ -283,19 +271,11 @@ az storage account create --resource-group $RESOURCE_GROUP_SVC --name $SCHEDULER
 Build the Scheduler service
 
 ```bash
-export SCHEDULER_PATH=microservices-reference-implementation/src/bc-shipping/scheduler
-export SOURCE=folderName_on_maven_container_for_scheduler
-export FULLPATHSOURCE=fullpath_for_scheduler_folder
-export JAR_BUILD_IMAGE=imageName_to_build_java_jar. you can reuse the same image create in ingestiion
+export SCHEDULER_PATH=./microservices-reference-implementation/src/bc-shipping/scheduler
 
-note:
-SOURCE is a folder name of your choice without back or forward slashes
-FULLPATHSOURCE is the full path of scheduler folder
-JAR_BUILD_IMAGE is the image name of your choice, that will run maven and compile java source into jar binaries
-this image can be reused from the ingestion service step
-
-# Build the app. this will gerate jars under target folder
-docker run -it --rm -e  SOURCEPATH=/$SOURCE -v $FULLPATHSOURCE:/$SOURCE -v $FULLPATHSOURCE/target:/$SOURCE/target $JAR_BUILD_IMAGE:1
+# Build the app 
+docker build -t openjdk_and_mvn-build:8-jdk -f $SCHEDULER_PATH/Dockerfilemaven $SCHEDULER_PATH && \
+docker run -it --rm -v $( cd "${SCHEDULER_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
 
 # Build the docker image
 docker build -f $SCHEDULER_PATH/Dockerfile -t $ACR_SERVER/scheduler:0.1.0 $SCHEDULER_PATH
