@@ -49,27 +49,27 @@ spec:
             valueFrom:
               secretKeyRef: 
                 name: scheduler-secrets
-                key: eventHubName
+                key: eventhub_name 
           - name: IOTHUB_EVENTHUB_ENDPOINT
             valueFrom:
               secretKeyRef: 
                 name: scheduler-secrets
-                key: eventHubEndpoint
+                key: eventhub_sas_connection_string 
           - name: IOTHUB_ACCESS_CONNSTRING
             valueFrom:
               secretKeyRef: 
                 name: scheduler-secrets
-                key: eventHubConnectionString
+                key: eventhub_sas_connection_string
           - name: IOTHUB_CHECKPOINT_AZSTORAGE_ACCOUNT
             valueFrom:
               secretKeyRef: 
                 name: scheduler-secrets
-                key: blobStorageAccountName
+                key: storageaccount_name
           - name: IOTHUB_CHECKPOINT_AZSTORAGE_KEY
             valueFrom:
               secretKeyRef: 
                 name: scheduler-secrets
-                key: blobStorageAccountKey
+                key: storageaccount_key
           - name: STORAGE_QUEUE_NAME
             valueFrom:
               secretKeyRef:
