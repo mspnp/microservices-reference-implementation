@@ -307,7 +307,7 @@ export STORAGE_ACCOUNT_ACCESS_KEY=[YOUR_STORAGE_ACCOUNT_ACCESS_KEY_HERE]
 # Create secrets
 kubectl -n bc-shipping create secret generic scheduler-secrets --from-literal=eventhub_name=${INGESTION_EH_NAME} \
 --from-literal=eventhub_sas_connection_string={$EH_CONNECTION_STRING} \
---from-literal=storageaccount_name=${SCHEDULER_STORAGE_ACCOUNT_NAME} \  
+--from-literal=storageaccount_name=${SCHEDULER_STORAGE_ACCOUNT_NAME} \
 --from-literal=storageaccount_key=${STORAGE_ACCOUNT_ACCESS_KEY}
 
 
