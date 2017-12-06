@@ -222,7 +222,7 @@ export INGESTION_EH_CONSUMERGROUP_NAME=[INGESTION_EVENT_HUB_CONSUMERGROUP_NAME_H
 
 wget https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-event-hubs-create-event-hub-and-consumer-group/azuredeploy.json && \
 sed -i 's#"partitionCount": "4"#"partitionCount": "32"#g' azuredeploy.json && \
-az group deployment create -g $RESOURCE_GROUP_SVC --template-file azuredeploy.json  --parameters \
+az group deployment create -g $RESOURCE_GROUP --template-file azuredeploy.json  --parameters \
 '{ \
   "namespaceName": {"value": "'${INGESTION_EH_NS}'"}, \
   "eventHubName": {"value": "'${INGESTION_EH_NAME}'"}, \
@@ -274,7 +274,7 @@ Provision Azure resources
 ```bash
 export SCHEDULER_STORAGE_ACCOUNT_NAME=[INGESTION_STORAGE_ACCOUNT_NAME_HERE]
 
-az storage account create --resource-group $RESOURCE_GROUP_SVC --name $SCHEDULER_STORAGE_ACCOUNT_NAME --sku Standard_LRS
+az storage account create --resource-group $RESOURCE_GROUP --name $SCHEDULER_STORAGE_ACCOUNT_NAME --sku Standard_LRS
 ```
 
 Build the Scheduler service
@@ -288,17 +288,24 @@ docker run -it --rm -v $( cd "${SCHEDULER_PATH}" && pwd )/:/sln openjdk_and_mvn-
 
 # Build the docker image
 docker build -f $SCHEDULER_PATH/Dockerfile -t $ACR_SERVER/scheduler:0.1.0 $SCHEDULER_PATH
+```
 
 Deploy the Scheduler service
 
+```bash
 # Update deployment YAML with image tage
 sed -i "s#image:#image: $ACR_SERVER/scheduler:0.1.0#g" ./microservices-reference-implementation/k8s/scheduler.yaml
 
-# Create secret
+# Get the following values from the Azure Portal
+export EH_CONNECTION_STRING=[YOUR_EVENT_HUB_CONNECTION_STRING_HERE]
+export STORAGE_ACCOUNT_ACCESS_KEY=[YOUR_STORAGE_ACCOUNT_ACCESS_KEY_HERE]
+
+# Create secrets
 kubectl -n bc-shipping create secret generic scheduler-secrets --from-literal=eventhub_name=${INGESTION_EH_NAME} \
---from-literal=eventhub_sas_connection_string=your_sas_connection_string_here \ # Azure Portal --> Event Hubs --> select your event hub namespace --> shared keys
+--from-literal=eventhub_sas_connection_string={$EH_CONNECTION_STRING} \
 --from-literal=storageaccount_name=${SCHEDULER_STORAGE_ACCOUNT_NAME} \  
---from-literal=storageaccount_key=your_storageaccount_accesskeys_here # Azure Portal --> Storage Account --> select your storage account --> access keys 
+--from-literal=storageaccount_key=${STORAGE_ACCOUNT_ACCESS_KEY}
+
 
 # Deploy service
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/scheduler.yaml
@@ -325,7 +332,7 @@ docker build -t $ACR_SERVER/thirdparty:0.1.0 $MOCKS_PATH/MockThirdPartyService/.
 az acr login --name $ACR_NAME
 docker push $ACR_SERVER/account:0.1.0 && \
 docker push $ACR_SERVER/dronescheduler:0.1.0 && \
-docker push $ACR_SERVER/thridparty:0.1.0
+docker push $ACR_SERVER/thirdparty:0.1.0
 ```
 
 Deploy the mock services:
@@ -337,7 +344,9 @@ sed -i "s#image:#image: $ACR_SERVER/dronescheduler:0.1.0#g" ./microservices-refe
 sed -i "s#image:#image: $ACR_SERVER/thirdparty:0.1.0#g" ./microservices-reference-implementation/k8s/thirdparty.yaml 
 
 # Deploy the service
-kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/account.yaml ./microservices-reference-implementation/k8s/dronescheduler.yaml ./microservices-reference-implementation/k8s/thirdparty.yaml
+kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/account.yaml && \
+kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/dronescheduler.yaml && \
+kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/thirdparty.yaml
 ```
 
 ## Verify all services are running:
