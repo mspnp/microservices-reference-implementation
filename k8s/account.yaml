@@ -48,7 +48,7 @@ spec:
     spec:
       containers:
       - name: account
-        image: dronedelivery.azurecr.io/mockaccountservice:0.1.0
+        image: 
         env:
         # Integration with l5d Daemon Sets
         - name: NODE_NAME
