@@ -71,15 +71,12 @@ spec:
                 name: scheduler-secrets
                 key: storageaccount_key
           - name: STORAGE_QUEUE_NAME
-            valueFrom:
-              secretKeyRef:
-                name: scheduler-secrets
-                key: queuename
+            value: "CompensatingTransactionQueue"
           - name: STORAGE_QUEUE_CONNECTION_STRING
             valueFrom:
               secretKeyRef:
                 name: scheduler-secrets
-                key:  queueconstring               
+                key:                 
           - name: IOTHUB_EVENTHUB_PARTITIONS
             value: "32"
           # Integration with l5d Daemon Sets
