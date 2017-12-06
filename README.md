@@ -26,7 +26,7 @@ Set environment variables.
 export LOCATION=your_location_here && \
 export UNIQUE_APP_NAME_PREFIX=you_unique_application_name_here && \
 export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
-export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster" && \
+export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster"
 ```
 
 Provision a Kubernetes cluster in ACS
@@ -183,10 +183,10 @@ Build the Package service
 export PACKAGE_PATH=microservices-reference-implementation/src/bc-shipping/package
 
 # Build the app
-docker-compose -f $PACKAGE_PATH/docker-compose.ci.build.yml up
+docker-compose -f $PACKAGE_PATH/build/docker-compose.ci.build.yml up
 
 # Build the docker image
-docker build -f $PACKAGE_PATH/build/prod.dockerfile -t $ACR_SERVER/package-service:0.1.0 $PACKAGE_PATH
+sudo docker build -f $PACKAGE_PATH/build/prod.dockerfile -t $ACR_SERVER/package-service:0.1.0 $PACKAGE_PATH
 
 # Push the docker image to ACR
 az acr login --name $ACR_NAME
