@@ -288,6 +288,10 @@ docker run -it --rm -v $( cd "${SCHEDULER_PATH}" && pwd )/:/sln openjdk_and_mvn-
 
 # Build the docker image
 docker build -f $SCHEDULER_PATH/Dockerfile -t $ACR_SERVER/scheduler:0.1.0 $SCHEDULER_PATH
+
+# Push the docker image to ACR
+az acr login --name $ACR_NAME
+docker push $ACR_SERVER/scheduler:0.1.0
 ```
 
 Deploy the Scheduler service
