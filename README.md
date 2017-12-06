@@ -23,8 +23,10 @@ git clone https://github.com/mspnp/microservices-reference-implementation.git
 Set environment variables.
 
 ```bash
-export LOCATION=your_location_here && \
-export UNIQUE_APP_NAME_PREFIX=you_unique_application_name_here && \
+export LOCATION=[YOUR_LOCATION_HERE]
+
+export UNIQUE_APP_NAME_PREFIX=[YOUR_UNIQUE_APPLICATION_NAME_HERE]
+
 export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
 export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster"
 ```
@@ -56,7 +58,7 @@ Create an Azure Container Registry instance.
 > Note: Azure Container Registory is not required. If you prefer, you can store the Docker images for this solution in another container registry.
 
 ```bash
-export ACR_NAME=your_container_registry_name_here
+export ACR_NAME=[YOUR_CONTAINER_REGISTRY_NAME_HERE]
 
 # Create the ACR instance
 az acr create --name $ACR_NAME --resource-group $RESOURCE_GROUP --sku Basic
@@ -211,9 +213,12 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 Provision Azure resources
 
 ```bash
-export INGESTION_EH_NS=ingestion_event_hub_namespace_here && \
-export INGESTION_EH_NAME=ingestion_event_hub_name_here && \
-export INGESTION_EH_CONSUMERGROUP_NAME=ingestion_event_hub_consumerGroup_name_here
+export INGESTION_EH_NS=[INGESTION_EVENT_HUB_NAMESPACE_HERE]
+
+export INGESTION_EH_NAME=[INGESTION_EVENT_HUB_NAME_HERE]
+
+export INGESTION_EH_CONSUMERGROUP_NAME=[INGESTION_EVENT_HUB_CONSUMERGROUP_NAME_HERE]
+
 wget https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-event-hubs-create-event-hub-and-consumer-group/azuredeploy.json && \
 sed -i 's#"partitionCount": "4"#"partitionCount": "32"#g' azuredeploy.json && \
 az group deployment create -g $RESOURCE_GROUP_SVC --template-file azuredeploy.json  --parameters \
@@ -262,7 +267,8 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 
 Provision Azure resources
 ```bash
-export SCHEDULER_STORAGE_ACCOUNT_NAME=ingestion_storage_account_name_here 
+export SCHEDULER_STORAGE_ACCOUNT_NAME=[INGESTION_STORAGE_ACCOUNT_NAME_HERE]
+
 az storage account create --resource-group $RESOURCE_GROUP_SVC --name $SCHEDULER_STORAGE_ACCOUNT_NAME --sku Standard_LRS
 ```
 
