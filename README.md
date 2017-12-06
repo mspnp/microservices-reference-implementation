@@ -272,7 +272,7 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 
 Provision Azure resources
 ```bash
-export SCHEDULER_STORAGE_ACCOUNT_NAME=[INGESTION_STORAGE_ACCOUNT_NAME_HERE]
+export SCHEDULER_STORAGE_ACCOUNT_NAME=[SCHEDULER_STORAGE_ACCOUNT_NAME_HERE]
 
 az storage account create --resource-group $RESOURCE_GROUP --name $SCHEDULER_STORAGE_ACCOUNT_NAME --sku Standard_LRS
 ```
@@ -303,13 +303,14 @@ sed -i "s#image:#image: $ACR_SERVER/scheduler:0.1.0#g" ./microservices-reference
 # Get the following values from the Azure Portal
 export EH_CONNECTION_STRING=[YOUR_EVENT_HUB_CONNECTION_STRING_HERE]
 export STORAGE_ACCOUNT_ACCESS_KEY=[YOUR_STORAGE_ACCOUNT_ACCESS_KEY_HERE]
+export STORAGE_QUEUE_CONNECTION_STRING=[YOUR_STORAGE_QUEUE_CONNECTION_STRING_HERE]
 
 # Create secrets
 kubectl -n bc-shipping create secret generic scheduler-secrets --from-literal=eventhub_name=${INGESTION_EH_NAME} \
 --from-literal=eventhub_sas_connection_string={$EH_CONNECTION_STRING} \
 --from-literal=storageaccount_name=${SCHEDULER_STORAGE_ACCOUNT_NAME} \
---from-literal=storageaccount_key=${STORAGE_ACCOUNT_ACCESS_KEY}
-
+--from-literal=storageaccount_key=${STORAGE_ACCOUNT_ACCESS_KEY} \
+--from-literal=queueconstring=${STORAGE_QUEUE_CONNECTION_STRING}
 
 # Deploy service
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/scheduler.yaml
