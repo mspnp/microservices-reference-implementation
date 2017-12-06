@@ -76,7 +76,7 @@ spec:
             valueFrom:
               secretKeyRef:
                 name: scheduler-secrets
-                key:                 
+                key: queueconstring
           - name: IOTHUB_EVENTHUB_PARTITIONS
             value: "32"
           # Integration with l5d Daemon Sets
