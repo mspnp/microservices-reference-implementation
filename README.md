@@ -241,6 +241,8 @@ FULLPATHSOURCE is the full path of ingestion folder
 JAR_BUILD_IMAGE is the image name of your choice, that will run maven and compile java source into jar binaries
 
 # Build the image that compiles java source code and generates the java jar binaries
+cd FULLPATHSOURCE
+
 docker  build -t $JAR_BUILD_IMAGE:1 -f  microservices-reference-implementation/src/bc-shipping/ingestion/Dockerfilemaven .
 
 # Build the app. this will gerate jars under target folder
