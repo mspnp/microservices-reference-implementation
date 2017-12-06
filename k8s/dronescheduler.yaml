@@ -42,9 +42,7 @@ spec:
         version: 0.1.0
         bc: shipping
       annotations:
-        commit: 
         team: droneschedulerservice
-        imagecreationdate:
     spec:
       containers:
       - name: dronescheduler

@@ -62,7 +62,7 @@ spec:
         - name: http_proxy
           value: $(NODE_NAME):4140
         - name: CORRELATION_HEADER
-           value: l5d-ctx-trace
+          value: l5d-ctx-trace
         ports:
         - name: service
           containerPort: 80
