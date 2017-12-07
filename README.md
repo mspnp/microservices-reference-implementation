@@ -298,9 +298,9 @@ Deploy the Scheduler service
 sed -i "s#image:#image: $ACR_SERVER/scheduler:0.1.0#g" ./microservices-reference-implementation/k8s/scheduler.yaml
 
 # Get the following values from the Azure Portal
-export EH_CONNECTION_STRING=[YOUR_EVENT_HUB_CONNECTION_STRING_HERE]
+export EH_CONNECTION_STRING="[YOUR_EVENT_HUB_CONNECTION_STRING_HERE]"
 export STORAGE_ACCOUNT_ACCESS_KEY=[YOUR_STORAGE_ACCOUNT_ACCESS_KEY_HERE]
-export STORAGE_QUEUE_CONNECTION_STRING=[YOUR_STORAGE_QUEUE_CONNECTION_STRING_HERE]
+export STORAGE_QUEUE_CONNECTION_STRING="[YOUR_STORAGE_QUEUE_CONNECTION_STRING_HERE]"
 
 # Create secrets
 kubectl -n bc-shipping create secret generic scheduler-secrets --from-literal=eventhub_name=${INGESTION_EH_NAME} \
