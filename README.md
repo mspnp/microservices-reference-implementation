@@ -258,8 +258,8 @@ export EH_ACCESS_KEY_VALUE=[YOUR_SHARED_ACCESS_POLICY_VALUE_HERE]
 # Create secret
 kubectl -n bc-shipping create secret generic ingestion-secrets --from-literal=eventhub_namespace=${INGESTION_EH_NS} \
 --from-literal=eventhub_name=${INGESTION_EH_NAME} \
---from-literal=eventhub_keyname={$EH_ACCESS_KEY_NAME} \
---from-literal=eventhub_keyvalue={$EH_ACCESS_KEY_VALUE}
+--from-literal=eventhub_keyname=${EH_ACCESS_KEY_NAME} \
+--from-literal=eventhub_keyvalue=${EH_ACCESS_KEY_VALUE}
 
 # Deploy service
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/ingestion.yaml
