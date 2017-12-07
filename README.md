@@ -24,7 +24,6 @@ Set environment variables.
 
 ```bash
 export LOCATION=[YOUR_LOCATION_HERE]
-
 export UNIQUE_APP_NAME_PREFIX=[YOUR_UNIQUE_APPLICATION_NAME_HERE]
 
 export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
@@ -215,9 +214,7 @@ Provision Azure resources
 
 ```bash
 export INGESTION_EH_NS=[INGESTION_EVENT_HUB_NAMESPACE_HERE]
-
 export INGESTION_EH_NAME=[INGESTION_EVENT_HUB_NAME_HERE]
-
 export INGESTION_EH_CONSUMERGROUP_NAME=[INGESTION_EVENT_HUB_CONSUMERGROUP_NAME_HERE]
 
 wget https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-event-hubs-create-event-hub-and-consumer-group/azuredeploy.json && \
@@ -307,7 +304,7 @@ export STORAGE_QUEUE_CONNECTION_STRING=[YOUR_STORAGE_QUEUE_CONNECTION_STRING_HER
 
 # Create secrets
 kubectl -n bc-shipping create secret generic scheduler-secrets --from-literal=eventhub_name=${INGESTION_EH_NAME} \
---from-literal=eventhub_sas_connection_string={$EH_CONNECTION_STRING} \
+--from-literal=eventhub_sas_connection_string=${EH_CONNECTION_STRING} \
 --from-literal=storageaccount_name=${SCHEDULER_STORAGE_ACCOUNT_NAME} \
 --from-literal=storageaccount_key=${STORAGE_ACCOUNT_ACCESS_KEY} \
 --from-literal=queueconstring=${STORAGE_QUEUE_CONNECTION_STRING}
