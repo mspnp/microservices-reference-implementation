@@ -64,27 +64,11 @@ spec:
         - name: DOCDB_COLLECTIONID
           valueFrom:
           value: "CosmosDB_CollectionId"
-        - name: REDIS_HOSTNAME
-          valueFrom:
-            secretKeyRef:
-              name: delivery-storageconf
-              key: Redis_HostName
-        - name: REDIS_PRIMARYKEY
-          valueFrom:
-            secretKeyRef:
-              name: delivery-storageconf
-              key: Redis_PrimaryKey
-        - name: REDIS_SECONDARYKEY
+        - name: REDIS_CONNSTR
           valueFrom:
              secretKeyRef:
               name: delivery-storageconf
-              key: Redis_SecondaryKey
-        - name: REDIS_SSLPORT
-          value: "6380"
-        - name: REDIS_PORT
-          value: "6379"
-        - name: REDIS_SSL
-          value: "false"
+              key: Redis_ConnectionString
         - name: EH_CONNSTR
           valueFrom:
              secretKeyRef:

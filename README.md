@@ -141,16 +141,15 @@ docker push $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0
 Create Kubernetes secrets
 
 ```bash
+export REDIS_CONNECTION_STRING=[YOUR_REDIS_CONNECTION_STRING]
+
 export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query primaryMasterKey) && \
 export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint) && \
-export REDIS_HOSTNAME=$(az redis show -n $REDIS_NAME -g $RESOURCE_GROUP --query hostName) && \
-export REDIS_KEY=$(az redis list-keys --name $REDIS_NAME --resource-group $RESOURCE_GROUP --query primaryKey)
 
 kubectl --namespace bc-shipping create --save-config=true secret generic delivery-storageconf \
     --from-literal=CosmosDB_Key=${COSMOSDB_KEY[@]//\"/} \
     --from-literal=CosmosDB_Endpoint=${COSMOSDB_ENDPOINT[@]//\"/} \
-    --from-literal=Redis_HostName=${REDIS_HOSTNAME[@]//\"/} \
-    --from-literal=Redis_PrimaryKey=${REDIS_KEY[@]//\"/} \
+    --from-literal=Redis_ConnectionString=${REDIS_CONNECTION_STRING} \
     --from-literal=EH_ConnectionString= \
     --from-literal=Redis_SecondaryKey=
 ```
