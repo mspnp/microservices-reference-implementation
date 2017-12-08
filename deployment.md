@@ -1,9 +1,6 @@
-# Microservices  Reference Implementation
-Microsoft patterns & practices
+# Deploying the Reference Implementation
 
-https://docs.microsoft.com/azure/architecture/microservices
 
----
 
 ## Prerequisites
 
@@ -356,6 +353,3 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 kubectl get all -n bc-shipping
 ```
 
----
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
