@@ -21,6 +21,7 @@ Set environment variables.
 
 ```bash
 export LOCATION=[YOUR_LOCATION_HERE]
+
 export UNIQUE_APP_NAME_PREFIX=[YOUR_UNIQUE_APPLICATION_NAME_HERE]
 
 export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
@@ -68,14 +69,6 @@ export ACR_SERVER=$(az acr show -g $RESOURCE_GROUP -n $ACR_NAME --query "loginSe
 # Strip quotes
 export ACR_SERVER=("${ACR_SERVER[@]//\"/}")
 ```
-
-Deploy Elasticsearch. For more information, see https://github.com/kubernetes/examples/tree/master/staging/elasticsearch
-
-Deploy Fluend. For more information, see https://docs.fluentd.org/v0.12/articles/kubernetes-fluentd
-
-Deploy linkerd. For more information, see https://linkerd.io/getting-started/k8s/
-
-Deploy Prometheus and Grafana. For more information, see https://github.com/linkerd/linkerd-viz#kubernetes-deploy
 
 ## Deploy the Delivery service
 
@@ -296,14 +289,14 @@ sed -i "s#image:#image: $ACR_SERVER/scheduler:0.1.0#g" ./microservices-reference
 # Get the following values from the Azure Portal
 export EH_CONNECTION_STRING="[YOUR_EVENT_HUB_CONNECTION_STRING_HERE]"
 export STORAGE_ACCOUNT_ACCESS_KEY=[YOUR_STORAGE_ACCOUNT_ACCESS_KEY_HERE]
-export STORAGE_QUEUE_CONNECTION_STRING="[YOUR_STORAGE_QUEUE_CONNECTION_STRING_HERE]"
+export STORAGE_ACCOUNT_CONNECTION_STRING="[YOUR_STORAGE_ACCOUNT_CONNECTION_STRING_HERE]"
 
 # Create secrets
 kubectl -n bc-shipping create secret generic scheduler-secrets --from-literal=eventhub_name=${INGESTION_EH_NAME} \
 --from-literal=eventhub_sas_connection_string=${EH_CONNECTION_STRING} \
 --from-literal=storageaccount_name=${SCHEDULER_STORAGE_ACCOUNT_NAME} \
 --from-literal=storageaccount_key=${STORAGE_ACCOUNT_ACCESS_KEY} \
---from-literal=queueconstring=${STORAGE_QUEUE_CONNECTION_STRING}
+--from-literal=queueconstring=${STORAGE_ACCOUNT_CONNECTION_STRING}
 
 # Deploy service
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/scheduler.yaml
@@ -353,3 +346,10 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 kubectl get all -n bc-shipping
 ```
 
+Deploy Elasticsearch. For more information, see https://github.com/kubernetes/examples/tree/master/staging/elasticsearch
+
+Deploy Fluend. For more information, see https://docs.fluentd.org/v0.12/articles/kubernetes-fluentd
+
+Deploy linkerd. For more information, see https://linkerd.io/getting-started/k8s/
+
+Deploy Prometheus and Grafana. For more information, see https://github.com/linkerd/linkerd-viz#kubernetes-deploy
