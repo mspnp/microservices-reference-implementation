@@ -89,8 +89,8 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             //TODO look into creating a factory of DocDBRepos/RedisCache/EventHubMessenger
             DocumentDBRepository<InternalNotifyMeRequest>.Configure(Configuration["DOCDB_ENDPOINT"], Configuration["DOCDB_KEY"], Configuration["DOCDB_DATABASEID"], Configuration["DOCDB_COLLECTIONID"], loggerFactory);
 
-            RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["REDIS_SSLPORT"], Configuration["REDIS_PORT"], Configuration["REDIS_SSL"], Configuration["REDIS_HOSTNAME"], Configuration["REDIS_PRIMARYKEY"], Configuration["REDIS_SECONDARYKEY"], loggerFactory);
-            RedisCache<DeliveryStatusEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["REDIS_SSLPORT"], Configuration["REDIS_PORT"], Configuration["REDIS_SSL"], Configuration["REDIS_HOSTNAME"], Configuration["REDIS_PRIMARYKEY"], Configuration["REDIS_SECONDARYKEY"], loggerFactory);
+            RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["REDIS_CONNSTR"], loggerFactory);
+            RedisCache<DeliveryStatusEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["REDIS_CONNSTR"], loggerFactory);
 
             EventHubSender<DeliveryHistory>.Configure(Configuration["EH_CONNSTR"], Configuration["EH_ENTITYPATH"]);
 

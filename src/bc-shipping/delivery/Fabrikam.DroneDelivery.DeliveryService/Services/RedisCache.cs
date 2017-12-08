@@ -49,16 +49,10 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
             }
         }
 
-        public static void Configure(int db, string sslPort, string nonSSLPort, string ssl, string hostName, string primaryKey, string secondaryKey, ILoggerFactory loggerFactory)
+        public static void Configure(int db, string connectionString, ILoggerFactory loggerFactory)
         {
             DB = db;
-            var dnsTask = System.Net.Dns.GetHostAddressesAsync(hostName);
-            var addresses = dnsTask.Result;
-            var connect = string.Join(",", addresses.Select(x => x.MapToIPv4().ToString() + ":" + nonSSLPort));
-            if (ssl.ToLower().Equals("false"))
-                ConnectionString = $"{connect},abortConnect=false,ssl={ssl.ToLower()},password={primaryKey}";
-            else
-                ConnectionString = $"{hostName},abortConnect=false,ssl={ssl.ToLower()},password={primaryKey}";
+            ConnectionString = connectionString;
             logger = loggerFactory.CreateLogger(nameof(RedisCache<T>));
         }
 
