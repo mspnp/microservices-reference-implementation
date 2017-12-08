@@ -95,7 +95,8 @@ az redis create --location $LOCATION \
             --name $REDIS_NAME \
             --resource-group $RESOURCE_GROUP \
             --sku Premium \
-            --vm-size P4
+            --vm-size P4 \
+            --enable-non-ssl-port
 
 # Create Cosmos DB account with DocumentDB API
 az cosmosdb create \
