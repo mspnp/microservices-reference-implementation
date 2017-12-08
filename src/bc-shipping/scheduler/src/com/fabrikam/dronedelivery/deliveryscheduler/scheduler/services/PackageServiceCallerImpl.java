@@ -74,7 +74,7 @@ public class PackageServiceCallerImpl extends ServiceCallerImpl {
 	public PackageGen createPackageAsync(PackageInfo packageInfo, String uri) {
 		// Let's call the backend
 		ListenableFuture<ResponseEntity<String>> future = (ListenableFuture<ResponseEntity<String>>) this
-				.putData(uri + '/' + packageInfo.getPackageId(), packageInfo);
+				.putData(uri + '/' + packageInfo.getTag(), packageInfo);
 		
 		CompletableFuture<ResponseEntity<String>> cfuture = toCompletableFuture(future);
 
