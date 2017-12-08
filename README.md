@@ -21,7 +21,7 @@ The Drone Delivery application is a sample application that consists of several 
 - Scheduler service. Dispatches client requests and manages the delivery workflow.
 - Supervisor service. Monitors the workflow for failures and applies compensating transactions.
 - Account service. Manages user accounts.
-- Third-party Transportation service. Manages third-party transportion options.
+- Third-party Transportation service. Manages third-party transportation options.
 - Drone service. Schedules drones and monitors drones in flight.
 - Package service. Manages packages.
 - Delivery service. Manages deliveries that are scheduled or in-transit.
