@@ -27,12 +27,12 @@ kind: Deployment
 metadata:
   name: ingestion
 spec:
-  replicas: 15
+  replicas: 1
   template:
     metadata:
       labels:
         app: ingestion
-        version: v1
+        version: 0.1.0
     spec:
       containers:
       - name: ingestion
@@ -58,22 +58,22 @@ spec:
           valueFrom:
             secretKeyRef:
               name: ingestion-secrets
-              key: EVENTHUB_NAMESPACE
+              key: eventhub_namespace
         - name: EH_NAME
           valueFrom:
             secretKeyRef:
               name: ingestion-secrets
-              key: EVENTHUB_NAME
+              key: eventhub_name
         - name: EH_KEYNAME
           valueFrom:
             secretKeyRef:
               name: ingestion-secrets
-              key: EVENTHUB_KEYNAME
+              key: eventhub_keyname
         - name: EH_KEYVALUE
           valueFrom:
             secretKeyRef:
               name: ingestion-secrets
-              key: EVENTHUB_KEYVALUE
+              key: eventhub_keyvalue
         - name: NODE_NAME
           valueFrom:
            fieldRef:
