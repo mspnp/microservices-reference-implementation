@@ -15,31 +15,24 @@ metadata:
     bc: shipping
 spec:
   ports:
-  - name: http
-    port: 80
+  - port: 80
+    name: http
   selector:
     app: ingestion
-  clusterIP: None 
+  type: 
+    LoadBalancer 
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: ingestion
-  labels:
-    app: ingestion 
-    version: 0.1.0
-    bc: shipping
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: ingestion 
+  replicas: 15
   template:
     metadata:
       labels:
         app: ingestion
-        version: 0.1.0
-        bc: shipping
+        version: v1
     spec:
       containers:
       - name: ingestion
@@ -65,23 +58,22 @@ spec:
           valueFrom:
             secretKeyRef:
               name: ingestion-secrets
-              key: eventhub_namespace
+              key: EVENTHUB_NAMESPACE
         - name: EH_NAME
           valueFrom:
             secretKeyRef:
               name: ingestion-secrets
-              key: eventhub_name
+              key: EVENTHUB_NAME
         - name: EH_KEYNAME
           valueFrom:
             secretKeyRef:
               name: ingestion-secrets
-              key: eventhub_keyname
+              key: EVENTHUB_KEYNAME
         - name: EH_KEYVALUE
           valueFrom:
             secretKeyRef:
               name: ingestion-secrets
-              key: eventhub_keyvalue
-        # Integration with l5d Daemon Sets
+              key: EVENTHUB_KEYVALUE
         - name: NODE_NAME
           valueFrom:
            fieldRef:
