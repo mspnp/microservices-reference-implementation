@@ -33,6 +33,7 @@ spec:
       labels:
         app: ingestion
         version: 0.1.0
+        bc: shipping
     spec:
       containers:
       - name: ingestion
@@ -74,6 +75,7 @@ spec:
             secretKeyRef:
               name: ingestion-secrets
               key: eventhub_keyvalue
+        # Integration with l5d Daemon Sets
         - name: NODE_NAME
           valueFrom:
            fieldRef:
