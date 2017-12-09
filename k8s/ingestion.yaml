@@ -15,25 +15,19 @@ metadata:
     bc: shipping
 spec:
   ports:
-  - name: http
-    port: 80
+  - port: 80
+    name: http
   selector:
     app: ingestion
-  clusterIP: None 
+  type: 
+    LoadBalancer 
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: ingestion
-  labels:
-    app: ingestion 
-    version: 0.1.0
-    bc: shipping
 spec:
   replicas: 1
-  selector:
-    matchLabels:
-      app: ingestion 
   template:
     metadata:
       labels:
