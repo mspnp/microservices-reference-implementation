@@ -28,10 +28,12 @@ public class ClientPoolImpl implements ClientPool {
 			throws IOException, ServiceBusException, InterruptedException, ExecutionException {
 		this.appProperties = appProps;
 		
-		this.eventHubNames = this.appProperties.getEventHubName().split(",");
-		nameSpace = appProperties.getNamespace();
-		sasKeyName = appProperties.getSasKeyName();
-		sasKey = appProperties.getSasKey();				
+		
+		this.eventHubNames = System.getenv(appProperties.getEnvHubName()).split(",");		
+		nameSpace = System.getenv(appProperties.getEnvNameSpace());					
+		sasKeyName = System.getenv(appProperties.getEnvsasKeyName());
+		sasKey = System.getenv(appProperties.getEnvsasKey());
+			
 		this.eventHubClients = new EventHubClient[this.appProperties.getMessageAmqpClientPoolSize()];
 	}
 
@@ -48,6 +50,8 @@ public class ClientPoolImpl implements ClientPool {
 					eventHubNames[eventHubId], sasKeyName, sasKey);
 			eventHubClients[poolId] = EventHubClient.createFromConnectionString(connectionString.toString()).get();
 		}
+		
+		EventHubClient vclient = eventHubClients[poolId];
 
 		return eventHubClients[poolId];
 	}

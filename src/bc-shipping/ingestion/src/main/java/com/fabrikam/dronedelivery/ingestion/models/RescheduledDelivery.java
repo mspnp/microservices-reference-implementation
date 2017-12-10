@@ -17,7 +17,11 @@ public class RescheduledDelivery implements DeliveryBase  {
 	private String deadline;
 	private Date pickupTime;
 
-	public RescheduledDelivery(String deliveryId, String pickupLocation, String dropoffLocation, String deadline, Date pickupTime) {
+	public RescheduledDelivery(String deliveryId, 
+			String pickupLocation, 
+			String dropoffLocation, 
+			String deadline, 
+			Date pickupTime) {
 
 		this.deliveryId = deliveryId;
 		this.pickupLocation = pickupLocation;
