@@ -60,7 +60,7 @@ public class DeliveryRequestEventProcessor {
             deliveryRequest = new AkkaDelivery();
             deliveryRequest.setDelivery(delivery);
             deliveryRequest.setMessageFromDevice(message);
-        } catch (JsonSyntaxException e) {
+        } catch (JsonSyntaxException | IllegalStateException e) {
             Log.error("throwable: {}", ExceptionUtils.getStackTrace(e).toString());
         }
 
