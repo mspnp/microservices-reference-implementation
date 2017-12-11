@@ -58,7 +58,8 @@ public class Main extends ReactiveStreamingApp {
 
 		// Read from the saved offsets if any else from the specified time
 		SourceOptions options = new SourceOptions().partitions(partitionsList)
-				.fromCheckpoint(java.time.Instant.now().minus(checkpointMin , ChronoUnit.MINUTES));
+				.fromTime(java.time.Instant.now().minus(checkpointMin,ChronoUnit.MINUTES));
+		//		.fromCheckpoint(java.time.Instant.now().minus(checkpointMin , ChronoUnit.MINUTES));
 		//java.time.Instant.now().minus(4, ChronoUnit.HOURS)
 
 		IoTHub iotHub = new IoTHub();
