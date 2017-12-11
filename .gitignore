@@ -288,3 +288,5 @@ __pycache__/
 *.xsd.cs
 
 .vscode
+
+src/bc-shipping/scheduler/target/*
