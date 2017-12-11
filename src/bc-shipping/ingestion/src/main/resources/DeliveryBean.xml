@@ -16,9 +16,11 @@
 		<constructor-arg index="4" value="null" type="java.util.Date" />
 		<constructor-arg index="5" value="null" type="boolean" />
 		<constructor-arg index="6" value="null" type="java.lang.String" />
-		<constructor-arg index="7" value="null"
-			type="com.fabrikam.dronedelivery.ingestion.models.ConfirmationRequired" />
-		<constructor-arg index="8" value="null" type="" />
+		<constructor-arg index="7" value="null" 
+		    type="com.fabrikam.dronedelivery.ingestion.models.ConfirmationRequired" />
+		<constructor-arg index="8" value="null" type="com.fabrikam.dronedelivery.ingestion.models.PackageInfo" />
+		<constructor-arg index="9" value="null" type="java.lang.String" />
+		
 
 	</bean>
 	<bean
