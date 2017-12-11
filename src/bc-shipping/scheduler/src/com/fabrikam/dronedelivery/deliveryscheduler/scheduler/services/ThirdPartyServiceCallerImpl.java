@@ -73,7 +73,7 @@ public class ThirdPartyServiceCallerImpl extends ServiceCallerImpl {
 			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
 		});
 		
-		future = null;
+ 		future = null;
 		cfuture = null;
 
 		return isThirdPartyRequired;

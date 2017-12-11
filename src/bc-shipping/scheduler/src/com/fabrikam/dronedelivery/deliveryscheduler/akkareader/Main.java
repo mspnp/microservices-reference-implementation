@@ -1,5 +1,6 @@
 package com.fabrikam.dronedelivery.deliveryscheduler.akkareader;
 
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -52,10 +53,13 @@ public class Main extends ReactiveStreamingApp {
 		String partitionNumber = partitionsList.stream().map(Object::toString).collect(Collectors.joining(","));
 
 		Log.info("Reading from partitions: {}", partitionNumber);
+		
+		int checkpointMin = Integer.parseInt(System.getenv(configSet.get("env.checkpoint.time")));
 
 		// Read from the saved offsets if any else from the specified time
 		SourceOptions options = new SourceOptions().partitions(partitionsList)
-				.fromCheckpoint(null);
+				.fromTime(java.time.Instant.now().minus(checkpointMin,ChronoUnit.MINUTES));
+		//		.fromCheckpoint(java.time.Instant.now().minus(checkpointMin , ChronoUnit.MINUTES));
 		//java.time.Instant.now().minus(4, ChronoUnit.HOURS)
 
 		IoTHub iotHub = new IoTHub();
