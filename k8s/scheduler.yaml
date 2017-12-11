@@ -45,6 +45,8 @@ spec:
             value: http://package/api/packages
           - name: SERVICE_URI_THIRDPARTY
             value: http://thirdparty/api/ThirdPartyDeliveries
+          - name: CHECKP_TIME_MINUTES
+            value: 10          
           - name: IOTHUB_EVENTHUB_NAME
             valueFrom:
               secretKeyRef: 

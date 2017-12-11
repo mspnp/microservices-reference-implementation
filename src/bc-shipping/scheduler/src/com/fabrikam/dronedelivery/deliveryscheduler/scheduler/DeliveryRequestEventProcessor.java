@@ -35,10 +35,7 @@ public class DeliveryRequestEventProcessor {
 
     private static Gson deserializer = new GsonBuilder().setPrettyPrinting().create();
 
-    //private static String droneId = null;
-    //private static boolean isAccountActive = false;
-    //private static boolean isThirdPartyRequired = true;
-    //private static PackageGen packageGen = null;
+    
 
     private static final EnumMap<ServiceName, ServiceCallerImpl> backendServicesMap = new EnumMap<ServiceName, ServiceCallerImpl>(
             ServiceName.class);
@@ -79,27 +76,27 @@ public class DeliveryRequestEventProcessor {
                 correlationId)) {
             Log.info("Processing delivery request: Calling backend services for delivery id: {}",
                     deliveryRequest.getDeliveryId());
+            
+               Boolean isAccountActive = invokeAccountServiceAsync(deliveryRequest, properties);
 
-            Boolean isAccountActive = invokeAccountServiceAsync(deliveryRequest, properties);
+               if (isAccountActive) {
+                  Log.info("Account is {}", (isAccountActive ? "active." : "suspended."));
+                  Boolean isThirdPartyRequired = invokeThirdPartyServiceAsync(deliveryRequest, properties);
+                  Log.info("Third party is {}", (isThirdPartyRequired ? "required." : "not required."));
 
-            if (isAccountActive) {
-                Log.info("Account is {}", (isAccountActive ? "active." : "suspended."));
-                Boolean isThirdPartyRequired = invokeThirdPartyServiceAsync(deliveryRequest, properties);
-                Log.info("Third party is {}", (isThirdPartyRequired ? "required." : "not required."));
-
-                if (!isThirdPartyRequired) {
-                    PackageGen packageGen = invokePackageServiceAsync(deliveryRequest, properties);
-                    if (packageGen != null) {
-                        Log.info("Package generated: {}", packageGen.toString());
-                        String droneId = invokeDroneSchedulerServiceAsync(deliveryRequest, properties);
-
-                        if (droneId != null) {
-                            Log.info("Drone assigned: {}", droneId);
-                            deliverySchedule = invokeDeliverySchedulerServiceAsync(deliveryRequest, droneId, properties);
-                        }
-                    }
-                }
-            }
+                  if (!isThirdPartyRequired) {
+                      PackageGen packageGen = invokePackageServiceAsync(deliveryRequest, properties);
+                      if (packageGen != null) {
+                          Log.info("Package generated: {}", packageGen.toString());
+                          String droneId = invokeDroneSchedulerServiceAsync(deliveryRequest, properties);
+  
+                          if (droneId != null) {
+                              Log.info("Drone assigned: {}", droneId);
+                              deliverySchedule = invokeDeliverySchedulerServiceAsync(deliveryRequest, droneId, properties);
+                          }
+                      }
+                  }
+              }
         }
         
         return CompletableFuture.completedFuture(deliverySchedule);
