@@ -45,8 +45,10 @@ spec:
             value: http://package/api/packages
           - name: SERVICE_URI_THIRDPARTY
             value: http://thirdparty/api/ThirdPartyDeliveries
+          ## set this env to read from period of time
+          ## otherwise is from last known checkpoint                              
           - name: CHECKP_TIME_MINUTES
-            value: 10          
+            value: "0"           
           - name: IOTHUB_EVENTHUB_NAME
             valueFrom:
               secretKeyRef: 
@@ -80,18 +82,7 @@ spec:
                 name: scheduler-secrets
                 key: queueconstring
           - name: IOTHUB_EVENTHUB_PARTITIONS
-            value: "32"
-          # Integration with l5d Daemon Sets
-          - name: NODE_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: spec.nodeName
-          - name: POD_IP
-            valueFrom:
-              fieldRef:
-                fieldPath: status.podIP
-          - name: http_proxy
-            value: $(NODE_NAME):4140	
+            value: "32"	
           - name: SERVICEMESH_HEADERS
             value: l5d-ctx-deadline,l5d-ctx-trace
           - name: SERVICEMESH_CORRELATION_HEADER
