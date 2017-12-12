@@ -354,11 +354,16 @@ Deploy linkerd. For more information, see https://linkerd.io/getting-started/k8s
 
 Deploy Prometheus and Grafana. For more information, see https://github.com/linkerd/linkerd-viz#kubernetes-deploy
 
-It is recommended to put an API Gateway in front of all APIs that you want exposed to the public, 
-however for convenience, we have exposed the Ingestion service with a public IP address.
+It is recommended to put an API Gateway in front of all APIs you want exposed to the public, 
+however for convenience, we exposed the Ingestion service with a public IP address.
 
 ```bash
 kubectl get svc ingestion -n bc-shipping
 ```
 
-You can send delivery requests to the ingestion service using the swagger ui, http://[INGESTION_SERVICE_EXTERNAL_IP_ADDRESS]/swagger-ui.html#!/ingestion45controller/scheduleDeliveryAsyncUsingPOST
+You can send delivery requests to the ingestion service using the swagger ui.
+
+```bash
+export INGESTION_SERVICE_EXTERNAL_IP_ADDRESS=$(kubectl get --namespace bc-shipping svc ingestion -o jsonpath="{.status.loadBalancer.ingress[0].*}")
+curl "http://${INGESTION_SERVICE_EXTERNAL_IP_ADDRESS}"/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST
+```
