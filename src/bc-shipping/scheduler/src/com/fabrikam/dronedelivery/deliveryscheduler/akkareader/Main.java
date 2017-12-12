@@ -55,10 +55,20 @@ public class Main extends ReactiveStreamingApp {
 		Log.info("Reading from partitions: {}", partitionNumber);
 		
 		int checkpointMin = Integer.parseInt(System.getenv(configSet.get("env.checkpoint.time")));
+		
+		
+		SourceOptions options;
+		// either we read from time 
+		// or from last known checkpoint
+		if (checkpointMin > 0){
+			options = new SourceOptions().partitions(partitionsList)
+					.fromTime(java.time.Instant.now().minus(checkpointMin,ChronoUnit.MINUTES));			
+		}
+		else{
+			options = new SourceOptions().partitions(partitionsList)
+					.fromCheckpoint(null);				
+		}
 
-		// Read from the saved offsets if any else from the specified time
-		SourceOptions options = new SourceOptions().partitions(partitionsList)
-				.fromTime(java.time.Instant.now().minus(checkpointMin,ChronoUnit.MINUTES));
 		//		.fromCheckpoint(java.time.Instant.now().minus(checkpointMin , ChronoUnit.MINUTES));
 		//java.time.Instant.now().minus(4, ChronoUnit.HOURS)
 
