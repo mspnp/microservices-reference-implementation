@@ -134,7 +134,7 @@ Create Kubernetes secrets
 export REDIS_CONNECTION_STRING=[YOUR_REDIS_CONNECTION_STRING]
 
 export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query primaryMasterKey) && \
-export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint) && \
+export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint)
 
 kubectl --namespace bc-shipping create --save-config=true secret generic delivery-storageconf \
     --from-literal=CosmosDB_Key=${COSMOSDB_KEY[@]//\"/} \
@@ -353,3 +353,13 @@ Deploy Fluend. For more information, see https://docs.fluentd.org/v0.12/articles
 Deploy linkerd. For more information, see https://linkerd.io/getting-started/k8s/
 
 Deploy Prometheus and Grafana. For more information, see https://github.com/linkerd/linkerd-viz#kubernetes-deploy
+
+It is recommended to put an API Gateway in front of all APIs you want exposed to the public, 
+however for convenience, we exposed the Ingestion service with a public IP address.
+
+You can send delivery requests to the ingestion service using the swagger ui.
+
+```bash
+export INGESTION_SERVICE_EXTERNAL_IP_ADDRESS=$(kubectl get --namespace bc-shipping svc ingestion -o jsonpath="{.status.loadBalancer.ingress[0].*}")
+curl "http://${INGESTION_SERVICE_EXTERNAL_IP_ADDRESS}"/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST
+```
