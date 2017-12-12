@@ -357,10 +357,6 @@ Deploy Prometheus and Grafana. For more information, see https://github.com/link
 It is recommended to put an API Gateway in front of all APIs you want exposed to the public, 
 however for convenience, we exposed the Ingestion service with a public IP address.
 
-```bash
-kubectl get svc ingestion -n bc-shipping
-```
-
 You can send delivery requests to the ingestion service using the swagger ui.
 
 ```bash
