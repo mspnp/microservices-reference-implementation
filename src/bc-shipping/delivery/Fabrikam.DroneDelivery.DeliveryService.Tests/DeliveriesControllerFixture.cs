@@ -41,7 +41,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotifyMeRequestRepository>().Object,
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryHistoryService>().Object,
-                                                  new Mock<IDeliveryStatusEventRepository>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
             
             // Act
@@ -63,7 +63,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotifyMeRequestRepository>().Object,
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryHistoryService>().Object,
-                                                  new Mock<IDeliveryStatusEventRepository>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
 
             // Act
@@ -89,7 +89,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotifyMeRequestRepository>().Object,
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryHistoryService>().Object,
-                                                  new Mock<IDeliveryStatusEventRepository>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
             
             // Act
@@ -111,7 +111,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotifyMeRequestRepository>().Object,
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryHistoryService>().Object,
-                                                  new Mock<IDeliveryStatusEventRepository>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
 
             // Act
@@ -138,7 +138,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotifyMeRequestRepository>().Object,
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryHistoryService>().Object,
-                                                  new Mock<IDeliveryStatusEventRepository>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
 
             // Act
@@ -164,7 +164,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotifyMeRequestRepository>().Object,
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryHistoryService>().Object,
-                                                  new Mock<IDeliveryStatusEventRepository>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
             // Act
             var result = await target.Put(new Delivery("deliveryid", new UserAccount("user", "account"), new Location(0, 0, 0), new Location(2, 2, 2), "deadline", true, ConfirmationType.FingerPrint, "drone"), "deliveryid");
@@ -177,14 +177,14 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
         }
 
         [TestMethod]
-        public async Task Put_AddsDeliveryStartedEvent()
+        public async Task Put_AddscreatedDeliveryEvent()
         {
             // Arrange
-            DeliveryStatusEvent startedEvent = null;
-            var deliveryStatusEventRepository = new Mock<IDeliveryStatusEventRepository>();
-            deliveryStatusEventRepository.Setup(r => r.AddAsync(It.IsAny<DeliveryStatusEvent>()))
+            DeliveryTrackingEvent createdDelivery = null;
+            var deliveryStatusEventRepository = new Mock<IDeliveryTrackingEventRepository>();
+            deliveryStatusEventRepository.Setup(r => r.AddAsync(It.IsAny<DeliveryTrackingEvent>()))
                                          .Returns(Task.CompletedTask)
-                                         .Callback<DeliveryStatusEvent>(e => startedEvent = e);
+                                         .Callback<DeliveryTrackingEvent>(e => createdDelivery = e);
 
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
@@ -202,8 +202,8 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             // Assert
             Assert.AreEqual(201, createdAtRouteResult.StatusCode);
             Assert.IsNotNull(createdAtRouteResult.Value);
-            Assert.IsNotNull(startedEvent);
-            Assert.AreEqual(DeliveryEventType.Created, startedEvent.Stage);
+            Assert.IsNotNull(createdDelivery);
+            Assert.AreEqual(DeliveryStage.Created, createdDelivery.Stage);
             deliveryStatusEventRepository.VerifyAll();
         }
 
@@ -218,7 +218,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotifyMeRequestRepository>().Object,
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryHistoryService>().Object,
-                                                  new Mock<IDeliveryStatusEventRepository>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
 
             // Act
@@ -252,7 +252,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotifyMeRequestRepository>().Object,
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryHistoryService>().Object,
-                                                  new Mock<IDeliveryStatusEventRepository>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
 
             // Act
@@ -275,7 +275,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
         public async Task Patch_AddsRescheduledDeliveryEvent()
         {
             // Arrange
-            DeliveryStatusEvent rescheduledEvent = null;
+            DeliveryTrackingEvent deliveryTrackingEvent = null;
 
             var rescheduledDelivery = new RescheduledDelivery(new Location(2, 2, 2),
                                                               new Location(3, 3, 3),
@@ -284,10 +284,10 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             var deliveryRepository = new Mock<IDeliveryRepository>();
             deliveryRepository.Setup(r => r.GetAsync("deliveryid")).ReturnsAsync(delivery);
 
-            var deliveryStatusEventRepository = new Mock<IDeliveryStatusEventRepository>();
-            deliveryStatusEventRepository.Setup(r => r.AddAsync(It.IsAny<DeliveryStatusEvent>()))
+            var deliveryStatusEventRepository = new Mock<IDeliveryTrackingEventRepository>();
+            deliveryStatusEventRepository.Setup(r => r.AddAsync(It.IsAny<DeliveryTrackingEvent>()))
                                          .Returns(Task.CompletedTask)
-                                         .Callback<DeliveryStatusEvent>(e => rescheduledEvent = e);
+                                         .Callback<DeliveryTrackingEvent>(e => deliveryTrackingEvent = e);
 
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
@@ -304,8 +304,8 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
 
             // Assert
             Assert.IsNotNull(result);
-            Assert.IsNotNull(rescheduledEvent);
-            Assert.AreEqual(DeliveryEventType.Rescheduled, rescheduledEvent.Stage);
+            Assert.IsNotNull(deliveryTrackingEvent);
+            Assert.AreEqual(DeliveryStage.Rescheduled, deliveryTrackingEvent.Stage);
             deliveryStatusEventRepository.VerifyAll();
         }
 
@@ -320,7 +320,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotifyMeRequestRepository>().Object,
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryHistoryService>().Object,
-                                                  new Mock<IDeliveryStatusEventRepository>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
 
             // Act
@@ -332,32 +332,30 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
         }
 
         [TestMethod]
-        public async Task Delete_SendsMessageWithCancelledEvent()
+        public async Task Delete_SendsMessageWithCancelledTrackingEvent()
         {
             // Arrange
-            InternalDelivery cancelledDelivery = null;
-            DeliveryStatusEvent cancelEvent = null;
-            DeliveryStatusEvent[] allEvents = null;
+            DeliveryTrackingEvent cancelledDelivery = null;
+            DeliveryTrackingEvent[] allTrackingEvents = null;
 
             var deliveryRepository = new Mock<IDeliveryRepository>();
             deliveryRepository.Setup(r => r.GetAsync("deliveryid")).ReturnsAsync(delivery);
 
             var deliveryHistoryService = new Mock<IDeliveryHistoryService>();
-            deliveryHistoryService.Setup(r => r.CancelAsync(It.IsAny<InternalDelivery>(), It.IsAny<DeliveryStatusEvent[]>()))
+            deliveryHistoryService.Setup(r => r.CancelAsync(It.IsAny<InternalDelivery>(), It.IsAny<DeliveryTrackingEvent[]>()))
                       .Returns(Task.CompletedTask)
-                      .Callback<InternalDelivery, DeliveryStatusEvent[]>((d, es) =>
+                      .Callback<InternalDelivery, DeliveryTrackingEvent[]>((d, es) =>
                       {
-                          cancelledDelivery = d;
-                          allEvents = es;
+                          allTrackingEvents = es;
                       });
 
-            var deliveryStatusEventRepository = new Mock<IDeliveryStatusEventRepository>();
-            deliveryStatusEventRepository.Setup(r => r.AddAsync(It.IsAny<DeliveryStatusEvent>()))
+            var deliveryStatusEventRepository = new Mock<IDeliveryTrackingEventRepository>();
+            deliveryStatusEventRepository.Setup(r => r.AddAsync(It.IsAny<DeliveryTrackingEvent>()))
                                          .Returns(Task.CompletedTask)
-                                         .Callback<DeliveryStatusEvent>(e => cancelEvent = e);
+                                         .Callback<DeliveryTrackingEvent>(e => cancelledDelivery = e);
 
             deliveryStatusEventRepository.Setup(r => r.GetByDeliveryIdAsync("deliveryid"))
-                                         .ReturnsAsync(new ReadOnlyCollection<DeliveryStatusEvent>(new List<DeliveryStatusEvent>() { cancelEvent }));
+                                         .ReturnsAsync(new ReadOnlyCollection<DeliveryTrackingEvent>(new List<DeliveryTrackingEvent>() { cancelledDelivery }));
 
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
@@ -372,11 +370,11 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             await target.Delete("deliveryid");
 
             // Assert
-            Assert.IsNotNull(cancelEvent);
-            Assert.AreEqual("deliveryid", cancelEvent.DeliveryId);
-            Assert.AreEqual(DeliveryEventType.Cancelled, cancelEvent.Stage);
+            Assert.IsNotNull(cancelledDelivery);
+            Assert.AreEqual("deliveryid", cancelledDelivery.DeliveryId);
+            Assert.AreEqual(DeliveryStage.Cancelled, cancelledDelivery.Stage);
             deliveryRepository.VerifyAll();
-            deliveryHistoryService.Verify(s => s.CancelAsync(delivery, allEvents), Times.Once);
+            deliveryHistoryService.Verify(s => s.CancelAsync(delivery, allTrackingEvents), Times.Once);
         }
 
         [TestMethod]
@@ -390,7 +388,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotifyMeRequestRepository>().Object,
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryHistoryService>().Object,
-                                                  new Mock<IDeliveryStatusEventRepository>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
 
             // Act
@@ -422,7 +420,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   notifyMeRequestRepository.Object,
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryHistoryService>().Object,
-                                                  new Mock<IDeliveryStatusEventRepository>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
 
             var notifyMeRequest = new NotifyMeRequest("email@test.com", "1234567");
@@ -448,7 +446,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotifyMeRequestRepository>().Object,
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryHistoryService>().Object,
-                                                  new Mock<IDeliveryStatusEventRepository>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
             // Act
             var result = await target.Confirm("invaliddeliveryid", null) as NotFoundResult;
@@ -462,7 +460,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
         public async Task Confirm_SendsNotifications()
         {
             // Arrange
-            DeliveryStatusEvent completeEvent = null;
+            DeliveryTrackingEvent completedDelivery = null;
 
             var deliveryRepository = new Mock<IDeliveryRepository>();
             deliveryRepository.Setup(r => r.GetAsync("deliveryid")).ReturnsAsync(delivery);
@@ -483,13 +481,13 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                .Callback(() => notificationServiceCalled++);
 
 
-            var deliveryStatusEventRepository = new Mock<IDeliveryStatusEventRepository>();
+            var deliveryStatusEventRepository = new Mock<IDeliveryTrackingEventRepository>();
 
             deliveryStatusEventRepository.Setup(r => r.GetByDeliveryIdAsync("deliveryid"))
-                                         .ReturnsAsync(new ReadOnlyCollection<DeliveryStatusEvent>(new List<DeliveryStatusEvent>() { completeEvent }));
+                                         .ReturnsAsync(new ReadOnlyCollection<DeliveryTrackingEvent>(new List<DeliveryTrackingEvent>() { completedDelivery }));
 
             var deliveryHistoryService = new Mock<IDeliveryHistoryService>();
-            deliveryHistoryService.Setup(r => r.CompleteAsync(delivery, It.IsAny<InternalConfirmation>(), It.IsAny<DeliveryStatusEvent[]>())).Returns(Task.CompletedTask);
+            deliveryHistoryService.Setup(r => r.CompleteAsync(delivery, It.IsAny<InternalConfirmation>(), It.IsAny<DeliveryTrackingEvent[]>())).Returns(Task.CompletedTask);
 
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
@@ -519,8 +517,8 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             // Arrange
             InternalDelivery confirmedDelivery = null;
             InternalConfirmation sentConfirmation = null;
-            DeliveryStatusEvent completeEvent = null;
-            DeliveryStatusEvent[] allEvents = null;
+            DeliveryTrackingEvent completedDelivery = null;
+            DeliveryTrackingEvent[] allTrackingEvents = null;
 
             var deliveryRepository = new Mock<IDeliveryRepository>();
             deliveryRepository.Setup(r => r.GetAsync("deliveryid")).ReturnsAsync(delivery);
@@ -529,22 +527,22 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             notifyMeRequestRepository.Setup(r => r.GetAllByDeliveryIdAsync("deliveryid"))
                                      .ReturnsAsync(new List<InternalNotifyMeRequest>());
 
-            var deliveryStatusEventRepository = new Mock<IDeliveryStatusEventRepository>();
-            deliveryStatusEventRepository.Setup(r => r.AddAsync(It.IsAny<DeliveryStatusEvent>()))
+            var deliveryStatusEventRepository = new Mock<IDeliveryTrackingEventRepository>();
+            deliveryStatusEventRepository.Setup(r => r.AddAsync(It.IsAny<DeliveryTrackingEvent>()))
                                          .Returns(Task.CompletedTask)
-                                         .Callback<DeliveryStatusEvent>(e => completeEvent = e);
+                                         .Callback<DeliveryTrackingEvent>(e => completedDelivery = e);
 
             deliveryStatusEventRepository.Setup(r => r.GetByDeliveryIdAsync("deliveryid"))
-                                         .ReturnsAsync(new ReadOnlyCollection<DeliveryStatusEvent>(new List<DeliveryStatusEvent>() { completeEvent }));
+                                         .ReturnsAsync(new ReadOnlyCollection<DeliveryTrackingEvent>(new List<DeliveryTrackingEvent>() { completedDelivery }));
 
             var deliveryHistoryService = new Mock<IDeliveryHistoryService>();
-            deliveryHistoryService.Setup(r => r.CompleteAsync(It.IsAny<InternalDelivery>(), It.IsAny<InternalConfirmation>(), It.IsAny<DeliveryStatusEvent[]>()))
+            deliveryHistoryService.Setup(r => r.CompleteAsync(It.IsAny<InternalDelivery>(), It.IsAny<InternalConfirmation>(), It.IsAny<DeliveryTrackingEvent[]>()))
                                   .Returns(Task.CompletedTask)
-                                  .Callback<InternalDelivery, InternalConfirmation, DeliveryStatusEvent[]>((d, c, es) =>
+                                  .Callback<InternalDelivery, InternalConfirmation, DeliveryTrackingEvent[]>((d, c, es) =>
                                   {
                                       confirmedDelivery = d;
                                       sentConfirmation = c;
-                                      allEvents = es;
+                                      allTrackingEvents = es;
                                   });
 
             var loggerFactory = new Mock<ILoggerFactory>();
@@ -573,7 +571,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             Assert.AreEqual(3, sentConfirmation.GeoCoordinates.Longitude);
             Assert.AreEqual(ConfirmationType.Picture, sentConfirmation.ConfirmationType);
             Assert.AreEqual("confirmationblob", sentConfirmation.ConfirmationBlob);
-            deliveryHistoryService.Verify(s => s.CompleteAsync(confirmedDelivery, It.IsAny<InternalConfirmation>(), allEvents), Times.Once);
+            deliveryHistoryService.Verify(s => s.CompleteAsync(confirmedDelivery, It.IsAny<InternalConfirmation>(), allTrackingEvents), Times.Once);
         }
 
         [TestMethod]
@@ -581,7 +579,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
         {
             // Arrange
             InternalDelivery confirmedDelivery = null;
-            DeliveryStatusEvent completeEvent = null;
+            DeliveryTrackingEvent completedDelivery = null;
 
             var deliveryRepository = new Mock<IDeliveryRepository>();
             deliveryRepository.Setup(r => r.GetAsync("deliveryid")).ReturnsAsync(delivery);
@@ -589,13 +587,13 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                             .Returns(Task.CompletedTask)
                             .Callback<string, InternalDelivery>((i, d) => confirmedDelivery = d);
 
-            var deliveryStatusEventRepository = new Mock<IDeliveryStatusEventRepository>();
-            deliveryStatusEventRepository.Setup(r => r.AddAsync(It.IsAny<DeliveryStatusEvent>()))
+            var deliveryStatusEventRepository = new Mock<IDeliveryTrackingEventRepository>();
+            deliveryStatusEventRepository.Setup(r => r.AddAsync(It.IsAny<DeliveryTrackingEvent>()))
                                          .Returns(Task.CompletedTask)
-                                         .Callback<DeliveryStatusEvent>(e => completeEvent = e);
+                                         .Callback<DeliveryTrackingEvent>(e => completedDelivery = e);
 
             deliveryStatusEventRepository.Setup(r => r.GetByDeliveryIdAsync("deliveryid"))
-                                         .ReturnsAsync(new ReadOnlyCollection<DeliveryStatusEvent>(new List<DeliveryStatusEvent>() { completeEvent }));
+                                         .ReturnsAsync(new ReadOnlyCollection<DeliveryTrackingEvent>(new List<DeliveryTrackingEvent>() { completedDelivery }));
 
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
@@ -622,21 +620,21 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
         }
 
         [TestMethod]
-        public async Task Confirm_AddsDeliveryCompleteEvent()
+        public async Task Confirm_AddsDeliveryCompletedEvent()
         {
             // Arrange
-            DeliveryStatusEvent completeEvent = null;
+            DeliveryTrackingEvent completedDelivery = null;
 
             var deliveryRepository = new Mock<IDeliveryRepository>();
             deliveryRepository.Setup(r => r.GetAsync("deliveryid")).ReturnsAsync(delivery);
 
-            var deliveryStatusEventRepository = new Mock<IDeliveryStatusEventRepository>();
-            deliveryStatusEventRepository.Setup(r => r.AddAsync(It.IsAny<DeliveryStatusEvent>()))
+            var deliveryStatusEventRepository = new Mock<IDeliveryTrackingEventRepository>();
+            deliveryStatusEventRepository.Setup(r => r.AddAsync(It.IsAny<DeliveryTrackingEvent>()))
                                          .Returns(Task.CompletedTask)
-                                         .Callback<DeliveryStatusEvent>(e => completeEvent = e);
+                                         .Callback<DeliveryTrackingEvent>(e => completedDelivery = e);
 
             deliveryStatusEventRepository.Setup(r => r.GetByDeliveryIdAsync("deliveryid"))
-                                         .ReturnsAsync(new ReadOnlyCollection<DeliveryStatusEvent>(new List<DeliveryStatusEvent>() { completeEvent }));
+                                         .ReturnsAsync(new ReadOnlyCollection<DeliveryTrackingEvent>(new List<DeliveryTrackingEvent>() { completedDelivery }));
 
             var loggerFactory = new Mock<ILoggerFactory>();
             loggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
@@ -658,8 +656,8 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
 
             // Assert
             Assert.IsNotNull(result);
-            Assert.IsNotNull(completeEvent);
-            Assert.AreEqual(DeliveryEventType.DeliveryComplete, completeEvent.Stage);
+            Assert.IsNotNull(completedDelivery);
+            Assert.AreEqual(DeliveryStage.Completed, completedDelivery.Stage);
         }
 
     }

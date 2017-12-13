@@ -8,10 +8,10 @@ public class HistoryDocument
     {
         //Set the first character of deliveryID as partition key
         this.PartitionKey = history.Id.ToCharArray()[0].ToString();
-        this.DeliveryStatus = history.DeliveryStatus;
+        this.DeliveryTrackingEvents = history.DeliveryTrackingEvents;
        
     }
     public string PartitionKey {get;}
-    public DeliveryStatusEvent[] DeliveryStatus { get; }
+    public DeliveryTrackingEvent[] DeliveryTrackingEvents { get; }
 
 }

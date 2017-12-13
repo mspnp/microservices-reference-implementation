@@ -9,9 +9,9 @@ using Fabrikam.DroneDelivery.DeliveryService.Models;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Services
 {
-    public interface IDeliveryStatusEventRepository
+    public interface IDeliveryTrackingEventRepository
     {
-        Task AddAsync(DeliveryStatusEvent deliveryStatusEvent);
-        Task<ReadOnlyCollection<DeliveryStatusEvent>> GetByDeliveryIdAsync(string deliveryId);
+        Task AddAsync(DeliveryTrackingEvent deliveryTrackingEvent);
+        Task<ReadOnlyCollection<DeliveryTrackingEvent>> GetByDeliveryIdAsync(string deliveryId);
     }
 }
