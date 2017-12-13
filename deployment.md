@@ -349,7 +349,21 @@ Deploy Elasticsearch. For more information, see https://github.com/kubernetes/ex
 
 Deploy Fluend. For more information, see https://docs.fluentd.org/v0.12/articles/kubernetes-fluentd
 
-Deploy linkerd. For more information, see https://linkerd.io/getting-started/k8s/
+#### Deploy linkerd 
+
+For more information, see [https://linkerd.io/getting-started/k8s/](https://linkerd.io/getting-started/k8s/)
+
+> Note: 
+> the service mesh configuration linked above is defaulting the namespace to "default" for service discovery.  
+> Since Drone Delivery microservices are getting deployed into the bc-shipping custom namespace, this config needs to be modified. This will consist of a small change in the dtab rules.
+
+Deploy linkerd defaulting the namespace to bc-shipping instead: 
+
+```bash
+wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/servicemesh.yml && \
+sed -i "s#/default#/bc-shipping#g" servicemesh.yml && \
+kubectl apply -f servicemesh.yml
+``` 
 
 Deploy Prometheus and Grafana. For more information, see https://github.com/linkerd/linkerd-viz#kubernetes-deploy
 
