@@ -5,13 +5,13 @@
 
 namespace Fabrikam.DroneDelivery.Common
 {
-    public enum DeliveryEventType
+    public enum DeliveryStage
     {
         Created,
         Rescheduled,
-        DroneHeadingToPickupLocation,
-        InTransit,
-        DeliveryComplete,
+        HeadedToPickup,
+        HeadedToDropoff,
+        Completed,
         Cancelled
     }
 }

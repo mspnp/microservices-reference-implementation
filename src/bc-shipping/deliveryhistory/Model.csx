@@ -48,19 +48,19 @@ using Newtonsoft.Json;
         public ConfirmationType ConfirmationType { get; }
         public string ConfirmationBlob { get; }
     }
-    public enum DeliveryEventType
+    public enum DeliveryStage
     {
         Created,
         Rescheduled,
-        DroneHeadingToPickupLocation,
-        InTransit,
-        DeliveryComplete,
+        HeadedToPickup,
+        HeadedToDropoff,
+        Completed,
         Cancelled
     }
-    public class DeliveryStatusEvent : BaseCache
+    public class DeliveryTrackingEvent : BaseCache
     {
         public string DeliveryId { get; set; }
-        public DeliveryEventType Stage { get; set; }
+        public DeliveryStage Stage { get; set; }
         public Location Location { get; set; }
         public override string Key => $"{this.DeliveryId}_{this.Stage.ToString()}";
     }
@@ -120,14 +120,14 @@ using Newtonsoft.Json;
     }
     public class DeliveryStatus
     {
-        public DeliveryStatus(DeliveryEventType deliveryStage, Location lastKnownLocation, string pickupeta, string deliveryeta)
+        public DeliveryStatus(DeliveryStage deliveryStage, Location lastKnownLocation, string pickupeta, string deliveryeta)
         {
             Stage = deliveryStage;
             LastKnownLocation = lastKnownLocation;
             PickupETA = pickupeta;
             DeliveryETA = deliveryeta;
         }
-        public DeliveryEventType Stage { get; }
+        public DeliveryStage Stage { get; }
         public Location LastKnownLocation { get; }
         public string PickupETA { get; }
         public string DeliveryETA { get; }
@@ -169,16 +169,16 @@ using Newtonsoft.Json;
     {
         public DeliveryHistory(string id, 
                         InternalDelivery delivery,
-                        params DeliveryStatusEvent[] deliveryStatus)
+                        params DeliveryTrackingEvent[] deliveryTrackingEvents)
         {
             Id = id;
             Delivery = delivery;
-            DeliveryStatus = deliveryStatus;
+            DeliveryTrackingEvents = deliveryTrackingEvents;
         }
 
         [JsonProperty(PropertyName = "id")]
         public string Id { get; }
         public InternalDelivery Delivery { get; }
-        public DeliveryStatusEvent[] DeliveryStatus { get; }
+        public DeliveryTrackingEvent[] DeliveryTrackingEvents { get; }
     }
     

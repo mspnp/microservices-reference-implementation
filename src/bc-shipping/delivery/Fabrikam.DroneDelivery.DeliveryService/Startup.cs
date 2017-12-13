@@ -54,7 +54,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             services.AddSingleton<INotifyMeRequestRepository, NotifyMeRequestRepository>();
             services.AddSingleton<INotificationService, NoOpNotificationService>();
             services.AddSingleton<IDeliveryHistoryService, DeliveryHistoryService>();
-            services.AddSingleton<IDeliveryStatusEventRepository, DeliveryStatusEventRepository>();
+            services.AddSingleton<IDeliveryTrackingEventRepository, DeliveryTrackingRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -90,7 +90,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             DocumentDBRepository<InternalNotifyMeRequest>.Configure(Configuration["DOCDB_ENDPOINT"], Configuration["DOCDB_KEY"], Configuration["DOCDB_DATABASEID"], Configuration["DOCDB_COLLECTIONID"], loggerFactory);
 
             RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["REDIS_CONNSTR"], loggerFactory);
-            RedisCache<DeliveryStatusEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["REDIS_CONNSTR"], loggerFactory);
+            RedisCache<DeliveryTrackingEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["REDIS_CONNSTR"], loggerFactory);
 
             EventHubSender<DeliveryHistory>.Configure(Configuration["EH_CONNSTR"], Configuration["EH_ENTITYPATH"]);
 

@@ -11,16 +11,16 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Models
     {
         public DeliveryHistory(string id, 
                         InternalDelivery delivery,
-                        params DeliveryStatusEvent[] deliveryStatus)
+                        params DeliveryTrackingEvent[] deliveryTrackingEvents)
         {
             Id = id;
             Delivery = delivery;
-            DeliveryStatus = deliveryStatus;
+            DeliveryTrackingEvents = deliveryTrackingEvents;
         }
 
         [JsonProperty(PropertyName = "id")]
         public string Id { get; }
         public InternalDelivery Delivery { get; }
-        public DeliveryStatusEvent[] DeliveryStatus { get; }
+        public DeliveryTrackingEvent[] DeliveryTrackingEvents { get; }
     }
 }

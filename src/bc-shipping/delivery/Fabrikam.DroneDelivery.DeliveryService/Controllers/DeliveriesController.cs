@@ -23,21 +23,21 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
         private readonly INotifyMeRequestRepository notifyMeRequestRepository;
         private readonly INotificationService notificationService;
         private readonly IDeliveryHistoryService deliveryHistoryService;
-        private readonly IDeliveryStatusEventRepository deliveryStatusEventRepository;
+        private readonly IDeliveryTrackingEventRepository deliveryTrackingRepository;
         private readonly ILogger logger;
 
         public DeliveriesController(IDeliveryRepository deliveryRepository,
                                     INotifyMeRequestRepository notifyMeRequestRepository,
                                     INotificationService notificationService,
                                     IDeliveryHistoryService deliveryHistoryRepository,
-                                    IDeliveryStatusEventRepository deliveryStatusEventRepository,
+                                    IDeliveryTrackingEventRepository deliveryTrackingRepository,
                                     ILoggerFactory loggerFactory)
         {
             this.deliveryRepository = deliveryRepository;
             this.notifyMeRequestRepository = notifyMeRequestRepository;
             this.notificationService = notificationService;
             this.deliveryHistoryService = deliveryHistoryRepository;
-            this.deliveryStatusEventRepository = deliveryStatusEventRepository;
+            this.deliveryTrackingRepository = deliveryTrackingRepository;
             this.logger = loggerFactory.CreateLogger<DeliveriesController>();
         }
 
@@ -92,7 +92,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
                 return NotFound();
             }
 
-            var status = new DeliveryStatus(DeliveryEventType.InTransit, new Location(0,0,0), DateTime.Now.AddMinutes(10).ToString(), DateTime.Now.AddHours(1).ToString());
+            var status = new DeliveryStatus(DeliveryStage.HeadedToDropoff, new Location(0,0,0), DateTime.Now.AddMinutes(10).ToString(), DateTime.Now.AddHours(1).ToString());
             return Ok(status);
         }
 
@@ -112,8 +112,8 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
                 await deliveryRepository.CreateAsync(internalDelivery);
 
                 // Adds the delivery created status event
-                var deliveryStatusEvent = new DeliveryStatusEvent { DeliveryId = delivery.Id, Stage = DeliveryEventType.Created };
-                await deliveryStatusEventRepository.AddAsync(deliveryStatusEvent);
+                var deliveryTrackingEvent = new DeliveryTrackingEvent { DeliveryId = delivery.Id, Stage = DeliveryStage.Created };
+                await deliveryTrackingRepository.AddAsync(deliveryTrackingEvent);
 
                 return CreatedAtRoute("GetDelivery", new { id= delivery.Id }, delivery);
             }
@@ -154,8 +154,8 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
                                            delivery.DroneId);
             
             // Adds the delivery rescheduled status event
-            var deliveryStatusEvent = new DeliveryStatusEvent { DeliveryId = id, Stage = DeliveryEventType.Rescheduled };
-            await deliveryStatusEventRepository.AddAsync(deliveryStatusEvent);
+            var deliveryTrackingEvent = new DeliveryTrackingEvent { DeliveryId = id, Stage = DeliveryStage.Rescheduled };
+            await deliveryTrackingRepository.AddAsync(deliveryTrackingEvent);
 
             // Updates the inflight delivery with updated information
             await deliveryRepository.UpdateAsync(id, updatedDelivery);
@@ -176,12 +176,12 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
             }
 
             // Adds the delivery cancelled status event
-            var deliveryStatusEvent = new DeliveryStatusEvent { DeliveryId = id, Stage = DeliveryEventType.Cancelled };
-            await deliveryStatusEventRepository.AddAsync(deliveryStatusEvent);
+            var deliveryTrackingEvent = new DeliveryTrackingEvent { DeliveryId = id, Stage = DeliveryStage.Cancelled };
+            await deliveryTrackingRepository.AddAsync(deliveryTrackingEvent);
 
             // forwards cancelled delivery to the Delivery History
-            var allEvents = await deliveryStatusEventRepository.GetByDeliveryIdAsync(id);
-            await deliveryHistoryService.CancelAsync(delivery, allEvents.ToArray());
+            var allTrackingEvents = await deliveryTrackingRepository.GetByDeliveryIdAsync(id);
+            await deliveryHistoryService.CancelAsync(delivery, allTrackingEvents.ToArray());
 
             // logical delivery deletion
             await deliveryRepository.DeleteAsync(id, delivery);
@@ -256,16 +256,16 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
             };
 
             // Adds the delivery complete status event
-            await deliveryStatusEventRepository.AddAsync(new DeliveryStatusEvent
+            await deliveryTrackingRepository.AddAsync(new DeliveryTrackingEvent
                                                             {
                                                                 DeliveryId = id,
-                                                                Stage = DeliveryEventType.DeliveryComplete
+                                                                Stage = DeliveryStage.Completed
                                                             });
             // get all the milestones from cache
-            var allEvents = await deliveryStatusEventRepository.GetByDeliveryIdAsync(id);
+            var allTrackingEvents = await deliveryTrackingRepository.GetByDeliveryIdAsync(id);
 
             // archives Delivery by sending it to the Delivery History + Confirmantion details as well as forwarding milestones to the Delivery History
-            await deliveryHistoryService.CompleteAsync(confirmedDelivery, internalConfirmation, allEvents.ToArray());
+            await deliveryHistoryService.CompleteAsync(confirmedDelivery, internalConfirmation, allTrackingEvents.ToArray());
 
             // sends notifications
             var notifyMeRequests = await notifyMeRequestRepository.GetAllByDeliveryIdAsync(id);
