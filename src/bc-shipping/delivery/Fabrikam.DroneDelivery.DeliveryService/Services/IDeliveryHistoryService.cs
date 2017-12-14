@@ -10,7 +10,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
 {
     public interface IDeliveryHistoryService
     {
-        Task CompleteAsync(InternalDelivery delivery, InternalConfirmation confirmation, params DeliveryStatusEvent[] events);
-        Task CancelAsync(InternalDelivery delivery, params DeliveryStatusEvent[] events);
+        Task CompleteAsync(InternalDelivery delivery, InternalConfirmation confirmation, params DeliveryTrackingEvent[] deliveryTrackingEvents);
+        Task CancelAsync(InternalDelivery delivery, params DeliveryTrackingEvent[] deliveryTrackingEvents);
     }
 }

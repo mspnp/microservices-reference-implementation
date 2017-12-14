@@ -9,14 +9,14 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Models
 {
     public class DeliveryStatus
     {
-        public DeliveryStatus(DeliveryEventType deliveryStage, Location lastKnownLocation, string pickupeta, string deliveryeta)
+        public DeliveryStatus(DeliveryStage deliveryStage, Location lastKnownLocation, string pickupeta, string deliveryeta)
         {
             Stage = deliveryStage;
             LastKnownLocation = lastKnownLocation;
             PickupETA = pickupeta;
             DeliveryETA = deliveryeta;
         }
-        public DeliveryEventType Stage { get; }
+        public DeliveryStage Stage { get; }
         public Location LastKnownLocation { get; }
         public string PickupETA { get; }
         public string DeliveryETA { get; }

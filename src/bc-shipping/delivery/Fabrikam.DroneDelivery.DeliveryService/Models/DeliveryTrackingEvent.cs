@@ -7,10 +7,10 @@ using Fabrikam.DroneDelivery.Common;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Models
 {
-    public class DeliveryStatusEvent : BaseCache
+    public class DeliveryTrackingEvent : BaseCache
     {
         public string DeliveryId { get; set; }
-        public DeliveryEventType Stage { get; set; }
+        public DeliveryStage Stage { get; set; }
         public Location Location { get; set; }
         public override string Key => $"{this.DeliveryId}_{this.Stage.ToString()}";
     }
