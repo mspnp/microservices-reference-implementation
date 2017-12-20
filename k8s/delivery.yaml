@@ -9,9 +9,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: delivery
+  name:
   labels:
-    app: delivery
+    app:
     bc: shipping
 spec:
   ports:
@@ -19,33 +19,33 @@ spec:
     port: 80
     targetPort: 80
   selector:
-    app: delivery
+    app:
   clusterIP: None
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: delivery
+  name:
   labels:                 # In API version apps/v1beta2, .metadata.labels no longer default to .spec.template.metadata.labels. 
-    app: delivery
-    version: 0.1.0
+    app:
+    version:
     bc: shipping
 spec:
-  replicas: 1
+  replicas:
   selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels. 
     matchLabels:           # spec.selector is immutable after creation of the Deployment in apps/v1beta2.
-      app: delivery         
+      app:
   template:                # A Deployment may terminate Pods whose labels match the selector if their template is different from .spec.template
     metadata:
       labels:
-        app: delivery
-        version: 0.1.0
+        app:
+        version:
         bc: shipping
       annotations:
         team: deliveryservice
     spec:
       containers:
-      - name: delivery
+      - name:
         image:
         env:
         # Export K8s secrets

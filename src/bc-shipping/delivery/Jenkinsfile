@@ -1,0 +1,258 @@
+#!/usr/bin/groovy
+
+podTemplate(label: 'jenkins-pipeline', containers: [
+    containerTemplate(name: 'jnlp'   , image: 'jenkinsci/jnlp-slave:3.14-1', args: '${computer.jnlpmac} ${computer.name}', workingDir: '/home/jenkins', resourceRequestCpu: '200m', resourceLimitCpu: '300m', resourceRequestMemory: '256Mi', resourceLimitMemory: '512Mi'),
+    containerTemplate(name: 'docker' , image: 'docker:1.13', command: 'cat', ttyEnabled: true),
+    containerTemplate(name: 'dotnet' , image: 'microsoft/aspnetcore-build:1.0-2.0', command: 'cat', ttyEnabled: true),
+    containerTemplate(name: 'kubectl', image: 'lachlanevenson/k8s-kubectl:v1.6.9', command: 'cat', ttyEnabled: true)
+],
+volumes:[
+    hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock'),
+]) {
+    node ('jenkins-pipeline') {
+
+    def pwd = pwd()
+    checkout scm
+
+    // read in required jenkins workflow config values
+    def inputFile = readFile('./src/bc-shipping/delivery/pipelineargs.json')
+    def config = new groovy.json.JsonSlurperClassic().parseText(inputFile)
+    println "pipeline config ==> ${config}"
+
+    // set additional git envvars for image tagging
+    gitEnvVars()
+        
+    // If pipeline debugging enabled
+    if (config.pipeline.debug) {
+      println "DEBUG ENABLED"
+      sh "env | sort"
+
+      println "Runing kubectl tests"
+      container('kubectl') {
+        kubectlTest()
+      }
+    }
+
+    // tag image with version, and branch-commit_id
+    def image_tags_map = getContainerTags(config)
+    
+    println "image tag ==> ${image_tags_map}"  
+
+    // compile tag list
+    def image_tags_list = getMapValues(image_tags_map)
+
+    stage ('compile and test') {
+      container('dotnet') {
+        echo "begin CI"  
+        sh "dotnet restore ./src/bc-shipping/delivery/Fabrikam.DroneDelivery.sln && dotnet publish ./src/bc-shipping/delivery/Fabrikam.DroneDelivery.sln -c Release -o ./obj/Docker/publish"
+        echo "end CI"
+      }
+    }
+    def String image_id
+    stage ('publish container') {
+        container('docker') {
+            // build and publish container
+            image_id = containerBuildPub(
+               dockerfile: config.container_repo.dockerfile,
+               host      : config.container_repo.host,
+               acct      : config.container_repo.user,
+               repo      : config.container_repo.repo,
+               tags      : image_tags_list,
+               auth_id   : config.container_repo.jenkins_creds_id,
+               registryAlias : config.container_repo.registryAlias
+            )
+        }
+    }
+
+    // deploy 
+    stage ('deploy to k8s') {
+      def image_tag = image_tags_list.get(0)
+      container('kubectl') {
+        // Deploy using Helm chart
+        k8sDeploy(
+          name          : config.app.name,
+          namespace     : config.app.namespace,
+          config_file   : config.app.config_file,
+          sed           : [
+            "name:": config.app.name,
+            "app:": config.app.name,
+            "version:": config.app.version,
+            "image:": "${image_id}:${image_tag}",
+            "replicas:": config.app.replicas
+          ]
+        )
+      }
+    }
+    
+    if (config.pipeline.test) {
+      stage ('integration test') {
+        println "execute integration tests here"
+        k8sTest(
+          name          : config.app.name,
+          namespace     : config.app.namespace
+        )
+      }
+    }
+  }
+}
+
+def gitEnvVars() {
+    // create git envvars
+    println "Setting envvars to tag container"
+    sh 'git rev-parse HEAD > git_commit_id.txt'
+    try {
+        env.GIT_COMMIT_ID = readFile('git_commit_id.txt').trim()
+        env.GIT_SHA = env.GIT_COMMIT_ID.substring(0, 7)
+    } catch (e) {
+        error "${e}"
+    }
+    println "env.GIT_COMMIT_ID ==> ${env.GIT_COMMIT_ID}"
+    
+    sh 'git rev-parse --abbrev-ref HEAD > git_current_branch_name.txt'
+    try {
+        if(!env.BRANCH_NAME) {
+           env.BRANCH_NAME = readFile('git_current_branch_name.txt').trim()
+        }
+        env.ESCAPED_BRANCH_NAME = "${env.BRANCH_NAME}".replace("/", "-").replace("_","-")
+    } catch (e) {
+        error "${e}"
+    }
+    println "env.BRANCH_NAME ==> ${env.BRANCH_NAME}"
+    println "env.ESCAPED_BRANCH_NAME ==> ${env.ESCAPED_BRANCH_NAME}"
+
+    sh 'git config --get remote.origin.url> git_remote_origin_url.txt'
+    try {
+        env.GIT_REMOTE_URL = readFile('git_remote_origin_url.txt').trim()
+    } catch (e) {
+        error "${e}"
+    }
+    println "env.GIT_REMOTE_URL ==> ${env.GIT_REMOTE_URL}"
+}
+
+def kubectlTest() {
+    // Test that kubectl can communicate with the Kubernetes
+    println "begin checking kubectl connnectivity to the API"
+    sh "kubectl get nodes"
+    println "end checking kubectl connnectivity to the API"
+}
+
+def getContainerTags(config, Map tags = [:]) {
+    println "getting list of tags for container"
+    def String commit_tag
+    def String version_tag
+
+    try {
+        // if PR branch tag with only branch name
+        if (env.ESCAPED_BRANCH_NAME.contains('PR')) {
+            commit_tag = env.ESCAPED_BRANCH_NAME
+            tags << ['commit': commit_tag]
+            return tags
+        }
+    } catch (Exception e) {
+        println "WARNING: commit unavailable from env. ${e}"
+    }
+
+    // commit tag
+    try {
+        // if branch available, use as prefix, otherwise only commit hash
+        if (env.ESCAPED_BRANCH_NAME) {
+            commit_tag = env.ESCAPED_BRANCH_NAME + '-' + env.GIT_COMMIT_ID.substring(0, 7)
+        } else {
+            commit_tag = env.GIT_COMMIT_ID.substring(0, 7)
+        }
+        tags << ['commit': commit_tag]
+    } catch (Exception e) {
+        println "WARNING: commit unavailable from env. ${e}"
+    }
+
+    // master tag
+    try {
+        if (env.ESCAPED_BRANCH_NAME == 'master') {
+            tags << ['master': config.app.version]
+        }
+    } catch (Exception e) {
+        println "WARNING: branch unavailable from env. ${e}"
+    }
+
+    // build tag only if none of the above are available
+    if (!tags) {
+        try {
+            tags << ['build': env.BUILD_TAG]
+        } catch (Exception e) {
+            println "WARNING: build tag unavailable from config.project. ${e}"
+        }
+    }
+
+    return tags
+}
+
+@NonCPS
+def getMapValues(Map map=[:]) {
+    // jenkins and workflow restriction force this function instead of map.values(): https://issues.jenkins-ci.org/browse/JENKINS-27421
+    def entries = []
+    def map_values = []
+
+    entries.addAll(map.entrySet())
+
+    for (int i=0; i < entries.size(); i++){
+        String value =  entries.get(i).value
+        map_values.add(value)
+    }
+
+    return map_values
+}
+
+def k8sDeploy(Map args) {
+    if (args.sed) {
+      sedK8sManifestFiles("${args.config_file}", args.sed)
+    }
+
+    def String namespace
+
+    // provided there isn't a given namespace, set the namespace to the name
+    if (args.namespace == null) {
+        namespace = args.name
+    } else {
+        namespace = args.namespace
+    }
+
+    println "Running deployment"
+    
+    sh("kubectl get ns ${namespace} || kubectl create ns ${namespace}")
+    sh "kubectl --namespace ${namespace} apply -f ${args.config_file}"
+    sh "kubectl --namespace ${namespace} get all"
+}
+
+def sedK8sManifestFiles(String k8sManifestFile, Map map=[:]) {
+    def String replaceWith
+    
+    map.each { key, value ->
+        replaceWith = "${key} ${value}"
+        sh("sed -i 's#${key}\$#${replaceWith}#' ${k8sManifestFile}")
+    }
+    sh "cat ${k8sManifestFile}"
+}
+
+def containerBuildPub(Map args) {
+    println "Running Docker build/publish: ${args.host}/${args.acct}/${args.repo}:${args.tags}"
+
+    def img = docker.image("${args.acct}/${args.repo}")
+    println "dockerfile: ${args.dockerfile}"
+    sh "docker build --build-arg VCS_REF=${env.GIT_SHA} --build-arg BUILD_DATE=`date -u +'%Y-%m-%dT%H:%M:%SZ'` -t ${args.acct}/${args.repo} ${args.dockerfile}"
+    def String tag_to_push
+    for (int i = 0; i < args.tags.size(); i++) {
+        tag_to_push = args.tags.get(i)
+        sh "docker tag ${args.acct}/${args.repo} ${args.registryAlias}/${args.acct}/${args.repo}:${tag_to_push}"
+        
+        withCredentials([[$class          : 'UsernamePasswordMultiBinding', credentialsId: args.auth_id,
+        usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD']]) {
+            sh "docker login ${args.host} -u ${env.USERNAME} -p ${env.PASSWORD} && docker push ${args.registryAlias}/${args.acct}/${args.repo}:${tag_to_push}"
+        }
+    }
+    println "${img.id}"
+    return img.id
+}
+
+def k8sTest(Map args) {
+    println "Running k8s app tests"
+}
