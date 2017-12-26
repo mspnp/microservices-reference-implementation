@@ -1,0 +1,21 @@
+{
+   "app": {
+      "name": "delivery",
+      "namespace": "bc-shipping",
+      "version": "0.1.1",
+      "replicas": "1",
+      "config_file": "./k8s/delivery.yaml"
+   },
+   "container_repo": {
+      "host": "https://index.docker.io/v1/",
+      "registryAlias": "docker.io",
+      "user": "ferantivero",
+      "jenkins_creds_id": "docker_creds",
+      "repo": "delivery",
+      "dockerfile": "./src/bc-shipping/delivery/Fabrikam.DroneDelivery.DeliveryService/"
+   },
+   "pipeline": {
+      "debug": true,
+      "test": true
+   }
+}
