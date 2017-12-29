@@ -140,8 +140,7 @@ kubectl --namespace bc-shipping create --save-config=true secret generic deliver
     --from-literal=CosmosDB_Key=${COSMOSDB_KEY[@]//\"/} \
     --from-literal=CosmosDB_Endpoint=${COSMOSDB_ENDPOINT[@]//\"/} \
     --from-literal=Redis_ConnectionString=${REDIS_CONNECTION_STRING} \
-    --from-literal=EH_ConnectionString= \
-    --from-literal=Redis_SecondaryKey=
+    --from-literal=EH_ConnectionString=
 ```
 
 Deploy the Delivery service:
