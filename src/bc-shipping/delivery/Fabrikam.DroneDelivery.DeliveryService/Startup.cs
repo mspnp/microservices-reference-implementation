@@ -85,15 +85,9 @@ namespace Fabrikam.DroneDelivery.DeliveryService
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "Fabrikam DroneDelivery DeliveryService API V1");
             });
 
-
             //TODO look into creating a factory of DocDBRepos/RedisCache/EventHubMessenger
             DocumentDBRepository<InternalNotifyMeRequest>.Configure(Configuration["DOCDB_ENDPOINT"], Configuration["DOCDB_KEY"], Configuration["DOCDB_DATABASEID"], Configuration["DOCDB_COLLECTIONID"], loggerFactory);
-
             RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["REDIS_CONNSTR"], loggerFactory);
-            RedisCache<DeliveryTrackingEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["REDIS_CONNSTR"], loggerFactory);
-
-            EventHubSender<DeliveryHistory>.Configure(Configuration["EH_CONNSTR"], Configuration["EH_ENTITYPATH"]);
-
             EventHubSender<DeliveryHistory>.Configure(Configuration["EH_CONNSTR"], Configuration["EH_ENTITYPATH"]);
         }
     }
