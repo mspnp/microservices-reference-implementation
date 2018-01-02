@@ -9,6 +9,5 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
     {
         public const int PartitionKeyLength = 4;
         public const int RedisCacheDBId_Delivery = 0;
-        public const int RedisCacheDBId_DeliveryStatus = 1;
     }
 }
