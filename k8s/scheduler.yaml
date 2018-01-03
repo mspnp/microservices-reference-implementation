@@ -13,6 +13,7 @@ metadata:
   labels:
     app: scheduler 
     bc: shipping
+    co: fabrikam
 spec:
   serviceName: scheduler
   replicas: 32
@@ -25,6 +26,7 @@ spec:
         app: scheduler 
         version: 0.1.0
         bc: shipping
+        co: fabrikam
     spec:
       containers:
       - image:

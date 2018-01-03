@@ -11,6 +11,7 @@ metadata:
     app: package
     version: 0.1.0
     bc: shipping
+    co: fabrikam
 spec:
   replicas: 1
   selector:
@@ -22,6 +23,7 @@ spec:
         app: package
         version: 0.1.0
         bc: shipping
+        co: fabrikam
     spec:
       containers:
       - name: package
@@ -49,6 +51,7 @@ metadata:
   labels:
     app: package
     bc: shipping
+    co: fabrikam
 spec:
   selector:
     app: package
