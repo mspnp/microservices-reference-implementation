@@ -1,0 +1,82 @@
+{
+  "hints": [],
+  "groups": [
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service",
+      "type": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties"
+    }
+  ],
+  "properties": [
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.env-hub-name",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.env-name-space",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.envsas-key",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.envsas-key-name",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.event-hub-name",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.message-amqp-client-pool-size",
+      "type": "java.lang.Integer"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.namespace",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.sas-key",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.sas-key-name",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.service-mesh-correlation-header",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.service-mesh-headers",
+      "type": "java.util.List<java.lang.String>"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.thread-pool-executor-max-pool-size",
+      "type": "java.lang.Integer"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.thread-pool-executor-pool-size",
+      "type": "java.lang.Integer"
+    },
+    {
+      "sourceType": "com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties",
+      "name": "service.thread-pool-executor-queue-size",
+      "type": "java.lang.Integer"
+    }
+  ]
+}

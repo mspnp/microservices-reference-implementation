@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+
+	<bean
+		class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
+	<bean id="Deliverybean"
+		class="com.fabrikam.dronedelivery.ingestion.models.Delivery">
+		<constructor-arg index="0" value="null" type="java.lang.String" />
+		<constructor-arg index="1" value="null" type="java.lang.String" />
+		<constructor-arg index="2" value="null" type="java.lang.String" />
+		<constructor-arg index="3" value="null" type="java.lang.String" />
+		<constructor-arg index="4" value="null" type="java.util.Date" />
+		<constructor-arg index="5" value="null" type="boolean" />
+		<constructor-arg index="6" value="null" type="java.lang.String" />
+		<constructor-arg index="7" value="null" 
+		    type="com.fabrikam.dronedelivery.ingestion.models.ConfirmationRequired" />
+		<constructor-arg index="8" value="null" type="com.fabrikam.dronedelivery.ingestion.models.PackageInfo" />
+		<constructor-arg index="9" value="null" type="java.lang.String" />
+		
+
+	</bean>
+	<bean
+		class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor" />
+	<bean id="RescheduledDeliveryBean"
+		class="com.fabrikam.dronedelivery.ingestion.models.RescheduledDelivery">
+		<constructor-arg index="0" value="null" type="java.lang.String" />
+		<constructor-arg index="1" value="null" type="java.lang.String" />
+		<constructor-arg index="2" value="null" type="java.lang.String" />
+		<constructor-arg index="3" value="null" type="java.lang.String" />
+		<constructor-arg index="4" value="null" type="java.util.Date" />
+	</bean>
+
+</beans>

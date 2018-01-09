@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Implementation-Title: Ingestion
+Implementation-Version: 1.0.0
+Built-By: cfarre
+Implementation-Vendor-Id: DroneDelivery
+Build-Jdk: 1.8.0_141
+Implementation-URL: http://projects.spring.io/spring-boot/Ingestion/
+Created-By: Maven Integration for Eclipse
+Implementation-Vendor: Pivotal Software, Inc.
+
