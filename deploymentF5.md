@@ -23,6 +23,7 @@ Set environment variables.
 export LOCATION=[YOUR_LOCATION_HERE]
 
 export UNIQUE_APP_NAME_PREFIX=[YOUR_UNIQUE_APPLICATION_NAME_HERE]
+export ACR_NAME=[YOUR_CONTAINER_REGISTRY_NAME_HERE]
 
 export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
 export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster"
@@ -53,7 +54,7 @@ Create the ACS cluster
   ```
   > Note: 
   > 1. when sshRSAPublicKey parameter prompts you for the string, do not enclose within quotes, or they will be treated as part of the public key.
-  > 2. Highlighted are the servicePrincipalClientId (appId) and the servicePrincipalClientSecret (password) that you use as service principal parameters for cluster deployment. Please note that this is a secure string and you will not see the input in your screen.
+  > 2. Highlighted are the servicePrincipalClientId (appId) and the servicePrincipalClientSecret (password) that you use as service principal parameters for cluster deployment. Please note that these params are secure strings, so when you enter or paste the value it is not going to be displayed in your screen.
 
     ![](./service-principal-creds.png)
 
@@ -63,7 +64,10 @@ Create the ACS cluster
   > Note: 
   > 1. when deployed using the Preview Portal, you should paste in the contents of your ssh-rsa public key file as a string.
   > 2. paste the $RESOURCE_GROUP value and choose use existing resource group
+  > 3. paste the $ACR_NAME value in the acraname parameter 
 
+Download kubectl and create a k8s namespace
+```bash
 #  Install kubectl
 sudo az acs kubernetes install-cli
 
@@ -74,15 +78,9 @@ az acs kubernetes get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUST
 kubectl create namespace bc-shipping
 ```
 
-Create an Azure Container Registry instance. 
-
-> Note: Azure Container Registory is not required. If you prefer, you can store the Docker images for this solution in another container registry.
+Obtain your Azure Container Registry instance details. 
 
 ```bash
-export ACR_NAME=[YOUR_CONTAINER_REGISTRY_NAME_HERE]
-
-# Create the ACR instance
-az acr create --name $ACR_NAME --resource-group $RESOURCE_GROUP --sku Basic
 
 # Log in to ACR
 az acr login --name $ACR_NAME
