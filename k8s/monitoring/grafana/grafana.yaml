@@ -1,0 +1,246 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+###################################################################################################
+# Persistent Volume
+###################################################################################################
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "storage-monitoring"
+  labels:
+    app: grafana
+    component: grafana
+  name: grafanapvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3000Gi
+---
+###################################################################################################
+# grafana configMap
+#
+###################################################################################################
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: grafana
+    component: grafana
+  name: grafana-config
+data:
+  grafana.ini: |
+    ; instance_name = ${HOSTNAME}
+    [paths]
+    data = /var/lib/grafana/data
+    logs = /var/log/grafana
+    plugins = /var/lib/grafana/plugins
+    [server]
+    ;protocol = http
+    ;http_addr =
+    ;http_port = 3000
+    ;domain = localhost
+    ;enforce_domain = false
+    ;root_url = %(protocol)s://%(domain)s:%(http_port)s/
+    ;router_logging = false
+    ;static_root_path = public
+    ;enable_gzip = false
+    ;cert_file =
+    ;cert_key =
+    [database]
+    ;type = sqlite3
+    ;host = 127.0.0.1:3306
+    ;name = grafana
+    ;user = root
+    ;password =
+    ;ssl_mode = disable
+    ;path = grafana.db
+    [session]
+    ;provider = file
+    ;provider_config = sessions
+    ;cookie_name = grafana_sess
+    ;cookie_secure = false
+    ;session_life_time = 86400
+    [analytics]
+    ;reporting_enabled = true
+    check_for_updates = true
+    ;google_analytics_ua_id =
+    [security]
+    ;admin_user = admin
+    ;admin_password = admin
+    ;secret_key = SW2YcwTIb9zpOOhoPsMm
+    ;login_remember_days = 7
+    ;cookie_username = grafana_user
+    ;cookie_remember_name = grafana_remember
+    ;disable_gravatar = false
+    ;data_source_proxy_whitelist =
+    [snapshots]
+    ;external_enabled = true
+    ;external_snapshot_url = https://snapshots-origin.raintank.io
+    ;external_snapshot_name = Publish to snapshot.raintank.io
+    [users]
+    ;allow_sign_up = true
+    ;allow_org_create = true
+    ;auto_assign_org = true
+    ;auto_assign_org_role = Viewer
+    ;login_hint = email or username
+    ;default_theme = dark
+    [auth.anonymous]
+    ;enabled = false
+    ;org_name = Main Org.
+    ;org_role = Viewer
+    [auth.github]
+    ;enabled = false
+    ;allow_sign_up = false
+    ;client_id = some_id
+    ;client_secret = some_secret
+    ;scopes = user:email,read:org
+    ;auth_url = https://github.com/login/oauth/authorize
+    ;token_url = https://github.com/login/oauth/access_token
+    ;api_url = https://api.github.com/user
+    ;team_ids =
+    ;allowed_organizations =
+    [auth.google]
+    ;enabled = false
+    ;allow_sign_up = false
+    ;client_id = some_client_id
+    ;client_secret = some_client_secret
+    ;scopes = https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email
+    ;auth_url = https://accounts.google.com/o/oauth2/auth
+    ;token_url = https://accounts.google.com/o/oauth2/token
+    ;api_url = https://www.googleapis.com/oauth2/v1/userinfo
+    ;allowed_domains =
+    [auth.proxy]
+    ;enabled = false
+    ;header_name = X-WEBAUTH-USER
+    ;header_property = username
+    ;auto_sign_up = true
+    [auth.basic]
+    ;enabled = true
+    [auth.ldap]
+    ;enabled = false
+    ;config_file = /etc/grafana/ldap.toml
+    [smtp]
+    ;enabled = false
+    ;host = localhost:25
+    ;user =
+    ;password =
+    ;cert_file =
+    ;key_file =
+    ;skip_verify = false
+    ;from_address = admin@grafana.localhost
+    [emails]
+    ;welcome_email_on_sign_up = false
+    [log]
+    mode = console
+    level = info
+    [log.console]
+    ;level =
+    ;format = console
+    [event_publisher]
+    ;enabled = false
+    ;rabbitmq_url = amqp://localhost/
+    ;exchange = grafana_events
+    [dashboards.json]
+    enabled = true
+    path = /var/lib/grafana/dashboards
+    [metrics]
+    ;enabled           = true
+    ;interval_seconds  = 10
+    ; [metrics.graphite]
+    ; address = localhost:2003
+    ; prefix = prod.grafana.%(instance_name)s.
+    [grafana_net]
+    url = https://grafana.net
+
+---
+###################################################################################################
+# grafana service
+# this endpoint allows for accessing Grafana. Grafana is protected with username / password
+# for security purposes remove LoadBalancer and use ClusterIP with a jumpbox
+# machine to access the private endpoint of Grafana
+###################################################################################################
+
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: grafana
+    component: grafana
+  name: grafana
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 3000
+  selector:
+    app: grafana
+    component: grafana
+  type: LoadBalancer
+
+---
+###################################################################################################
+# grafana deployment
+###################################################################################################
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: grafana
+    component: server
+  name: grafana
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+      labels:
+        app: grafana
+        component: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:4.6.2
+          imagePullPolicy: Always
+          env:
+            - name: GF_SECURITY_ADMIN_USER
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secrets
+                  key: grafana-admin-user
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-secrets
+                  key: grafana-admin-password
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 3000
+            initialDelaySeconds: 30
+            timeoutSeconds: 30
+          volumeMounts:
+            - name: config-volume
+              mountPath: "/etc/grafana"
+            - name: storage-volume
+              mountPath: "/var/lib/grafana/data"
+              subPath: ""
+      terminationGracePeriodSeconds: 300
+      volumes:
+        - name: config-volume
+          configMap:
+            name: grafana-config
+        - name: storage-volume
+          persistentVolumeClaim:
+            claimName: grafanapvc

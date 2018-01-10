@@ -50,7 +50,7 @@ az acs kubernetes get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUST
 kubectl create namespace bc-shipping
 ```
 
-Create an Azure Container Registry instance. 
+Create an Azure Container Registry instance.
 
 > Note: Azure Container Registory is not required. If you prefer, you can store the Docker images for this solution in another container registry.
 
@@ -93,9 +93,9 @@ az cosmosdb create \
     --kind GlobalDocumentDB \
     --resource-group $RESOURCE_GROUP \
     --max-interval 10 \
-    --max-staleness-prefix 200 
+    --max-staleness-prefix 200
 
-# Create a Cosmos DB database 
+# Create a Cosmos DB database
 az cosmosdb database create \
     --name $COSMOSDB_NAME \
     --db-name=$DATABASE_NAME \
@@ -116,7 +116,7 @@ export DELIVERY_PATH=./microservices-reference-implementation/src/bc-shipping/de
 docker-compose -f $DELIVERY_PATH/docker-compose.ci.build.yml up
 ```
 
-Build and publish the container image 
+Build and publish the container image
 
 ```bash
 # Build the Docker image
@@ -197,7 +197,7 @@ kubectl -n bc-shipping create secret generic package-secrets --from-literal=mong
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/package.yml
 ```
 
-## Deploy the Ingestion service 
+## Deploy the Ingestion service
 Provision Azure resources
 
 ```bash
@@ -221,7 +221,7 @@ Build the Ingestion service
 ```bash
 export INGESTION_PATH=./microservices-reference-implementation/src/bc-shipping/ingestion
 
-# Build the app 
+# Build the app
 docker build -t openjdk_and_mvn-build:8-jdk -f $INGESTION_PATH/Dockerfilemaven $INGESTION_PATH && \
 docker run -it --rm -v $( cd "${INGESTION_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
 
@@ -253,7 +253,7 @@ kubectl -n bc-shipping create secret generic ingestion-secrets --from-literal=ev
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/ingestion.yaml
 ```
 
-## Deploy the Scheduler service 
+## Deploy the Scheduler service
 
 Provision Azure resources
 ```bash
@@ -267,7 +267,7 @@ Build the Scheduler service
 ```bash
 export SCHEDULER_PATH=./microservices-reference-implementation/src/bc-shipping/scheduler
 
-# Build the app 
+# Build the app
 docker build -t openjdk_and_mvn-build:8-jdk -f $SCHEDULER_PATH/Dockerfilemaven $SCHEDULER_PATH && \
 docker run -it --rm -v $( cd "${SCHEDULER_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
 
@@ -310,13 +310,13 @@ export MOCKS_PATH=microservices-reference-implementation/src/bc-shipping/deliver
 docker-compose -f $MOCKS_PATH/docker-compose.ci.build.yml up
 ```
 
-Build and publish the container image 
+Build and publish the container image
 
 ```bash
 # Build the Docker image
 docker build -t $ACR_SERVER/account:0.1.0 $MOCKS_PATH/MockAccountService/. && \
 docker build -t $ACR_SERVER/dronescheduler:0.1.0 $MOCKS_PATH/MockDroneScheduler/. && \
-docker build -t $ACR_SERVER/thirdparty:0.1.0 $MOCKS_PATH/MockThirdPartyService/. 
+docker build -t $ACR_SERVER/thirdparty:0.1.0 $MOCKS_PATH/MockThirdPartyService/.
 
 # Push the image to ACR
 az acr login --name $ACR_NAME
@@ -331,13 +331,54 @@ Deploy the mock services:
 # Update the image tag in the deployment YAML
 sed -i "s#image:#image: $ACR_SERVER/account:0.1.0#g" ./microservices-reference-implementation/k8s/account.yaml && \
 sed -i "s#image:#image: $ACR_SERVER/dronescheduler:0.1.0#g" ./microservices-reference-implementation/k8s/dronescheduler.yaml && \
-sed -i "s#image:#image: $ACR_SERVER/thirdparty:0.1.0#g" ./microservices-reference-implementation/k8s/thirdparty.yaml 
+sed -i "s#image:#image: $ACR_SERVER/thirdparty:0.1.0#g" ./microservices-reference-implementation/k8s/thirdparty.yaml
 
 # Deploy the service
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/account.yaml && \
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/dronescheduler.yaml && \
 kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/thirdparty.yaml
 ```
+## Deploy Monitoring (Prometheus and Grafana)
+
+
+create namespace for Monitoring
+kubectl create namespace monitoring
+
+Provision azure resources
+export MONITORING_STORAGE_ACCOUNT_NAME=[MONITORING_STORAGE_ACCOUNT_NAME_HERE]
+
+az storage account create --resource-group $RESOURCE_GROUP --name $MONITORING_STORAGE_ACCOUNT_NAME --sku Premium_LRS
+
+Deploy Prometheus, node_exporter and kube statististics
+
+sed -i "s#storageaccount:#storageaccount: $MONITORING_STORAGE_ACCOUNT_NAME#g" ./microservices-reference-implementation/k8s/monitoring/prometheus/prometheus.yaml && \
+sed -i "s#location:#location: $LOCATION#g" ./microservices-reference-implementation/k8s/monitoring/prometheus/prometheus.yaml
+
+kubectl --namespace monitoring apply -f ./microservices-reference-implementation/k8s/monitoring/prometheus/prometheus.yaml
+
+Deploy grafana
+
+export GRAFANA_USER=[YOUR_GRAFANA_USER_HERE]
+export GRAFANA_PASSWORD=[YOUR_GRAFANA_PASSWORD_HERE]
+
+
+kubectl -n monitoring create secret generic grafana-secrets --from-literal=grafana-admin-user=${GRAFANA_USER} \
+--from-literal=grafana-admin-password=${GRAFANA_PASSWORD}
+
+kubectl --namespace monitoring apply -f ./microservices-reference-implementation/k8s/monitoring/grafana/grafana.yaml
+
+Import grafana dashboards
+1- Execute the command kubectl svc -n Monitoring
+2- Open your browser at http://EXTERNAL-IP, where EXTERNAL_IP is grafana public ip
+3- Enter grafana user name and password
+4- Click add source
+5- In name type Dronedelivery(case sensitive), int type select prometheus and int URL under http settings enter http://CLUSTER-IP where CLUSTER-IP is the internal ip address of prometheus. Click create
+6- click on left upper corner of grafana. Select Dasbards->import. Click on uplad json file. Browse to microservices\microservices-reference-implementation\k8s\monitoring\grafana\dashboards
+Select System Metrics.json.
+7- Import all remaining dashboards from same location.
+
+
+
 
 ## Verify all services are running:
 
@@ -351,9 +392,7 @@ Deploy Fluend. For more information, see https://docs.fluentd.org/v0.12/articles
 
 Deploy linkerd. For more information, see https://linkerd.io/getting-started/k8s/
 
-Deploy Prometheus and Grafana. For more information, see https://github.com/linkerd/linkerd-viz#kubernetes-deploy
-
-It is recommended to put an API Gateway in front of all APIs you want exposed to the public, 
+It is recommended to put an API Gateway in front of all APIs you want exposed to the public,
 however for convenience, we exposed the Ingestion service with a public IP address.
 
 You can send delivery requests to the ingestion service using the swagger ui.
