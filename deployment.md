@@ -396,9 +396,9 @@ kubectl svc -n Monitoring
 
 4- Click add source
 
-5- In name type Dronedelivery(case sensitive), int type select prometheus and int URL under http settings enter http://CLUSTER-IP where CLUSTER-IP is the internal ip address of prometheus. Click create
+5- In name type Dronedelivery(case sensitive), in type select prometheus and in URL under http settings enter http://CLUSTER-IP where CLUSTER-IP is the internal ip address of prometheus. Click create
 
-6- click on left upper corner of grafana. Select Dasbards->import. Click on uplad json file. Browse to microservices\microservices-reference-implementation\k8s\monitoring\grafana\dashboards
+6- click on left upper corner of grafana. Select Dasboards->import. Click on upload .json file. Browse to microservices\microservices-reference-implementation\k8s\monitoring\grafana\dashboards
 Select System Metrics.json.
 
 7- Import all remaining dashboards from same location.
