@@ -342,24 +342,31 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 
 
 create namespace for Monitoring
-
+```bash
 kubectl create namespace monitoring
 
+```
 Provision azure resources
 
+```bash
 export MONITORING_STORAGE_ACCOUNT_NAME=[MONITORING_STORAGE_ACCOUNT_NAME_HERE]
 
 az storage account create --resource-group $RESOURCE_GROUP --name $MONITORING_STORAGE_ACCOUNT_NAME --sku Premium_LRS
 
+```
 Deploy Prometheus, node_exporter and kube statististics
 
+```bash
 sed -i "s#storageaccount:#storageaccount: $MONITORING_STORAGE_ACCOUNT_NAME#g" ./microservices-reference-implementation/k8s/monitoring/prometheus/prometheus.yaml && \
 sed -i "s#location:#location: $LOCATION#g" ./microservices-reference-implementation/k8s/monitoring/prometheus/prometheus.yaml
 
 kubectl --namespace monitoring apply -f ./microservices-reference-implementation/k8s/monitoring/prometheus/prometheus.yaml
 
+```
+
 Deploy grafana
 
+```bash
 export GRAFANA_USER=[YOUR_GRAFANA_USER_HERE]
 
 export GRAFANA_PASSWORD=[YOUR_GRAFANA_PASSWORD_HERE]
@@ -372,7 +379,15 @@ kubectl --namespace monitoring apply -f ./microservices-reference-implementation
 
 Import grafana dashboards
 
-1- Execute the command kubectl svc -n Monitoring
+```
+
+1- Execute the command below to get endpoints(prometheus and grafana)
+
+```bash
+
+kubectl svc -n Monitoring
+
+```
 
 2- Open your browser at http://EXTERNAL-IP, where EXTERNAL_IP is grafana public ip
 
