@@ -12,7 +12,8 @@ metadata:
   name: thirdparty
   labels:
     app: thirdparty
-    bc: shipping
+    bc: 3rdparty
+    co: fabrikam
 spec:
   ports:
   - name: http
@@ -29,18 +30,20 @@ metadata:
   labels:                 # In API version apps/v1beta2, .metadata.labels no longer default to .spec.template.metadata.labels. 
     app: thirdparty
     version: 0.1.0
-    bc: shipping
+    bc: 3rdparty
+    co: fabrikam
 spec:
   replicas: 1
   selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels. 
     matchLabels:           # spec.selector is immutable after creation of the Deployment in apps/v1beta2.
-      app: thirdparty         
+      app: thirdparty
   template:                # A Deployment may terminate Pods whose labels match the selector if their template is different from .spec.template
     metadata:
       labels:
         app: thirdparty
-        bc: shipping
+        bc: 3rdparty
         version: 0.1.0
+        co: fabrikam
       annotations:
         team: thirdpartyservice
     spec:

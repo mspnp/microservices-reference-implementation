@@ -13,6 +13,7 @@ metadata:
   labels:
     app: ingestion
     bc: shipping
+    co: fabrikam
 spec:
   ports:
   - port: 80
@@ -26,6 +27,11 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: ingestion
+  labels:
+    app: ingestion
+    version: 0.1.0
+    bc: shipping
+    co: fabrikam
 spec:
   replicas: 1
   template:
@@ -34,6 +40,7 @@ spec:
         app: ingestion
         version: 0.1.0
         bc: shipping
+        co: fabrikam
     spec:
       containers:
       - name: ingestion
