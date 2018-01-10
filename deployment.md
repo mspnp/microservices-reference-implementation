@@ -377,9 +377,10 @@ kubectl -n monitoring create secret generic grafana-secrets --from-literal=grafa
 
 kubectl --namespace monitoring apply -f ./microservices-reference-implementation/k8s/monitoring/grafana/grafana.yaml
 
+```
+
 Import grafana dashboards
 
-```
 
 1- Execute the command below to get endpoints(prometheus and grafana)
 
