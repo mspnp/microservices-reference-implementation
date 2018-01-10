@@ -97,6 +97,77 @@
       "metadata": {
         "description": "Type of the storage account that will store container registry datas."
       }
+    },
+    "deliveryRedisStorageType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS"
+      ],
+      "metadata": {
+        "description": "Type of the storage account that will store Redis Cache."
+      }
+    },
+    "delivery_redisCacheName": {
+      "type": "string",
+      "metadata": {
+        "description": "The name of the Azure Redis Cache to create."
+      }
+    },
+    "delivery_redisCacheSKU": {
+      "type": "string",
+      "allowedValues": [
+        "Basic",
+        "Standard",
+        "Premium"
+      ],
+      "defaultValue": "Premium",
+      "metadata": {
+        "description": "The pricing tier of the new Azure Redis Cache."
+      }
+    },
+    "delivery_redisCacheFamily": {
+      "type": "string",
+      "defaultValue": "P",
+      "metadata": {
+        "description": "The family for the sku."
+      },
+      "allowedValues": [
+        "C",
+        "P"
+      ]
+    },
+    "delivery_redisCacheCapacity": {
+      "type": "int",
+      "allowedValues": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "defaultValue": 1,
+      "metadata": {
+        "description": "The size of the new Azure Redis Cache instance. "
+      }
+    },
+    "delivery_redisEnableNonSslPort": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "A boolean value that indicates whether to allow access via non-SSL ports."
+      }
+    },
+    "delivery_redisDiagnosticsEnabled": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "A value that indicates whether diagnostics should be saved to the specified storage account."
+      }
     }
   },
   "variables": {
@@ -116,7 +187,9 @@
       }
     ],
     "acrStorageName": "[concat('acr', uniqueString(resourceGroup().id))]",
-    "acrStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('acrStorageName'))]"
+    "deliveryRedisStorageName": "[concat('red', uniqueString(resourceGroup().id))]",
+    "acrStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('acrStorageName'))]",
+    "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('deliveryRedisStorageName'))]"
   },
   "resources": [
     {
@@ -188,6 +261,63 @@
           "name": "[variables('acrStorageName')]"
         }
       }
+    },
+    {
+      "name": "[variables('deliveryRedisStorageName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().location]",
+      "comments": "This storage account is used by Delivery Redis",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "Delivery Redis storage"
+      },
+      "properties": {
+        "accountType": "[parameters('deliveryRedisStorageType')]"
+      }
+    },
+    {
+      "apiVersion": "2015-08-01",
+      "name": "[parameters('delivery_redisCacheName')]",
+      "type": "Microsoft.Cache/Redis",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[variables('deliveryRedisStorageId')]"
+      ],      
+      "properties": {
+        "redisEnableNonSslPort": "[parameters('delivery_redisEnableNonSslPort')]",
+        "sku": {
+          "capacity": "[parameters('delivery_redisCacheCapacity')]",
+          "family": "[parameters('delivery_redisCacheFamily')]",
+          "name": "[parameters('delivery_redisCacheSKU')]"
+        },
+        "vm-size": "P4"
+      },
+      "resources": [
+        {
+          "apiVersion": "2017-05-01-preview",
+          "type": "Microsoft.Cache/redis/providers/diagnosticsettings",
+          "name": "[concat(parameters('delivery_redisCacheName'), '/Microsoft.Insights/', parameters('delivery_redisCacheName'))]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Cache/Redis/', parameters('delivery_redisCacheName'))]"
+          ],
+          "properties": {
+            "storageAccountId": "[variables('deliveryRedisStorageId')]",
+            "logs": [],
+            "metrics": [
+              {
+                "timeGrain": "AllMetrics",
+                "enabled": "[parameters('delivery_redisDiagnosticsEnabled')]",
+                "retentionPolicy": {
+                  "days": 90,
+                  "enabled": "[parameters('delivery_redisDiagnosticsEnabled')]"
+                }
+              }
+            ]
+          }
+        }
+      ]
     }
   ],
   "outputs": {

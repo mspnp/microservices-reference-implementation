@@ -26,7 +26,8 @@ export UNIQUE_APP_NAME_PREFIX=[YOUR_UNIQUE_APPLICATION_NAME_HERE]
 export ACR_NAME=[YOUR_CONTAINER_REGISTRY_NAME_HERE]
 
 export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
-export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster"
+export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster" && \
+export REDIS_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-redis" 
 ```
 
 Infrastructure Prerequisites
@@ -50,7 +51,13 @@ Create the ACS cluster
 * using Azure CLI 2.0
 
   ```bash
-  az group deployment create -g $RESOURCE_GROUP --template-file azuredeploy.json
+  az group deployment create -g $RESOURCE_GROUP --template-file azuredeploy.json --parameters \
+  '{ \
+    "acrName": {"value": "'${ACR_NAME}'"}, \
+    "dnsNamePrefix": {"value": "'${UNIQUE_APP_NAME_PREFIX}'"}, \
+    "delivery_redisCacheName": {"value": "'${REDIS_NAME}'"}
+  }'
+
   ```
   > Note: 
   > 1. when sshRSAPublicKey parameter prompts you for the string, do not enclose within quotes, or they will be treated as part of the public key.
@@ -97,17 +104,10 @@ export ACR_SERVER=("${ACR_SERVER[@]//\"/}")
 Provision Azure resources
 
 ```bash
-export REDIS_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-redis" && \
+
 export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-cosmosdb" && \
 export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
 export COLLECTION_NAME="${DATABASE_NAME}-col"
-
-# Create Azure Redis Cache
-az redis create --location $LOCATION \
-            --name $REDIS_NAME \
-            --resource-group $RESOURCE_GROUP \
-            --sku Premium \
-            --vm-size P4
 
 # Create Cosmos DB account with DocumentDB API
 az cosmosdb create \
