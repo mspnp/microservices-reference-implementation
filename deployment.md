@@ -342,9 +342,11 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 
 
 create namespace for Monitoring
+
 kubectl create namespace monitoring
 
 Provision azure resources
+
 export MONITORING_STORAGE_ACCOUNT_NAME=[MONITORING_STORAGE_ACCOUNT_NAME_HERE]
 
 az storage account create --resource-group $RESOURCE_GROUP --name $MONITORING_STORAGE_ACCOUNT_NAME --sku Premium_LRS
@@ -359,6 +361,7 @@ kubectl --namespace monitoring apply -f ./microservices-reference-implementation
 Deploy grafana
 
 export GRAFANA_USER=[YOUR_GRAFANA_USER_HERE]
+
 export GRAFANA_PASSWORD=[YOUR_GRAFANA_PASSWORD_HERE]
 
 
@@ -368,13 +371,20 @@ kubectl -n monitoring create secret generic grafana-secrets --from-literal=grafa
 kubectl --namespace monitoring apply -f ./microservices-reference-implementation/k8s/monitoring/grafana/grafana.yaml
 
 Import grafana dashboards
+
 1- Execute the command kubectl svc -n Monitoring
+
 2- Open your browser at http://EXTERNAL-IP, where EXTERNAL_IP is grafana public ip
+
 3- Enter grafana user name and password
+
 4- Click add source
+
 5- In name type Dronedelivery(case sensitive), int type select prometheus and int URL under http settings enter http://CLUSTER-IP where CLUSTER-IP is the internal ip address of prometheus. Click create
+
 6- click on left upper corner of grafana. Select Dasbards->import. Click on uplad json file. Browse to microservices\microservices-reference-implementation\k8s\monitoring\grafana\dashboards
 Select System Metrics.json.
+
 7- Import all remaining dashboards from same location.
 
 
