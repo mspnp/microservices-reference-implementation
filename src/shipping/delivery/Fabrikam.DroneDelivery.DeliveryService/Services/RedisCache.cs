@@ -100,7 +100,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
                 logger.LogInformation("Start: storing item in Redis");
                 string jsonItem = await Task.Factory.StartNew(() => JsonConvert.SerializeObject(item));
                 await cache.StringSetAsync(item.Key, jsonItem);
-                var success = await cache.KeyExpireAsync(item.Key, DateTime.MaxValue.ToUniversalTime()).ConfigureAwait(continueOnCapturedContext: false);
+                var success = await cache.KeyExpireAsync(item.Key, TimeSpan.FromSeconds(3)).ConfigureAwait(continueOnCapturedContext: false);
                 logger.LogInformation("End: storing item in Redis");
 
                 return success;
