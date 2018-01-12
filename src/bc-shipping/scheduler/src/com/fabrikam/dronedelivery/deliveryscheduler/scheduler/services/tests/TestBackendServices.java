@@ -1,14 +1,19 @@
 package com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services.tests;
 
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.DeliveryRequestEventProcessor;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.SchedulerSettings;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.Location;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.ConfirmationRequired;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.ContainerSize;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.Delivery;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.PackageInfo;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.LocationRandomizer;
-import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
+import static net.javacrumbs.futureconverter.springjava.FutureConverter.toCompletableFuture;
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -17,15 +22,14 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.AsyncRestTemplate;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.PackageGen;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.PackageInfo;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsUtils;
+import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import static net.javacrumbs.futureconverter.springjava.FutureConverter.toCompletableFuture;
-import static org.junit.Assert.assertEquals;
+import wiremock.org.eclipse.jetty.http.HttpStatus;
 
 public class TestBackendServices {
 	@ClassRule
@@ -33,41 +37,37 @@ public class TestBackendServices {
 	
 	public final String baseUri = "http://localhost:" + wiremock.port();
 
-	private Random random = new Random();
-
-	private final String Locations[] = { "Austin", "Seattle", "Berkley", "Oregon", "Florida", "Blaine", "Renton" };
-
-	private final ContainerSize[] containers = ContainerSize.values();
-	private final ConfirmationRequired[] confirmations = ConfirmationRequired.values();
-	
 	private AsyncRestTemplate restTemplate = new AsyncRestTemplate();
+	
+    private static Gson deserializer = new GsonBuilder().create();
 
 	@Before
 	public void setUp() throws Exception {
-
-	}
-	
-	
-	private void setupStubAccountService() {
 		// Account service stub
 		wiremock.stubFor(get(urlPathMatching("/api/Account/.*")).willReturn(
-				aResponse().withStatus(200).withHeader("Content-Type", "text/plain").withBody("true")));
-	}
-	
-	private void setupStubThirdPartyService(){
-		wiremock.stubFor(put(urlPathMatching("/api/ThirdPartyDeliveries/.*"))
-				.withHeader("Content-Type", equalTo("application/json"))
-				.withRequestBody(matchingJsonPath("{ \"altitude\": 0, \"latitude\": 0, \"longitude\": 0 }"))
+				aResponse().withStatus(HttpStatus.OK_200).withHeader("Content-Type", "text/plain").withBody("true")));
+		
+		// Third party deliveries service stub
+		wiremock.stubFor(put(urlPathEqualTo("/api/ThirdPartyDeliveries/some-random-delivery-id"))
+				.withRequestBody(equalToJson(deserializer.toJson(ModelsUtils.getRandomLocation(0.0))))
 				.willReturn(
-				aResponse().withStatus(200)
-				.withHeader("Content-Type", "application/json; charset=utf-8")
+				aResponse().withStatus(HttpStatus.CREATED_201)
 				.withBody("false")));
-			
+		
+		// Package service stub
+		PackageInfo packInfo = ModelsUtils.getPackageInfo("some-random-tag");
+		String json = deserializer.toJson(packInfo);
+		wiremock.stubFor(put(urlPathEqualTo("/api/packages/some-random-tag"))
+				.withRequestBody(equalToJson(json))
+				.willReturn(
+				aResponse().withStatus(HttpStatus.CREATED_201)
+				.withHeader("Content-Type", "application/json")
+				.withBody(json)));
+
 	}
 	
 	@Test
 	public void CanRetrieveAccountStatusFromMockServiceAsync() throws IOException, InterruptedException, ExecutionException {
-		setupStubAccountService();
 		String uri = this.baseUri + "/api/Account/some-random-account-id";
 
 		CompletableFuture<ResponseEntity<String>> cfuture = toCompletableFuture(
@@ -78,10 +78,9 @@ public class TestBackendServices {
 	
 	@Test
 	public void CanRetrieveThirdPartyStatusFromMockServiceAsync() throws IOException, InterruptedException, ExecutionException {
-		setupStubThirdPartyService();
 		String uri = this.baseUri + "/api/ThirdPartyDeliveries/some-random-delivery-id";
-		
-		HttpEntity<Location> entity = new HttpEntity<Location>(LocationRandomizer.getRandomLocation());
+		String json = deserializer.toJson(ModelsUtils.getRandomLocation(0.0));
+		HttpEntity<String> entity = new HttpEntity<String>(json);
 		CompletableFuture<ResponseEntity<String>> cfuture = toCompletableFuture(
 				this.restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class));
 		String result = ((HttpEntity<String>)cfuture.get()).getBody();
@@ -89,17 +88,29 @@ public class TestBackendServices {
 	}
 	
 	@Test
-	public void CanRetrieveAccountStatusFromAccountServiceAsync() throws InterruptedException, ExecutionException {
-			
-		Map<String, String> properties = new HashMap<String,String>();
-		SchedulerSettings.AccountServiceUri = "http://51.179.155.83/api/Account";
-		DeliveryRequestEventProcessor.invokeAccountServiceAsync(this.createDeliveryRequest(), properties);
+	public void CanRetrievePackageFromMockServiceAsync() throws IOException, InterruptedException, ExecutionException {
+		String uri = this.baseUri + "/api/packages/some-random-tag";
+		PackageInfo packInfo = ModelsUtils.getPackageInfo("some-random-tag");
+		HttpEntity<String> entity = new HttpEntity<String>(deserializer.toJson(packInfo));
+		CompletableFuture<ResponseEntity<String>> cfuture = toCompletableFuture(
+				this.restTemplate.exchange(uri, HttpMethod.PUT, entity, String.class));
+		HttpEntity<String> resultEntity = cfuture.get();
+		PackageGen result = (PackageGen)ModelsUtils.getPackageGen(resultEntity.getBody());
+		assertEquals(result.getTag(), "some-random-tag");
+	}
+	
+//	@Test
+//	public void CanRetrieveAccountStatusFromAccountServiceAsync() throws InterruptedException, ExecutionException {
+//			
+//		Map<String, String> properties = new HashMap<String,String>();
+//		SchedulerSettings.AccountServiceUri = "http://51.179.155.83/api/Account";
+//		DeliveryRequestEventProcessor.invokeAccountServiceAsync(this.createDeliveryRequest(), properties);
 		
 //		CompletableFuture<?> cfuture = toCompletableFuture(
 //				accountService.getData("http://51.179.155.83/api/Account/", accountId));
 //		String result = ((HttpEntity<String>)cfuture.get()).getBody();
 //		assertEquals(result, "true");
-	}
+//	}
 
 
 //	@Test
@@ -154,27 +165,5 @@ public class TestBackendServices {
 //			assertEquals(pack.getPackageId(), packGen.getTag());
 //		});
 //	}
-
-	private Delivery createDeliveryRequest() {
-		PackageInfo pack = new PackageInfo();
-
-		pack.setPackageId(UUID.randomUUID().toString());
-		pack.setSize(containers[random.nextInt(containers.length)]);
-
-		Delivery delivery = new Delivery();
-
-		delivery.setDeliveryId(UUID.randomUUID().toString());
-		delivery.setOwnerId(UUID.randomUUID().toString());
-		delivery.setPickupTime(new Date());
-		delivery.setDropOffLocation(Locations[random.nextInt(Locations.length)]);
-		delivery.setPickupLocation(Locations[random.nextInt(Locations.length)]);
-		delivery.setConfirmationRequired(confirmations[random.nextInt(confirmations.length)]);
-		delivery.setDeadline("LineOfDeadPeople");
-		delivery.setExpedited(true);
-
-		delivery.setPackageInfo(pack);
-
-		return delivery;
-	}
 }
 
