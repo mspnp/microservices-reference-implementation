@@ -15,7 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFuture;
 
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.Location;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.LocationRandomizer;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsUtils;
 
 public class ThirdPartyServiceCallerImpl extends ServiceCallerImpl {
 	
@@ -47,7 +47,7 @@ public class ThirdPartyServiceCallerImpl extends ServiceCallerImpl {
 			throws InterruptedException, ExecutionException {
 		// TODO: Convert string location to Location instead of using the below
 		// hack
-		Location pickup = LocationRandomizer.getRandomLocation();
+		Location pickup = ModelsUtils.getRandomLocation();
 		ListenableFuture<?> response = this.postData(uri, pickup);
 		return Boolean.valueOf(((ResponseEntity<String>) response.get()).getBody().toString());
 	}
@@ -55,7 +55,7 @@ public class ThirdPartyServiceCallerImpl extends ServiceCallerImpl {
 	@SuppressWarnings("unchecked")
 	public Boolean isThirdPartyServiceRequiredAsync(String dropOffLocation, String uri) {
 
-		Location pickup = LocationRandomizer.getRandomLocation();
+		Location pickup = ModelsUtils.getRandomLocation();
 
 		// Let's call the backend
 		ListenableFuture<ResponseEntity<String>> future = (ListenableFuture<ResponseEntity<String>>) this

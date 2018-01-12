@@ -15,8 +15,8 @@ import org.springframework.util.concurrent.ListenableFuture;
 
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DroneDelivery;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.Delivery;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.LocationRandomizer;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsConverter;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsUtils;
 
 public class DroneSchedulerServiceCallerImpl extends ServiceCallerImpl {
 
@@ -58,8 +58,8 @@ public class DroneSchedulerServiceCallerImpl extends ServiceCallerImpl {
 		delivery.setDeliveryId(deliveryRequest.getDeliveryId());
 
 		// TODO: Convert string location to Location instead of using below hack
-		delivery.setDropoff(LocationRandomizer.getRandomLocation());
-		delivery.setPickup(LocationRandomizer.getRandomLocation());
+		delivery.setDropoff(ModelsUtils.getRandomLocation());
+		delivery.setPickup(ModelsUtils.getRandomLocation());
 
 		delivery.setExpedited(delivery.getExpedited());
 		delivery.setPackageDetail(ModelsConverter.getPackageDetail(deliveryRequest.getPackageInfo()));

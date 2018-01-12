@@ -18,8 +18,8 @@ import org.springframework.util.concurrent.ListenableFuture;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DeliverySchedule;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.UserAccount;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.Delivery;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.LocationRandomizer;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsConverter;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsUtils;
 
 public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
 
@@ -93,8 +93,8 @@ public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
 		DeliverySchedule scheduleDelivery = new DeliverySchedule();
 		scheduleDelivery.setId(deliveryRequest.getDeliveryId());
 		scheduleDelivery.setOwner(account);
-		scheduleDelivery.setPickup(LocationRandomizer.getRandomLocation());
-		scheduleDelivery.setDropoff(LocationRandomizer.getRandomLocation());
+		scheduleDelivery.setPickup(ModelsUtils.getRandomLocation());
+		scheduleDelivery.setDropoff(ModelsUtils.getRandomLocation());
 		//scheduleDelivery.setPackageId(deliveryRequest.getPackageInfo().getPackageId());
 		scheduleDelivery.setDeadline(deliveryRequest.getDeadline());
 		scheduleDelivery.setExpedited(deliveryRequest.isExpedited());
