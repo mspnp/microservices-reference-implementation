@@ -32,7 +32,7 @@ export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-cosmosdb" && \
 export MONGODB_NAME="${UNIQUE_APP_NAME_PREFIX}-package-service-cosmosdb" && \
 export INGESTION_EH_NS="${UNIQUE_APP_NAME_PREFIX}ingehns" && \
 export INGESTION_EH_NAME="${UNIQUE_APP_NAME_PREFIX}ingeh" && \
-export INGESTION_EH_CONSUMERGROUP_NAME="${UNIQUE_APP_NAME_PREFIX}ingehcg" 
+export INGESTION_EH_CONSUMERGROUP_NAME="${UNIQUE_APP_NAME_PREFIX}ingehcg"
 ```
 
 Infrastructure Prerequisites
@@ -246,13 +246,6 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 ```
 
 ## Deploy the Scheduler service 
-
-Provision Azure resources
-```bash
-export SCHEDULER_STORAGE_ACCOUNT_NAME=[SCHEDULER_STORAGE_ACCOUNT_NAME_HERE]
-
-az storage account create --resource-group $RESOURCE_GROUP --name $SCHEDULER_STORAGE_ACCOUNT_NAME --sku Standard_LRS
-```
 
 Build the Scheduler service
 

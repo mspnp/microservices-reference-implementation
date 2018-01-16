@@ -162,6 +162,18 @@
       "metadata": {
         "description": "A value that indicates whether diagnostics should be saved to the specified storage account."
       }
+    },
+    "schedulerStorageType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS"
+      ],
+      "metadata": {
+        "description": "Type of the storage account that will store Scheduler checkpoints."
+      }
     }
   },
   "variables": {
@@ -189,7 +201,8 @@
     "packageMongoDbName": "[concat(parameters('dnsNamePrefix'),'-package-service-cosmosdb')]",
     "ingestionEHNamespace": "[concat(parameters('dnsNamePrefix'),'ingehns')]",
     "ingestionEHName": "[concat(parameters('dnsNamePrefix'),'ingeh')]",
-    "ingestionEHConsumerGroupName": "[concat(parameters('dnsNamePrefix'),'ingehcg')]"
+    "ingestionEHConsumerGroupName": "[concat(parameters('dnsNamePrefix'),'ingehcg')]",
+    "schedulerStorageName": "[concat('sch', uniqueString(resourceGroup().id))]"
   },
   "resources": [
     {
@@ -385,6 +398,20 @@
             ]
          }
       ]
+    },
+    {
+      "name": "[variables('schedulerStorageName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().location]",
+      "comments": "This storage account is used by the Scheduler checkpoints.",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "Scheduler Checkpoints storage"
+      },
+      "properties": {
+        "accountType": "[parameters('schedulerStorageType')]"
+      }
     }
   ],
   "outputs": {
