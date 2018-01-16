@@ -186,7 +186,10 @@
     "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('deliveryRedisStorageName'))]",
     "deliveryCosmosDbName": "[concat(parameters('dnsNamePrefix'),'-delivery-service-cosmosdb')]",
     "deliveryRedisName": "[concat(parameters('dnsNamePrefix'),'-delivery-service-redis')]",
-    "packageMongoDbName": "[concat(parameters('dnsNamePrefix'),'-package-service-cosmosdb')]"
+    "packageMongoDbName": "[concat(parameters('dnsNamePrefix'),'-package-service-cosmosdb')]",
+    "ingestionEHNamespace": "[concat(parameters('dnsNamePrefix'),'ingehns')]",
+    "ingestionEHName": "[concat(parameters('dnsNamePrefix'),'ingeh')]",
+    "ingestionEHConsumerGroupName": "[concat(parameters('dnsNamePrefix'),'ingehcg')]"
   },
   "resources": [
     {
@@ -342,6 +345,46 @@
         "databaseAccountOfferType": "Standard",
         "name": "[variables('packageMongoDbName')]"
       }
+    },
+    {
+      "apiVersion":"2017-04-01",
+      "name":"[variables('ingestionEHNamespace')]",
+      "type":"Microsoft.EventHub/Namespaces",
+      "location":"[resourceGroup().location]",
+      "sku":{
+         "name":"Standard"
+      },
+      "properties": {
+         "isAutoInflateEnabled": "true",
+         "maximumThroughputUnits": "20"
+         },
+      "resources":[
+         {
+            "apiVersion":"2017-04-01",
+            "name":"[variables('ingestionEHName')]",
+            "type":"EventHubs",
+            "dependsOn":[
+               "[concat('Microsoft.EventHub/namespaces/', variables('ingestionEHNamespace'))]"
+            ],
+            "properties":{
+               "messageRetentionInDays": "7",
+               "partitionCount": "4"
+            },
+            "resources":[
+               {
+                  "apiVersion":"2017-04-01",
+                  "name":"[variables('ingestionEHConsumerGroupName')]",
+                  "type":"ConsumerGroups",
+                  "dependsOn":[
+                     "[variables('ingestionEHName')]"
+                  ],
+                  "properties":{
+                  "userMetadata": "Consumer Group for ingestion Event Hub"
+                  }
+               }
+            ]
+         }
+      ]
     }
   ],
   "outputs": {

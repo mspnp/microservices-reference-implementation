@@ -29,7 +29,10 @@ export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
 export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster" && \
 export REDIS_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-redis" && \
 export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-cosmosdb" && \
-export MONGODB_NAME="${UNIQUE_APP_NAME_PREFIX}-package-service-cosmosdb"
+export MONGODB_NAME="${UNIQUE_APP_NAME_PREFIX}-package-service-cosmosdb" && \
+export INGESTION_EH_NS="${UNIQUE_APP_NAME_PREFIX}ingehns" && \
+export INGESTION_EH_NAME="${UNIQUE_APP_NAME_PREFIX}ingeh" && \
+export INGESTION_EH_CONSUMERGROUP_NAME="${UNIQUE_APP_NAME_PREFIX}ingehcg" 
 ```
 
 Infrastructure Prerequisites
@@ -204,23 +207,6 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 ```
 
 ## Deploy the Ingestion service 
-Provision Azure resources
-
-```bash
-export INGESTION_EH_NS=[INGESTION_EVENT_HUB_NAMESPACE_HERE]
-export INGESTION_EH_NAME=[INGESTION_EVENT_HUB_NAME_HERE]
-export INGESTION_EH_CONSUMERGROUP_NAME=[INGESTION_EVENT_HUB_CONSUMERGROUP_NAME_HERE]
-
-wget https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-event-hubs-create-event-hub-and-consumer-group/azuredeploy.json && \
-sed -i 's#"partitionCount": "4"#"partitionCount": "32"#g' azuredeploy.json && \
-az group deployment create -g $RESOURCE_GROUP --template-file azuredeploy.json  --parameters \
-'{ \
-  "namespaceName": {"value": "'${INGESTION_EH_NS}'"}, \
-  "eventHubName": {"value": "'${INGESTION_EH_NAME}'"}, \
-  "consumerGroupName": {"value": "'${INGESTION_EH_CONSUMERGROUP_NAME}'"} \
-}'
-```
-Note: you could also create this from [the Azure Portal](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-create)
 
 Build the Ingestion service
 
