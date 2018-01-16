@@ -117,7 +117,11 @@
         "description": "The size of the new Azure Redis Cache instance. "
       }
     },
+<<<<<<< 98fac7fe73a75557c3daf6d232fd8dc8de228f6c
     "deliveryRedisDiagnosticsEnabled": {
+=======
+    "delivery_redisDiagnosticsEnabled": {
+>>>>>>> reduce ARM params, flesh output out and use them from deployment steps:
       "type": "bool",
       "allowedValues": [
         false,
@@ -157,10 +161,17 @@
         "Secret": "[parameters('servicePrincipalClientSecret')]"
       }
     ],
+<<<<<<< 98fac7fe73a75557c3daf6d232fd8dc8de228f6c
     "acsK8sClusterName":"[concat('acsK8sCluster-',resourceGroup().name)]", 
     "acrName": "[concat('acr', uniqueString(resourceGroup().id))]",
     "acrStorageName": "[concat('acrsto', uniqueString(resourceGroup().id))]",
     "acrStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('acrStorageName'))]",
+=======
+    "acrName": "[concat('acr', uniqueString(resourceGroup().id))]",
+    "acrStorageName": "[concat('acrsto', uniqueString(resourceGroup().id))]",
+    "acrStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('acrStorageName'))]",
+    "acsK8sClusterName":"[concat('acsK8sCluster-',resourceGroup().name)]", 
+>>>>>>> reduce ARM params, flesh output out and use them from deployment steps:
     "deliveryRedisStorageName": "[concat('redsto', uniqueString(resourceGroup().id))]",
     "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('deliveryRedisStorageName'))]",
     "deliveryCosmosDbName": "[concat(uniqueString(resourceGroup().id),'-delivery-service-cosmosdb')]",

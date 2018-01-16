@@ -57,10 +57,16 @@ Deployment
 * using Azure CLI 2.0
 
   ```bash
+<<<<<<< 98fac7fe73a75557c3daf6d232fd8dc8de228f6c
   az group deployment create -g $RESOURCE_GROUP --name azuredeploy --template-file azuredeploy.json \
   --parameters servicePrincipalClientId=${SP_APP_ID} \
              servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
              sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})"
+=======
+  az group deployment create -g $RESOURCE_GROUP --name azuredeploy --template-file azuredeploy.json --parameters servicePrincipalClientId=${SP_APP_ID} \
+                                                                                             servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
+                                                                                             sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})"
+>>>>>>> reduce ARM params, flesh output out and use them from deployment steps:
   ```
 
 * from Azure Portal
@@ -389,4 +395,7 @@ You can send delivery requests to the ingestion service using the swagger ui.
 export INGESTION_SERVICE_EXTERNAL_IP_ADDRESS=$(kubectl get --namespace shipping svc ingestion -o jsonpath="{.status.loadBalancer.ingress[0].*}")
 curl "http://${INGESTION_SERVICE_EXTERNAL_IP_ADDRESS}"/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST
 ```
+<<<<<<< 98fac7fe73a75557c3daf6d232fd8dc8de228f6c
 
+=======
+>>>>>>> reduce ARM params, flesh output out and use them from deployment steps:
