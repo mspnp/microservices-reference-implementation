@@ -110,12 +110,6 @@
         "description": "Type of the storage account that will store Redis Cache."
       }
     },
-    "delivery_redisCacheName": {
-      "type": "string",
-      "metadata": {
-        "description": "The name of the Azure Redis Cache to create."
-      }
-    },
     "delivery_redisCacheSKU": {
       "type": "string",
       "allowedValues": [
@@ -187,9 +181,11 @@
       }
     ],
     "acrStorageName": "[concat('acr', uniqueString(resourceGroup().id))]",
-    "deliveryRedisStorageName": "[concat('red', uniqueString(resourceGroup().id))]",
     "acrStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('acrStorageName'))]",
-    "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('deliveryRedisStorageName'))]"
+    "deliveryRedisStorageName": "[concat('red', uniqueString(resourceGroup().id))]",
+    "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('deliveryRedisStorageName'))]",
+    "deliveryCosmosDbName": "[concat(parameters('dnsNamePrefix'),'-delivery-service-cosmosdb')]",
+    "deliveryRedisName": "[concat(parameters('dnsNamePrefix'),'-delivery-service-redis')]"
   },
   "resources": [
     {
@@ -278,12 +274,12 @@
     },
     {
       "apiVersion": "2015-08-01",
-      "name": "[parameters('delivery_redisCacheName')]",
+      "name": "[variables('deliveryRedisName')]",
       "type": "Microsoft.Cache/Redis",
       "location": "[resourceGroup().location]",
       "dependsOn": [
         "[variables('deliveryRedisStorageId')]"
-      ],      
+      ],
       "properties": {
         "redisEnableNonSslPort": "[parameters('delivery_redisEnableNonSslPort')]",
         "sku": {
@@ -297,10 +293,10 @@
         {
           "apiVersion": "2017-05-01-preview",
           "type": "Microsoft.Cache/redis/providers/diagnosticsettings",
-          "name": "[concat(parameters('delivery_redisCacheName'), '/Microsoft.Insights/', parameters('delivery_redisCacheName'))]",
+          "name": "[concat(variables('deliveryRedisName'), '/Microsoft.Insights/', variables('deliveryRedisName'))]",
           "location": "[resourceGroup().location]",
           "dependsOn": [
-            "[concat('Microsoft.Cache/Redis/', parameters('delivery_redisCacheName'))]"
+            "[concat('Microsoft.Cache/Redis/', variables('deliveryRedisName'))]"
           ],
           "properties": {
             "storageAccountId": "[variables('deliveryRedisStorageId')]",
@@ -318,6 +314,22 @@
           }
         }
       ]
+    },
+    {
+      "apiVersion": "2015-04-08",
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "name": "[variables('deliveryCosmosDbName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "name": "[variables('deliveryCosmosDbName')]",
+        "databaseAccountOfferType": "['Standard']",
+        "locations": [
+          {
+            "locationName": "[resourceGroup().location]",
+            "failoverPriority": 0
+          }
+        ]
+      }
     }
   ],
   "outputs": {

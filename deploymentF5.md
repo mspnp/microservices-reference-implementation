@@ -27,7 +27,8 @@ export ACR_NAME=[YOUR_CONTAINER_REGISTRY_NAME_HERE]
 
 export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
 export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster" && \
-export REDIS_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-redis" 
+export REDIS_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-redis" && \
+export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-cosmosdb"
 ```
 
 Infrastructure Prerequisites
@@ -54,8 +55,7 @@ Create the ACS cluster
   az group deployment create -g $RESOURCE_GROUP --template-file azuredeploy.json --parameters \
   '{ \
     "acrName": {"value": "'${ACR_NAME}'"}, \
-    "dnsNamePrefix": {"value": "'${UNIQUE_APP_NAME_PREFIX}'"}, \
-    "delivery_redisCacheName": {"value": "'${REDIS_NAME}'"}
+    "dnsNamePrefix": {"value": "'${UNIQUE_APP_NAME_PREFIX}'"}
   }'
 
   ```
@@ -104,18 +104,8 @@ export ACR_SERVER=("${ACR_SERVER[@]//\"/}")
 Provision Azure resources
 
 ```bash
-
-export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-cosmosdb" && \
 export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
 export COLLECTION_NAME="${DATABASE_NAME}-col"
-
-# Create Cosmos DB account with DocumentDB API
-az cosmosdb create \
-    --name $COSMOSDB_NAME \
-    --kind GlobalDocumentDB \
-    --resource-group $RESOURCE_GROUP \
-    --max-interval 10 \
-    --max-staleness-prefix 200 
 
 # Create a Cosmos DB database 
 az cosmosdb database create \
