@@ -185,7 +185,8 @@
     "deliveryRedisStorageName": "[concat('red', uniqueString(resourceGroup().id))]",
     "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('deliveryRedisStorageName'))]",
     "deliveryCosmosDbName": "[concat(parameters('dnsNamePrefix'),'-delivery-service-cosmosdb')]",
-    "deliveryRedisName": "[concat(parameters('dnsNamePrefix'),'-delivery-service-redis')]"
+    "deliveryRedisName": "[concat(parameters('dnsNamePrefix'),'-delivery-service-redis')]",
+    "packageMongoDbName": "[concat(parameters('dnsNamePrefix'),'-package-service-cosmosdb')]"
   },
   "resources": [
     {
@@ -329,6 +330,17 @@
             "failoverPriority": 0
           }
         ]
+      }
+    },
+    {
+      "apiVersion": "2015-04-08",
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "kind": "MongoDB",
+      "name": "[variables('packageMongoDbName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "name": "[variables('packageMongoDbName')]"
       }
     }
   ],

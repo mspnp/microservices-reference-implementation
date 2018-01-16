@@ -28,7 +28,8 @@ export ACR_NAME=[YOUR_CONTAINER_REGISTRY_NAME_HERE]
 export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
 export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster" && \
 export REDIS_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-redis" && \
-export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-cosmosdb"
+export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-cosmosdb" && \
+export MONGODB_NAME="${UNIQUE_APP_NAME_PREFIX}-package-service-cosmosdb"
 ```
 
 Infrastructure Prerequisites
@@ -172,13 +173,6 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 
 ## Deploy the Package service
 
-Provision Azure resources
-
-```bash
-export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-package-service-cosmosdb"
-az cosmosdb create --name $COSMOSDB_NAME --kind MongoDB --resource-group $RESOURCE_GROUP
-```
-
 Build the Package service
 
 ```bash
@@ -202,7 +196,7 @@ Deploy the Package service
 sed -i "s#image:#image: $ACR_SERVER/package-service:0.1.0#g" ./microservices-reference-implementation/k8s/package.yml
 
 # Create secret
-export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString")
+export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $MONGODB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString")
 kubectl -n bc-shipping create secret generic package-secrets --from-literal=mongodb-pwd=${COSMOSDB_CONNECTION[@]//\"/}
 
 # Deploy service
