@@ -1,6 +1,7 @@
-package com.fabrikam.dronedelivery.deliveryscheduler.scheduler.StorageQueue;
+package com.fabrikam.dronedelivery.deliveryscheduler.scheduler.compensation.tests;
 
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.SchedulerSettings;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.compensation.StorageQueueClientFactory;
 import com.microsoft.azure.storage.queue.CloudQueue;
 import com.microsoft.azure.storage.queue.CloudQueueClient;
 import com.microsoft.azure.storage.queue.CloudQueueMessage;

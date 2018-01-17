@@ -15,7 +15,6 @@ import org.springframework.util.concurrent.ListenableFuture;
 
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DroneDelivery;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.Delivery;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsConverter;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsUtils;
 
 public class DroneSchedulerServiceCallerImpl extends ServiceCallerImpl {
@@ -45,32 +44,17 @@ public class DroneSchedulerServiceCallerImpl extends ServiceCallerImpl {
 
 	@SuppressWarnings("unchecked")
 	public String getDroneId(Delivery deliveryRequest, String uri) throws InterruptedException, ExecutionException {
-		DroneDelivery delivery = createDroneDelivery(deliveryRequest);
+		DroneDelivery delivery = ModelsUtils.createDroneDelivery(deliveryRequest);
 		ListenableFuture<?> response = this.postData(uri, delivery);
 
 		ResponseEntity<String> entity = (ResponseEntity<String>) response.get();
 		return entity.getStatusCode() == HttpStatus.OK ? entity.getBody().toString() : null;
 	}
 
-
-	private DroneDelivery createDroneDelivery(Delivery deliveryRequest) {
-		DroneDelivery delivery = new DroneDelivery();
-		delivery.setDeliveryId(deliveryRequest.getDeliveryId());
-
-		// TODO: Convert string location to Location instead of using below hack
-		delivery.setDropoff(ModelsUtils.getRandomLocation());
-		delivery.setPickup(ModelsUtils.getRandomLocation());
-
-		delivery.setExpedited(delivery.getExpedited());
-		delivery.setPackageDetail(ModelsConverter.getPackageDetail(deliveryRequest.getPackageInfo()));
-
-		return delivery;
-	}
-	
 	@SuppressWarnings("unchecked")
 	public String getDroneIdAsync(Delivery deliveryRequest, String uri) {
 		// Create drone delivery to post data
-		DroneDelivery delivery = createDroneDelivery(deliveryRequest);
+		DroneDelivery delivery = ModelsUtils.createDroneDelivery(deliveryRequest);
 
 		// Let's call the backend
 		ListenableFuture<ResponseEntity<String>> future = (ListenableFuture<ResponseEntity<String>>) this.putData(uri+"/"+delivery.getDeliveryId(),
@@ -86,9 +70,6 @@ public class DroneSchedulerServiceCallerImpl extends ServiceCallerImpl {
 		}).exceptionally(e -> {
 			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
 		});
-		
-		future = null;
-		cfuture = null;
 		
 		return droneId;
 	}

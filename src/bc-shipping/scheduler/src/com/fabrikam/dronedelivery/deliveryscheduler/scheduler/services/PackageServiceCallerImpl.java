@@ -85,10 +85,6 @@ public class PackageServiceCallerImpl extends ServiceCallerImpl {
 		}).exceptionally(e -> {
 			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
 		});
-		
-		future = null;
-		cfuture = null;
-		packageInfo = null;
 
 		return packageGen;
 	}

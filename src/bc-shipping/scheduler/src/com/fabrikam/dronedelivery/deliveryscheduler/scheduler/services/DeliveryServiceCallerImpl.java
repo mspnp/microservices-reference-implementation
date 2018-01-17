@@ -49,7 +49,7 @@ public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
 	@SuppressWarnings("unchecked")
 	public DeliverySchedule scheduleDelivery(Delivery deliveryRequest, String droneId, String uri)
 			throws InterruptedException, ExecutionException {
-		DeliverySchedule schedule = this.createDeliverySchedule(deliveryRequest, droneId);
+		DeliverySchedule schedule = ModelsUtils.createDeliverySchedule(deliveryRequest, droneId);
 		ListenableFuture<?> response = this.postData(uri, schedule);
 
 		ResponseEntity<DeliverySchedule> entity = (ResponseEntity<DeliverySchedule>) response.get();
@@ -62,7 +62,7 @@ public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
 			String uri) {
 
 		// Create delivery schedule to post as data
-		DeliverySchedule schedule = this.createDeliverySchedule(deliveryRequest, droneId);
+		DeliverySchedule schedule = ModelsUtils.createDeliverySchedule(deliveryRequest, droneId);
 
 		// Let's call the backend
 		ListenableFuture<ResponseEntity<DeliverySchedule>> future = (ListenableFuture<ResponseEntity<DeliverySchedule>>) this
@@ -78,30 +78,7 @@ public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
 		}).exceptionally(e -> {
 			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
 		});
-		
-		future = null;
-		cfuture = null;
-		deliveryRequest = null;
-		schedule = null;
 
 		return deliverySchedule;
-	}
-	
-	private DeliverySchedule createDeliverySchedule(Delivery deliveryRequest, String droneId) {
-		UserAccount account = new UserAccount(UUID.randomUUID().toString(), deliveryRequest.getOwnerId());
-
-		DeliverySchedule scheduleDelivery = new DeliverySchedule();
-		scheduleDelivery.setId(deliveryRequest.getDeliveryId());
-		scheduleDelivery.setOwner(account);
-		scheduleDelivery.setPickup(ModelsUtils.getRandomLocation());
-		scheduleDelivery.setDropoff(ModelsUtils.getRandomLocation());
-		//scheduleDelivery.setPackageId(deliveryRequest.getPackageInfo().getPackageId());
-		scheduleDelivery.setDeadline(deliveryRequest.getDeadline());
-		scheduleDelivery.setExpedited(deliveryRequest.isExpedited());
-		scheduleDelivery
-				.setConfirmationRequired(ModelsConverter.getConfirmationType(deliveryRequest.getConfirmationRequired()));
-		scheduleDelivery.setDroneId(droneId);
-
-		return scheduleDelivery;
 	}
 }

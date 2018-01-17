@@ -1,7 +1,8 @@
 package com.fabrikam.dronedelivery.deliveryscheduler.scheduler;
 
 import com.fabrikam.dronedelivery.deliveryscheduler.akkareader.AkkaDelivery;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.StorageQueue.StorageQueueClientFactory;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.compensation.RetryableDelivery;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.compensation.StorageQueueClientFactory;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DeliverySchedule;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.PackageGen;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.Delivery;
@@ -33,9 +34,7 @@ public class DeliveryRequestEventProcessor {
 
     private static final String CorrelationHeaderTag = "CorrelationId";
 
-    private static Gson deserializer = new GsonBuilder().setPrettyPrinting().create();
-
-    
+    private static final Gson gsonSerializer = new GsonBuilder().setPrettyPrinting().create();
 
     private static final EnumMap<ServiceName, ServiceCallerImpl> backendServicesMap = new EnumMap<ServiceName, ServiceCallerImpl>(
             ServiceName.class);
@@ -56,7 +55,7 @@ public class DeliveryRequestEventProcessor {
         try {
 
             String dataReceived = message.contentAsString();
-            Delivery delivery = deserializer.fromJson(dataReceived, Delivery.class);
+            Delivery delivery = gsonSerializer.fromJson(dataReceived, Delivery.class);
             deliveryRequest = new AkkaDelivery();
             deliveryRequest.setDelivery(delivery);
             deliveryRequest.setMessageFromDevice(message);
@@ -112,10 +111,11 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.AccountService, ExceptionUtils.getMessage(e))
-                    .thenRunAsync(() -> {
-                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-                    });
+            superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getMessage(e))
+            .thenAcceptAsync(result -> {
+                Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                Log.debug(result);
+            });
 
             throw e;
         }
@@ -134,10 +134,11 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.ThirdPartyService, ExceptionUtils.getMessage(e))
-                    .thenRunAsync(() -> {
-                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-                    });
+            superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getMessage(e))
+            .thenAcceptAsync(result -> {
+                Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                Log.debug(result);
+            });
 
             throw e;
         }
@@ -156,10 +157,11 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.DroneSchedulerService, ExceptionUtils.getMessage(e))
-                    .thenRunAsync(() -> {
-                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-                    });
+            superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getMessage(e))
+            .thenAcceptAsync(result -> {
+                Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                Log.debug(result);
+            });
 
             throw e;
         }
@@ -177,10 +179,12 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.PackageService, ExceptionUtils.getMessage(e))
-                    .thenRunAsync(() -> {
-                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-                    });
+            superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getMessage(e))
+            .thenAcceptAsync(result -> {
+                Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                Log.debug(result);
+            });
+            
             throw e;
         }
 
@@ -198,8 +202,9 @@ public class DeliveryRequestEventProcessor {
             // Assume failure of service here - a crude supervisor
             // implementation
             superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getMessage(e))
-                    .thenRunAsync(() -> {
+                    .thenAcceptAsync(result -> {
                         Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                        Log.debug(result);
                     });
 
             throw e;
@@ -225,23 +230,24 @@ public class DeliveryRequestEventProcessor {
     /*
      * Supervisor implementation
      */
-    private static CompletableFuture<Void> superviseFailureAsync(Delivery deliveryRequest, ServiceName serviceName, String errorMessage) {
+	private static CompletableFuture<String> superviseFailureAsync(Delivery deliveryRequest, ServiceName serviceName, String errorMessage) {
         CloudQueueClient queueClient = StorageQueueClientFactory.get();
+        String endResult = "Failed delivery request added to compensation queue!";
         try {
             CloudQueue queueReference = queueClient.getQueueReference(SchedulerSettings.storageQueueName);
             queueReference.createIfNotExists();
-
-            String requestInJson = deserializer.toJson(deliveryRequest, Delivery.class);
+            
+            // Store the metadata so that delivery could be retried from failure state if needed
+            String requestInJson = gsonSerializer.toJson(new RetryableDelivery(deliveryRequest, serviceName, errorMessage));
             byte[] requestInJsonBytes = requestInJson.getBytes(StandardCharsets.UTF_8);
             CloudQueueMessage message = new CloudQueueMessage(requestInJsonBytes);
 
             queueReference.addMessage(message);
 
         } catch (URISyntaxException | StorageException e) {
-            e.printStackTrace();
-        } finally {
-            return null;
+            endResult = ExceptionUtils.getStackTrace(e);
         }
 
+        return CompletableFuture.completedFuture(endResult);
     }
 }
