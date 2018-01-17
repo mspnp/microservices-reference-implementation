@@ -4,8 +4,11 @@ import java.util.Date;
 import java.util.Random;
 import java.util.UUID;
 
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DeliverySchedule;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DroneDelivery;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.Location;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.PackageGen;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.UserAccount;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.ConfirmationRequired;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.ContainerSize;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.Delivery;
@@ -24,6 +27,11 @@ public class ModelsUtils {
 	private final static String Locations[] = { "Austin", "Seattle", "Berkley", "Oregon", "Florida", "Blaine", "Renton" };
 
 	private final static ConfirmationRequired[] confirmations = ConfirmationRequired.values();
+	
+	private final static double leftLimit = 10D;
+	
+	private final static double rightLimit = 100D;
+	
 
 	public static Location getRandomLocation(double... arguments) {
 		Location location = null;
@@ -44,7 +52,7 @@ public class ModelsUtils {
 		PackageGen pack = new PackageGen();
 		JsonElement jsonElem = jsonParser.parse(jsonStr);
 		JsonObject jObject = jsonElem.getAsJsonObject();
-		pack.setId(jObject.get("id").getAsString());
+		pack.setId(jObject.get("packageId").getAsString());
 		pack.setSize(ContainerSize.valueOf(jObject.get("size").getAsString()));
 		pack.setTag(jObject.get("tag").getAsString());
 
@@ -70,6 +78,7 @@ public class ModelsUtils {
 
 		pack.setPackageId(UUID.randomUUID().toString());
 		pack.setSize(containers[random.nextInt(containers.length)]);
+		pack.setWeight(leftLimit + new Random().nextDouble() * (rightLimit - leftLimit));
 
 		Delivery delivery = new Delivery();
 
@@ -79,11 +88,41 @@ public class ModelsUtils {
 		delivery.setDropOffLocation(Locations[random.nextInt(Locations.length)]);
 		delivery.setPickupLocation(Locations[random.nextInt(Locations.length)]);
 		delivery.setConfirmationRequired(confirmations[random.nextInt(confirmations.length)]);
-		delivery.setDeadline("LineOfDeadPeople");
+		delivery.setDeadline("ByTheEndOfDay");
 		delivery.setExpedited(true);
 
 		delivery.setPackageInfo(pack);
 
 		return delivery;
+	}
+	
+	public static DroneDelivery createDroneDelivery(Delivery deliveryRequest) {
+		DroneDelivery delivery = new DroneDelivery();
+		delivery.setDeliveryId(deliveryRequest.getDeliveryId());
+
+		delivery.setDropoff(ModelsUtils.getRandomLocation());
+		delivery.setPickup(ModelsUtils.getRandomLocation());
+
+		delivery.setExpedited(delivery.getExpedited());
+		delivery.setPackageDetail(ModelsConverter.getPackageDetail(deliveryRequest.getPackageInfo()));
+
+		return delivery;
+	}
+	
+	public static DeliverySchedule createDeliverySchedule(Delivery deliveryRequest, String droneId) {
+		UserAccount account = new UserAccount(UUID.randomUUID().toString(), deliveryRequest.getOwnerId());
+
+		DeliverySchedule scheduleDelivery = new DeliverySchedule();
+		scheduleDelivery.setId(deliveryRequest.getDeliveryId());
+		scheduleDelivery.setOwner(account);
+		scheduleDelivery.setPickup(ModelsUtils.getRandomLocation());
+		scheduleDelivery.setDropoff(ModelsUtils.getRandomLocation());
+		scheduleDelivery.setDeadline(deliveryRequest.getDeadline());
+		scheduleDelivery.setExpedited(deliveryRequest.isExpedited());
+		scheduleDelivery
+				.setConfirmationRequired(ModelsConverter.getConfirmationType(deliveryRequest.getConfirmationRequired()));
+		scheduleDelivery.setDroneId(droneId);
+
+		return scheduleDelivery;
 	}
 }

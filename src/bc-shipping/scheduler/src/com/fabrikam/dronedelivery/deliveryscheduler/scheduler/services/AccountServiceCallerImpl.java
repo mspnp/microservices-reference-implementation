@@ -51,10 +51,7 @@ public final class AccountServiceCallerImpl extends ServiceCallerImpl {
 		}).exceptionally(e -> {
 			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
 		});
-		
-		future = null;
-		cfuture = null;
-		
+
 		return isAccountActive;
 	}
 }

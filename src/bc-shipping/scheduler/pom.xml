@@ -188,6 +188,12 @@
 			<artifactId>azure-storage</artifactId>
 			<version>6.1.0</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>com.opentable</groupId>
+			<artifactId>wiremock-body-transformer</artifactId>
+			<version>1.1.6</version>
+		</dependency>
 
 	</dependencies>
 </project>
