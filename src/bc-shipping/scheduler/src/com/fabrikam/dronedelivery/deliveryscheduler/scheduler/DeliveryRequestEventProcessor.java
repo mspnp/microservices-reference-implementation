@@ -234,7 +234,7 @@ public class DeliveryRequestEventProcessor {
         CloudQueueClient queueClient = StorageQueueClientFactory.get();
         String endResult = "Failed delivery request added to compensation queue!";
         try {
-            CloudQueue queueReference = queueClient.getQueueReference(SchedulerSettings.storageQueueName);
+            CloudQueue queueReference = queueClient.getQueueReference(SchedulerSettings.StorageQueueName);
             queueReference.createIfNotExists();
             
             // Store the metadata so that delivery could be retried from failure state if needed

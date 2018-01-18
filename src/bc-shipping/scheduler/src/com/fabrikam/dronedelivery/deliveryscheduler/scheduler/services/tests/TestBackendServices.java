@@ -8,7 +8,8 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static net.javacrumbs.futureconverter.springjava.FutureConverter.toCompletableFuture;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -21,7 +22,6 @@ import org.junit.Test;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.client.AsyncRestTemplate;
 
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DeliverySchedule;
@@ -35,7 +35,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.opentable.extension.BodyTransformer;
 
-import junit.framework.Assert;
 import wiremock.org.eclipse.jetty.http.HttpStatus;
 
 public class TestBackendServices {
@@ -150,7 +149,6 @@ public class TestBackendServices {
 		HttpEntity<DeliverySchedule> resultEntity = cfuture.get();
 		DeliverySchedule result = (DeliverySchedule)resultEntity.getBody();
 		assertEquals(result.getDroneId(), DroneId);
-		assertEquals(result.getId(), delivery.getDeliveryId());
 	}
 }
 

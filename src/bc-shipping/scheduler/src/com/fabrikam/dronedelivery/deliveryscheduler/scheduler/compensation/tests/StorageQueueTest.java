@@ -22,8 +22,8 @@ public class StorageQueueTest {
     @Before
     public void setup() {
 
-        SchedulerSettings.storageQueueConnectionString = System.getenv("STORAGE_QUEUE_CONNECTION_STRING");
-        SchedulerSettings.storageQueueName = System.getenv("STORAGE_QUEUE_NAME");
+        SchedulerSettings.StorageQueueConnectionString = System.getenv("STORAGE_QUEUE_CONNECTION_STRING");
+        SchedulerSettings.StorageQueueName = System.getenv("STORAGE_QUEUE_NAME");
         storageClient = StorageQueueClientFactory.get();
         someStringContent = "This is test message to queue";
     }
@@ -37,7 +37,7 @@ public class StorageQueueTest {
         CloudQueue queueReference = null;
         try {
 
-            queueReference = storageClient.getQueueReference(SchedulerSettings.storageQueueName);
+            queueReference = storageClient.getQueueReference(SchedulerSettings.StorageQueueName);
             queueReference.createIfNotExists();
 
 

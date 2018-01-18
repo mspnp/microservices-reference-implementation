@@ -20,7 +20,7 @@ public class StorageQueueClientFactory {
     static {
 
         try {
-            CloudStorageAccount cloudStorageAccount = CloudStorageAccount.parse(SchedulerSettings.storageQueueConnectionString);
+            CloudStorageAccount cloudStorageAccount = CloudStorageAccount.parse(SchedulerSettings.StorageQueueConnectionString);
             queueClient = cloudStorageAccount.createCloudQueueClient();
         } catch (URISyntaxException | InvalidKeyException e) {
             Log.error("throwable: {}", ExceptionUtils.getStackTrace(e).toString());

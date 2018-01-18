@@ -2,7 +2,6 @@ package com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services;
 
 import static net.javacrumbs.futureconverter.springjava.FutureConverter.toCompletableFuture;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -14,11 +13,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFuture;
 
-
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DeliverySchedule;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.UserAccount;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.Delivery;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsConverter;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsUtils;
 
 public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
