@@ -3,9 +3,6 @@ package com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services.tests;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Collections;
-import java.util.Date;
-import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 
 import org.junit.Before;
@@ -15,14 +12,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.client.AsyncRestTemplate;
 
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.ConfirmationRequired;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.ContainerSize;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.Delivery;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.PackageInfo;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsUtils;
 
 public class PostDeliveryRequests {

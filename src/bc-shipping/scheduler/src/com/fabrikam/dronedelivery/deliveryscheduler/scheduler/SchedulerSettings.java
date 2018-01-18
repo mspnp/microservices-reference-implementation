@@ -17,6 +17,7 @@ public class SchedulerSettings {
 	public static String HostNameValue;
 
 	//StorageQueue
-	public static String storageQueueConnectionString;
-	public static String storageQueueName;
+	public static String StorageQueueConnectionString;
+	public static String StorageQueueName;
+	public static int CheckpointTimeInMinutes;
 }

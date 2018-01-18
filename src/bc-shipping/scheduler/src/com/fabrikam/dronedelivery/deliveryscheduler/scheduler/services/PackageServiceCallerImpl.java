@@ -6,21 +6,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
-
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFuture;
 
-
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.PackageGen;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.ContainerSize;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.PackageInfo;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsUtils;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 public class PackageServiceCallerImpl extends ServiceCallerImpl {
 	private PackageGen packageGen = null;
