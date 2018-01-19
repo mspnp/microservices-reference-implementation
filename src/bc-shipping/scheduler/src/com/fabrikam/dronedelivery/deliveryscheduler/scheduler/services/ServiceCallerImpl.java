@@ -30,6 +30,7 @@ public abstract class ServiceCallerImpl implements ServiceCaller {
 	private AsyncRestTemplate asyncRestTemplate;
 	private HttpHeaders requestHeaders;
 	private static final Logger Log = LogManager.getLogger(ServiceCallerImpl.class);
+	private final static int FiveSeconds = 5000;
 	
 	public AsyncRestTemplate getAsyncRestTemplate() {
 		return asyncRestTemplate;
@@ -87,14 +88,19 @@ public abstract class ServiceCallerImpl implements ServiceCaller {
 
 		CloseableHttpAsyncClient client = builder.build();
 
-		IdleConnectionMonitorThread  worker = new IdleConnectionMonitorThread(poolingConnManager);
-		worker.start();
+		IdleConnectionMonitorThread  staleMonitor = new IdleConnectionMonitorThread(poolingConnManager);
+		staleMonitor.start();
+		try {
+			staleMonitor.join(1000);
+		} catch (InterruptedException e) {
+			Log.error(ExceptionUtils.getStackTrace(e));
+		}
 				
 		HttpComponentsAsyncClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsAsyncClientHttpRequestFactory();
-		clientHttpRequestFactory.setConnectionRequestTimeout(0);
-		clientHttpRequestFactory.setConnectTimeout(0);
+		clientHttpRequestFactory.setConnectionRequestTimeout(FiveSeconds);
+		clientHttpRequestFactory.setConnectTimeout(FiveSeconds);
 		clientHttpRequestFactory.setBufferRequestBody(false);
-		clientHttpRequestFactory.setReadTimeout(0);
+		clientHttpRequestFactory.setReadTimeout(FiveSeconds);
 
 		clientHttpRequestFactory.setHttpAsyncClient(client);
 		asyncRestTemplate = new AsyncRestTemplate(clientHttpRequestFactory);
