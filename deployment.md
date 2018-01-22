@@ -99,19 +99,6 @@ az cosmosdb create \
     --resource-group $RESOURCE_GROUP \
     --max-interval 10 \
     --max-staleness-prefix 200 
-
-# Create a Cosmos DB database 
-az cosmosdb database create \
-    --name $COSMOSDB_NAME \
-    --db-name=$DATABASE_NAME \
-    --resource-group $RESOURCE_GROUP
-
-# Create a Cosmos DB collection
-az cosmosdb collection create \
-    --collection-name $COLLECTION_NAME \
-    --name $COSMOSDB_NAME \
-    --db-name $DATABASE_NAME \
-    --resource-group $RESOURCE_GROUP
 ```
 
 Build the Delivery service
