@@ -90,12 +90,6 @@ public abstract class ServiceCallerImpl implements ServiceCaller {
 
 		IdleConnectionMonitorThread  staleMonitor = new IdleConnectionMonitorThread(poolingConnManager);
 		staleMonitor.start();
-		try {
-			staleMonitor.join(1000);
-		} catch (InterruptedException e) {
-			Log.error(ExceptionUtils.getStackTrace(e));
-		}
-				
 		HttpComponentsAsyncClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsAsyncClientHttpRequestFactory();
 		clientHttpRequestFactory.setConnectionRequestTimeout(FiveSeconds);
 		clientHttpRequestFactory.setConnectTimeout(FiveSeconds);
