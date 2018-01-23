@@ -47,7 +47,7 @@ spec:
             value: http://thirdparty/api/ThirdPartyDeliveries
           ## set this env to read from period of time
           ## otherwise is from last known checkpoint                              
-          - name: CHECKP_TIME_MINUTES
+          - name: CHECKPOINT_TIME_MINUTES
             value: "0"           
           - name: IOTHUB_EVENTHUB_NAME
             valueFrom:
