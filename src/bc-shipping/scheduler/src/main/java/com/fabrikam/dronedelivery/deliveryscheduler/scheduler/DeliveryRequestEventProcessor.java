@@ -1,6 +1,7 @@
 package com.fabrikam.dronedelivery.deliveryscheduler.scheduler;
 
 import com.fabrikam.dronedelivery.deliveryscheduler.akkareader.AkkaDelivery;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.SchedulerSettings;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.compensation.RetryableDelivery;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.compensation.StorageQueueClientFactory;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DeliverySchedule;
@@ -231,7 +232,7 @@ public class DeliveryRequestEventProcessor {
      * Supervisor implementation
      */
 	private static CompletableFuture<String> superviseFailureAsync(Delivery deliveryRequest, ServiceName serviceName, String errorMessage) {
-        CloudQueueClient queueClient = StorageQueueClientFactory.get();
+        CloudQueueClient queueClient = StorageQueueClientFactory.INSTANCE.get(SchedulerSettings.StorageQueueConnectionString);
         String endResult = "Failed delivery request added to compensation queue!";
         try {
             CloudQueue queueReference = queueClient.getQueueReference(SchedulerSettings.StorageQueueName);

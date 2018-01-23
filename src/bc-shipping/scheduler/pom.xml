@@ -2,7 +2,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.fabrikam.dronedelivery</groupId>
-	<artifactId>deliveryscheduler.delivery-dispatcher-service</artifactId>
+	<artifactId>dronedelivery.delivery-scheduler-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<description>Processes the messages dropped to the event hub</description>
 	<properties>
@@ -24,12 +24,13 @@
 		</repository>
 	</repositories>
 	<build>
-		<sourceDirectory>src</sourceDirectory>
+		<sourceDirectory>src/main/java</sourceDirectory>
 		<resources>
 			<resource>
-				<directory>conf</directory>
+				<directory>src/main/resources</directory>
 			</resource>
 		</resources>
+		<testSourceDirectory>src/test/java</testSourceDirectory>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>

@@ -1,4 +1,4 @@
-package com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services.tests;
+package com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
@@ -37,7 +37,7 @@ import com.opentable.extension.BodyTransformer;
 
 import wiremock.org.eclipse.jetty.http.HttpStatus;
 
-public class TestBackendServices {
+public class InvokeMockBackendServicesTest {
 	@ClassRule
 	public static WireMockClassRule wiremock = new WireMockClassRule(wireMockConfig().dynamicPort().dynamicHttpsPort().extensions(new BodyTransformer()));
 	
@@ -99,7 +99,7 @@ public class TestBackendServices {
 	}
 	
 	@Test
-	public void CanRetrieveAccountStatusFromMockServiceAsync() throws IOException, InterruptedException, ExecutionException {
+	public void can_retrieve_account_status() throws IOException, InterruptedException, ExecutionException {
 		String uri = this.baseUri + "/api/Account/some-random-account-id";
 
 		CompletableFuture<ResponseEntity<String>> cfuture = toCompletableFuture(
@@ -109,7 +109,7 @@ public class TestBackendServices {
 	}
 	
 	@Test
-	public void CanRetrieveThirdPartyStatusFromMockServiceAsync() throws IOException, InterruptedException, ExecutionException {
+	public void can_retrieve_thirdparty_status() throws IOException, InterruptedException, ExecutionException {
 		String uri = this.baseUri + "/api/ThirdPartyDeliveries/" + DeliveryId;
 		String json = deserializer.toJson(ModelsUtils.getRandomLocation(0.0));
 		HttpEntity<String> entity = new HttpEntity<String>(json);
@@ -120,7 +120,7 @@ public class TestBackendServices {
 	}
 	
 	@Test
-	public void CanRetrievePackageFromMockServiceAsync() throws IOException, InterruptedException, ExecutionException {
+	public void can_retrieve_package() throws IOException, InterruptedException, ExecutionException {
 		String uri = this.baseUri + "/api/packages/" + Tag;
 		HttpEntity<String> entity = new HttpEntity<String>(deserializer.toJson(packInfo));
 		CompletableFuture<ResponseEntity<String>> cfuture = toCompletableFuture(
@@ -131,7 +131,7 @@ public class TestBackendServices {
 	}
 	
 	@Test
-	public void CanAssignDroneIdFromMockServiceAsync() throws InterruptedException, ExecutionException{
+	public void can_assign_drone() throws InterruptedException, ExecutionException{
 		String uri = this.baseUri + "api/DroneDeliveries/" + droneDelivery.getDeliveryId();
 		HttpEntity<String> entity = new HttpEntity<String>(deserializer.toJson(droneDelivery));
 		CompletableFuture<ResponseEntity<String>> cfuture = toCompletableFuture(
@@ -141,7 +141,7 @@ public class TestBackendServices {
 	}
 	
 	@Test
-	public void CanScheduleDeliveryFromMockServiceAsync() throws IOException, InterruptedException, ExecutionException {
+	public void can_schedule_delivery() throws IOException, InterruptedException, ExecutionException {
 		String uri = this.baseUri + "/api/Deliveries/" + deliverySchedule.getId();
 		HttpEntity<String> entity = new HttpEntity<String>(deserializer.toJson(deliverySchedule));
 		CompletableFuture<ResponseEntity<DeliverySchedule>> cfuture = toCompletableFuture(
