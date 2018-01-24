@@ -48,8 +48,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import java.io.IOException;
 
-//@RunWith(SpringJUnit4ClassRunner.class)
-//@SpringApplicationConfiguration(classes = ApplicationProperties.class)
+
 
 public class IngestionControllerTest {
 
