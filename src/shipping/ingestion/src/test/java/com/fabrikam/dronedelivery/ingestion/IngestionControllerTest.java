@@ -10,7 +10,6 @@ import com.microsoft.azure.servicebus.ServiceBusException;
 import java.util.Date;
 import java.util.UUID;
 
-import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,6 +48,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 import java.io.IOException;
 
+//@RunWith(SpringJUnit4ClassRunner.class)
+//@SpringApplicationConfiguration(classes = ApplicationProperties.class)
 
 public class IngestionControllerTest {
 
@@ -63,9 +64,6 @@ public class IngestionControllerTest {
 	@Mock
 	private ApplicationProperties appPropsMock;
 	
-	@Mock
-	private Logger loggerMock;
-
 	@InjectMocks
 	private IngestionController ingestionController;
 
@@ -73,7 +71,6 @@ public class IngestionControllerTest {
 	public void setUp() throws Exception {
 		
 		
-
 			
 		MockitoAnnotations.initMocks(this);
 	    mockMvc = MockMvcBuilders
@@ -186,7 +183,7 @@ public class IngestionControllerTest {
 	
 	
 	@Test
-	public void IngestionControllerHandlesServiceBusException() throws Exception {
+	public void scheduleDeliveryHandlesServiceBusException() throws Exception {
 						
 		Mockito.doThrow(new RuntimeException(new ServiceBusException(true,"message")))
 		.when(ingestionimplMock)
@@ -206,7 +203,7 @@ public class IngestionControllerTest {
 	}
 	
 	@Test
-	public void IngestionControllerHandlesIllegalArgumentException() throws Exception {
+	public void schedulerDeliveryHandlesIllegalArgumentException() throws Exception {
 						
 		Mockito.doThrow(new RuntimeException(new IllegalArgumentException()))
 		.when(ingestionimplMock)
@@ -226,7 +223,7 @@ public class IngestionControllerTest {
 	}
 	
 	@Test
-	public void IngestionControllerHandlesIOException() throws Exception {
+	public void scheduleDeliveryHandlesIOException() throws Exception {
 						
 		Mockito.doThrow(new RuntimeException(new IOException()))
 		.when(ingestionimplMock)
@@ -246,7 +243,7 @@ public class IngestionControllerTest {
 	}
 	
 	@Test
-	public void IngestionControllerHandlesJsonProcessingException() throws Exception {
+	public void scheduleDeliveryHandlesJsonProcessingException() throws Exception {
 										
 		Mockito.doThrow(new RuntimeException(new JsonParseException(null, "error")))
 		.when(ingestionimplMock)
@@ -267,7 +264,7 @@ public class IngestionControllerTest {
 	
 	
 	@Test
-	public void IngestionControllerHandlesMethodArgumentTypeMismatchException() throws Exception {
+	public void scheduleDeliveryHandlesMethodArgumentTypeMismatchException() throws Exception {
 										
 		Mockito.doThrow(new RuntimeException(new MethodArgumentTypeMismatchException(appPropsMock, null, null, null, null)))
 		.when(ingestionimplMock)
@@ -285,6 +282,242 @@ public class IngestionControllerTest {
 				  
 		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
+	
+	
+	//------------------
+	
+	@Test
+	public void rescheduleDeliveryHandlesServiceBusException() throws Exception {
+						
+		Mockito.doThrow(new RuntimeException(new ServiceBusException(true,"message")))
+		.when(ingestionimplMock)
+		.rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
+		
+		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
+		
+		String deliveryId = externalRDelivery.getDeliveryId().toString();
+
+		mockMvc.perform(
+	            patch("/api/deliveryrequests/" + deliveryId)
+	                    .contentType(MediaType.APPLICATION_JSON)
+	                    .content(asJsonString(externalDelivery)))
+						.andExpect(status().is5xxServerError());
+
+		  Mockito.verify(ingestionimplMock, times(1))
+		 .rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
+		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
+	}
+	
+	@Test
+	public void reschedulerDeliveryHandlesIllegalArgumentException() throws Exception {
+						
+		Mockito.doThrow(new RuntimeException(new IllegalArgumentException()))
+		.when(ingestionimplMock)
+		.rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
+		
+		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
+		
+		String deliveryId = externalRDelivery.getDeliveryId().toString();
+
+
+		mockMvc.perform(
+	            patch("/api/deliveryrequests/" + deliveryId)
+	                    .contentType(MediaType.APPLICATION_JSON)
+	                    .content(asJsonString(externalDelivery)))
+						.andExpect(status().isBadRequest());
+
+		  Mockito.verify(ingestionimplMock, times(1))
+		 .rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
+		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
+	}
+	
+	@Test
+	public void rescheduleDeliveryHandlesIOException() throws Exception {
+						
+		Mockito.doThrow(new RuntimeException(new IOException()))
+		.when(ingestionimplMock)
+		.rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
+		
+		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
+		
+		String deliveryId = externalRDelivery.getDeliveryId().toString();
+
+		mockMvc.perform(
+	            patch("/api/deliveryrequests/" + deliveryId)
+	                    .contentType(MediaType.APPLICATION_JSON)
+	                    .content(asJsonString(externalDelivery)))
+						.andExpect(status().is5xxServerError());
+
+		  Mockito.verify(ingestionimplMock, times(1))
+		 .rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
+		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
+	}
+	
+	@Test
+	public void rescheduleDeliveryHandlesJsonProcessingException() throws Exception {
+										
+		Mockito.doThrow(new RuntimeException(new JsonParseException(null, "error")))
+		.when(ingestionimplMock)
+		.rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
+		
+		String deliveryId = externalRDelivery.getDeliveryId().toString();
+		
+		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
+		mockMvc.perform(
+	            patch("/api/deliveryrequests/" + deliveryId)
+	                    .contentType(MediaType.APPLICATION_JSON)
+	                    .content(asJsonString(externalDelivery)))
+						.andExpect(status().is5xxServerError());
+
+		  Mockito.verify(ingestionimplMock, times(1))
+		 .rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
+				  
+		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
+	}
+	
+	
+	@Test
+	public void rescheduleDeliveryHandlesMethodArgumentTypeMismatchException() throws Exception {
+										
+		Mockito.doThrow(new RuntimeException(new MethodArgumentTypeMismatchException(appPropsMock, null, null, null, null)))
+		.when(ingestionimplMock)
+		.rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
+		
+		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
+		String deliveryId = externalRDelivery.getDeliveryId().toString();
+		
+		mockMvc.perform(
+	            patch("/api/deliveryrequests/" + deliveryId)
+	                    .contentType(MediaType.APPLICATION_JSON)
+	                    .content(asJsonString(externalDelivery)))
+						.andExpect(status().isBadRequest());
+
+		  Mockito.verify(ingestionimplMock, times(1))
+		 .rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
+				  
+		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
+	}
+	
+	
+	//---------------------
+	
+	@Test
+	public void cancelscheduleDeliveryHandlesServiceBusException() throws Exception {
+						
+		Mockito.doThrow(new RuntimeException(new ServiceBusException(true,"message")))
+		.when(ingestionimplMock)
+		.cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
+		
+		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
+		
+		String deliveryId = externalRDelivery.getDeliveryId().toString();
+
+		mockMvc.perform(
+	            delete("/api/deliveryrequests/" + deliveryId)
+	                    .contentType(MediaType.APPLICATION_JSON)
+	                    .content(asJsonString(externalDelivery)))
+						.andExpect(status().is5xxServerError());
+
+		  Mockito.verify(ingestionimplMock, times(1))
+		  .cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
+		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
+	}
+	
+	@Test
+	public void cancelschedulerDeliveryHandlesIllegalArgumentException() throws Exception {
+						
+		Mockito.doThrow(new RuntimeException(new IllegalArgumentException()))
+		.when(ingestionimplMock)
+		.cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
+		
+		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
+		
+		String deliveryId = externalRDelivery.getDeliveryId().toString();
+
+
+		mockMvc.perform(
+	            delete("/api/deliveryrequests/" + deliveryId)
+	                    .contentType(MediaType.APPLICATION_JSON)
+	                    .content(asJsonString(externalDelivery)))
+						.andExpect(status().isBadRequest());
+
+		  Mockito.verify(ingestionimplMock, times(1))
+		  .cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
+		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
+	}
+	
+	@Test
+	public void cancelscheduleDeliveryHandlesIOException() throws Exception {
+
+						
+		Mockito.doThrow(new RuntimeException(new IOException()))
+		.when(ingestionimplMock)
+		.cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
+		
+		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
+		
+		String deliveryId = externalRDelivery.getDeliveryId().toString();
+
+		mockMvc.perform(
+	            delete("/api/deliveryrequests/" + deliveryId)
+	                    .contentType(MediaType.APPLICATION_JSON)
+	                    .content(asJsonString(externalDelivery)))
+						.andExpect(status().is5xxServerError());
+
+		  Mockito.verify(ingestionimplMock, times(1))
+		  .cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
+		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
+	}
+	
+	@Test
+	public void cancelscheduleDeliveryHandlesJsonProcessingException() throws Exception {
+										
+		Mockito.doThrow(new RuntimeException(new JsonParseException(null, "error")))
+		.when(ingestionimplMock)
+		.cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
+		
+		String deliveryId = externalRDelivery.getDeliveryId().toString();
+		
+		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
+		mockMvc.perform(
+	            delete("/api/deliveryrequests/" + deliveryId)
+	                    .contentType(MediaType.APPLICATION_JSON)
+	                    .content(asJsonString(externalDelivery)))
+						.andExpect(status().is5xxServerError());
+
+		  Mockito.verify(ingestionimplMock, times(1))
+		 .cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
+				  
+		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
+	}
+	
+	
+	@Test
+	public void cancelscheduleDeliveryHandlesMethodArgumentTypeMismatchException() throws Exception {
+										
+		Mockito.doThrow(new RuntimeException(new MethodArgumentTypeMismatchException(appPropsMock, null, null, null, null)))
+		.when(ingestionimplMock)
+		.cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
+		
+		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
+		String deliveryId = externalRDelivery.getDeliveryId().toString();
+		
+		mockMvc.perform(
+	            delete("/api/deliveryrequests/" + deliveryId)
+	                    .contentType(MediaType.APPLICATION_JSON)
+	                    .content(asJsonString(externalDelivery)))
+						.andExpect(status().isBadRequest());
+
+		  Mockito.verify(ingestionimplMock, times(1))
+		  .cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
+				  
+		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
+	}
+
+	
+	
+	
+	
 	
 	
 	
