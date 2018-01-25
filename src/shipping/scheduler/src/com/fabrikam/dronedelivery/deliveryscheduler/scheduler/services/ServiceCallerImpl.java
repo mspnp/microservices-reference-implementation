@@ -30,8 +30,11 @@ public abstract class ServiceCallerImpl implements ServiceCaller {
 	private AsyncRestTemplate asyncRestTemplate;
 	private HttpHeaders requestHeaders;
 	private static final Logger Log = LogManager.getLogger(ServiceCallerImpl.class);
+	private HttpComponentsAsyncClientHttpRequestFactory clientHttpRequestFactory;
 	
 	public AsyncRestTemplate getAsyncRestTemplate() {
+		AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate(clientHttpRequestFactory);
+		asyncRestTemplate.setErrorHandler(new ServiceCallerResponseErrorHandler());
 		return asyncRestTemplate;
 	}
 
@@ -90,18 +93,18 @@ public abstract class ServiceCallerImpl implements ServiceCaller {
 		IdleConnectionMonitorThread  worker = new IdleConnectionMonitorThread(poolingConnManager);
 		worker.start();
 				
-		HttpComponentsAsyncClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsAsyncClientHttpRequestFactory();
-		clientHttpRequestFactory.setConnectionRequestTimeout(0);
-		clientHttpRequestFactory.setConnectTimeout(0);
+		clientHttpRequestFactory = new HttpComponentsAsyncClientHttpRequestFactory();
+		clientHttpRequestFactory.setConnectionRequestTimeout(30000);
+		clientHttpRequestFactory.setConnectTimeout(30000);
 		clientHttpRequestFactory.setBufferRequestBody(false);
 		clientHttpRequestFactory.setReadTimeout(0);
 
 		clientHttpRequestFactory.setHttpAsyncClient(client);
-		asyncRestTemplate = new AsyncRestTemplate(clientHttpRequestFactory);
+	//	asyncRestTemplate = new AsyncRestTemplate(clientHttpRequestFactory);
 		this.requestHeaders = new HttpHeaders();
 		this.requestHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 		this.requestHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
-		asyncRestTemplate.setErrorHandler(new ServiceCallerResponseErrorHandler());
+	//	asyncRestTemplate.setErrorHandler(new ServiceCallerResponseErrorHandler());
 	}
 
 	@Override

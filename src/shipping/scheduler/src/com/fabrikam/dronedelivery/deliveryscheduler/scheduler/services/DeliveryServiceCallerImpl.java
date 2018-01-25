@@ -2,6 +2,7 @@ package com.fabrikam.dronedelivery.deliveryscheduler.scheduler.services;
 
 import static net.javacrumbs.futureconverter.springjava.FutureConverter.toCompletableFuture;
 
+import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -9,8 +10,10 @@ import java.util.concurrent.ExecutionException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 //import org.apache.http.nio.reactor.IOReactorException;
 import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFuture;
 
@@ -41,7 +44,10 @@ public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
 	
 	@Override
 	public <T> ListenableFuture<?> putData(String url, T entity, Object... args) {
-		HttpEntity<T> httpEntity = new HttpEntity<T>(entity, this.getRequestHeaders());
+		HttpHeaders requestHeaders = new HttpHeaders();
+		requestHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+		requestHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
+		HttpEntity<T> httpEntity = new HttpEntity<T>(entity, requestHeaders);
 		ListenableFuture<ResponseEntity<DeliverySchedule>> response = getAsyncRestTemplate().exchange(url, HttpMethod.PUT, httpEntity, DeliverySchedule.class);
 		return response;
 	}
