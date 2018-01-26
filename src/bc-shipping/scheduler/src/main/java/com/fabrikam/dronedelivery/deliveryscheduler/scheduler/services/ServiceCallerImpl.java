@@ -7,11 +7,10 @@ import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.client.AsyncRestTemplate;
 
 public abstract class ServiceCallerImpl implements ServiceCaller {
-	private AsyncRestTemplate asyncRestTemplate;
 	private HttpHeaders requestHeaders;
 
 	public AsyncRestTemplate getAsyncRestTemplate() {
-		asyncRestTemplate = new AsyncRestTemplate(CustomClientHttpRequestFactory.INSTANCE.get());
+		AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate(CustomClientHttpRequestFactory.INSTANCE.get());
 		asyncRestTemplate.setErrorHandler(new ServiceCallerResponseErrorHandler());
 		return asyncRestTemplate;
 	}

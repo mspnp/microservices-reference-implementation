@@ -20,6 +20,8 @@ import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsUtils;
 public class DroneSchedulerServiceCallerImpl extends ServiceCallerImpl {
 
 	private String droneId = null;
+	private String exceptionMsg = null;
+	
 	// Calls the super constructor and sets the HTTP context
 	public DroneSchedulerServiceCallerImpl() {
 		super();
@@ -68,8 +70,13 @@ public class DroneSchedulerServiceCallerImpl extends ServiceCallerImpl {
 				throw new BackendServiceCallFailedException(response.getStatusCode().getReasonPhrase());
 			}
 		}).exceptionally(e -> {
-			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
+			exceptionMsg = ExceptionUtils.getStackTrace(e);
+			return null;
 		});
+		
+		if(droneId==null){
+			throw new BackendServiceCallFailedException(exceptionMsg);
+		}
 		
 		return droneId;
 	}

@@ -104,7 +104,7 @@ public class DeliveryRequestEventProcessor {
     }
 
     public static Boolean invokeAccountServiceAsync(Delivery deliveryRequest, Map<String, String> properties) {
-        Boolean accountResult = new Boolean(false);
+        Boolean accountResult = null;
         try {
             AccountServiceCallerImpl backendService = (AccountServiceCallerImpl) backendServicesMap.get(ServiceName.AccountService);
             appendServiceMeshHeaders(backendService, properties);
@@ -112,20 +112,18 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getMessage(e))
+            superviseFailureAsync(deliveryRequest, ServiceName.AccountService, ExceptionUtils.getMessage(e))
             .thenAcceptAsync(result -> {
                 Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
                 Log.debug(result);
             });
-
-            throw e;
         }
 
         return accountResult;
     }
 
     private static Boolean invokeThirdPartyServiceAsync(Delivery deliveryRequest, Map<String, String> properties) {
-        Boolean thirdPartyResult = new Boolean(false);
+        Boolean thirdPartyResult = null;
         try {
             ThirdPartyServiceCallerImpl backendService = (ThirdPartyServiceCallerImpl) backendServicesMap
                     .get(ServiceName.ThirdPartyService);
@@ -135,13 +133,11 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getMessage(e))
+            superviseFailureAsync(deliveryRequest, ServiceName.ThirdPartyService, ExceptionUtils.getMessage(e))
             .thenAcceptAsync(result -> {
                 Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
                 Log.debug(result);
             });
-
-            throw e;
         }
 
         return thirdPartyResult;
@@ -158,20 +154,18 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getMessage(e))
+            superviseFailureAsync(deliveryRequest, ServiceName.DroneSchedulerService, ExceptionUtils.getMessage(e))
             .thenAcceptAsync(result -> {
                 Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
                 Log.debug(result);
             });
-
-            throw e;
         }
 
         return droneScheduleResult;
     }
 
     public static PackageGen invokePackageServiceAsync(Delivery deliveryRequest, Map<String, String> properties) {
-        PackageGen packageResult = new PackageGen();
+        PackageGen packageResult = null;
         try {
             PackageInfo packageInfo = deliveryRequest.getPackageInfo();
             PackageServiceCallerImpl backendService = (PackageServiceCallerImpl) backendServicesMap.get(ServiceName.PackageService);
@@ -180,13 +174,11 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getMessage(e))
+            superviseFailureAsync(deliveryRequest, ServiceName.PackageService, ExceptionUtils.getMessage(e))
             .thenAcceptAsync(result -> {
                 Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
                 Log.debug(result);
             });
-            
-            throw e;
         }
 
         return packageResult;
@@ -207,8 +199,6 @@ public class DeliveryRequestEventProcessor {
                         Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
                         Log.debug(result);
                     });
-
-            throw e;
         }
 
         return deliveryResult;

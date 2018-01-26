@@ -58,18 +58,14 @@ public class Main extends ReactiveStreamingApp {
 		Log.info("Reading from partitions: {}", partitionNumber);
 
 		SourceOptions options;
-		// either we read from time
-		// or from last known checkpoint
+		
+		// Either we read from time or from last known checkpoint
 		if (SchedulerSettings.CheckpointTimeInMinutes > 0) {
 			options = new SourceOptions().partitions(partitionsList).fromTime(
 					java.time.Instant.now().minus(SchedulerSettings.CheckpointTimeInMinutes, ChronoUnit.MINUTES));
 		} else {
 			options = new SourceOptions().partitions(partitionsList).fromCheckpoint(null);
 		}
-
-		// .fromCheckpoint(java.time.Instant.now().minus(checkpointMin ,
-		// ChronoUnit.MINUTES));
-		// java.time.Instant.now().minus(4, ChronoUnit.HOURS)
 
 		IoTHub iotHub = new IoTHub();
 		Source<MessageFromDevice, NotUsed> messages = iotHub.source(options);
@@ -111,8 +107,8 @@ public class Main extends ReactiveStreamingApp {
 					.processDeliveryRequestAsync(delivery.getDelivery(), delivery.getMessageFromDevice().properties());
 
 			completableSchedule.whenComplete((deliverySchedule, error) -> {
-				if (error != null) {
-					Log.error("Failed Delivery: {}", ExceptionUtils.getStackTrace(error).toString());
+				if (deliverySchedule == null) {
+					Log.error(error == null ? "Failed Delivery": "Failed Delivery: " + ExceptionUtils.getStackTrace(error).toString());
 				} else {
 					Log.info("Completed Delivery", deliverySchedule.toString());
 				}

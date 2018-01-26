@@ -15,6 +15,7 @@ import static net.javacrumbs.futureconverter.springjava.FutureConverter.*;
 public final class AccountServiceCallerImpl extends ServiceCallerImpl {
 
 	private Boolean isAccountActive = false;
+	private String exceptionMsg = null;
 	
 	// Calls the super constructor and sets the HTTP context
 	public AccountServiceCallerImpl() {
@@ -49,8 +50,13 @@ public final class AccountServiceCallerImpl extends ServiceCallerImpl {
 				throw new BackendServiceCallFailedException(response.getStatusCode().getReasonPhrase());
 			}
 		}).exceptionally(e -> {
-			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
+			exceptionMsg = ExceptionUtils.getStackTrace(e);
+			return null;
 		});
+		
+		if(isAccountActive==null){
+			throw new BackendServiceCallFailedException(exceptionMsg);
+		}
 
 		return isAccountActive;
 	}

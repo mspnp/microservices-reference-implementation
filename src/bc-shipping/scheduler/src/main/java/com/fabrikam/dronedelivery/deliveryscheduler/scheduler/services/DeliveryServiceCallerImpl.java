@@ -20,6 +20,7 @@ import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsUtils;
 public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
 
 	private DeliverySchedule  deliverySchedule = null;
+	private String exceptionMsg = null;
 	
 	// Calls the super constructor and sets the HTTP context
 	public DeliveryServiceCallerImpl() {
@@ -72,8 +73,13 @@ public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
 				throw new BackendServiceCallFailedException(response.getStatusCode().getReasonPhrase());
 			}
 		}).exceptionally(e -> {
-			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
+			exceptionMsg = ExceptionUtils.getStackTrace(e);
+			return null;
 		});
+		
+		if(deliverySchedule==null){
+			throw new BackendServiceCallFailedException(exceptionMsg);
+		}
 
 		return deliverySchedule;
 	}
