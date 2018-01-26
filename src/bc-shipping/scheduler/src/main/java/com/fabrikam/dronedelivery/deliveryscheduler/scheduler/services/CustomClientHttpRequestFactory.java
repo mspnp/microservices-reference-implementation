@@ -67,7 +67,7 @@ public enum CustomClientHttpRequestFactory {
 		clientHttpRequestFactory.setConnectionRequestTimeout(30*Second);
 		clientHttpRequestFactory.setConnectTimeout(30*Second);
 		clientHttpRequestFactory.setBufferRequestBody(false);
-		clientHttpRequestFactory.setReadTimeout(30*Second);
+		clientHttpRequestFactory.setReadTimeout(0);
 
 		clientHttpRequestFactory.setHttpAsyncClient(client);
 		return clientHttpRequestFactory;

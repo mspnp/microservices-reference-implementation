@@ -20,6 +20,7 @@ import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.utils.ModelsUtils;
 public class ThirdPartyServiceCallerImpl extends ServiceCallerImpl {
 	
 	private Boolean isThirdPartyRequired = true;
+	private String exceptionMsg = null;
 
 	public ThirdPartyServiceCallerImpl() {
 		super();
@@ -70,8 +71,13 @@ public class ThirdPartyServiceCallerImpl extends ServiceCallerImpl {
 				throw new BackendServiceCallFailedException(response.getStatusCode().getReasonPhrase());
 			}
 		}).exceptionally(e -> {
-			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
+			exceptionMsg = ExceptionUtils.getStackTrace(e);
+			return null;
 		});
+		
+		if(isThirdPartyRequired==null){
+			throw new BackendServiceCallFailedException(exceptionMsg);
+		}
 
 		return isThirdPartyRequired;
 	}
