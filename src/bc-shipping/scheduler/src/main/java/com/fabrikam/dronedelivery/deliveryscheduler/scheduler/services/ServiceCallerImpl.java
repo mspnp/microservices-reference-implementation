@@ -30,9 +30,10 @@ public abstract class ServiceCallerImpl implements ServiceCaller {
 	private HttpHeaders requestHeaders;
 	private final static Logger Log = LogManager.getLogger(ServiceCallerImpl.class);
 	private final static int Second = 1000;
+	private HttpComponentsAsyncClientHttpRequestFactory clientHttpRequestFactory;	
 	
 	public AsyncRestTemplate getAsyncRestTemplate() {
-		AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate(getCustomClientHttpRequestFactory()); //CustomClientHttpRequestFactory.INSTANCE.get()
+		AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate(this.clientHttpRequestFactory);
 		asyncRestTemplate.setErrorHandler(new ServiceCallerResponseErrorHandler());
 		return asyncRestTemplate;
 	}
@@ -53,6 +54,9 @@ public abstract class ServiceCallerImpl implements ServiceCaller {
 	public ServiceCallerImpl() {
 		// Initialize http headers
 		initHttpHeaders();
+		
+		// Initialize factory that is shared by all new instances of AsyncRestTemplate
+		this.clientHttpRequestFactory = getCustomClientHttpRequestFactory(); 
 	}
 
 	private void initHttpHeaders() {
@@ -61,7 +65,7 @@ public abstract class ServiceCallerImpl implements ServiceCaller {
 		this.requestHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
 	}
 
-	public HttpComponentsAsyncClientHttpRequestFactory getCustomClientHttpRequestFactory() {
+	private HttpComponentsAsyncClientHttpRequestFactory getCustomClientHttpRequestFactory() {
 	    PoolingNHttpClientConnectionManager poolingConnManager = 
 	    	      new PoolingNHttpClientConnectionManager(getIOReactor());
 	    
