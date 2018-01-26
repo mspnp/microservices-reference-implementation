@@ -52,7 +52,7 @@ public class ModelsUtils {
 		PackageGen pack = new PackageGen();
 		JsonElement jsonElem = jsonParser.parse(jsonStr);
 		JsonObject jObject = jsonElem.getAsJsonObject();
-		pack.setId(jObject.get("packageId").getAsString());
+		pack.setId(jObject.get("id").getAsString());
 		pack.setSize(ContainerSize.valueOf(jObject.get("size").getAsString()));
 		pack.setTag(jObject.get("tag").getAsString());
 
