@@ -75,7 +75,7 @@ spec:
                 name: scheduler-secrets
                 key: storageaccount_key
           - name: STORAGE_QUEUE_NAME
-            value: "CompensatingTransactionQueue"
+            value: "compensationqueue"
           - name: STORAGE_QUEUE_CONNECTION_STRING
             valueFrom:
               secretKeyRef:
