@@ -73,6 +73,16 @@ public class ModelsUtils {
 		return packInfo;
 	}
 	
+	public static PackageGen createPackageGen(String tag)
+	{
+		PackageGen pack = new PackageGen();
+		pack.setId(UUID.randomUUID().toString());
+		pack.setSize(containers[random.nextInt(containers.length)]);
+		pack.setTag(tag);
+		pack.setWeight(leftLimit + new Random().nextDouble() * (rightLimit - leftLimit));
+		return pack;
+	}
+	
 	public static Delivery createDeliveryRequest() {
 		PackageInfo pack = new PackageInfo();
 
