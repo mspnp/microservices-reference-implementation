@@ -15,6 +15,8 @@ Clone or download this repo locally.
 git clone https://github.com/mspnp/microservices-reference-implementation.git
 ```
 
+The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
+
 ## Create the Kubernetes cluster
 
 Set environment variables.
@@ -47,7 +49,10 @@ sudo az acs kubernetes install-cli
 az acs kubernetes get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 
 # Create the Shipping BC namespace
-kubectl create namespace bc-shipping
+kubectl create namespace shipping && \
+kubectl create namespace accounts && \
+kubectl create namespace dronemgmt && \
+kubectl create namespace 3rdparty 
 ```
 
 Create an Azure Container Registry instance. 
@@ -112,7 +117,7 @@ az cosmosdb collection create \
 Build the Delivery service
 
 ```bash
-export DELIVERY_PATH=./microservices-reference-implementation/src/bc-shipping/delivery
+export DELIVERY_PATH=./microservices-reference-implementation/src/shipping/delivery
 docker-compose -f $DELIVERY_PATH/docker-compose.ci.build.yml up
 ```
 
@@ -136,7 +141,7 @@ export REDIS_CONNECTION_STRING=[YOUR_REDIS_CONNECTION_STRING]
 export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query primaryMasterKey) && \
 export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint)
 
-kubectl --namespace bc-shipping create --save-config=true secret generic delivery-storageconf \
+kubectl --namespace shipping create --save-config=true secret generic delivery-storageconf \
     --from-literal=CosmosDB_Key=${COSMOSDB_KEY[@]//\"/} \
     --from-literal=CosmosDB_Endpoint=${COSMOSDB_ENDPOINT[@]//\"/} \
     --from-literal=Redis_ConnectionString=${REDIS_CONNECTION_STRING} \
@@ -155,7 +160,7 @@ sed -i "s/value: \"CosmosDB_CollectionId\"/value: $COLLECTION_NAME/g"  "./micros
 sed -i "s/value: \"EH_EntityPath\"/value:/g"                           "./microservices-reference-implementation/k8s/delivery.yaml"
 
 # Deploy the service
-kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/delivery.yaml
+kubectl --namespace shipping apply -f ./microservices-reference-implementation/k8s/delivery.yaml
 ```
 
 ## Deploy the Package service
@@ -170,7 +175,7 @@ az cosmosdb create --name $COSMOSDB_NAME --kind MongoDB --resource-group $RESOUR
 Build the Package service
 
 ```bash
-export PACKAGE_PATH=microservices-reference-implementation/src/bc-shipping/package
+export PACKAGE_PATH=microservices-reference-implementation/src/shipping/package
 
 # Build the app
 docker-compose -f $PACKAGE_PATH/build/docker-compose.ci.build.yml up
@@ -191,10 +196,10 @@ sed -i "s#image:#image: $ACR_SERVER/package-service:0.1.0#g" ./microservices-ref
 
 # Create secret
 export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString")
-kubectl -n bc-shipping create secret generic package-secrets --from-literal=mongodb-pwd=${COSMOSDB_CONNECTION[@]//\"/}
+kubectl -n shipping create secret generic package-secrets --from-literal=mongodb-pwd=${COSMOSDB_CONNECTION[@]//\"/}
 
 # Deploy service
-kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/package.yml
+kubectl --namespace shipping apply -f ./microservices-reference-implementation/k8s/package.yml
 ```
 
 ## Deploy the Ingestion service 
@@ -219,7 +224,7 @@ Note: you could also create this from [the Azure Portal](https://docs.microsoft.
 Build the Ingestion service
 
 ```bash
-export INGESTION_PATH=./microservices-reference-implementation/src/bc-shipping/ingestion
+export INGESTION_PATH=./microservices-reference-implementation/src/shipping/ingestion
 
 # Build the app 
 docker build -t openjdk_and_mvn-build:8-jdk -f $INGESTION_PATH/Dockerfilemaven $INGESTION_PATH && \
@@ -244,13 +249,13 @@ export EH_ACCESS_KEY_NAME=[YOUR_SHARED_ACCESS_POLICY_NAME_HERE]
 export EH_ACCESS_KEY_VALUE=[YOUR_SHARED_ACCESS_POLICY_VALUE_HERE]
 
 # Create secret
-kubectl -n bc-shipping create secret generic ingestion-secrets --from-literal=eventhub_namespace=${INGESTION_EH_NS} \
+kubectl -n shipping create secret generic ingestion-secrets --from-literal=eventhub_namespace=${INGESTION_EH_NS} \
 --from-literal=eventhub_name=${INGESTION_EH_NAME} \
 --from-literal=eventhub_keyname=${EH_ACCESS_KEY_NAME} \
 --from-literal=eventhub_keyvalue=${EH_ACCESS_KEY_VALUE}
 
 # Deploy service
-kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/ingestion.yaml
+kubectl --namespace shipping apply -f ./microservices-reference-implementation/k8s/ingestion.yaml
 ```
 
 ## Deploy the Scheduler service 
@@ -265,7 +270,7 @@ az storage account create --resource-group $RESOURCE_GROUP --name $SCHEDULER_STO
 Build the Scheduler service
 
 ```bash
-export SCHEDULER_PATH=./microservices-reference-implementation/src/bc-shipping/scheduler
+export SCHEDULER_PATH=./microservices-reference-implementation/src/shipping/scheduler
 
 # Build the app 
 docker build -t openjdk_and_mvn-build:8-jdk -f $SCHEDULER_PATH/Dockerfilemaven $SCHEDULER_PATH && \
@@ -291,14 +296,14 @@ export STORAGE_ACCOUNT_ACCESS_KEY=[YOUR_STORAGE_ACCOUNT_ACCESS_KEY_HERE]
 export STORAGE_ACCOUNT_CONNECTION_STRING="[YOUR_STORAGE_ACCOUNT_CONNECTION_STRING_HERE]"
 
 # Create secrets
-kubectl -n bc-shipping create secret generic scheduler-secrets --from-literal=eventhub_name=${INGESTION_EH_NAME} \
+kubectl -n shipping create secret generic scheduler-secrets --from-literal=eventhub_name=${INGESTION_EH_NAME} \
 --from-literal=eventhub_sas_connection_string=${EH_CONNECTION_STRING} \
 --from-literal=storageaccount_name=${SCHEDULER_STORAGE_ACCOUNT_NAME} \
 --from-literal=storageaccount_key=${STORAGE_ACCOUNT_ACCESS_KEY} \
 --from-literal=queueconstring=${STORAGE_ACCOUNT_CONNECTION_STRING}
 
 # Deploy service
-kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/scheduler.yaml
+kubectl --namespace shipping apply -f ./microservices-reference-implementation/k8s/scheduler.yaml
 ```
 
 ## Deploy mock services
@@ -306,7 +311,7 @@ kubectl --namespace bc-shipping apply -f ./microservices-reference-implementatio
 Build the mock services
 
 ```bash
-export MOCKS_PATH=microservices-reference-implementation/src/bc-shipping/delivery
+export MOCKS_PATH=microservices-reference-implementation/src/shipping/delivery
 docker-compose -f $MOCKS_PATH/docker-compose.ci.build.yml up
 ```
 
@@ -334,22 +339,62 @@ sed -i "s#image:#image: $ACR_SERVER/dronescheduler:0.1.0#g" ./microservices-refe
 sed -i "s#image:#image: $ACR_SERVER/thirdparty:0.1.0#g" ./microservices-reference-implementation/k8s/thirdparty.yaml 
 
 # Deploy the service
-kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/account.yaml && \
-kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/dronescheduler.yaml && \
-kubectl --namespace bc-shipping apply -f ./microservices-reference-implementation/k8s/thirdparty.yaml
+kubectl --namespace accounts apply -f ./microservices-reference-implementation/k8s/account.yaml && \
+kubectl --namespace dronemgmt apply -f ./microservices-reference-implementation/k8s/dronescheduler.yaml && \
+kubectl --namespace 3rdparty apply -f ./microservices-reference-implementation/k8s/thirdparty.yaml
 ```
 
 ## Verify all services are running:
 
 ```bash
-kubectl get all -n bc-shipping
+kubectl get all --all-namespaces -l co=fabrikam
 ```
 
 Deploy Elasticsearch. For more information, see https://github.com/kubernetes/examples/tree/master/staging/elasticsearch
 
+```bash
+kubectl --namespace kube-system apply -f https://raw.githubusercontent.com/kubernetes/examples/master/staging/elasticsearch/service-account.yaml && \
+kubectl --namespace kube-system apply -f https://raw.githubusercontent.com/kubernetes/examples/master/staging/elasticsearch/es-svc.yaml && \
+kubectl --namespace kube-system apply -f https://raw.githubusercontent.com/kubernetes/examples/master/staging/elasticsearch/es-rc.yaml
+```
+
 Deploy Fluend. For more information, see https://docs.fluentd.org/v0.12/articles/kubernetes-fluentd
 
-Deploy linkerd. For more information, see https://linkerd.io/getting-started/k8s/
+```bash
+# The example elasticsearch yaml files deploy a service named "elasticsearch"
+wget https://raw.githubusercontent.com/fluent/fluentd-kubernetes-daemonset/master/fluentd-daemonset-elasticsearch.yaml && \
+sed -i "s/elasticsearch-logging/elasticsearch/" fluentd-daemonset-elasticsearch.yaml
+
+# Commenting out X-Pack credentials for demo purposes. 
+# Make sure to configure X-Pack in elasticsearch and provide credentials here for production workloads
+sed -i "s/- name: FLUENT_ELASTICSEARCH_USER/#- name: FLUENT_ELASTICSEARCH_USER/" fluentd-daemonset-elasticsearch.yaml && \
+sed -i 's/  value: "elastic"/#  value: "elastic"/' fluentd-daemonset-elasticsearch.yaml && \
+sed -i "s/- name: FLUENT_ELASTICSEARCH_PASSWORD/#- name: FLUENT_ELASTICSEARCH_PASSWORD/" fluentd-daemonset-elasticsearch.yaml && \
+sed -i 's/  value: "changeme"/#  value: "changeme"/' fluentd-daemonset-elasticsearch.yaml && \
+kubectl --namespace kube-system apply -f fluentd-daemonset-elasticsearch.yaml
+``` 
+
+#### Deploy linkerd 
+
+For more information, see [https://linkerd.io/getting-started/k8s/](https://linkerd.io/getting-started/k8s/)
+
+> Note: 
+> the service mesh configuration linked above is defaulting the namespace to "default" for service discovery.  
+> Since Drone Delivery microservices are getting deployed into several custom namespaces, this config needs to be modified. This will consist of a small change in the dtab rules.
+
+Deploy linkerd defaulting the namespace to shipping instead: 
+
+```bash
+wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/servicemesh.yml && \
+sed -i "s#/default#/shipping#g" servicemesh.yml && \
+sed -i "149i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \ 
+sed -i "149i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.dronemgmt ;" servicemesh.yml && \
+sed -i "149i \ \ \ \ \ \ \ \ /svc/thirdparty => /svc/thirdparty.3rdparty ;" servicemesh.yml && \
+sed -i "176i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \
+sed -i "176i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.dronemgmt ;" servicemesh.yml && \
+sed -i "176i \ \ \ \ \ \ \ \ /svc/thirdparty => /svc/thirdparty.3rdparty ;" servicemesh.yml && \
+kubectl apply -f servicemesh.yml
+``` 
 
 Deploy Prometheus and Grafana. For more information, see https://github.com/linkerd/linkerd-viz#kubernetes-deploy
 
@@ -359,6 +404,6 @@ however for convenience, we exposed the Ingestion service with a public IP addre
 You can send delivery requests to the ingestion service using the swagger ui.
 
 ```bash
-export INGESTION_SERVICE_EXTERNAL_IP_ADDRESS=$(kubectl get --namespace bc-shipping svc ingestion -o jsonpath="{.status.loadBalancer.ingress[0].*}")
+export INGESTION_SERVICE_EXTERNAL_IP_ADDRESS=$(kubectl get --namespace shipping svc ingestion -o jsonpath="{.status.loadBalancer.ingress[0].*}")
 curl "http://${INGESTION_SERVICE_EXTERNAL_IP_ADDRESS}"/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST
 ```
