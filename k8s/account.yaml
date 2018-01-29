@@ -12,7 +12,8 @@ metadata:
   name: account
   labels:
     app: account
-    bc: shipping
+    bc: accounts
+    co: fabrikam
 spec:
   ports:
   - name: http
@@ -29,7 +30,8 @@ metadata:
   labels:                 # In API version apps/v1beta2, .metadata.labels no longer default to .spec.template.metadata.labels. 
     app: account
     version: 0.1.0
-    bc: shipping
+    bc: accounts
+    co: fabrikam
 spec:
   replicas: 1
   selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels. 
@@ -40,7 +42,8 @@ spec:
       labels:
         app: account
         version: 0.1.0
-        bc: shipping
+        bc: accounts
+        co: fabrikam
       annotations:
         team: accountservice
     spec:

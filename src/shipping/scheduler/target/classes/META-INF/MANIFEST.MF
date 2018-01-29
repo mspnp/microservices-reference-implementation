@@ -1,0 +1,68 @@
+Manifest-Version: 1.0
+Built-By: kirpas
+Class-Path: lib/azure-1.0.0.jar lib/azure-client-runtime-1.0.4.jar lib
+ /client-runtime-1.0.4.jar lib/retrofit-2.1.0.jar lib/okhttp-3.3.1.jar
+  lib/okio-1.8.0.jar lib/logging-interceptor-3.3.1.jar lib/okhttp-urlc
+ onnection-3.3.1.jar lib/converter-jackson-2.1.0.jar lib/jackson-datat
+ ype-joda-2.7.2.jar lib/adapter-rxjava-2.1.0.jar lib/azure-client-auth
+ entication-1.0.4.jar lib/adal4j-1.1.2.jar lib/oauth2-oidc-sdk-4.5.jar
+  lib/mail-1.4.7.jar lib/activation-1.1.jar lib/jcip-annotations-1.0.j
+ ar lib/lang-tag-1.4.jar lib/nimbus-jose-jwt-3.1.2.jar lib/bcprov-jdk1
+ 5on-1.51.jar lib/azure-mgmt-resources-1.0.0.jar lib/rxjava-1.2.4.jar 
+ lib/azure-mgmt-storage-1.0.0.jar lib/azure-mgmt-network-1.0.0.jar lib
+ /azure-mgmt-compute-1.0.0.jar lib/azure-mgmt-graph-rbac-1.0.0.jar lib
+ /azure-mgmt-keyvault-1.0.0.jar lib/azure-mgmt-batch-1.0.0.jar lib/azu
+ re-mgmt-trafficmanager-1.0.0.jar lib/azure-mgmt-dns-1.0.0.jar lib/azu
+ re-mgmt-redis-1.0.0.jar lib/azure-mgmt-appservice-1.0.0.jar lib/azure
+ -annotations-1.0.0.jar lib/azure-mgmt-cdn-1.0.0.jar lib/azure-mgmt-sq
+ l-1.0.0.jar lib/azure-mgmt-servicebus-1.0.0.jar lib/joda-time-2.1.jar
+  lib/jackson-databind-2.9.0.pr3.jar lib/jackson-annotations-2.9.0.pr3
+ .jar lib/jackson-core-2.9.0.pr3.jar lib/reactor-core-3.0.7.RELEASE.ja
+ r lib/reactive-streams-1.0.0.jar lib/spring-web-5.0.0.M5.jar lib/spri
+ ng-aop-5.0.0.M5.jar lib/spring-beans-5.0.0.M5.jar lib/spring-context-
+ 5.0.0.M5.jar lib/spring-expression-5.0.0.M5.jar lib/spring-core-5.0.0
+ .M5.jar lib/spring-web-reactive-5.0.0.M4.jar lib/spring-webflux-5.0.0
+ .M5.jar lib/iothub-react_2.12-0.10.0-DEV.170725c.jar lib/scala-librar
+ y-2.12.2.jar lib/iot-service-client-1.6.23.jar lib/gson-2.5.jar lib/i
+ ot-deps-serializer-0.7.6.jar lib/javax.json-1.0.4.jar lib/commons-cod
+ ec-1.6.jar lib/proton-j-0.18.0.jar lib/websocket-transport-layer-0.1.
+ 3.jar lib/azure-eventhubs-0.14.3.jar lib/azure-documentdb-1.12.0.jar 
+ lib/json-20140107.jar lib/cassandra-driver-core-3.3.0.jar lib/netty-h
+ andler-4.0.47.Final.jar lib/netty-buffer-4.0.47.Final.jar lib/netty-c
+ ommon-4.0.47.Final.jar lib/netty-transport-4.0.47.Final.jar lib/netty
+ -codec-4.0.47.Final.jar lib/guava-19.0.jar lib/metrics-core-3.2.2.jar
+  lib/jnr-ffi-2.0.7.jar lib/jffi-1.2.10.jar lib/jffi-1.2.10-native.jar
+  lib/asm-5.0.3.jar lib/asm-commons-5.0.3.jar lib/asm-analysis-5.0.3.j
+ ar lib/asm-tree-5.0.3.jar lib/asm-util-5.0.3.jar lib/jnr-x86asm-1.0.2
+ .jar lib/jnr-posix-3.0.27.jar lib/jnr-constants-0.9.0.jar lib/akka-st
+ ream_2.12-2.5.3.jar lib/akka-actor_2.12-2.5.3.jar lib/config-1.3.1.ja
+ r lib/scala-java8-compat_2.12-0.8.0.jar lib/ssl-config-core_2.12-0.2.
+ 1.jar lib/scala-parser-combinators_2.12-1.0.4.jar lib/json4s-native_2
+ .12-3.5.2.jar lib/json4s-core_2.12-3.5.2.jar lib/json4s-ast_2.12-3.5.
+ 2.jar lib/json4s-scalap_2.12-3.5.2.jar lib/paranamer-2.8.jar lib/scal
+ a-xml_2.12-1.0.6.jar lib/json4s-jackson_2.12-3.5.2.jar lib/httpasyncc
+ lient-4.1.3.jar lib/httpcore-4.4.6.jar lib/httpcore-nio-4.4.6.jar lib
+ /httpclient-4.5.3.jar lib/commons-logging-1.2.jar lib/commons-io-2.6.
+ jar lib/future-converter-spring-java8-1.1.0.jar lib/future-converter-
+ spring-common-1.1.0.jar lib/future-converter-common-1.1.0.jar lib/fut
+ ure-converter-java8-common-1.1.0.jar lib/system-rules-1.16.1.jar lib/
+ wiremock-standalone-2.9.0.jar lib/log4j-api-2.9.1.jar lib/log4j-core-
+ 2.9.1.jar lib/azure-storage-6.1.0.jar lib/slf4j-api-1.7.12.jar lib/co
+ mmons-lang3-3.4.jar lib/azure-keyvault-core-0.8.0.jar lib/wiremock-bo
+ dy-transformer-1.1.6.jar lib/wiremock-2.3.1.jar lib/jetty-server-9.2.
+ 13.v20150730.jar lib/javax.servlet-api-3.1.0.jar lib/jetty-http-9.2.1
+ 3.v20150730.jar lib/jetty-io-9.2.13.v20150730.jar lib/jetty-servlet-9
+ .2.13.v20150730.jar lib/jetty-security-9.2.13.v20150730.jar lib/jetty
+ -servlets-9.2.13.v20150730.jar lib/jetty-continuation-9.2.13.v2015073
+ 0.jar lib/jetty-util-9.2.13.v20150730.jar lib/jetty-webapp-9.2.13.v20
+ 150730.jar lib/jetty-xml-9.2.13.v20150730.jar lib/xmlunit-core-2.1.1.
+ jar lib/xmlunit-legacy-2.1.1.jar lib/json-path-2.2.0.jar lib/json-sma
+ rt-2.2.1.jar lib/accessors-smart-1.1.jar lib/jopt-simple-4.9.jar lib/
+ zjsonpatch-0.2.1.jar lib/commons-collections4-4.0.jar lib/jackson-dat
+ aformat-xml-2.6.1.jar lib/jackson-module-jaxb-annotations-2.6.1.jar l
+ ib/stax2-api-3.1.4.jar lib/jcl-over-slf4j-1.7.21.jar
+Build-Jdk: 1.8.0_161
+Created-By: Maven Integration for Eclipse
+Main-Class: com.fabrikam.dronedelivery.deliveryscheduler.akkareader.Ma
+ in
+

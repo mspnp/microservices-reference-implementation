@@ -1,0 +1,4 @@
+com\fabrikam\dronedelivery\deliveryscheduler\scheduler\compensation\StorageQueueTest.class
+com\fabrikam\dronedelivery\deliveryscheduler\scheduler\services\ModelsAndUtilsTest.class
+com\fabrikam\dronedelivery\deliveryscheduler\scheduler\services\PostDeliveryRequestsTest.class
+com\fabrikam\dronedelivery\deliveryscheduler\scheduler\services\InvokeMockBackendServicesTest.class

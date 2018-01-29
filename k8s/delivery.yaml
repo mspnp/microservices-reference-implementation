@@ -13,6 +13,7 @@ metadata:
   labels:
     app: delivery
     bc: shipping
+    co: fabrikam
 spec:
   ports:
   - name: http
@@ -30,6 +31,7 @@ metadata:
     app: delivery
     version: 0.1.0
     bc: shipping
+    co: fabrikam
 spec:
   replicas: 1
   selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels. 
@@ -41,6 +43,7 @@ spec:
         app: delivery
         version: 0.1.0
         bc: shipping
+        co: fabrikam
       annotations:
         team: deliveryservice
     spec:
