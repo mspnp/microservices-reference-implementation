@@ -81,7 +81,7 @@
         "description": "Type of the storage account that will store Redis Cache."
       }
     },
-    "delivery_redisCacheSKU": {
+    "deliveryRedisCacheSKU": {
       "type": "string",
       "allowedValues": [
         "Basic",
@@ -93,7 +93,7 @@
         "description": "The pricing tier of the new Azure Redis Cache."
       }
     },
-    "delivery_redisCacheFamily": {
+    "deliveryRedisCacheFamily": {
       "type": "string",
       "defaultValue": "P",
       "metadata": {
@@ -104,7 +104,7 @@
         "P"
       ]
     },
-    "delivery_redisCacheCapacity": {
+    "deliveryRedisCacheCapacity": {
       "type": "int",
       "allowedValues": [
         1,
@@ -117,7 +117,7 @@
         "description": "The size of the new Azure Redis Cache instance. "
       }
     },
-    "delivery_redisDiagnosticsEnabled": {
+    "deliveryRedisDiagnosticsEnabled": {
       "type": "bool",
       "allowedValues": [
         false,
@@ -157,10 +157,10 @@
         "Secret": "[parameters('servicePrincipalClientSecret')]"
       }
     ],
+    "acsK8sClusterName":"[concat('acsK8sCluster-',resourceGroup().name)]", 
     "acrName": "[concat('acr', uniqueString(resourceGroup().id))]",
     "acrStorageName": "[concat('acrsto', uniqueString(resourceGroup().id))]",
     "acrStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('acrStorageName'))]",
-    "acsK8sClusterName":"[concat('acsK8sCluster-',resourceGroup().name)]", 
     "deliveryRedisStorageName": "[concat('redsto', uniqueString(resourceGroup().id))]",
     "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('deliveryRedisStorageName'))]",
     "deliveryCosmosDbName": "[concat(uniqueString(resourceGroup().id),'-delivery-service-cosmosdb')]",
@@ -268,9 +268,9 @@
       "properties": {
         "redisEnableNonSslPort": "false",
         "sku": {
-          "capacity": "[parameters('delivery_redisCacheCapacity')]",
-          "family": "[parameters('delivery_redisCacheFamily')]",
-          "name": "[parameters('delivery_redisCacheSKU')]"
+          "capacity": "[parameters('deliveryRedisCacheCapacity')]",
+          "family": "[parameters('deliveryRedisCacheFamily')]",
+          "name": "[parameters('deliveryRedisCacheSKU')]"
         },
         "vm-size": "P4"
       },
@@ -289,10 +289,10 @@
             "metrics": [
               {
                 "timeGrain": "AllMetrics",
-                "enabled": "[parameters('delivery_redisDiagnosticsEnabled')]",
+                "enabled": "[parameters('deliveryRedisDiagnosticsEnabled')]",
                 "retentionPolicy": {
                   "days": 90,
-                  "enabled": "[parameters('delivery_redisDiagnosticsEnabled')]"
+                  "enabled": "[parameters('deliveryRedisDiagnosticsEnabled')]"
                 }
               }
             ]
