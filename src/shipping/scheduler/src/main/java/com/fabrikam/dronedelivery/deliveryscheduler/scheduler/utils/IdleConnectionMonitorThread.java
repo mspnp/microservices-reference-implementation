@@ -19,7 +19,7 @@ public class IdleConnectionMonitorThread extends Thread {
 		try {
 			while (!shutdown) {
 				synchronized (this) {
-					wait(1000);
+					wait(5000);
 					// Close expired connections
 					connMgr.closeExpiredConnections();
 					// Optionally, close connections
