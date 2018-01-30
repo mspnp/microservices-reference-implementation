@@ -36,7 +36,7 @@ spec:
   replicas: 1
   selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels. 
     matchLabels:           # spec.selector is immutable after creation of the Deployment in apps/v1beta2.
-      app: thirdparty         
+      app: thirdparty
   template:                # A Deployment may terminate Pods whose labels match the selector if their template is different from .spec.template
     metadata:
       labels:
