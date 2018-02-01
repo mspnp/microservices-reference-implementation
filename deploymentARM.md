@@ -97,28 +97,6 @@ kubectl create namespace 3rdparty
 
 ## Deploy the Delivery service
 
-Provision Azure resources
-
-```bash
-export REDIS_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryRedisName.value | sed -e 's/^"//' -e 's/"$//') && \
-export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryCosmosDbName.value | sed -e 's/^"//' -e 's/"$//') && \
-export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
-export COLLECTION_NAME="${DATABASE_NAME}-col"
-
-# Create a Cosmos DB database 
-az cosmosdb database create \
-    --name $COSMOSDB_NAME \
-    --db-name=$DATABASE_NAME \
-    --resource-group $RESOURCE_GROUP
-
-# Create a Cosmos DB collection
-az cosmosdb collection create \
-    --collection-name $COLLECTION_NAME \
-    --name $COSMOSDB_NAME \
-    --db-name $DATABASE_NAME \
-    --resource-group $RESOURCE_GROUP
-```
-
 Build the Delivery service
 
 ```bash
@@ -143,6 +121,7 @@ Create Kubernetes secrets
 ```bash
 export REDIS_CONNECTION_STRING=[YOUR_REDIS_CONNECTION_STRING]
 
+export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryCosmosDbName.value | sed -e 's/^"//' -e 's/"$//') && \
 export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query primaryMasterKey) && \
 export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint)
 
@@ -389,4 +368,3 @@ You can send delivery requests to the ingestion service using the swagger ui.
 export INGESTION_SERVICE_EXTERNAL_IP_ADDRESS=$(kubectl get --namespace shipping svc ingestion -o jsonpath="{.status.loadBalancer.ingress[0].*}")
 curl "http://${INGESTION_SERVICE_EXTERNAL_IP_ADDRESS}"/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST
 ```
-
