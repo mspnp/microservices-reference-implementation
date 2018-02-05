@@ -65,7 +65,7 @@ Deployment
 
 * from Azure Portal
 
-  [![Deploy to Azure](http://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fmicroservices-reference-implementation%2Ffeature%2F48_AddARMTemplates%2Fazuredeploy.json)
+  [![Deploy to Azure](http://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fmicroservices-reference-implementation%2Fmaster%2Fazuredeploy.json)
   > Note: 
   > 1. paste the $RESOURCE_GROUP value in the resource group field. Important: choose use existing resource group 
   > 2. paste the content of your ssh-rsa public key file in the Ssh RSA Plublic Key field.
