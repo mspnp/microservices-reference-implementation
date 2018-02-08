@@ -103,7 +103,7 @@ public class IngestionController {
 					externalDelivery.getDeadline());
 
 			externalDelivery.setDeliveryId(delivery.getDeliveryId());
-			response.setHeader("Content-Type", "application/json; charset=utf-8	");
+			response.setHeader("Content-Type", "application/json;charset=utf-8");
 			response.setHeader("Location", "http://deliveries/api/deliveries/" + delivery.getDeliveryId());
 
 			// Extract the headers as a map and pass on to eventhub message

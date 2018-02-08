@@ -35,6 +35,18 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
 
             client = new DocumentClient(new Uri(Endpoint), Key);
             logger = loggerFactory.CreateLogger(nameof(DocumentDBRepository<T>));
+            logger.LogInformation($"Creating CosmosDb Database {DatabaseId} if not exists...");
+            var taskCreateDb = client.CreateDatabaseIfNotExistsAsync(new Database { Id = DatabaseId });
+            taskCreateDb.GetAwaiter().GetResult();
+            logger.LogInformation($"CosmosDb Database {DatabaseId} creation if not exists: OK!");
+            var dataBaseUri = UriFactory.CreateDatabaseUri(DatabaseId);
+            logger.LogInformation($"Creating CosmosDb Collection {CollectionId} for {dataBaseUri.ToString()} if not exists...");
+            var taskCreateDocCollection = client.CreateDocumentCollectionIfNotExistsAsync(
+                UriFactory.CreateDatabaseUri(DatabaseId),
+                new DocumentCollection { Id = CollectionId },
+                new RequestOptions { OfferThroughput = 1000 });
+            taskCreateDocCollection.GetAwaiter().GetResult();
+            logger.LogInformation($"CosmosDb Collection {CollectionId} creation if not exists: OK!");
         }
 
         public static async Task<T> GetItemAsync(string id, string partitionKey)

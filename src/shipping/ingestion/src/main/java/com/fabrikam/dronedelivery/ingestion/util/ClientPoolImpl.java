@@ -51,8 +51,7 @@ public class ClientPoolImpl implements ClientPool {
 			eventHubClients[poolId] = EventHubClient.createFromConnectionString(connectionString.toString()).get();
 		}
 		
-		EventHubClient vclient = eventHubClients[poolId];
-
+	
 		return eventHubClients[poolId];
 	}
 

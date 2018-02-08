@@ -1,0 +1,423 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "sshRSAPublicKey": {
+      "type": "string",
+      "metadata": {
+        "description": "Configure all linux machines with the SSH RSA public key string.  Your key should include three parts, for example 'ssh-rsa AAAAB...snip...UcyupgH azureuser@linuxvm'"
+      }
+    },
+    "servicePrincipalClientId": {
+      "metadata": {
+        "description": "Client ID (used by cloudprovider)"
+      },
+      "type": "string"
+    },
+    "servicePrincipalClientSecret": {
+      "metadata": {
+        "description": "The Service Principal Client Secret."
+      },
+      "type": "securestring"
+    },
+    "agentCount": {
+      "type": "int",
+      "defaultValue": 3,
+      "metadata": {
+        "description": "The number of agents for the cluster.  This value can be from 1 to 100 (note, for Kubernetes clusters you will also get 1 or 2 public agents in addition to these seleted masters)"
+      },
+      "minValue":1,
+      "maxValue":100
+    },
+    "agentVMSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2_v2" ,
+      "allowedValues": [
+        "Standard_D2_v2",
+        "Standard_F8s_v2"
+      ],
+      "metadata": {
+        "description": "The size of the Virtual Machine."
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "User name for the Linux Virtual Machines."
+      },
+      "defaultValue" : "azureuser"
+    },
+    "masterCount": {
+      "type": "int",
+      "defaultValue": 1,
+      "allowedValues": [
+        1
+      ],
+      "metadata": {
+        "description": "The number of Kubernetes masters for the cluster."
+      }
+    },
+    "acrStorageType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS"
+      ],
+      "metadata": {
+        "description": "Type of the storage account that will store container registry datas."
+      }
+    },
+    "deliveryRedisStorageType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS"
+      ],
+      "metadata": {
+        "description": "Type of the storage account that will store Redis Cache."
+      }
+    },
+    "deliveryRedisCacheSKU": {
+      "type": "string",
+      "allowedValues": [
+        "Basic",
+        "Standard",
+        "Premium"
+      ],
+      "defaultValue": "Premium",
+      "metadata": {
+        "description": "The pricing tier of the new Azure Redis Cache."
+      }
+    },
+    "deliveryRedisCacheFamily": {
+      "type": "string",
+      "defaultValue": "P",
+      "metadata": {
+        "description": "The family for the sku."
+      },
+      "allowedValues": [
+        "C",
+        "P"
+      ]
+    },
+    "deliveryRedisCacheCapacity": {
+      "type": "int",
+      "allowedValues": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "defaultValue": 4,
+      "metadata": {
+        "description": "The size of the new Azure Redis Cache instance. "
+      }
+    },
+    "deliveryRedisDiagnosticsEnabled": {
+      "type": "bool",
+      "allowedValues": [
+        false,
+        true
+      ],
+      "defaultValue": false,
+      "metadata": {
+        "description": "A value that indicates whether diagnostics should be saved to the specified storage account."
+      }
+    },
+    "schedulerStorageType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS"
+      ],
+      "metadata": {
+        "description": "Type of the storage account that will store Scheduler checkpoints."
+      }
+    }
+  },
+  "variables": {
+    "agentsEndpointDNSNamePrefix":"[concat('agents',uniqueString(resourceGroup().id))]",
+    "mastersEndpointDNSNamePrefix":"[concat('mgmt',uniqueString(resourceGroup().id))]",
+    "useServicePrincipalDictionary": {
+      "DCOS": 0,
+      "Swarm": 0,
+      "Kubernetes": 1
+    },
+    "useServicePrincipal": "[variables('useServicePrincipalDictionary')['Kubernetes']]",
+    "servicePrincipalFields": [
+      null,
+      {
+        "ClientId": "[parameters('servicePrincipalClientId')]",
+        "Secret": "[parameters('servicePrincipalClientSecret')]"
+      }
+    ],
+    "acsK8sClusterName":"[concat('acsK8sCluster-',resourceGroup().name)]", 
+    "acrName": "[concat('acr', uniqueString(resourceGroup().id))]",
+    "acrStorageName": "[concat('acrsto', uniqueString(resourceGroup().id))]",
+    "acrStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('acrStorageName'))]",
+    "deliveryRedisStorageName": "[concat('redsto', uniqueString(resourceGroup().id))]",
+    "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('deliveryRedisStorageName'))]",
+    "deliveryCosmosDbName": "[concat(uniqueString(resourceGroup().id),'-delivery-service-cosmosdb')]",
+    "deliveryRedisName": "[concat(uniqueString(resourceGroup().id),'-delivery-service-redis')]",
+    "packageMongoDbName": "[concat(uniqueString(resourceGroup().id),'-package-service-cosmosdb')]",
+    "ingestionEHNamespace": "[concat(uniqueString(resourceGroup().id),'ingehns')]",
+    "ingestionEHName": "[concat(uniqueString(resourceGroup().id),'ingeh')]",
+    "ingestionEHConsumerGroupName": "[concat(uniqueString(resourceGroup().id),'ingehcg')]",
+    "schedulerStorageName": "[concat('schsto', uniqueString(resourceGroup().id))]",
+    "schedulerStorageId": "[resourceId('Microsoft.Storage/storageAccounts', variables('schedulerStorageName'))]"
+  },
+  "resources": [
+    {
+      "apiVersion": "2016-09-30",
+      "type": "Microsoft.ContainerService/containerServices",
+      "location": "[resourceGroup().location]",
+      "name":"[variables('acsK8sClusterName')]",
+      "properties": {
+        "orchestratorProfile": {
+          "orchestratorType": "Kubernetes"
+        },
+        "masterProfile": {
+          "count": "[parameters('masterCount')]",
+          "dnsPrefix": "[variables('mastersEndpointDNSNamePrefix')]"
+        },
+        "agentPoolProfiles": [
+          {
+            "name": "agentpools",
+            "count": "[parameters('agentCount')]",
+            "vmSize": "[parameters('agentVMSize')]",
+            "dnsPrefix": "[variables('agentsEndpointDNSNamePrefix')]"
+          }
+        ],
+        "linuxProfile": {
+          "adminUsername": "[parameters('adminUsername')]",
+          "ssh": {
+            "publicKeys": [
+              {
+                "keyData": "[parameters('sshRSAPublicKey')]"
+              }
+            ]
+          }
+        },
+        "servicePrincipalProfile": "[variables('servicePrincipalFields')[variables('useServicePrincipal')]]"
+      }
+    },
+    {
+      "name": "[variables('acrStorageName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().location]",
+      "comments": "This storage account is used by Container Registry for storing its datas.",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "ACR Image's storage",
+        "container.registry": "[variables('acrName')]"
+      },
+      "properties": {
+        "accountType": "[parameters('acrStorageType')]"
+      }
+    },
+    {
+      "name": "[variables('acrName')]",
+      "type": "Microsoft.ContainerRegistry/registries",
+      "apiVersion": "2016-06-27-preview",
+      "location": "[resourceGroup().location]",
+      "comments": "Container registry for storing docker images",
+      "dependsOn": [
+        "[variables('acrStorageId')]"
+      ],
+      "tags": {
+        "displayName": "Container Registry",
+        "container.registry": "[variables('acrName')]"
+      },
+      "properties": {
+        "adminUserEnabled": "true",
+        "storageAccount": {
+          "accessKey": "[listKeys(variables('acrStorageId'),'2015-06-15').key1]",
+          "name": "[variables('acrStorageName')]"
+        }
+      }
+    },
+    {
+      "name": "[variables('deliveryRedisStorageName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().location]",
+      "comments": "This storage account is used by Delivery Redis",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "Delivery Redis storage"
+      },
+      "properties": {
+        "accountType": "[parameters('deliveryRedisStorageType')]"
+      }
+    },
+    {
+      "apiVersion": "2015-08-01",
+      "name": "[variables('deliveryRedisName')]",
+      "type": "Microsoft.Cache/Redis",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[variables('deliveryRedisStorageId')]"
+      ],
+      "properties": {
+        "redisEnableNonSslPort": "false",
+        "sku": {
+          "capacity": "[parameters('deliveryRedisCacheCapacity')]",
+          "family": "[parameters('deliveryRedisCacheFamily')]",
+          "name": "[parameters('deliveryRedisCacheSKU')]"
+        },
+        "vm-size": "P4"
+      },
+      "resources": [
+        {
+          "apiVersion": "2017-05-01-preview",
+          "type": "Microsoft.Cache/redis/providers/diagnosticsettings",
+          "name": "[concat(variables('deliveryRedisName'), '/Microsoft.Insights/', variables('deliveryRedisName'))]",
+          "location": "[resourceGroup().location]",
+          "dependsOn": [
+            "[concat('Microsoft.Cache/Redis/', variables('deliveryRedisName'))]"
+          ],
+          "properties": {
+            "storageAccountId": "[variables('deliveryRedisStorageId')]",
+            "logs": [],
+            "metrics": [
+              {
+                "timeGrain": "AllMetrics",
+                "enabled": "[parameters('deliveryRedisDiagnosticsEnabled')]",
+                "retentionPolicy": {
+                  "days": 90,
+                  "enabled": "[parameters('deliveryRedisDiagnosticsEnabled')]"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "apiVersion": "2015-04-08",
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "name": "[variables('deliveryCosmosDbName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "name": "[variables('deliveryCosmosDbName')]",
+        "databaseAccountOfferType": "['Standard']",
+        "locations": [
+          {
+            "locationName": "[resourceGroup().location]",
+            "failoverPriority": 0
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "2015-04-08",
+      "type": "Microsoft.DocumentDB/databaseAccounts",
+      "kind": "MongoDB",
+      "name": "[variables('packageMongoDbName')]",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "databaseAccountOfferType": "Standard",
+        "name": "[variables('packageMongoDbName')]"
+      }
+    },
+    {
+      "apiVersion":"2017-04-01",
+      "name":"[variables('ingestionEHNamespace')]",
+      "type":"Microsoft.EventHub/Namespaces",
+      "location":"[resourceGroup().location]",
+      "sku":{
+         "name":"Standard"
+      },
+      "properties": {
+         "isAutoInflateEnabled": "true",
+         "maximumThroughputUnits": "20"
+         },
+      "resources":[
+         {
+            "apiVersion":"2017-04-01",
+            "name":"[variables('ingestionEHName')]",
+            "type":"EventHubs",
+            "dependsOn":[
+               "[concat('Microsoft.EventHub/namespaces/', variables('ingestionEHNamespace'))]"
+            ],
+            "properties":{
+               "messageRetentionInDays": "7",
+               "partitionCount": "4"
+            },
+            "resources":[
+               {
+                  "apiVersion":"2017-04-01",
+                  "name":"[variables('ingestionEHConsumerGroupName')]",
+                  "type":"ConsumerGroups",
+                  "dependsOn":[
+                     "[variables('ingestionEHName')]"
+                  ],
+                  "properties":{
+                  "userMetadata": "Consumer Group for ingestion Event Hub"
+                  }
+               }
+            ]
+         }
+      ]
+    },
+    {
+      "name": "[variables('schedulerStorageName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2015-06-15",
+      "location": "[resourceGroup().location]",
+      "comments": "This storage account is used by the Scheduler checkpoints.",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "Scheduler Checkpoints storage"
+      },
+      "properties": {
+        "accountType": "[parameters('schedulerStorageType')]"
+      }
+    }
+  ],
+  "outputs": {
+    "acrName": {
+      "value": "[variables('acrName')]",
+      "type": "string"
+    },
+    "acrLoginServer": {
+      "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries',variables('acrName')),'2016-06-27-preview').loginServer]",
+      "type": "string"
+    },
+    "acsK8sClusterName": {
+      "value": "[variables('acsK8sClusterName')]",
+      "type": "string"
+    },
+    "deliveryRedisName": {
+      "value": "[variables('deliveryRedisName')]",
+      "type": "string"
+    },
+    "deliveryCosmosDbName": {
+      "value": "[variables('deliveryCosmosDbName')]",
+      "type": "string"
+    },
+    "packageMongoDbName": {
+      "value": "[variables('packageMongoDbName')]",
+      "type": "string"
+    },
+    "ingestionEHNamespace": {
+      "value": "[variables('ingestionEHNamespace')]",
+      "type": "string"
+    },
+    "ingestionEHName": {
+      "value": "[variables('ingestionEHName')]",
+      "type": "string"
+    },
+    "schedulerStorageAccountName": {
+      "value": "[listKeys(variables('schedulerStorageName'),'2016-12-01')]",
+      "type": "object"
+    }
+  }
+}

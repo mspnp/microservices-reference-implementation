@@ -15,91 +15,87 @@ Clone or download this repo locally.
 git clone https://github.com/mspnp/microservices-reference-implementation.git
 ```
 
-The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
+> The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
 
-## Create the Kubernetes cluster
+## Generate a SSH rsa public/private key pair 
+
+the SSH rsa key pair can be generated using ssh-keygen, among other tools, on Linux, Mac, or Windows. If you already have an ~/.ssh/id_rsa.pub file, you could provide the same later on. If you need to create an SSH key pair, see [How to create and use an SSH key pair](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys). 
+> Note: the SSH rsa public key will be requested when deploying your Kubernetes cluster in Azure. 
+
+## Azure Resources Provisioning
 
 Set environment variables.
 
 ```bash
+export SSH_PUBLIC_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PUBLIC_KEY_FILE_HERE]
+export SSH_PRIVATE_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PRIVAYE_KEY_FILE_HERE]
+
 export LOCATION=[YOUR_LOCATION_HERE]
 
-export UNIQUE_APP_NAME_PREFIX=[YOUR_UNIQUE_APPLICATION_NAME_HERE]
+export RESOURCE_GROUP=[YOUR_RESOURCE_GROUP_HERE]
 
-export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
-export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster"
+export SP_CLIENT_SECRET=$(uuidgen)
 ```
 
-Provision a Kubernetes cluster in ACS
+Infrastructure Prerequisites
 
 ```bash
 # Log in to Azure
 az login
 
-# Create a resource group for ACS
-az group create --name $RESOURCE_GROUP --location $LOCATION
+# Create a resource group and service principal for ACS
+az group create --name $RESOURCE_GROUP --location $LOCATION && \
+export SP_APP_ID=$(az ad sp create-for-rbac --role="Contributor" -p $SP_CLIENT_SECRET | grep -oP '(?<="appId": ")[^"]*') && \
+export BEARER_TOKEN=$(az account get-access-token --query accessToken | sed -e 's/^"//' -e 's/"$//') && \
+export SUBS_ID=$(az account show --query id | sed -e 's/^"//' -e 's/"$//')
+```
 
-# Create the ACS cluster
-az acs create --orchestrator-type kubernetes --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --generate-ssh-keys
+Deployment  
 
-# Install kubectl
+> Note: this deployment might take up to 20 minutes
+
+* using Azure CLI 2.0
+
+  ```bash
+  az group deployment create -g $RESOURCE_GROUP --name azuredeploy --template-file azuredeploy.json \
+  --parameters servicePrincipalClientId=${SP_APP_ID} \
+             servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
+             sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})"
+  ```
+
+* from Azure Portal
+
+  [![Deploy to Azure](http://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fmicroservices-reference-implementation%2Fmaster%2Fazuredeploy.json)
+  > Note: 
+  > 1. paste the $RESOURCE_GROUP value in the resource group field. Important: choose use existing resource group 
+  > 2. paste the content of your ssh-rsa public key file in the Ssh RSA Plublic Key field.
+  > 3. paste the $SP_APP_ID and $SP_CLIENT_SECRET in the Client Id and Secret fields.
+
+Get outputs from Azure Deploy
+```bash
+# Shared 
+export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acrName.value | sed -e 's/^"//' -e 's/"$//') && \
+export ACR_SERVER=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acrLoginServer.value | sed -e 's/^"//' -e 's/"$//') && \
+export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acsK8sClusterName.value | sed -e 's/^"//' -e 's/"$//') 
+```
+
+Download kubectl and create a k8s namespace
+```bash
+#  Install kubectl
 sudo az acs kubernetes install-cli
 
 # Get the Kubernetes cluster credentials
-az acs kubernetes get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
+az acs kubernetes get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME \
+    --ssh-key-file $SSH_PRIVATE_KEY_FILE
 
 # Create the BC namespaces
 kubectl create namespace shipping && \
 kubectl create namespace accounts && \
 kubectl create namespace dronemgmt && \
-kubectl create namespace 3rdparty 
-```
-
-Create an Azure Container Registry instance. 
-
-> Note: Azure Container Registory is not required. If you prefer, you can store the Docker images for this solution in another container registry.
-
-```bash
-export ACR_NAME=[YOUR_CONTAINER_REGISTRY_NAME_HERE]
-
-# Create the ACR instance
-az acr create --name $ACR_NAME --resource-group $RESOURCE_GROUP --sku Basic
-
-# Log in to ACR
-az acr login --name $ACR_NAME
-
-# Get the ACR login server name
-export ACR_SERVER=$(az acr show -g $RESOURCE_GROUP -n $ACR_NAME --query "loginServer")
-
-# Strip quotes
-export ACR_SERVER=("${ACR_SERVER[@]//\"/}")
+kubectl create namespace 3rdparty
 ```
 
 ## Deploy the Delivery service
-
-Provision Azure resources
-
-```bash
-export REDIS_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-redis" && \
-export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-cosmosdb" && \
-export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
-export COLLECTION_NAME="${DATABASE_NAME}-col"
-
-# Create Azure Redis Cache
-az redis create --location $LOCATION \
-            --name $REDIS_NAME \
-            --resource-group $RESOURCE_GROUP \
-            --sku Premium \
-            --vm-size P4
-
-# Create Cosmos DB account with DocumentDB API
-az cosmosdb create \
-    --name $COSMOSDB_NAME \
-    --kind GlobalDocumentDB \
-    --resource-group $RESOURCE_GROUP \
-    --max-interval 10 \
-    --max-staleness-prefix 200 
-```
 
 Build the Delivery service
 
@@ -125,6 +121,7 @@ Create Kubernetes secrets
 ```bash
 export REDIS_CONNECTION_STRING=[YOUR_REDIS_CONNECTION_STRING]
 
+export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryCosmosDbName.value | sed -e 's/^"//' -e 's/"$//') && \
 export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query primaryMasterKey) && \
 export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint)
 
@@ -152,13 +149,6 @@ kubectl --namespace shipping apply -f ./microservices-reference-implementation/k
 
 ## Deploy the Package service
 
-Provision Azure resources
-
-```bash
-export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-package-service-cosmosdb"
-az cosmosdb create --name $COSMOSDB_NAME --kind MongoDB --resource-group $RESOURCE_GROUP
-```
-
 Build the Package service
 
 ```bash
@@ -182,6 +172,7 @@ Deploy the Package service
 sed -i "s#image:#image: $ACR_SERVER/package-service:0.1.0#g" ./microservices-reference-implementation/k8s/package.yml
 
 # Create secret
+export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.packageMongoDbName.value | sed -e 's/^"//' -e 's/"$//') && \
 export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString")
 kubectl -n shipping create secret generic package-secrets --from-literal=mongodb-pwd=${COSMOSDB_CONNECTION[@]//\"/}
 
@@ -190,23 +181,6 @@ kubectl --namespace shipping apply -f ./microservices-reference-implementation/k
 ```
 
 ## Deploy the Ingestion service 
-Provision Azure resources
-
-```bash
-export INGESTION_EH_NS=[INGESTION_EVENT_HUB_NAMESPACE_HERE]
-export INGESTION_EH_NAME=[INGESTION_EVENT_HUB_NAME_HERE]
-export INGESTION_EH_CONSUMERGROUP_NAME=[INGESTION_EVENT_HUB_CONSUMERGROUP_NAME_HERE]
-
-wget https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/201-event-hubs-create-event-hub-and-consumer-group/azuredeploy.json && \
-sed -i 's#"partitionCount": "4"#"partitionCount": "32"#g' azuredeploy.json && \
-az group deployment create -g $RESOURCE_GROUP --template-file azuredeploy.json  --parameters \
-'{ \
-  "namespaceName": {"value": "'${INGESTION_EH_NS}'"}, \
-  "eventHubName": {"value": "'${INGESTION_EH_NAME}'"}, \
-  "consumerGroupName": {"value": "'${INGESTION_EH_CONSUMERGROUP_NAME}'"} \
-}'
-```
-Note: you could also create this from [the Azure Portal](https://docs.microsoft.com/en-us/azure/event-hubs/event-hubs-create)
 
 Build the Ingestion service
 
@@ -232,8 +206,12 @@ Deploy the Ingestion service
 sed -i "s#image:#image: $ACR_SERVER/ingestion:0.1.0#g" ./microservices-reference-implementation/k8s/ingestion.yaml
 
 # Get the EventHub shared access policy name and key from the Azure Portal
-export EH_ACCESS_KEY_NAME=[YOUR_SHARED_ACCESS_POLICY_NAME_HERE]
-export EH_ACCESS_KEY_VALUE=[YOUR_SHARED_ACCESS_POLICY_VALUE_HERE]
+export INGESTION_EH_NS=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionEHNamespace.value | sed -e 's/^"//' -e 's/"$//') && \
+export INGESTION_EH_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionEHName.value | sed -e 's/^"//' -e 's/"$//') && \
+export EH_KEYS=$(curl -X POST "https://management.azure.com/subscriptions/${SUBS_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.EventHub/namespaces/${INGESTION_EH_NS}/AuthorizationRules/RootManageSharedAccessKey/ListKeys?api-version=2017-04-01" -H "Content-Type: application/json" -H "Authorization: Bearer ${BEARER_TOKEN}" -H "Content-Length: 0" --stderr - --silent) && \
+export EH_ACCESS_KEY_NAME=$(echo $EH_KEYS | grep -oP '(?<="keyName":")[^"]*') && \
+export EH_ACCESS_KEY_VALUE=$(echo $EH_KEYS | grep -oP '(?<="primaryKey":")[^"]*') && \
+export EH_CONNECTION_STRING=$(echo $EH_KEYS | grep -oP '(?<="primaryConnectionString":")[^"]*')
 
 # Create secret
 kubectl -n shipping create secret generic ingestion-secrets --from-literal=eventhub_namespace=${INGESTION_EH_NS} \
@@ -246,13 +224,6 @@ kubectl --namespace shipping apply -f ./microservices-reference-implementation/k
 ```
 
 ## Deploy the Scheduler service 
-
-Provision Azure resources
-```bash
-export SCHEDULER_STORAGE_ACCOUNT_NAME=[SCHEDULER_STORAGE_ACCOUNT_NAME_HERE]
-
-az storage account create --resource-group $RESOURCE_GROUP --name $SCHEDULER_STORAGE_ACCOUNT_NAME --sku Standard_LRS
-```
 
 Build the Scheduler service
 
@@ -278,7 +249,10 @@ Deploy the Scheduler service
 sed -i "s#image:#image: $ACR_SERVER/scheduler:0.1.0#g" ./microservices-reference-implementation/k8s/scheduler.yaml
 
 # Get the following values from the Azure Portal
-export EH_CONNECTION_STRING="[YOUR_EVENT_HUB_CONNECTION_STRING_HERE]"
+export SCHEDULER_STORAGE_ACCOUNT_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.schedulerStorageAccountName.value | sed -e 's/^"//' -e 's/"$//') && \
+export EH_KEYS=$(curl -X POST "https://management.azure.com/subscriptions/${SUBS_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.EventHub/namespaces/${INGESTION_EH_NS}/AuthorizationRules/RootManageSharedAccessKey/ListKeys?api-version=2017-04-01" -H "Content-Type: application/json" -H "Authorization: Bearer ${BEARER_TOKEN}" -H "Content-Length: 0" --stderr - --silent) && \
+export EH_CONNECTION_STRING=$(echo $EH_KEYS | grep -oP '(?<="primaryConnectionString":")[^"]*')
+
 export STORAGE_ACCOUNT_ACCESS_KEY=[YOUR_STORAGE_ACCOUNT_ACCESS_KEY_HERE]
 export STORAGE_ACCOUNT_CONNECTION_STRING="[YOUR_STORAGE_ACCOUNT_CONNECTION_STRING_HERE]"
 
