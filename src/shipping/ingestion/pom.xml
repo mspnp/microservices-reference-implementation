@@ -45,13 +45,6 @@
 			<scope>test</scope>
 		</dependency>
 		
-        
-        
-<!--         <dependency> -->
-<!--             <groupId>org.projectlombok</groupId> -->
-<!--             <artifactId>lombok</artifactId>            -->
-<!--         </dependency> -->
-		
 		<dependency>
 			<groupId>com.google.common.html.types</groupId>
 			<artifactId>types</artifactId>
@@ -170,7 +163,27 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-			   <plugin>
+			
+			<plugin>
+       			<groupId>org.apache.maven.plugins</groupId>
+        		<artifactId>maven-failsafe-plugin</artifactId>
+        		<executions>
+          			<execution>
+            			<id>integration-test</id>
+            			<goals>
+              				<goal>integration-test</goal>
+            			</goals>
+          			</execution>
+          			<execution>
+            			<id>verify</id>
+            			<goals>
+              				<goal>verify</goal>
+            			</goals>
+          			</execution>
+        		</executions>
+  			</plugin>
+  			
+			<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
