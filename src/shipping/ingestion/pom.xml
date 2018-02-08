@@ -45,23 +45,34 @@
 			<scope>test</scope>
 		</dependency>
 		
-        
-        
-<!--         <dependency> -->
-<!--             <groupId>org.projectlombok</groupId> -->
-<!--             <artifactId>lombok</artifactId>            -->
-<!--         </dependency> -->
-		
 		<dependency>
 			<groupId>com.google.common.html.types</groupId>
 			<artifactId>types</artifactId>
 			<version>1.0.5</version>
 		</dependency>
-
+		
+		<!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
 		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
+    		<groupId>org.mockito</groupId>
+    		<artifactId>mockito-core</artifactId>
+    		<version>2.13.0</version>
+    		<scope>test</scope>
 		</dependency>
+		
+  		<dependency>
+      		<groupId>org.powermock</groupId>
+      		<artifactId>powermock-module-junit4</artifactId>
+      		<version>1.7.1</version>
+      		<scope>test</scope>
+  		 </dependency>
+   		<dependency>
+     		<groupId>org.powermock</groupId>
+      		<artifactId>powermock-api-mockito2</artifactId>
+      		<version>1.7.1</version>
+  		    <scope>test</scope>
+ 	  </dependency>
+
+
 		
 		<dependency>
 			<groupId>junit</groupId>
@@ -94,6 +105,15 @@
 		    <artifactId>springfox-swagger2</artifactId>
 		    <version>2.7.0</version>
 		</dependency> 
+		
+		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-test -->
+		<dependency>
+  		  <groupId>org.springframework.boot</groupId>
+ 		   <artifactId>spring-boot-starter-test</artifactId>
+		    <version>1.5.9.RELEASE</version>
+		    <scope>test</scope>
+		</dependency>
+		
 		 
 		<dependency>
 		    <groupId>io.springfox</groupId>
@@ -143,7 +163,27 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-			   <plugin>
+			
+			<plugin>
+       			<groupId>org.apache.maven.plugins</groupId>
+        		<artifactId>maven-failsafe-plugin</artifactId>
+        		<executions>
+          			<execution>
+            			<id>integration-test</id>
+            			<goals>
+              				<goal>integration-test</goal>
+            			</goals>
+          			</execution>
+          			<execution>
+            			<id>verify</id>
+            			<goals>
+              				<goal>verify</goal>
+            			</goals>
+          			</execution>
+        		</executions>
+  			</plugin>
+  			
+			<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
