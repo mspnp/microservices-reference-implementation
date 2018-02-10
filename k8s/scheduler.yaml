@@ -47,10 +47,10 @@ spec:
             value: http://package/api/packages
           - name: SERVICE_URI_THIRDPARTY
             value: http://thirdparty/api/ThirdPartyDeliveries
-          # set this env to read from period of time
-          # otherwise is from last known checkpoint
-          - name: CHECKP_TIME_MINUTES
-            value: "0"
+          ## set this env to read from period of time
+          ## otherwise is from last known checkpoint                              
+          - name: CHECKPOINT_TIME_MINUTES
+            value: "0"           
           - name: IOTHUB_EVENTHUB_NAME
             valueFrom:
               secretKeyRef: 
@@ -77,7 +77,7 @@ spec:
                 name: scheduler-secrets
                 key: storageaccount_key
           - name: STORAGE_QUEUE_NAME
-            value: "CompensatingTransactionQueue"
+            value: "compensationqueue"
           - name: STORAGE_QUEUE_CONNECTION_STRING
             valueFrom:
               secretKeyRef:
