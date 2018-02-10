@@ -1,7 +1,9 @@
 package com.fabrikam.dronedelivery.deliveryscheduler.scheduler;
 
 import com.fabrikam.dronedelivery.deliveryscheduler.akkareader.AkkaDelivery;
-import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.StorageQueue.StorageQueueClientFactory;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.SchedulerSettings;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.compensation.RetryableDelivery;
+import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.compensation.StorageQueueClientFactory;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.DeliverySchedule;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.invoker.PackageGen;
 import com.fabrikam.dronedelivery.deliveryscheduler.scheduler.models.receiver.Delivery;
@@ -33,9 +35,7 @@ public class DeliveryRequestEventProcessor {
 
     private static final String CorrelationHeaderTag = "CorrelationId";
 
-    private static Gson deserializer = new GsonBuilder().setPrettyPrinting().create();
-
-    
+    private static final Gson gsonSerializer = new GsonBuilder().setPrettyPrinting().create();
 
     private static final EnumMap<ServiceName, ServiceCallerImpl> backendServicesMap = new EnumMap<ServiceName, ServiceCallerImpl>(
             ServiceName.class);
@@ -56,7 +56,7 @@ public class DeliveryRequestEventProcessor {
         try {
 
             String dataReceived = message.contentAsString();
-            Delivery delivery = deserializer.fromJson(dataReceived, Delivery.class);
+            Delivery delivery = gsonSerializer.fromJson(dataReceived, Delivery.class);
             deliveryRequest = new AkkaDelivery();
             deliveryRequest.setDelivery(delivery);
             deliveryRequest.setMessageFromDevice(message);
@@ -104,7 +104,7 @@ public class DeliveryRequestEventProcessor {
     }
 
     public static Boolean invokeAccountServiceAsync(Delivery deliveryRequest, Map<String, String> properties) {
-        Boolean accountResult = new Boolean(false);
+        Boolean accountResult = null;
         try {
             AccountServiceCallerImpl backendService = (AccountServiceCallerImpl) backendServicesMap.get(ServiceName.AccountService);
             appendServiceMeshHeaders(backendService, properties);
@@ -113,18 +113,17 @@ public class DeliveryRequestEventProcessor {
             // Assume failure of service here - a crude supervisor
             // implementation
             superviseFailureAsync(deliveryRequest, ServiceName.AccountService, ExceptionUtils.getMessage(e))
-                    .thenRunAsync(() -> {
-                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-                    });
-
-            throw e;
+            .thenAcceptAsync(result -> {
+                Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                Log.debug(result);
+            });
         }
 
         return accountResult;
     }
 
     private static Boolean invokeThirdPartyServiceAsync(Delivery deliveryRequest, Map<String, String> properties) {
-        Boolean thirdPartyResult = new Boolean(false);
+        Boolean thirdPartyResult = null;
         try {
             ThirdPartyServiceCallerImpl backendService = (ThirdPartyServiceCallerImpl) backendServicesMap
                     .get(ServiceName.ThirdPartyService);
@@ -135,11 +134,10 @@ public class DeliveryRequestEventProcessor {
             // Assume failure of service here - a crude supervisor
             // implementation
             superviseFailureAsync(deliveryRequest, ServiceName.ThirdPartyService, ExceptionUtils.getMessage(e))
-                    .thenRunAsync(() -> {
-                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-                    });
-
-            throw e;
+            .thenAcceptAsync(result -> {
+                Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                Log.debug(result);
+            });
         }
 
         return thirdPartyResult;
@@ -157,18 +155,17 @@ public class DeliveryRequestEventProcessor {
             // Assume failure of service here - a crude supervisor
             // implementation
             superviseFailureAsync(deliveryRequest, ServiceName.DroneSchedulerService, ExceptionUtils.getMessage(e))
-                    .thenRunAsync(() -> {
-                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-                    });
-
-            throw e;
+            .thenAcceptAsync(result -> {
+                Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                Log.debug(result);
+            });
         }
 
         return droneScheduleResult;
     }
 
     public static PackageGen invokePackageServiceAsync(Delivery deliveryRequest, Map<String, String> properties) {
-        PackageGen packageResult = new PackageGen();
+        PackageGen packageResult = null;
         try {
             PackageInfo packageInfo = deliveryRequest.getPackageInfo();
             PackageServiceCallerImpl backendService = (PackageServiceCallerImpl) backendServicesMap.get(ServiceName.PackageService);
@@ -178,10 +175,10 @@ public class DeliveryRequestEventProcessor {
             // Assume failure of service here - a crude supervisor
             // implementation
             superviseFailureAsync(deliveryRequest, ServiceName.PackageService, ExceptionUtils.getMessage(e))
-                    .thenRunAsync(() -> {
-                        Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
-                    });
-            throw e;
+            .thenAcceptAsync(result -> {
+                Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                Log.debug(result);
+            });
         }
 
         return packageResult;
@@ -198,11 +195,10 @@ public class DeliveryRequestEventProcessor {
             // Assume failure of service here - a crude supervisor
             // implementation
             superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getMessage(e))
-                    .thenRunAsync(() -> {
+                    .thenAcceptAsync(result -> {
                         Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
+                        Log.debug(result);
                     });
-
-            throw e;
         }
 
         return deliveryResult;
@@ -225,23 +221,24 @@ public class DeliveryRequestEventProcessor {
     /*
      * Supervisor implementation
      */
-    private static CompletableFuture<Void> superviseFailureAsync(Delivery deliveryRequest, ServiceName serviceName, String errorMessage) {
-        CloudQueueClient queueClient = StorageQueueClientFactory.get();
+	private static CompletableFuture<String> superviseFailureAsync(Delivery deliveryRequest, ServiceName serviceName, String errorMessage) {
+        CloudQueueClient queueClient = StorageQueueClientFactory.INSTANCE.get(SchedulerSettings.StorageQueueConnectionString);
+        String endResult = "Failed delivery request added to compensation queue!";
         try {
-            CloudQueue queueReference = queueClient.getQueueReference(SchedulerSettings.storageQueueName);
+            CloudQueue queueReference = queueClient.getQueueReference(SchedulerSettings.StorageQueueName);
             queueReference.createIfNotExists();
-
-            String requestInJson = deserializer.toJson(deliveryRequest, Delivery.class);
+            
+            // Store the metadata so that delivery could be retried from failure state if needed
+            String requestInJson = gsonSerializer.toJson(new RetryableDelivery(deliveryRequest, serviceName, errorMessage));
             byte[] requestInJsonBytes = requestInJson.getBytes(StandardCharsets.UTF_8);
             CloudQueueMessage message = new CloudQueueMessage(requestInJsonBytes);
 
             queueReference.addMessage(message);
 
         } catch (URISyntaxException | StorageException e) {
-            e.printStackTrace();
-        } finally {
-            return null;
+            endResult = ExceptionUtils.getStackTrace(e);
         }
 
+        return CompletableFuture.completedFuture(endResult);
     }
 }

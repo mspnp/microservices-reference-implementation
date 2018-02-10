@@ -27,16 +27,15 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 
 public abstract class ServiceCallerImpl implements ServiceCaller {
-	private AsyncRestTemplate asyncRestTemplate;
 	private HttpHeaders requestHeaders;
-	private static final Logger Log = LogManager.getLogger(ServiceCallerImpl.class);
+	private final static Logger Log = LogManager.getLogger(ServiceCallerImpl.class);
+	private final static int Second = 1000;
+	private HttpComponentsAsyncClientHttpRequestFactory clientHttpRequestFactory;	
 	
 	public AsyncRestTemplate getAsyncRestTemplate() {
+		AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate(this.clientHttpRequestFactory);
+		asyncRestTemplate.setErrorHandler(new ServiceCallerResponseErrorHandler());
 		return asyncRestTemplate;
-	}
-
-	public void setAsyncRestTemplate(AsyncRestTemplate asyncRest) {
-		this.asyncRestTemplate = asyncRest;
 	}
 
 	public HttpHeaders getRequestHeaders() {
@@ -53,23 +52,69 @@ public abstract class ServiceCallerImpl implements ServiceCaller {
 	}
 
 	public ServiceCallerImpl() {
-	    ConnectingIOReactor ioReactor = null;
+		// Initialize http headers
+		initHttpHeaders();
+		
+		// Initialize factory that is shared by all new instances of AsyncRestTemplate
+		this.clientHttpRequestFactory = getCustomClientHttpRequestFactory(); 
+	}
+
+	private void initHttpHeaders() {
+		this.requestHeaders = new HttpHeaders();
+		this.requestHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+		this.requestHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
+	}
+
+	private HttpComponentsAsyncClientHttpRequestFactory getCustomClientHttpRequestFactory() {
+	    PoolingNHttpClientConnectionManager poolingConnManager = 
+	    	      new PoolingNHttpClientConnectionManager(getIOReactor());
+	    
+		HttpHost httpProxy = getHttpProxy();
+		
+		CloseableHttpAsyncClient client = getCustomHttpClient(poolingConnManager, httpProxy);
+
+		// Start idle connection monitor
+		IdleConnectionMonitorThread  staleMonitor = new IdleConnectionMonitorThread(poolingConnManager);
+		staleMonitor.start();
+
+		return getCustomClientHttpRequestFactory(client);
+	}
+	
+	private ConnectingIOReactor getIOReactor() {
+		ConnectingIOReactor ioReactor = null;
 		
 	    try {
 			ioReactor = new DefaultConnectingIOReactor();
 		} catch (IOReactorException e) {
 			Log.error(ExceptionUtils.getStackTrace(e));
 		}
-	    
-	    PoolingNHttpClientConnectionManager poolingConnManager = 
-	    	      new PoolingNHttpClientConnectionManager(ioReactor);
-	    
+		return ioReactor;
+	}
+	
+	private HttpHost getHttpProxy() {
 		HttpHost httpProxy = null;
 		if (StringUtils.isNotEmpty(SchedulerSettings.HttpProxyValue)) {
 			String[] address = SchedulerSettings.HttpProxyValue.split("\\s*:\\s*");
 			httpProxy = new HttpHost(address[0], Integer.parseInt(address[1]));
 		}
+		return httpProxy;
+	}
+
+	private HttpComponentsAsyncClientHttpRequestFactory getCustomClientHttpRequestFactory(
+			CloseableHttpAsyncClient client) {
 		
+		HttpComponentsAsyncClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsAsyncClientHttpRequestFactory();
+		clientHttpRequestFactory.setConnectionRequestTimeout(30*Second);
+		clientHttpRequestFactory.setConnectTimeout(30*Second);
+		clientHttpRequestFactory.setBufferRequestBody(false);
+		clientHttpRequestFactory.setReadTimeout(0);
+
+		clientHttpRequestFactory.setHttpAsyncClient(client);
+		return clientHttpRequestFactory;
+	}
+	
+	private CloseableHttpAsyncClient getCustomHttpClient(PoolingNHttpClientConnectionManager poolingConnManager,
+			HttpHost httpProxy) {
 		HttpAsyncClientBuilder builder = HttpAsyncClients.custom().setConnectionManager(poolingConnManager)
 				.setConnectionReuseStrategy(new ConnectionReuseStrategy() {
 
@@ -86,22 +131,7 @@ public abstract class ServiceCallerImpl implements ServiceCaller {
 		}
 
 		CloseableHttpAsyncClient client = builder.build();
-
-		IdleConnectionMonitorThread  worker = new IdleConnectionMonitorThread(poolingConnManager);
-		worker.start();
-				
-		HttpComponentsAsyncClientHttpRequestFactory clientHttpRequestFactory = new HttpComponentsAsyncClientHttpRequestFactory();
-		clientHttpRequestFactory.setConnectionRequestTimeout(0);
-		clientHttpRequestFactory.setConnectTimeout(0);
-		clientHttpRequestFactory.setBufferRequestBody(false);
-		clientHttpRequestFactory.setReadTimeout(0);
-
-		clientHttpRequestFactory.setHttpAsyncClient(client);
-		asyncRestTemplate = new AsyncRestTemplate(clientHttpRequestFactory);
-		this.requestHeaders = new HttpHeaders();
-		this.requestHeaders.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-		this.requestHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
-		asyncRestTemplate.setErrorHandler(new ServiceCallerResponseErrorHandler());
+		return client;
 	}
 
 	@Override

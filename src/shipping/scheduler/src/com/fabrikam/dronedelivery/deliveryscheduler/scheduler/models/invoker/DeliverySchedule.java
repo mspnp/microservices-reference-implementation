@@ -9,7 +9,6 @@ public class DeliverySchedule {
 	private Boolean expedited;
 	private ConfirmationType confirmationRequired;
 	private String droneId;
-//	private String packageId;
 
 	public Location getPickup() {
 		return pickup;
@@ -42,14 +41,6 @@ public class DeliverySchedule {
 	public void setDroneId(String droneId) {
 		this.droneId = droneId;
 	}
-
-//	public String getPackageId() {
-//		return packageId;
-//	}
-//
-//	public void setPackageId(String packageId) {
-//		this.packageId = packageId;
-//	}
 
 	public String getDeadline() {
 		return this.deadline;
