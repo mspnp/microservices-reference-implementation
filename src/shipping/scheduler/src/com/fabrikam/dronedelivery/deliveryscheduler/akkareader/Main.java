@@ -105,17 +105,8 @@ public class Main extends ReactiveStreamingApp {
 	
 	private static Flow<AkkaDelivery, MessageFromDevice, NotUsed> deliveryProcessor() {
 		return Flow.of(AkkaDelivery.class).map(delivery -> {
-			CompletableFuture<DeliverySchedule> completableSchedule = DeliveryRequestEventProcessor
-					.processDeliveryRequestAsync(delivery.getDelivery(), delivery.getMessageFromDevice().properties());
-
-			completableSchedule.whenComplete((deliverySchedule, error) -> {
-				if (deliverySchedule == null) {
-					Log.error(error == null ? "Failed Delivery": "Failed Delivery: " + ExceptionUtils.getStackTrace(error).toString());
-				} else {
-					Log.info("Completed Delivery", deliverySchedule.toString());
-				}
-									
-			});
+			DeliveryRequestEventProcessor.processDeliveryRequestAsync(delivery.getDelivery(),
+					delivery.getMessageFromDevice().properties());
 
 			return delivery.getMessageFromDevice();
 		});

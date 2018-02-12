@@ -96,7 +96,6 @@ public class DeliveryServiceCallerImpl extends ServiceCallerImpl {
 		scheduleDelivery.setOwner(account);
 		scheduleDelivery.setPickup(LocationRandomizer.getRandomLocation());
 		scheduleDelivery.setDropoff(LocationRandomizer.getRandomLocation());
-		//scheduleDelivery.setPackageId(deliveryRequest.getPackageInfo().getPackageId());
 		scheduleDelivery.setDeadline(deliveryRequest.getDeadline());
 		scheduleDelivery.setExpedited(deliveryRequest.isExpedited());
 		scheduleDelivery

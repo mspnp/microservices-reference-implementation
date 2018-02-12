@@ -67,7 +67,7 @@ public class DeliveryRequestEventProcessor {
         return deliveryRequest;
     }
 
-    public static CompletableFuture<DeliverySchedule> processDeliveryRequestAsync(Delivery deliveryRequest,
+    public static void processDeliveryRequestAsync(Delivery deliveryRequest,
                                                                Map<String, String> properties) {
         DeliverySchedule deliverySchedule = null;
         // Extract the correlation id and log it
@@ -99,7 +99,17 @@ public class DeliveryRequestEventProcessor {
               }
         }
         
-        return CompletableFuture.completedFuture(deliverySchedule);
+		CompletableFuture.completedFuture(deliverySchedule).whenCompleteAsync((ds, error) -> {
+			if (ds == null) {
+				Log.error("Failed Delivery");
+				superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService,
+						error == null ? "Unknown error" : ExceptionUtils.getStackTrace(error).toString())
+								.thenAcceptAsync(result -> Log.debug(result));
+			} else {
+				Log.info("Completed Delivery", ds.toString());
+			}
+
+		});
 
     }
 
@@ -112,7 +122,7 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.AccountService, ExceptionUtils.getMessage(e))
+            superviseFailureAsync(deliveryRequest, ServiceName.AccountService, ExceptionUtils.getStackTrace(e))
             .thenAcceptAsync(result -> {
                 Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
                 Log.debug(result);
@@ -133,7 +143,7 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.ThirdPartyService, ExceptionUtils.getMessage(e))
+            superviseFailureAsync(deliveryRequest, ServiceName.ThirdPartyService, ExceptionUtils.getStackTrace(e))
             .thenAcceptAsync(result -> {
                 Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
                 Log.debug(result);
@@ -154,7 +164,7 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.DroneSchedulerService, ExceptionUtils.getMessage(e))
+            superviseFailureAsync(deliveryRequest, ServiceName.DroneSchedulerService, ExceptionUtils.getStackTrace(e))
             .thenAcceptAsync(result -> {
                 Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
                 Log.debug(result);
@@ -174,7 +184,7 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.PackageService, ExceptionUtils.getMessage(e))
+            superviseFailureAsync(deliveryRequest, ServiceName.PackageService, ExceptionUtils.getStackTrace(e))
             .thenAcceptAsync(result -> {
                 Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
                 Log.debug(result);
@@ -194,7 +204,7 @@ public class DeliveryRequestEventProcessor {
         } catch (Exception e) {
             // Assume failure of service here - a crude supervisor
             // implementation
-            superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getMessage(e))
+            superviseFailureAsync(deliveryRequest, ServiceName.DeliveryService, ExceptionUtils.getStackTrace(e))
                     .thenAcceptAsync(result -> {
                         Log.error("throwable: {}", ExceptionUtils.getStackTrace(e));
                         Log.debug(result);
