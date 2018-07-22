@@ -16,7 +16,7 @@ metadata:
     co: fabrikam
 spec:
   serviceName: scheduler
-  replicas: 32
+  replicas: 8
   selector:
     matchLabels:
       app: scheduler 
