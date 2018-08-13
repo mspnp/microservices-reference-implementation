@@ -289,4 +289,4 @@ __pycache__/
 
 .vscode
 
-src/bc-shipping/scheduler/target/*
+src/shipping/scheduler/target/*

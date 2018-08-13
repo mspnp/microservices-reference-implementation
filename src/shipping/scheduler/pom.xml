@@ -2,7 +2,7 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.fabrikam.dronedelivery</groupId>
-	<artifactId>deliveryscheduler.delivery-dispatcher-service</artifactId>
+	<artifactId>dronedelivery.delivery-scheduler-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<description>Processes the messages dropped to the event hub</description>
 	<properties>
@@ -29,12 +29,13 @@
 		</repository>
 	</repositories>
 	<build>
-		<sourceDirectory>src</sourceDirectory>
+		<sourceDirectory>src/main/java</sourceDirectory>
 		<resources>
 			<resource>
-				<directory>conf</directory>
+				<directory>src/main/resources</directory>
 			</resource>
 		</resources>
+		<testSourceDirectory>src/test/java</testSourceDirectory>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -123,10 +124,12 @@
 			<version>5.0.0.M5</version>
 		</dependency>
 
+		<!-- https://mvnrepository.com/artifact/junit/junit -->
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.9</version>
+		    <groupId>junit</groupId>
+		    <artifactId>junit</artifactId>
+		    <version>4.12</version>
+		    <scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -190,6 +193,12 @@
 			<groupId>com.microsoft.azure</groupId>
 			<artifactId>azure-storage</artifactId>
 			<version>6.1.0</version>
+		</dependency>
+		
+		<dependency>
+			<groupId>com.opentable</groupId>
+			<artifactId>wiremock-body-transformer</artifactId>
+			<version>1.1.6</version>
 		</dependency>
 
 	</dependencies>
