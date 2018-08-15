@@ -207,7 +207,7 @@ az eventhubs namespace create --name $INGESTION_EH_NS \
 az eventhubs eventhub create --name $INGESTION_EH_NAME \
                              --resource-group $RESOURCE_GROUP \
                              --namespace-name $INGESTION_EH_NS \
-                             --partition-count 8
+                             --partition-count 4
 
 # Create consumer group
 az eventhubs eventhub consumer-group create --eventhub-name $INGESTION_EH_NAME \
