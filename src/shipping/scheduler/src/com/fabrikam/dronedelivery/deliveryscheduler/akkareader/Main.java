@@ -10,6 +10,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -46,31 +47,26 @@ public class Main extends ReactiveStreamingApp {
 		SchedulerSettings.HostNameValue = System.getenv(configSet.get("env.hostname.key"));
 		SchedulerSettings.HttpProxyValue = System.getenv(configSet.get("env.proxyname.key"));
 
-		SchedulerSettings.storageQueueConnectionString = System.getenv(configSet.get("env.storage.queue.connection.string"));
-		SchedulerSettings.storageQueueName = System.getenv(configSet.get("env.storage.queue.name"));
+		SchedulerSettings.StorageQueueConnectionString = System
+				.getenv(configSet.get("env.storage.queue.connection.string"));
+		SchedulerSettings.StorageQueueName = System.getenv(configSet.get("env.storage.queue.name"));
+		SchedulerSettings.CheckpointTimeInMinutes = Integer
+				.parseInt(System.getenv(configSet.get("env.checkpoint.time")));
 
 		List<Integer> partitionsList = getPartitionsList();
 		String partitionNumber = partitionsList.stream().map(Object::toString).collect(Collectors.joining(","));
 
 		Log.info("Reading from partitions: {}", partitionNumber);
-		
-		int checkpointMin = Integer.parseInt(System.getenv(configSet.get("env.checkpoint.time")));
-		
-		
-		SourceOptions options;
-		// either we read from time 
-		// or from last known checkpoint
-		if (checkpointMin > 0){
-			options = new SourceOptions().partitions(partitionsList)
-					.fromTime(java.time.Instant.now().minus(checkpointMin,ChronoUnit.MINUTES));			
-		}
-		else{
-			options = new SourceOptions().partitions(partitionsList)
-					.fromCheckpoint(null);				
-		}
 
-		//		.fromCheckpoint(java.time.Instant.now().minus(checkpointMin , ChronoUnit.MINUTES));
-		//java.time.Instant.now().minus(4, ChronoUnit.HOURS)
+		SourceOptions options;
+		
+		// Either we read from time or from last known checkpoint
+		if (SchedulerSettings.CheckpointTimeInMinutes > 0) {
+			options = new SourceOptions().partitions(partitionsList).fromTime(
+					java.time.Instant.now().minus(SchedulerSettings.CheckpointTimeInMinutes, ChronoUnit.MINUTES));
+		} else {
+			options = new SourceOptions().partitions(partitionsList).fromCheckpoint(null);
+		}
 
 		IoTHub iotHub = new IoTHub();
 		Source<MessageFromDevice, NotUsed> messages = iotHub.source(options);
@@ -109,29 +105,10 @@ public class Main extends ReactiveStreamingApp {
 	
 	private static Flow<AkkaDelivery, MessageFromDevice, NotUsed> deliveryProcessor() {
 		return Flow.of(AkkaDelivery.class).map(delivery -> {
-			CompletableFuture<DeliverySchedule> completableSchedule = DeliveryRequestEventProcessor
-					.processDeliveryRequestAsync(delivery.getDelivery(), 
-							delivery.getMessageFromDevice().properties());
-			
-			completableSchedule.whenComplete((deliverySchedule,error) -> {
-				if (error!=null){
-					Log.info("failed delivery" + error.getStackTrace());
-				}
-				else{
-					Log.info("Completed Delivery",deliverySchedule.toString());
-				}
-									
-			});
-			
-			completableSchedule = null;
+			DeliveryRequestEventProcessor.processDeliveryRequestAsync(delivery.getDelivery(),
+					delivery.getMessageFromDevice().properties());
+
 			return delivery.getMessageFromDevice();
 		});
 	}
-	
-		
-	
-	/*
-	 * Implementation of workflow using fluent api
-	 */
-
 }

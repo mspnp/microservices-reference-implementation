@@ -26,6 +26,7 @@ public class PackageServiceCallerImpl extends ServiceCallerImpl {
 	private final static JsonParser jsonParser = new JsonParser();
 	
 	private PackageGen packageGen = null;
+	private String exceptionMsg = null;
 
 	// Calls the super constructor and sets the HTTP context
 	public PackageServiceCallerImpl() {
@@ -85,12 +86,13 @@ public class PackageServiceCallerImpl extends ServiceCallerImpl {
 				throw new BackendServiceCallFailedException(response.getStatusCode().getReasonPhrase());
 			}
 		}).exceptionally(e -> {
-			throw new BackendServiceCallFailedException(ExceptionUtils.getStackTrace(e));
+			exceptionMsg = ExceptionUtils.getStackTrace(e);
+			return null;
 		});
 		
-		future = null;
-		cfuture = null;
-		packageInfo = null;
+		if(packageGen==null){
+			throw new BackendServiceCallFailedException(exceptionMsg);
+		}
 
 		return packageGen;
 	}
