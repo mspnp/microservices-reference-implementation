@@ -66,11 +66,16 @@ spec:
           value: "CosmosDB_DatabaseId"
         - name: DOCDB_COLLECTIONID
           value: "CosmosDB_CollectionId"
-        - name: REDIS_CONNSTR
+        - name: REDIS_ENDPOINT
           valueFrom:
              secretKeyRef:
               name: delivery-storageconf
-              key: Redis_ConnectionString
+              key: Redis_Endpoint
+        - name: REDIS_KEY
+          valueFrom:
+             secretKeyRef:
+              name: delivery-storageconf
+              key: Redis_AccessKey
         - name: EH_CONNSTR
           valueFrom:
              secretKeyRef:
