@@ -16,14 +16,14 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
 {
     public static class RedisCache<T> where T : BaseCache
     {
-        private static string ConnectionString;
+        private static ConfigurationOptions ConfigOptions;
         private static int DB;
         private static ILogger logger;
 
         private static Lazy<ConnectionMultiplexer> lazyConnection = new Lazy<ConnectionMultiplexer>(() =>
         {
             // automatically disposed when the AppDomain is torn down
-            var connection = ConnectionMultiplexer.Connect(ConnectionString);
+            var connection = ConnectionMultiplexer.Connect(ConfigOptions);
 
             return connection;
         });
@@ -49,10 +49,16 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
             }
         }
 
-        public static void Configure(int db, string connectionString, ILoggerFactory loggerFactory)
+        public static void Configure(int db, string endPoint, string key, ILoggerFactory loggerFactory)
         {
             DB = db;
-            ConnectionString = connectionString;
+            ConfigOptions = new ConfigurationOptions
+            {
+                Password = key,
+                EndPoints = { { endPoint } },
+                Ssl = true,
+                AbortOnConnectFail = false
+            };
             logger = loggerFactory.CreateLogger(nameof(RedisCache<T>));
         }
 
