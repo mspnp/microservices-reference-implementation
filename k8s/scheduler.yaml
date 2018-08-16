@@ -16,7 +16,7 @@ metadata:
     co: fabrikam
 spec:
   serviceName: scheduler
-  replicas: 32
+  replicas: 4
   selector:
     matchLabels:
       app: scheduler 
@@ -84,7 +84,7 @@ spec:
                 name: scheduler-secrets
                 key: queueconstring
           - name: IOTHUB_EVENTHUB_PARTITIONS
-            value: "32"
+            value: "4"
           # Integration with l5d Daemon Sets
           - name: NODE_NAME
             valueFrom:
