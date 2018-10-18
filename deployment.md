@@ -30,23 +30,23 @@ export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster"
 export K8S=./microservices-reference-implementation/k8s
 ```
 
-Provision a Kubernetes cluster in ACS
+Provision a Kubernetes cluster in AKS
 
 ```bash
 # Log in to Azure
 az login
 
-# Create a resource group for ACS
+# Create a resource group for AKS
 az group create --name $RESOURCE_GROUP --location $LOCATION
 
-# Create the ACS cluster
-az acs create --orchestrator-type kubernetes --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --generate-ssh-keys
+# Create the AKS cluster
+az aks create --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --node-count 4 --enable-addons monitoring --generate-ssh-keys
 
 # Install kubectl
-sudo az acs kubernetes install-cli
+sudo az aks install-cli
 
 # Get the Kubernetes cluster credentials
-az acs kubernetes get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
+az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 
 # Create the BC namespaces
 kubectl create namespace shipping && \
@@ -70,6 +70,17 @@ az acr login --name $ACR_NAME
 
 # Get the ACR login server name
 export ACR_SERVER=$(az acr show -g $RESOURCE_GROUP -n $ACR_NAME --query "loginServer" -o tsv)
+```
+
+Grant the cluster access to the registry.
+
+```bash
+# Acquire the necessary IDs
+export CLUSTER_CLIENT_ID=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query "servicePrincipalProfile.clientId" --output tsv)
+export ACR_ID=$(az acr show --name $ACR_NAME --resource-group $RESOURCE_GROUP --query "id" --output tsv)
+
+# Grant the cluster read access to the registry
+az role assignment create --assignee $CLUSTER_CLIENT_ID --role Reader --scope $ACR_ID
 ```
 
 ## Deploy the Delivery service
@@ -386,6 +397,16 @@ For more information, see [https://linkerd.io/getting-started/k8s/](https://link
 > The service mesh configuration linked above uses the default namespace for service discovery.  
 > Since Drone Delivery microservices are getting deployed into several custom namespaces, this config needs to be modified as shown. This change modifies the dtab rules.
 
+The linkerd accounts need to be granted permissions to query the cluster for resources, as RBAC is enabled by default on AKS.
+
+```bash
+wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-rbac.yml && \
+sed -i "s#namespace: default#namespace: linkerd#g" linkerd-rbac.yml && \
+kubectl apply -f linkerd-rbac.yml
+```
+
+For more information on using linkerd with an RBAC-enabled cluster see [https://blog.buoyant.io/2017/07/24/using-linkerd-kubernetes-rbac/](https://blog.buoyant.io/2017/07/24/using-linkerd-kubernetes-rbac/)
+
 ## Validate the application is running
 
 You can send delivery requests to the ingestion service using the Swagger UI.
@@ -396,7 +417,11 @@ Get the public IP address of the Ingestion Service:
 export EXTERNAL_IP_ADDRESS=$(kubectl get --namespace shipping svc ingestion -o jsonpath="{.status.loadBalancer.ingress[0].*}")
 ```
 
-Use a web browser to navigate to `http://EXTERNAL_IP_ADDRESS]/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST` and use the **Try it out** button to submit a delivery request.
+Use a web browser to navigate to `http://[EXTERNAL_IP_ADDRESS]/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST` and use the **Try it out** button to submit a delivery request.
+
+```bash
+open "http://$EXTERNAL_IP_ADDRESS/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST"
+```
 
 > We recommended putting an API Gateway in front of all public APIs. For convenience, the Ingestion service is directly exposed with a public IP address.
 
@@ -412,7 +437,7 @@ kubectl --namespace kube-system apply -f https://raw.githubusercontent.com/kuber
 kubectl --namespace kube-system apply -f https://raw.githubusercontent.com/kubernetes/examples/master/staging/elasticsearch/es-rc.yaml
 ```
 
-Deploy Fluend. For more information, see https://docs.fluentd.org/v0.12/articles/kubernetes-fluentd
+Deploy Fluentd. For more information, see https://docs.fluentd.org/v0.12/articles/kubernetes-fluentd
 
 ```bash
 # The example elasticsearch yaml files deploy a service named "elasticsearch"
