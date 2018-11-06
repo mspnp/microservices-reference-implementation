@@ -17,10 +17,10 @@ git clone https://github.com/mspnp/microservices-reference-implementation.git
 
 > The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
 
-## Generate a SSH rsa public/private key pair 
+## Generate a SSH rsa public/private key pair
 
-the SSH rsa key pair can be generated using ssh-keygen, among other tools, on Linux, Mac, or Windows. If you already have an ~/.ssh/id_rsa.pub file, you could provide the same later on. If you need to create an SSH key pair, see [How to create and use an SSH key pair](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys). 
-> Note: the SSH rsa public key will be requested when deploying your Kubernetes cluster in Azure. 
+the SSH rsa key pair can be generated using ssh-keygen, among other tools, on Linux, Mac, or Windows. If you already have an ~/.ssh/id_rsa.pub file, you could provide the same later on. If you need to create an SSH key pair, see [How to create and use an SSH key pair](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys).
+> Note: the SSH rsa public key will be requested when deploying your Kubernetes cluster in Azure.
 
 ## Azure Resources Provisioning
 
@@ -50,7 +50,7 @@ export BEARER_TOKEN=$(az account get-access-token --query accessToken | sed -e '
 export SUBS_ID=$(az account show --query id | sed -e 's/^"//' -e 's/"$//')
 ```
 
-Deployment  
+Deployment
 
 > Note: this deployment might take up to 20 minutes
 
@@ -66,17 +66,17 @@ Deployment
 * from Azure Portal
 
   [![Deploy to Azure](http://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fmicroservices-reference-implementation%2Fmaster%2Fazuredeploy.json)
-  > Note: 
-  > 1. paste the $RESOURCE_GROUP value in the resource group field. Important: choose use existing resource group 
+  > Note:
+  > 1. paste the $RESOURCE_GROUP value in the resource group field. Important: choose use existing resource group
   > 2. paste the content of your ssh-rsa public key file in the Ssh RSA Plublic Key field.
   > 3. paste the $SP_APP_ID and $SP_CLIENT_SECRET in the Client Id and Secret fields.
 
 Get outputs from Azure Deploy
 ```bash
-# Shared 
+# Shared
 export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acrName.value | sed -e 's/^"//' -e 's/"$//') && \
 export ACR_SERVER=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acrLoginServer.value | sed -e 's/^"//' -e 's/"$//') && \
-export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acsK8sClusterName.value | sed -e 's/^"//' -e 's/"$//') 
+export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acsK8sClusterName.value | sed -e 's/^"//' -e 's/"$//')
 ```
 
 Download kubectl and create a k8s namespace
@@ -104,11 +104,11 @@ export DELIVERY_PATH=./microservices-reference-implementation/src/shipping/deliv
 docker-compose -f $DELIVERY_PATH/docker-compose.ci.build.yml up
 ```
 
-Build and publish the container image 
+Build and publish the container image
 
 ```bash
 # Build the Docker image
-docker build -t $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0 $DELIVERY_PATH/Fabrikam.DroneDelivery.DeliveryService/.
+docker build --pull --compress -t $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0 $DELIVERY_PATH/.
 
 # Push the image to ACR
 az acr login --name $ACR_NAME
@@ -182,14 +182,14 @@ kubectl -n shipping create secret generic package-secrets --from-literal=mongodb
 kubectl --namespace shipping apply -f ./microservices-reference-implementation/k8s/package.yml
 ```
 
-## Deploy the Ingestion service 
+## Deploy the Ingestion service
 
 Build the Ingestion service
 
 ```bash
 export INGESTION_PATH=./microservices-reference-implementation/src/shipping/ingestion
 
-# Build the app 
+# Build the app
 docker build -t openjdk_and_mvn-build:8-jdk -f $INGESTION_PATH/Dockerfilemaven $INGESTION_PATH && \
 docker run -it --rm -v $( cd "${INGESTION_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
 
@@ -225,14 +225,14 @@ kubectl -n shipping create secret generic ingestion-secrets --from-literal=event
 kubectl --namespace shipping apply -f ./microservices-reference-implementation/k8s/ingestion.yaml
 ```
 
-## Deploy the Scheduler service 
+## Deploy the Scheduler service
 
 Build the Scheduler service
 
 ```bash
 export SCHEDULER_PATH=./microservices-reference-implementation/src/shipping/scheduler
 
-# Build the app 
+# Build the app
 docker build -t openjdk_and_mvn-build:8-jdk -f $SCHEDULER_PATH/Dockerfilemaven $SCHEDULER_PATH && \
 docker run -it --rm -v $( cd "${SCHEDULER_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
 
@@ -278,13 +278,13 @@ export MOCKS_PATH=microservices-reference-implementation/src/shipping/delivery
 docker-compose -f $MOCKS_PATH/docker-compose.ci.build.yml up
 ```
 
-Build and publish the container image 
+Build and publish the container image
 
 ```bash
 # Build the Docker image
 docker build -t $ACR_SERVER/account:0.1.0 $MOCKS_PATH/MockAccountService/. && \
 docker build -t $ACR_SERVER/dronescheduler:0.1.0 $MOCKS_PATH/MockDroneScheduler/. && \
-docker build -t $ACR_SERVER/thirdparty:0.1.0 $MOCKS_PATH/MockThirdPartyService/. 
+docker build -t $ACR_SERVER/thirdparty:0.1.0 $MOCKS_PATH/MockThirdPartyService/.
 
 # Push the image to ACR
 az acr login --name $ACR_NAME
@@ -299,7 +299,7 @@ Deploy the mock services:
 # Update the image tag in the deployment YAML
 sed -i "s#image:#image: $ACR_SERVER/account:0.1.0#g" ./microservices-reference-implementation/k8s/account.yaml && \
 sed -i "s#image:#image: $ACR_SERVER/dronescheduler:0.1.0#g" ./microservices-reference-implementation/k8s/dronescheduler.yaml && \
-sed -i "s#image:#image: $ACR_SERVER/thirdparty:0.1.0#g" ./microservices-reference-implementation/k8s/thirdparty.yaml 
+sed -i "s#image:#image: $ACR_SERVER/thirdparty:0.1.0#g" ./microservices-reference-implementation/k8s/thirdparty.yaml
 
 # Deploy the service
 kubectl --namespace accounts apply -f ./microservices-reference-implementation/k8s/account.yaml && \
@@ -328,40 +328,40 @@ Deploy Fluend. For more information, see https://docs.fluentd.org/v0.12/articles
 wget https://raw.githubusercontent.com/fluent/fluentd-kubernetes-daemonset/master/fluentd-daemonset-elasticsearch.yaml && \
 sed -i "s/elasticsearch-logging/elasticsearch/" fluentd-daemonset-elasticsearch.yaml
 
-# Commenting out X-Pack credentials for demo purposes. 
+# Commenting out X-Pack credentials for demo purposes.
 # Make sure to configure X-Pack in elasticsearch and provide credentials here for production workloads
 sed -i "s/- name: FLUENT_ELASTICSEARCH_USER/#- name: FLUENT_ELASTICSEARCH_USER/" fluentd-daemonset-elasticsearch.yaml && \
 sed -i 's/  value: "elastic"/#  value: "elastic"/' fluentd-daemonset-elasticsearch.yaml && \
 sed -i "s/- name: FLUENT_ELASTICSEARCH_PASSWORD/#- name: FLUENT_ELASTICSEARCH_PASSWORD/" fluentd-daemonset-elasticsearch.yaml && \
 sed -i 's/  value: "changeme"/#  value: "changeme"/' fluentd-daemonset-elasticsearch.yaml && \
 kubectl --namespace kube-system apply -f fluentd-daemonset-elasticsearch.yaml
-``` 
+```
 
-#### Deploy linkerd 
+#### Deploy linkerd
 
 For more information, see [https://linkerd.io/getting-started/k8s/](https://linkerd.io/getting-started/k8s/)
 
-> Note: 
-> the service mesh configuration linked above is defaulting the namespace to "default" for service discovery.  
+> Note:
+> the service mesh configuration linked above is defaulting the namespace to "default" for service discovery.
 > Since Drone Delivery microservices are getting deployed into several custom namespaces, this config needs to be modified. This will consist of a small change in the dtab rules.
 
-Deploy linkerd defaulting the namespace to shipping instead: 
+Deploy linkerd defaulting the namespace to shipping instead:
 
 ```bash
 wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/servicemesh.yml && \
 sed -i "s#/default#/shipping#g" servicemesh.yml && \
-sed -i "149i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \ 
+sed -i "149i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \
 sed -i "149i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.dronemgmt ;" servicemesh.yml && \
 sed -i "149i \ \ \ \ \ \ \ \ /svc/thirdparty => /svc/thirdparty.3rdparty ;" servicemesh.yml && \
 sed -i "176i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \
 sed -i "176i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.dronemgmt ;" servicemesh.yml && \
 sed -i "176i \ \ \ \ \ \ \ \ /svc/thirdparty => /svc/thirdparty.3rdparty ;" servicemesh.yml && \
 kubectl apply -f servicemesh.yml
-``` 
+```
 
 Deploy Prometheus and Grafana. For more information, see https://github.com/linkerd/linkerd-viz#kubernetes-deploy
 
-It is recommended to put an API Gateway in front of all APIs you want exposed to the public, 
+It is recommended to put an API Gateway in front of all APIs you want exposed to the public,
 however for convenience, we exposed the Ingestion service with a public IP address.
 
 You can send delivery requests to the ingestion service using the swagger ui.

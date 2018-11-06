@@ -5,7 +5,6 @@ var del = require('del');
 var mocha = require('gulp-mocha');
 
 gulp.task('set-env', function() {
-    
     process.env.CONNECTION_STRING = "mongodb://packagedb:27017/local";
     process.env.COLLECTION_NAME = "packages";
     process.env.CORRELATION_HEADER = "x-b3-traceid";
@@ -26,13 +25,13 @@ gulp.task ('create-api-classes', function() {
         for (var gprop in definition.properties)
         {
             let propType = definition.properties[gprop]['type'];
-            
+
             // If this is a reference to a class we will use that
             if (propType == null) {
                 propType = definition.properties[gprop]['$ref'].split('/').splice(-1);
             }
 
-            // convert swagger integer to 
+            // convert swagger integer to
             if (propType == "integer")
                 propType = "number";
 
@@ -41,13 +40,13 @@ gulp.task ('create-api-classes', function() {
         }
         generated += "}\n\n";
     }
-    
+
     var fs = require('fs');
     fs.writeFile("./app/models/api-models.ts", generated, function(err) {
         if(err) {
             return console.log(err);
         }
-    }); 
+    });
 });
 
 gulp.task('build', ['clean'], function () {
@@ -78,16 +77,16 @@ gulp.task('clean', function (done) {
    return del(['.bin/'], done);
 });
 
-gulp.task('build-test', ['build'], function  () {
+gulp.task('build-int-test', ['build'], function  () {
     var tsProject = ts.createProject('tsconfig.json');
-    
+
     var tsResult = gulp.src("test/**/*.ts", {'base':'.'})
         .pipe(tsProject());
 
     return tsResult.js.pipe(gulp.dest('.bin'));
 });
 
-gulp.task('test', ['build-test', 'set-env'], function() {
+gulp.task('int-test', ['build-int-test', 'set-env'], function() {
     gulp.src("test/**/*.js", { cwd: '.bin' })
        .pipe(mocha({ reporter: 'list' }));
 });

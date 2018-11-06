@@ -1,0 +1,64 @@
+steps:
+
+- script: echo '##vso[task.setvariable variable=repositoryName]package'
+  name: setvarAzureContainerRegistry
+- script: echo $(repositoryName)
+  name: echovarRepositoryName
+
+- task: HelmInstaller@0
+  displayName: 'Install Helm 2.9.1'
+  inputs:
+    kubectlVersion: 1.10.3
+
+    checkLatestKubectl: false
+
+- task: HelmDeploy@0
+  displayName: 'helm init --client-only'
+  inputs:
+    azureSubscription: $(AzureSubscription)
+
+    azureResourceGroup: $(ResourceGroup)
+
+    kubernetesCluster: $(AzureKubernetesService)
+
+    namespace: prod
+
+    command: init
+
+    upgradeTiller: false
+
+    arguments: '--client-only'
+
+- task: AzureCLI@1
+  displayName: 'Add repository to Helm client'
+  inputs:
+    azureSubscription: 'arm_service_connection'
+
+    scriptLocation: inlineScript
+
+    inlineScript: 'az acr helm repo add --name $(AzureContainerRegistryHelmRepo)'
+
+- task: HelmDeploy@0
+  displayName: 'helm upgrade '
+  inputs:
+    azureSubscription: $(AzureSubscription)
+
+    azureResourceGroup: $(ResourceGroup)
+
+    kubernetesCluster: $(AzureKubernetesService)
+
+    namespace: backend
+
+    command: 'upgrade '
+
+    chartType: Name
+
+    chartName: $(AzureContainerRegistryHelmRepo)/$(repositoryName)
+
+    arguments: '--version $(Build.SourceBranchName)'
+
+    releaseName: $(repositoryName)-$(Build.SourceBranchName)
+
+    overrideValues: 'image.tag=$(Build.SourceBranchName),image.repository=$(repositoryName),dockerregistry=$(AzureContainerRegistry)'
+
+    waitForExecution: false

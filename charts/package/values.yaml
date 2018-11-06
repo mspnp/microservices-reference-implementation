@@ -1,0 +1,10 @@
+# Default values for package.
+replicaCount: 1
+image:
+  repository:
+  tag:
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+dockerregistry:
+reason: unknown

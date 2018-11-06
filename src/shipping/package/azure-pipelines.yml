@@ -1,0 +1,42 @@
+variables:
+  ResourceGroup: 'pnpdh-rg'
+  AzureKubernetesService: 'pnpdh-cluster'
+  BuildConfiguration: "Release"
+  AzureSubscription: arm_aks-ra
+  AzureContainerRegistry: pnpdhacr.azurecr.io
+  AzureContainerRegistryHelmRepo: pnpdhacr
+
+name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
+
+trigger:
+  batch: true
+  branches:
+    include:
+
+    # for new release to production: release flow strategy
+    - release/package/v*
+
+    - refs/relelase/package/v*
+
+  paths:
+     include:
+
+     - /src/shipping/package/
+
+resources:
+- repo: self
+
+jobs:
+
+# CI
+- job: packagejobci
+  displayName: "Package CI"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  timeoutInMinutes: 90
+  variables:
+    fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/package/v') ]
+  steps:
+  - script: echo $(fullCI)
+    name: echovar
+  - template: ./azure-pipelines-ci.yml

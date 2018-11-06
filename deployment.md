@@ -52,10 +52,10 @@ az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 kubectl create namespace shipping && \
 kubectl create namespace accounts && \
 kubectl create namespace dronemgmt && \
-kubectl create namespace 3rdparty 
+kubectl create namespace 3rdparty
 ```
 
-Create an Azure Container Registry instance. 
+Create an Azure Container Registry instance.
 
 > Note: Azure Container Registory is not required. If you prefer, you can store the Docker images for this solution in another container registry.
 
@@ -106,7 +106,7 @@ az cosmosdb create \
     --kind GlobalDocumentDB \
     --resource-group $RESOURCE_GROUP \
     --max-interval 10 \
-    --max-staleness-prefix 200 
+    --max-staleness-prefix 200
 ```
 
 Build the Delivery service
@@ -116,11 +116,11 @@ export DELIVERY_PATH=./microservices-reference-implementation/src/shipping/deliv
 docker-compose -f $DELIVERY_PATH/docker-compose.ci.build.yml up
 ```
 
-Build and publish the container image 
+Build and publish the container image
 
 ```bash
 # Build the Docker image
-docker build -t $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0 $DELIVERY_PATH/Fabrikam.DroneDelivery.DeliveryService/.
+docker build --pull --compress -t $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0 $DELIVERY_PATH/.
 
 # Push the image to ACR
 az acr login --name $ACR_NAME
@@ -203,7 +203,7 @@ kubectl --namespace shipping apply -f $K8S/package-0.yml
 kubectl get pods -n shipping
 ```
 
-## Deploy the Ingestion service 
+## Deploy the Ingestion service
 Provision Azure resources
 
 ```bash
@@ -244,7 +244,7 @@ Build the Ingestion service
 ```bash
 export INGESTION_PATH=./microservices-reference-implementation/src/shipping/ingestion
 
-# Build the app 
+# Build the app
 docker build -t openjdk_and_mvn-build:8-jdk -f $INGESTION_PATH/Dockerfilemaven $INGESTION_PATH
 docker run -it --rm -v $( cd "${INGESTION_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
 
@@ -275,7 +275,7 @@ kubectl --namespace shipping apply -f $K8S/ingestion-0.yaml
 kubectl get pods -n shipping
 ```
 
-## Deploy the Scheduler service 
+## Deploy the Scheduler service
 
 Provision Azure resources
 ```bash
@@ -289,7 +289,7 @@ Build the Scheduler service
 ```bash
 export SCHEDULER_PATH=./microservices-reference-implementation/src/shipping/scheduler
 
-# Build the app 
+# Build the app
 docker build -t openjdk_and_mvn-build:8-jdk -f $SCHEDULER_PATH/Dockerfilemaven $SCHEDULER_PATH
 docker run -it --rm -v $( cd "${SCHEDULER_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
 
@@ -343,13 +343,13 @@ export MOCKS_PATH=microservices-reference-implementation/src/shipping/delivery
 docker-compose -f $MOCKS_PATH/docker-compose.ci.build.yml up
 ```
 
-Build and publish the container image 
+Build and publish the container image
 
 ```bash
 # Build the Docker images
 docker build -t $ACR_SERVER/account:0.1.0 $MOCKS_PATH/MockAccountService/. && \
 docker build -t $ACR_SERVER/dronescheduler:0.1.0 $MOCKS_PATH/MockDroneScheduler/. && \
-docker build -t $ACR_SERVER/thirdparty:0.1.0 $MOCKS_PATH/MockThirdPartyService/. 
+docker build -t $ACR_SERVER/thirdparty:0.1.0 $MOCKS_PATH/MockThirdPartyService/.
 
 # Push the images to ACR
 az acr login --name $ACR_NAME
@@ -382,19 +382,19 @@ kubectl get all --all-namespaces -l co=fabrikam
 kubectl create ns linkerd
 wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/servicemesh.yml && \
 sed -i "s#/default#/shipping#g" servicemesh.yml && \
-sed -i "149i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \ 
+sed -i "149i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \
 sed -i "149i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.dronemgmt ;" servicemesh.yml && \
 sed -i "149i \ \ \ \ \ \ \ \ /svc/thirdparty => /svc/thirdparty.3rdparty ;" servicemesh.yml && \
 sed -i "176i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \
 sed -i "176i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.dronemgmt ;" servicemesh.yml && \
 sed -i "176i \ \ \ \ \ \ \ \ /svc/thirdparty => /svc/thirdparty.3rdparty ;" servicemesh.yml && \
 kubectl apply -f servicemesh.yml
-``` 
+```
 
 For more information, see [https://linkerd.io/getting-started/k8s/](https://linkerd.io/getting-started/k8s/)
 
-> Note: 
-> The service mesh configuration linked above uses the default namespace for service discovery.  
+> Note:
+> The service mesh configuration linked above uses the default namespace for service discovery.
 > Since Drone Delivery microservices are getting deployed into several custom namespaces, this config needs to be modified as shown. This change modifies the dtab rules.
 
 The linkerd accounts need to be granted permissions to query the cluster for resources, as RBAC is enabled by default on AKS.
@@ -444,13 +444,13 @@ Deploy Fluentd. For more information, see https://docs.fluentd.org/v0.12/article
 wget https://raw.githubusercontent.com/fluent/fluentd-kubernetes-daemonset/master/fluentd-daemonset-elasticsearch.yaml && \
 sed -i "s/elasticsearch-logging/elasticsearch/" fluentd-daemonset-elasticsearch.yaml
 
-# Commenting out X-Pack credentials for demo purposes. 
+# Commenting out X-Pack credentials for demo purposes.
 # Make sure to configure X-Pack in elasticsearch and provide credentials here for production workloads
 sed -i "s/- name: FLUENT_ELASTICSEARCH_USER/#- name: FLUENT_ELASTICSEARCH_USER/" fluentd-daemonset-elasticsearch.yaml && \
 sed -i 's/  value: "elastic"/#  value: "elastic"/' fluentd-daemonset-elasticsearch.yaml && \
 sed -i "s/- name: FLUENT_ELASTICSEARCH_PASSWORD/#- name: FLUENT_ELASTICSEARCH_PASSWORD/" fluentd-daemonset-elasticsearch.yaml && \
 sed -i 's/  value: "changeme"/#  value: "changeme"/' fluentd-daemonset-elasticsearch.yaml && \
 kubectl --namespace kube-system apply -f fluentd-daemonset-elasticsearch.yaml
-``` 
+```
 
 Deploy Prometheus and Grafana. For more information, see https://github.com/linkerd/linkerd-viz#kubernetes-deploy
