@@ -28,6 +28,14 @@ namespace Fabrikam.DroneDelivery.DeliveryService
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
                 .AddEnvironmentVariables();
+
+            var buildConfig = builder.Build();
+
+            if(buildConfig["KEY_VAULT_URI"] is var keyVaultUri && !string.IsNullOrEmpty(keyVaultUri))
+            {
+                builder.AddAzureKeyVault(keyVaultUri);
+            }
+
             Configuration = builder.Build();
         }
 

@@ -27,6 +27,9 @@ export UNIQUE_APP_NAME_PREFIX=[YOUR_UNIQUE_APPLICATION_NAME_HERE]
 export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
 export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster"
 
+export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+export TENANT_ID=$(az account show --query tenantId --output tsv)
+
 export K8S=./microservices-reference-implementation/k8s
 ```
 
@@ -47,6 +50,9 @@ sudo az aks install-cli
 
 # Get the Kubernetes cluster credentials
 az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
+
+# Get the cluster's principal
+export CLUSTER_SERVICE_PRINCIPAL=$(az aks show --name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --query servicePrincipalProfile.clientId --output tsv)
 
 # Create the BC namespaces
 kubectl create namespace shipping && \
@@ -81,6 +87,17 @@ export ACR_ID=$(az acr show --name $ACR_NAME --resource-group $RESOURCE_GROUP --
 
 # Grant the cluster read access to the registry
 az role assignment create --assignee $CLUSTER_CLIENT_ID --role Reader --scope $ACR_ID
+```
+
+## Setup AAD pod identity and key vault flexvol infrastructure
+
+Complete instructions can be found at https://github.com/Azure/kubernetes-keyvault-flexvol
+
+```bash
+# setup AAD pod identity
+kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/deployment-rbac.yaml
+
+kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
 
 ## Deploy the Delivery service
@@ -125,7 +142,6 @@ docker build --pull --compress -t $ACR_SERVER/fabrikam.dronedelivery.deliveryser
 # Push the image to ACR
 az acr login --name $ACR_NAME
 docker push $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0
-
 ```
 
 Create Kubernetes secrets
@@ -145,6 +161,45 @@ kubectl --namespace shipping create --save-config=true secret generic delivery-s
     --from-literal=EH_ConnectionString=
 ```
 
+Create KeyVault and secrets
+
+```bash
+export DELIVERY_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-kv"
+az keyvault create --name $DELIVERY_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
+az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name CosmosDB-Key --value ${COSMOSDB_KEY} # (consider using encoding base64 to keep the actual values)
+az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name CosmosDB-Endpoint --value ${COSMOSDB_ENDPOINT}
+az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name Redis-Endpoint --value ${REDIS_ENDPOINT}
+az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name Redis-AccessKey --value ${REDIS_KEY}
+# az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name EH-ConnectionString    # cannot create a secret without a value or with an empty value
+
+export DELIVERY_KEYVAULT_ID=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DELIVERY_KEYVAULT_NAME --query "id" --output tsv)
+export DELIVERY_KEYVAULT_URI=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DELIVERY_KEYVAULT_NAME --query "properties.vaultUri" --output tsv)
+```
+
+Create and set up pod identity
+
+```bash
+# Create the identity and extract properties
+export DELIVERY_PRINCIPAL_NAME=delivery
+az identity create --resource-group $RESOURCE_GROUP --name $DELIVERY_PRINCIPAL_NAME
+export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $DELIVERY_PRINCIPAL_NAME --query "id" --output tsv)
+export DELIVERY_PRINCIPAL_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $DELIVERY_PRINCIPAL_NAME --query "principalId" --output tsv)
+export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $DELIVERY_PRINCIPAL_NAME --query "clientId" --output tsv)
+
+# Grant the identity access to the KeyVault
+az role assignment create --role Reader --assignee $DELIVERY_PRINCIPAL_ID --scope $DELIVERY_KEYVAULT_ID
+az keyvault set-policy --name $DELIVERY_KEYVAULT_NAME --secret-permissions get, list --spn $DELIVERY_PRINCIPAL_CLIENT_ID
+
+# Allow the cluster to manage the identity to assign to pods
+az role assignment create --role "Managed Identity Operator" --assignee $CLUSTER_SERVICE_PRINCIPAL --scope $DELIVERY_PRINCIPAL_RESOURCE_ID
+
+# Deploy the identity resources
+cat $K8S/delivery-identity.yaml | \
+    sed "s#ResourceID: \"identityResourceId\"#ResourceID: $DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
+    sed "s#ClientID: \"identityClientid\"#ClientID: $DELIVERY_PRINCIPAL_CLIENT_ID#g" > $K8S/delivery-identity-0.yaml
+kubectl apply -f $K8S/delivery-identity-0.yaml
+```
+
 Deploy the Delivery service:
 
 ```bash
@@ -152,7 +207,12 @@ Deploy the Delivery service:
 sed "s#image:#image: $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0#g" $K8S/delivery.yaml | \
     sed "s/value: \"CosmosDB_DatabaseId\"/value: $DATABASE_NAME/g" | \
     sed "s/value: \"CosmosDB_CollectionId\"/value: $COLLECTION_NAME/g" | \
-    sed "s/value: \"EH_EntityPath\"/value:/g" > $K8S/delivery-0.yaml
+    sed "s/value: \"EH_EntityPath\"/value:/g" | \
+    sed "s#value: \"KeyVault_Name\"#value: $DELIVERY_KEYVAULT_URI#g" | \
+    sed "s#resourcegroup: \"keyVaultResourceGroup\"#resourcegroup: $RESOURCE_GROUP#g" | \
+    sed "s#subscriptionid: \"keyVaultSubscriptionId\"#subscriptionid: $SUBSCRIPTION_ID#g" | \
+    sed "s#tenantid: \"keyVaultTenantId\"#tenantid: $TENANT_ID#g" | \
+    sed "s#keyvaultname: \"keyVaultName\"#keyvaultname: $DELIVERY_KEYVAULT_NAME#g" > $K8S/delivery-0.yaml
 
 # Deploy the service
 kubectl --namespace shipping apply -f $K8S/delivery-0.yaml
@@ -195,6 +255,11 @@ sed "s#image:#image: $ACR_SERVER/package-service:0.1.0#g" $K8S/package.yml > $K8
 # Create secret
 export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv)
 kubectl -n shipping create secret generic package-secrets --from-literal=mongodb-pwd=$COSMOSDB_CONNECTION
+
+# Create KeyVault secret
+export PACKAGE_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-package-kv"
+az keyvault create --name $PACKAGE_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
+az keyvault secret set --vault-name $PACKAGE_KEYVAULT_NAME --name mongodb-pwd --value $COSMOSDB_CONNECTION
 
 # Deploy service
 kubectl --namespace shipping apply -f $K8S/package-0.yml
@@ -263,10 +328,19 @@ Deploy the Ingestion service
 sed "s#image:#image: $ACR_SERVER/ingestion:0.1.0#g" $K8S/ingestion.yaml > $K8S/ingestion-0.yaml
 
 # Create secret
-kubectl -n shipping create secret generic ingestion-secrets --from-literal=eventhub_namespace=${INGESTION_EH_NS} \
+kubectl -n shipping create secret generic ingestion-secrets \
+--from-literal=eventhub_namespace=${INGESTION_EH_NS} \
 --from-literal=eventhub_name=${INGESTION_EH_NAME} \
 --from-literal=eventhub_keyname=IngestionServiceAccessKey \
 --from-literal=eventhub_keyvalue=${EH_ACCESS_KEY_VALUE}
+
+# Create KeyVault secrets
+export INGESTION_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-ingestion-kv"
+az keyvault create --name $INGESTION_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
+az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-namespace --value ${INGESTION_EH_NS}
+az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-name --value ${INGESTION_EH_NAME}
+az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-keyname --value IngestionServiceAccessKey
+az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-keyvalue --value ${EH_ACCESS_KEY_VALUE}
 
 # Deploy service
 kubectl --namespace shipping apply -f $K8S/ingestion-0.yaml

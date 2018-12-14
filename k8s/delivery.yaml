@@ -18,7 +18,7 @@ spec:
   ports:
   - name: http
     port: 80
-    targetPort: 80
+    targetPort: 8080
   selector:
     app: delivery
   clusterIP: None
@@ -32,6 +32,7 @@ metadata:
     version: 0.1.0
     bc: shipping
     co: fabrikam
+    aadpodidbinding: delivery
 spec:
   replicas: 1
   selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels. 
@@ -44,12 +45,19 @@ spec:
         version: 0.1.0
         bc: shipping
         co: fabrikam
+        aadpodidbinding: delivery
       annotations:
         team: deliveryservice
     spec:
+      securityContext:
+        fsGroup: 1
       containers:
       - name: delivery
         image:
+        volumeMounts:
+        - name: delivery
+          mountPath: /kvmnt
+          readOnly: true
         env:
         # Export K8s secrets
         - name: DOCDB_KEY
@@ -66,6 +74,8 @@ spec:
           value: "CosmosDB_DatabaseId"
         - name: DOCDB_COLLECTIONID
           value: "CosmosDB_CollectionId"
+        - name: KEY_VAULT_URI
+          value: "KeyVault_Name"
         - name: REDIS_ENDPOINT
           valueFrom:
              secretKeyRef:
@@ -94,11 +104,13 @@ spec:
               fieldPath: status.podIP
         - name: http_proxy
           value: $(NODE_NAME):4140
+        - name: no_proxy
+          value: 169.254.169.254
         - name: CORRELATION_HEADER
           value: l5d-ctx-trace
         ports:
         - name: service
-          containerPort: 80
+          containerPort: 8080
         resources:
            requests:
              cpu: 1
@@ -106,3 +118,16 @@ spec:
            limits:
              cpu: 1
              memory: 3G
+      volumes:
+      - name: delivery
+        flexVolume:
+          driver: "azure/kv"
+          options:
+            usepodidentity: "true"
+            keyvaultname: "keyVaultName"
+            keyvaultobjectnames: CosmosDB-Key;CosmosDB-Endpoint;Redis-Endpoint;Redis-AccessKey
+            keyvaultobjecttypes: secret;secret;secret;secret
+            keyvaultobjectversions: ""
+            resourcegroup: "keyVaultResourceGroup"
+            subscriptionid: "keyVaultSubscriptionId"
+            tenantid: "keyVaultTenantId"
