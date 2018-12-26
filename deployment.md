@@ -5,7 +5,10 @@
 - Azure subscription
 - [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
+
+> Note: in linux systems, it is possible to run the docker command without prefacing
+>       with sudo. For more information, please refer to [the Post-installation steps
+>       for linux](https://docs.docker.com/install/linux/linux-postinstall/)
 
 Clone or download this repo locally.
 
@@ -54,11 +57,9 @@ az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 # Get the cluster's principal
 export CLUSTER_SERVICE_PRINCIPAL=$(az aks show --name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --query servicePrincipalProfile.clientId --output tsv)
 
-# Create the BC namespaces
-kubectl create namespace shipping && \
-kubectl create namespace accounts && \
-kubectl create namespace dronemgmt && \
-kubectl create namespace 3rdparty
+# Create namespaces
+kubectl create namespace backend && \
+kubectl create namespace frontend
 ```
 
 Create an Azure Container Registry instance.
@@ -130,18 +131,17 @@ Build the Delivery service
 
 ```bash
 export DELIVERY_PATH=./microservices-reference-implementation/src/shipping/delivery
-docker-compose -f $DELIVERY_PATH/docker-compose.ci.build.yml up
 ```
 
 Build and publish the container image
 
 ```bash
 # Build the Docker image
-docker build --pull --compress -t $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0 $DELIVERY_PATH/.
+docker build --pull --compress -t $ACR_SERVER/delivery:0.1.0 $DELIVERY_PATH/.
 
 # Push the image to ACR
 az acr login --name $ACR_NAME
-docker push $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0
+docker push $ACR_SERVER/delivery:0.1.0
 ```
 
 Create Kubernetes secrets
@@ -153,7 +153,7 @@ export REDIS_KEY=$(az redis list-keys --name $REDIS_NAME --resource-group $RESOU
 export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query primaryMasterKey -o tsv)
 export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint -o tsv)
 
-kubectl --namespace shipping create --save-config=true secret generic delivery-storageconf \
+kubectl --namespace backend create --save-config=true secret generic delivery-storageconf \
     --from-literal=CosmosDB_Key=${COSMOSDB_KEY} \
     --from-literal=CosmosDB_Endpoint=${COSMOSDB_ENDPOINT} \
     --from-literal=Redis_Endpoint=${REDIS_ENDPOINT} \
@@ -204,7 +204,7 @@ Deploy the Delivery service:
 
 ```bash
 # Update the image tag and config values in the deployment YAML
-sed "s#image:#image: $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0#g" $K8S/delivery.yaml | \
+sed "s#image:#image: $ACR_SERVER/delivery:0.1.0#g" $K8S/delivery.yaml | \
     sed "s/value: \"CosmosDB_DatabaseId\"/value: $DATABASE_NAME/g" | \
     sed "s/value: \"CosmosDB_CollectionId\"/value: $COLLECTION_NAME/g" | \
     sed "s/value: \"EH_EntityPath\"/value:/g" | \
@@ -215,10 +215,10 @@ sed "s#image:#image: $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0#g"
     sed "s#keyvaultname: \"keyVaultName\"#keyvaultname: $DELIVERY_KEYVAULT_NAME#g" > $K8S/delivery-0.yaml
 
 # Deploy the service
-kubectl --namespace shipping apply -f $K8S/delivery-0.yaml
+kubectl --namespace backend apply -f $K8S/delivery-0.yaml
 
 # Verify the pod is created
-kubectl get pods -n shipping
+kubectl get pods -n backend
 ```
 
 ## Deploy the Package service
@@ -235,26 +235,23 @@ Build the Package service
 ```bash
 export PACKAGE_PATH=microservices-reference-implementation/src/shipping/package
 
-# Build the app
-docker-compose -f $PACKAGE_PATH/build/docker-compose.ci.build.yml up
-
 # Build the docker image
-sudo docker build -f $PACKAGE_PATH/build/prod.dockerfile -t $ACR_SERVER/package-service:0.1.0 $PACKAGE_PATH
+docker build -f $PACKAGE_PATH/Dockerfile -t $ACR_SERVER/package:0.1.0 $PACKAGE_PATH
 
 # Push the docker image to ACR
 az acr login --name $ACR_NAME
-docker push $ACR_SERVER/package-service:0.1.0
+docker push $ACR_SERVER/package:0.1.0
 ```
 
 Deploy the Package service
 
 ```bash
 # Update deployment YAML with image tage
-sed "s#image:#image: $ACR_SERVER/package-service:0.1.0#g" $K8S/package.yml > $K8S/package-0.yml
+sed "s#image:#image: $ACR_SERVER/package:0.1.0#g" $K8S/package.yml > $K8S/package-0.yml
 
 # Create secret
 export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv)
-kubectl -n shipping create secret generic package-secrets --from-literal=mongodb-pwd=$COSMOSDB_CONNECTION
+kubectl -n backend create secret generic package-secrets --from-literal=mongodb-pwd=$COSMOSDB_CONNECTION
 
 # Create KeyVault secret
 export PACKAGE_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-package-kv"
@@ -262,10 +259,10 @@ az keyvault create --name $PACKAGE_KEYVAULT_NAME --resource-group $RESOURCE_GROU
 az keyvault secret set --vault-name $PACKAGE_KEYVAULT_NAME --name mongodb-pwd --value $COSMOSDB_CONNECTION
 
 # Deploy service
-kubectl --namespace shipping apply -f $K8S/package-0.yml
+kubectl --namespace backend apply -f $K8S/package-0.yml
 
 # Verify the pod is created
-kubectl get pods -n shipping
+kubectl get pods -n backend
 ```
 
 ## Deploy the Ingestion service
@@ -328,7 +325,7 @@ Deploy the Ingestion service
 sed "s#image:#image: $ACR_SERVER/ingestion:0.1.0#g" $K8S/ingestion.yaml > $K8S/ingestion-0.yaml
 
 # Create secret
-kubectl -n shipping create secret generic ingestion-secrets \
+kubectl -n backend create secret generic ingestion-secrets \
 --from-literal=eventhub_namespace=${INGESTION_EH_NS} \
 --from-literal=eventhub_name=${INGESTION_EH_NAME} \
 --from-literal=eventhub_keyname=IngestionServiceAccessKey \
@@ -343,110 +340,42 @@ az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-key
 az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-keyvalue --value ${EH_ACCESS_KEY_VALUE}
 
 # Deploy service
-kubectl --namespace shipping apply -f $K8S/ingestion-0.yaml
+kubectl --namespace backend apply -f $K8S/ingestion-0.yaml
 
 # Verify the pod is created
-kubectl get pods -n shipping
+kubectl get pods -n backend
 ```
 
-## Deploy the Scheduler service
+## Deploy DroneScheduler service
 
-Provision Azure resources
-```bash
-export SCHEDULER_STORAGE_ACCOUNT_NAME=[SCHEDULER_STORAGE_ACCOUNT_NAME_HERE]
-
-az storage account create --resource-group $RESOURCE_GROUP --name $SCHEDULER_STORAGE_ACCOUNT_NAME --sku Standard_LRS
-```
-
-Build the Scheduler service
+Build the dronescheduler services
 
 ```bash
-export SCHEDULER_PATH=./microservices-reference-implementation/src/shipping/scheduler
-
-# Build the app
-docker build -t openjdk_and_mvn-build:8-jdk -f $SCHEDULER_PATH/Dockerfilemaven $SCHEDULER_PATH
-docker run -it --rm -v $( cd "${SCHEDULER_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
-
-# Build the docker image
-docker build -f $SCHEDULER_PATH/Dockerfile -t $ACR_SERVER/scheduler:0.1.0 $SCHEDULER_PATH
-
-# Push the docker image to ACR
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/scheduler:0.1.0
-```
-
-Deploy the Scheduler service
-
-```bash
-# Update deployment YAML with image tage
-sed "s#image:#image: $ACR_SERVER/scheduler:0.1.0#g" $K8S/scheduler.yaml > $K8S/scheduler-0.yaml
-
-export EH_CONNECTION_STRING=$(az eventhubs eventhub authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_EH_NS --name IngestionServiceAccessKey --eventhub-name $INGESTION_EH_NAME --query primaryConnectionString -o tsv)
-
-export STORAGE_ACCOUNT_CONNECTION_STRING=$(az storage account show-connection-string  \
-    --name $SCHEDULER_STORAGE_ACCOUNT_NAME \
-    --resource-group $RESOURCE_GROUP \
-    --output tsv)
-
-export STORAGE_ACCOUNT_ACCESS_KEY=$(az storage account keys list \
-    --account-name $SCHEDULER_STORAGE_ACCOUNT_NAME  \
-    --resource-group $RESOURCE_GROUP \
-    --query "[0].value" \
-    --output tsv)
-
-# Create secrets
-kubectl -n shipping create secret generic scheduler-secrets --from-literal=eventhub_name=${INGESTION_EH_NAME} \
---from-literal=eventhub_sas_connection_string=${EH_CONNECTION_STRING} \
---from-literal=storageaccount_name=${SCHEDULER_STORAGE_ACCOUNT_NAME} \
---from-literal=storageaccount_key=${STORAGE_ACCOUNT_ACCESS_KEY} \
---from-literal=queueconstring=${STORAGE_ACCOUNT_CONNECTION_STRING}
-
-# Deploy service
-kubectl --namespace shipping apply -f ./microservices-reference-implementation/k8s/scheduler-0.yaml
-
-# Verify all pods are created
-kubectl get pods -n shipping
-```
-
-## Deploy mock services
-
-Build the mock services
-
-```bash
-export MOCKS_PATH=microservices-reference-implementation/src/shipping/delivery
-docker-compose -f $MOCKS_PATH/docker-compose.ci.build.yml up
+export DRONE_PATH=microservices-reference-implementation/src/shipping/dronescheduler
 ```
 
 Build and publish the container image
 
 ```bash
 # Build the Docker images
-docker build -t $ACR_SERVER/account:0.1.0 $MOCKS_PATH/MockAccountService/. && \
-docker build -t $ACR_SERVER/dronescheduler:0.1.0 $MOCKS_PATH/MockDroneScheduler/. && \
-docker build -t $ACR_SERVER/thirdparty:0.1.0 $MOCKS_PATH/MockThirdPartyService/.
+docker build -f $DRONE_PATH/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 ../$DRONE_PATH
 
 # Push the images to ACR
 az acr login --name $ACR_NAME
-docker push $ACR_SERVER/account:0.1.0 && \
-docker push $ACR_SERVER/dronescheduler:0.1.0 && \
-docker push $ACR_SERVER/thirdparty:0.1.0
+docker push $ACR_SERVER/dronescheduler:0.1.0
 ```
 
-Deploy the mock services:
+Deploy the dronescheduler services:
 
 ```bash
 # Update the image tag in the deployment YAML
-sed "s#image:#image: $ACR_SERVER/account:0.1.0#g" $K8S/account.yaml > $K8S/account-0.yaml && \
-sed "s#image:#image: $ACR_SERVER/dronescheduler:0.1.0#g" $K8S/dronescheduler.yaml > $K8S/dronescheduler-0.yaml && \
-sed "s#image:#image: $ACR_SERVER/thirdparty:0.1.0#g" $K8S/thirdparty.yaml > $K8S/thirdparty-0.yaml
+sed "s#image:#image: $ACR_SERVER/dronescheduler:0.1.0#g" $K8S/dronescheduler.yaml > $K8S/dronescheduler-0.yaml
 
 # Deploy the service
-kubectl --namespace accounts apply -f $K8S/account-0.yaml && \
-kubectl --namespace dronemgmt apply -f $K8S/dronescheduler-0.yaml && \
-kubectl --namespace 3rdparty apply -f $K8S/thirdparty-0.yaml
+kubectl --namespace backend apply -f $K8S/dronescheduler-0.yaml
 
 ## Verify all services are running:
-kubectl get all --all-namespaces -l co=fabrikam
+kubectl get pods -n backend
 ```
 
 ## Deploy linkerd
@@ -457,10 +386,10 @@ kubectl create ns linkerd
 wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/servicemesh.yml && \
 sed -i "s#/default#/shipping#g" servicemesh.yml && \
 sed -i "149i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \
-sed -i "149i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.dronemgmt ;" servicemesh.yml && \
+sed -i "149i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.backend ;" servicemesh.yml && \
 sed -i "149i \ \ \ \ \ \ \ \ /svc/thirdparty => /svc/thirdparty.3rdparty ;" servicemesh.yml && \
 sed -i "176i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \
-sed -i "176i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.dronemgmt ;" servicemesh.yml && \
+sed -i "176i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.backend ;" servicemesh.yml && \
 sed -i "176i \ \ \ \ \ \ \ \ /svc/thirdparty => /svc/thirdparty.3rdparty ;" servicemesh.yml && \
 kubectl apply -f servicemesh.yml
 ```
