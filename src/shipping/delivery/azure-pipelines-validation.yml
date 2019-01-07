@@ -1,11 +1,6 @@
 variables:
-  ResourceGroup: 'pnpdh-rg'
-  AzureKubernetesService: 'pnpdh-cluster'
   BuildConfiguration: "Release"
-  AzureSubscription: arm_aks-ra
-  AzureContainerRegistry: pnpdhacr.azurecr.io
-  AzureContainerRegistryHelmRepo: pnpdhacr
-
+  
 name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
 
 pr: # only valid for GitHub. Using Azure repo it must be configure as a Branch Policy
