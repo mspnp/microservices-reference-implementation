@@ -1,0 +1,44 @@
+variables:
+  ResourceGroup: 'pnpdh-rg'
+  AzureKubernetesService: 'pnpdh-cluster'
+  BuildConfiguration: "Release"
+  AzureSubscription: arm_aks-ra
+  AzureContainerRegistry: pnpdhacr.azurecr.io
+  AzureContainerRegistryHelmRepo: pnpdhacr
+
+name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
+
+trigger:
+  batch: true
+  branches:
+    include:
+
+    # for new release to production: release flow strategy
+    - release/dronescheduler/v*
+
+    - refs/relelase/dronescheduler/v*
+
+  paths:
+     include:
+     - /src/shipping/dronescheduler/
+     exclude:
+     - /
+     - /src/
+
+resources:
+- repo: self
+
+jobs:
+
+# CI
+- job: droneschedulerjobci
+  displayName: "dronescheduler CI"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  timeoutInMinutes: 90
+  variables:
+    fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/dronescheduler/v') ]
+  steps:
+  - script: echo $(fullCI)
+    name: echovar
+  - template: ./azure-pipelines-ci.yml
