@@ -1,8 +1,8 @@
-FROM microsoft/dotnet:2-aspnetcore-runtime as base
+FROM microsoft/dotnet:2.2-aspnetcore-runtime as base
 WORKDIR /app
 EXPOSE 80
 
-FROM microsoft/dotnet:2-sdk AS build
+FROM microsoft/dotnet:2.2-sdk AS build
 
 MAINTAINER Fernando Antivero (https://github.com/ferantivero)
 

@@ -358,7 +358,7 @@ Build and publish the container image
 
 ```bash
 # Build the Docker images
-docker build -f $DRONE_PATH/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 ../$DRONE_PATH
+docker build -f $DRONE_PATH/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 $DRONE_PATH/../
 
 # Push the images to ACR
 az acr login --name $ACR_NAME
