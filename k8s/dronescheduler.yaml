@@ -27,16 +27,16 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   name: dronescheduler
-  labels:                 # In API version apps/v1beta2, .metadata.labels no longer default to .spec.template.metadata.labels. 
+  labels:                 # In API version apps/v1beta2, .metadata.labels no longer default to .spec.template.metadata.labels.
     app: dronescheduler
     version: 0.1.0
     bc: dronemgmt
     co: fabrikam
 spec:
   replicas: 1
-  selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels. 
+  selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels.
     matchLabels:           # spec.selector is immutable after creation of the Deployment in apps/v1beta2.
-      app: dronescheduler         
+      app: dronescheduler
   template:                # A Deployment may terminate Pods whose labels match the selector if their template is different from .spec.template
     metadata:
       labels:
@@ -49,21 +49,7 @@ spec:
     spec:
       containers:
       - name: dronescheduler
-        image: 
-        env:
-        # Integration with l5d Daemon Sets
-        - name: NODE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        - name: POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        - name: http_proxy
-          value: $(NODE_NAME):4140
-        - name: CORRELATION_HEADER
-          value: l5d-ctx-trace
+        image:
         ports:
         - name: service
           containerPort: 80
