@@ -1,5 +1,8 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Azure.ServiceBus;
+using Microsoft.Azure.ServiceBus.Primitives;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,33 +12,49 @@ namespace Fabrikam.Workflow.Service
     internal class WorkflowService : IHostedService
     {
         private readonly ILogger<WorkflowService> _logger;
-        private Timer _timer;
+        private readonly IOptions<WorkflowServiceOptions> _options;
+        private QueueClient _receiveClient;
 
-        public WorkflowService(ILogger<WorkflowService> logger)
+        public WorkflowService(ILogger<WorkflowService> logger, IOptions<WorkflowServiceOptions> options)
         {
             _logger = logger;
+            _options = options;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            _timer = new Timer(c =>
+            TokenProvider tokenProvider = TokenProvider.CreateManagedServiceIdentityTokenProvider();
+            _receiveClient = new QueueClient(_options.Value.QueueEndpoint, _options.Value.QueueName, tokenProvider, receiveMode: ReceiveMode.PeekLock);
+            _receiveClient.RegisterMessageHandler(
+                ProcessMessageAsync,
+                new MessageHandlerOptions(ProcessMessageExceptionAsync)
                 {
-                    _logger.LogInformation("Processing...");
-                }, null,
-                TimeSpan.Zero,
-                TimeSpan.FromSeconds(30));
-
+                    AutoComplete = true,
+                    MaxConcurrentCalls = _options.Value.MaxConcurrency
+                });
 
             _logger.LogInformation("Started");
             return Task.CompletedTask;
         }
 
-        public Task StopAsync(CancellationToken cancellationToken)
+        public async Task StopAsync(CancellationToken cancellationToken)
         {
-            _timer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-            _timer.Dispose();
+            await _receiveClient?.CloseAsync();
 
             _logger.LogInformation("Stopped");
+        }
+
+        private Task ProcessMessageAsync(Message message, CancellationToken ct)
+        {
+            _logger.LogInformation("Processing message {messageId}", message.MessageId);
+
+            return Task.CompletedTask;
+        }
+
+        private Task ProcessMessageExceptionAsync(ExceptionReceivedEventArgs exceptionEvent)
+        {
+            _logger.LogWarning("Exception processing message {exception}", exceptionEvent.Exception);
+
             return Task.CompletedTask;
         }
     }

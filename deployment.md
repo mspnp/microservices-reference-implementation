@@ -188,7 +188,7 @@ export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show --resource-group $RESOURC
 
 # Grant the identity access to the KeyVault
 az role assignment create --role Reader --assignee $DELIVERY_PRINCIPAL_ID --scope $DELIVERY_KEYVAULT_ID
-az keyvault set-policy --name $DELIVERY_KEYVAULT_NAME --secret-permissions get, list --spn $DELIVERY_PRINCIPAL_CLIENT_ID
+az keyvault set-policy --name $DELIVERY_KEYVAULT_NAME --secret-permissions get list --spn $DELIVERY_PRINCIPAL_CLIENT_ID
 
 # Allow the cluster to manage the identity to assign to pods
 az role assignment create --role "Managed Identity Operator" --assignee $CLUSTER_SERVICE_PRINCIPAL --scope $DELIVERY_PRINCIPAL_RESOURCE_ID
@@ -260,6 +260,98 @@ az keyvault secret set --vault-name $PACKAGE_KEYVAULT_NAME --name mongodb-pwd --
 
 # Deploy service
 kubectl --namespace backend apply -f $K8S/package-0.yml
+
+# Verify the pod is created
+kubectl get pods -n backend
+```
+
+## Deploy the Workflow service
+
+Provision Azure resources
+
+```bash
+export INGESTION_QUEUE_NAMESPACE="${UNIQUE_APP_NAME_PREFIX}-ingestion-ns"
+export INGESTION_QUEUE_NAME="${UNIQUE_APP_NAME_PREFIX}-ingestion"
+
+az servicebus namespace create --location $LOCATION \
+            --name $INGESTION_QUEUE_NAMESPACE \
+            --resource-group $RESOURCE_GROUP \
+            --sku Standard
+
+az servicebus queue create --name $INGESTION_QUEUE_NAME \
+                           --namespace-name $INGESTION_QUEUE_NAMESPACE \
+                           --resource-group $RESOURCE_GROUP
+
+export INGESTION_QUEUE_ID=$(az servicebus queue show --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_QUEUE_NAME --query "id" --output tsv)
+export INGESTION_QUEUE_NAMESPACE_ID=$(az servicebus namespace show --resource-group $RESOURCE_GROUP --name $INGESTION_QUEUE_NAMESPACE --query "id" --output tsv)
+export INGESTION_QUEUE_NAMESPACE_ENDPOINT=$(az servicebus namespace show --resource-group $RESOURCE_GROUP --name $INGESTION_QUEUE_NAMESPACE --query "serviceBusEndpoint" --output tsv)
+```
+
+Build the workflow service
+
+```bash
+export WORKFLOW_PATH=./microservices-reference-implementation/src/shipping/workflow
+
+# Build the Docker image
+docker build --pull --compress -t $ACR_SERVER/workflow:0.1.0 $WORKFLOW_PATH/.
+
+# Push the image to ACR
+az acr login --name $ACR_NAME
+docker push $ACR_SERVER/workflow:0.1.0
+```
+
+
+Create KeyVault and secrets
+
+```bash
+export WORKFLOW_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-workflow-kv"
+az keyvault create --name $WORKFLOW_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
+az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name QueueName --value ${INGESTION_QUEUE_NAME}
+az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name QueueEndpoint --value ${INGESTION_QUEUE_NAMESPACE_ENDPOINT}
+
+export WORKFLOW_KEYVAULT_ID=$(az keyvault show --resource-group $RESOURCE_GROUP --name $WORKFLOW_KEYVAULT_NAME --query "id" --output tsv)
+export WORKFLOW_KEYVAULT_URI=$(az keyvault show --resource-group $RESOURCE_GROUP --name $WORKFLOW_KEYVAULT_NAME --query "properties.vaultUri" --output tsv)
+```
+
+Create and set up pod identity
+
+```bash
+# Create the identity and extract properties
+export WORKFLOW_PRINCIPAL_NAME="workflow"
+az identity create --resource-group $RESOURCE_GROUP --name $WORKFLOW_PRINCIPAL_NAME
+export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $WORKFLOW_PRINCIPAL_NAME --query "id" --output tsv)
+export WORKFLOW_PRINCIPAL_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $WORKFLOW_PRINCIPAL_NAME --query "principalId" --output tsv)
+export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $WORKFLOW_PRINCIPAL_NAME --query "clientId" --output tsv)
+
+# Grant the identity access to the KeyVault
+az role assignment create --role Reader --assignee $WORKFLOW_PRINCIPAL_ID --scope $WORKFLOW_KEYVAULT_ID
+az keyvault set-policy --name $WORKFLOW_KEYVAULT_NAME --secret-permissions get list --spn $WORKFLOW_PRINCIPAL_CLIENT_ID
+
+# Grant the identity access to the ingestion queue
+az role assignment create --role Contributor --assignee $WORKFLOW_PRINCIPAL_ID --scope $INGESTION_QUEUE_NAMESPACE_ID
+
+# Allow the cluster to manage the identity to assign to pods
+az role assignment create --role "Managed Identity Operator" --assignee $CLUSTER_SERVICE_PRINCIPAL --scope $WORKFLOW_PRINCIPAL_RESOURCE_ID
+
+# Deploy the identity resources
+cat $K8S/workflow-identity.yaml | \
+    sed "s#ResourceID: \"identityResourceId\"#ResourceID: $WORKFLOW_PRINCIPAL_RESOURCE_ID#g" | \
+    sed "s#ClientID: \"identityClientid\"#ClientID: $WORKFLOW_PRINCIPAL_CLIENT_ID#g" > $K8S/workflow-identity-0.yaml
+kubectl apply -f $K8S/workflow-identity-0.yaml
+```
+
+Deploy the Workflow service:
+
+```bash
+# Update the image tag and config values in the deployment YAML
+sed "s#image:#image: $ACR_SERVER/workflow:0.1.0#g" $K8S/workflow.yaml | \
+    sed "s#resourcegroup: \"keyVaultResourceGroup\"#resourcegroup: $RESOURCE_GROUP#g" | \
+    sed "s#subscriptionid: \"keyVaultSubscriptionId\"#subscriptionid: $SUBSCRIPTION_ID#g" | \
+    sed "s#tenantid: \"keyVaultTenantId\"#tenantid: $TENANT_ID#g" | \
+    sed "s#keyvaultname: \"keyVaultName\"#keyvaultname: $WORKFLOW_KEYVAULT_NAME#g" > $K8S/workflow-0.yaml
+
+# Deploy the service
+kubectl --namespace backend apply -f $K8S/workflow-0.yaml
 
 # Verify the pod is created
 kubectl get pods -n backend

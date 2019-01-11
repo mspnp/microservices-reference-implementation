@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Formatting.Compact;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Fabrikam.Workflow.Service
@@ -17,27 +18,32 @@ namespace Fabrikam.Workflow.Service
         private static IHostBuilder CreateHostBuilder(string[] args)
         {
             return new HostBuilder()
-                .ConfigureAppConfiguration((environment, builder) =>
+                .ConfigureAppConfiguration((context, builder) =>
                 {
-                    builder.AddEnvironmentVariables();
+                    builder
+                        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                        .AddJsonFile($"appsettings.{context.HostingEnvironment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+                        .AddEnvironmentVariables();
 
                     var buildConfig = builder.Build();
                     if (buildConfig["CONFIGURATION_FOLDER"] is var configurationFolder && !string.IsNullOrEmpty(configurationFolder))
                     {
-                        builder.AddKeyPerFile(configurationFolder, false);
+                        builder.AddKeyPerFile(Path.Combine(context.HostingEnvironment.ContentRootPath, configurationFolder), false);
                     }
                 })
-                .ConfigureLogging(builder =>
+                .ConfigureLogging((context, builder) =>
                 {
                     var serilogBuilder = new LoggerConfiguration()
-                        //.ReadFrom.Configuration(Configuration)
+                        .ReadFrom.Configuration(context.Configuration)
                         //.Enrich.With(new CorrelationLogEventEnricher(httpContextAccessor, Configuration["Logging:CorrelationHeaderKey"]))
                         .WriteTo.Console(new CompactJsonFormatter());
 
                     builder.AddSerilog(serilogBuilder.CreateLogger(), true);
                 })
-                .ConfigureServices(services =>
+                .ConfigureServices((context, services) =>
                 {
+                    services.AddOptions();
+                    services.Configure<WorkflowServiceOptions>(context.Configuration);
                     services.AddHostedService<WorkflowService>();
                 })
                 .UseConsoleLifetime();

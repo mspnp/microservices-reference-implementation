@@ -37,8 +37,27 @@ spec:
       containers:
       - name: workflow
         image:
+        volumeMounts:
+        - name: workflow
+          mountPath: /kvmnt
+          readOnly: true
         env:
+        - name: CONFIGURATION_FOLDER
+          value: /kvmnt
         - name: no_proxy
           value: 169.254.169.254
         - name: CORRELATION_HEADER
           value: l5d-ctx-trace
+      volumes:
+      - name: workflow
+        flexVolume:
+          driver: "azure/kv"
+          options:
+            usepodidentity: "true"
+            keyvaultname: "keyVaultName"
+            keyvaultobjectnames: QueueName;QueueEndpoint
+            keyvaultobjecttypes: secret;secret
+            keyvaultobjectversions: ""
+            resourcegroup: "keyVaultResourceGroup"
+            subscriptionid: "keyVaultSubscriptionId"
+            tenantid: "keyVaultTenantId"
