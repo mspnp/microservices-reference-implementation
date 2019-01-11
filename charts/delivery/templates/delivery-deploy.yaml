@@ -53,18 +53,6 @@ spec:
             secretKeyRef:
               name: {{ .Release.Name }}-dd-deliveryservice-cosmosdbconf
               key: CosmosDB_CollectionId
-        - name: NODE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        - name: POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        - name: http_proxy
-          value: $(NODE_NAME):4140
-        - name: CORRELATION_HEADER
-          value: {{ .Values.correlationheader }}
         ports:
         - name: service
           containerPort: 80
