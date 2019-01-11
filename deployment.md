@@ -470,38 +470,6 @@ kubectl --namespace backend apply -f $K8S/dronescheduler-0.yaml
 kubectl get pods -n backend
 ```
 
-## Deploy linkerd
-
-
-```bash
-kubectl create ns linkerd
-wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/servicemesh.yml && \
-sed -i "s#/default#/shipping#g" servicemesh.yml && \
-sed -i "149i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \
-sed -i "149i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.backend ;" servicemesh.yml && \
-sed -i "149i \ \ \ \ \ \ \ \ /svc/thirdparty => /svc/thirdparty.3rdparty ;" servicemesh.yml && \
-sed -i "176i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \
-sed -i "176i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.backend ;" servicemesh.yml && \
-sed -i "176i \ \ \ \ \ \ \ \ /svc/thirdparty => /svc/thirdparty.3rdparty ;" servicemesh.yml && \
-kubectl apply -f servicemesh.yml
-```
-
-For more information, see [https://linkerd.io/getting-started/k8s/](https://linkerd.io/getting-started/k8s/)
-
-> Note:
-> The service mesh configuration linked above uses the default namespace for service discovery.
-> Since Drone Delivery microservices are getting deployed into several custom namespaces, this config needs to be modified as shown. This change modifies the dtab rules.
-
-The linkerd accounts need to be granted permissions to query the cluster for resources, as RBAC is enabled by default on AKS.
-
-```bash
-wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-rbac.yml && \
-sed -i "s#namespace: default#namespace: linkerd#g" linkerd-rbac.yml && \
-kubectl apply -f linkerd-rbac.yml
-```
-
-For more information on using linkerd with an RBAC-enabled cluster see [https://blog.buoyant.io/2017/07/24/using-linkerd-kubernetes-rbac/](https://blog.buoyant.io/2017/07/24/using-linkerd-kubernetes-rbac/)
-
 ## Validate the application is running
 
 You can send delivery requests to the ingestion service using the Swagger UI.
@@ -547,5 +515,3 @@ sed -i "s/- name: FLUENT_ELASTICSEARCH_PASSWORD/#- name: FLUENT_ELASTICSEARCH_PA
 sed -i 's/  value: "changeme"/#  value: "changeme"/' fluentd-daemonset-elasticsearch.yaml && \
 kubectl --namespace kube-system apply -f fluentd-daemonset-elasticsearch.yaml
 ```
-
-Deploy Prometheus and Grafana. For more information, see https://github.com/linkerd/linkerd-viz#kubernetes-deploy
