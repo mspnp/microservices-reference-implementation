@@ -40,16 +40,6 @@ spec:
               key: {{ .Release.Name }}-mongodb-pwd
         - name: COLLECTION_NAME
           value: packages
-        - name: NODE_NAME
-          valueFrom:
-            fieldRef:
-              fieldPath: spec.nodeName
-        - name: POD_IP
-          valueFrom:
-            fieldRef:
-              fieldPath: status.podIP
-        - name: http_proxy
-          value: $(NODE_NAME):4140
         - name: CORRELATION_HEADER
           value: {{ .Values.correlationheader }}
         ports:
