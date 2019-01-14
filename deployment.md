@@ -154,10 +154,6 @@ export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-gro
 export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint -o tsv)
 
 kubectl --namespace backend create --save-config=true secret generic delivery-storageconf \
-    --from-literal=CosmosDB_Key=${COSMOSDB_KEY} \
-    --from-literal=CosmosDB_Endpoint=${COSMOSDB_ENDPOINT} \
-    --from-literal=Redis_Endpoint=${REDIS_ENDPOINT} \
-    --from-literal=Redis_AccessKey=${REDIS_KEY} \
     --from-literal=EH_ConnectionString=
 ```
 
@@ -208,11 +204,7 @@ sed "s#image:#image: $ACR_SERVER/delivery:0.1.0#g" $K8S/delivery.yaml | \
     sed "s/value: \"CosmosDB_DatabaseId\"/value: $DATABASE_NAME/g" | \
     sed "s/value: \"CosmosDB_CollectionId\"/value: $COLLECTION_NAME/g" | \
     sed "s/value: \"EH_EntityPath\"/value:/g" | \
-    sed "s#value: \"KeyVault_Name\"#value: $DELIVERY_KEYVAULT_URI#g" | \
-    sed "s#resourcegroup: \"keyVaultResourceGroup\"#resourcegroup: $RESOURCE_GROUP#g" | \
-    sed "s#subscriptionid: \"keyVaultSubscriptionId\"#subscriptionid: $SUBSCRIPTION_ID#g" | \
-    sed "s#tenantid: \"keyVaultTenantId\"#tenantid: $TENANT_ID#g" | \
-    sed "s#keyvaultname: \"keyVaultName\"#keyvaultname: $DELIVERY_KEYVAULT_NAME#g" > $K8S/delivery-0.yaml
+    sed "s#value: \"KeyVault_Name\"#value: $DELIVERY_KEYVAULT_URI#g" > $K8S/delivery-0.yaml
 
 # Deploy the service
 kubectl --namespace backend apply -f $K8S/delivery-0.yaml

@@ -54,38 +54,14 @@ spec:
       containers:
       - name: delivery
         image:
-        volumeMounts:
-        - name: delivery
-          mountPath: /kvmnt
-          readOnly: true
         env:
         # Export K8s secrets
-        - name: DOCDB_KEY
-          valueFrom:
-            secretKeyRef:
-              name: delivery-storageconf
-              key: CosmosDB_Key
-        - name: DOCDB_ENDPOINT
-          valueFrom:
-            secretKeyRef:
-              name: delivery-storageconf
-              key: CosmosDB_Endpoint
         - name: DOCDB_DATABASEID
           value: "CosmosDB_DatabaseId"
         - name: DOCDB_COLLECTIONID
           value: "CosmosDB_CollectionId"
         - name: KEY_VAULT_URI
           value: "KeyVault_Name"
-        - name: REDIS_ENDPOINT
-          valueFrom:
-             secretKeyRef:
-              name: delivery-storageconf
-              key: Redis_Endpoint
-        - name: REDIS_KEY
-          valueFrom:
-             secretKeyRef:
-              name: delivery-storageconf
-              key: Redis_AccessKey
         - name: EH_CONNSTR
           valueFrom:
              secretKeyRef:
@@ -105,16 +81,3 @@ spec:
            limits:
              cpu: 1
              memory: 3G
-      volumes:
-      - name: delivery
-        flexVolume:
-          driver: "azure/kv"
-          options:
-            usepodidentity: "true"
-            keyvaultname: "keyVaultName"
-            keyvaultobjectnames: CosmosDB-Key;CosmosDB-Endpoint;Redis-Endpoint;Redis-AccessKey
-            keyvaultobjecttypes: secret;secret;secret;secret
-            keyvaultobjectversions: ""
-            resourcegroup: "keyVaultResourceGroup"
-            subscriptionid: "keyVaultSubscriptionId"
-            tenantid: "keyVaultTenantId"
