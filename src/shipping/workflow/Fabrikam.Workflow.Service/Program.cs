@@ -1,10 +1,14 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿// ------------------------------------------------------------
+//  Copyright (c) Microsoft Corporation.  All rights reserved.
+//  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+// ------------------------------------------------------------
+
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Formatting.Compact;
-using System.IO;
-using System.Threading.Tasks;
 
 namespace Fabrikam.Workflow.Service
 {
@@ -35,17 +39,11 @@ namespace Fabrikam.Workflow.Service
                 {
                     var serilogBuilder = new LoggerConfiguration()
                         .ReadFrom.Configuration(context.Configuration)
-                        //.Enrich.With(new CorrelationLogEventEnricher(httpContextAccessor, Configuration["Logging:CorrelationHeaderKey"]))
                         .WriteTo.Console(new CompactJsonFormatter());
 
                     builder.AddSerilog(serilogBuilder.CreateLogger(), true);
                 })
-                .ConfigureServices((context, services) =>
-                {
-                    services.AddOptions();
-                    services.Configure<WorkflowServiceOptions>(context.Configuration);
-                    services.AddHostedService<WorkflowService>();
-                })
+                .ConfigureServices(ServiceStartup.ConfigureServices)
                 .UseConsoleLifetime();
         }
     }
