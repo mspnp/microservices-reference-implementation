@@ -1,0 +1,8 @@
+# Default values for workflow.
+replicaCount: 1
+image:
+  repository:
+  tag:
+  pullPolicy: IfNotPresent
+dockerregistry:
+reason: unknown

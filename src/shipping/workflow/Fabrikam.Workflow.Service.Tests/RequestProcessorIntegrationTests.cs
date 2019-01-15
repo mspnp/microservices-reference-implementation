@@ -154,9 +154,10 @@ namespace Fabrikam.Workflow.Service.Tests
         [Fact]
         public async Task WhenPackageServiceFails_ThenRequestFails()
         {
-            _handleHttpRequest = async ctx =>
+            _handleHttpRequest = ctx =>
             {
                 ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                return Task.CompletedTask;
             };
 
             var delivery =
