@@ -16,11 +16,13 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
     {
         private readonly ILogger<RequestProcessor> _logger;
         private readonly IPackageServiceCaller _packageServiceCaller;
+        private readonly IDroneSchedulerServiceCaller _droneSchedulerServiceCaller;
 
-        public RequestProcessor(ILogger<RequestProcessor> logger, IPackageServiceCaller packageServiceCaller)
+        public RequestProcessor(ILogger<RequestProcessor> logger, IPackageServiceCaller packageServiceCaller, IDroneSchedulerServiceCaller droneSchedulerServiceCaller)
         {
             _logger = logger;
             _packageServiceCaller = packageServiceCaller;
+            _droneSchedulerServiceCaller = droneSchedulerServiceCaller;
         }
 
         public async Task<bool> ProcessDeliveryRequestAsync(Delivery deliveryRequest, IReadOnlyDictionary<string, object> properties)
@@ -29,12 +31,18 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
 
             try
             {
-                var packageGen = await CreatePackageAsync(deliveryRequest.PackageInfo).ConfigureAwait(false);
+                var packageGen = await _packageServiceCaller.CreatePackageAsync(deliveryRequest.PackageInfo).ConfigureAwait(false);
                 if (packageGen != null)
                 {
                     _logger.LogInformation("Generated package {packageId} for delivery {deliveryId}", packageGen.Id, deliveryRequest.DeliveryId);
 
-                    return true;
+                    var droneId = await _droneSchedulerServiceCaller.GetDroneIdAsync(deliveryRequest).ConfigureAwait(false);
+                    if (droneId != null)
+                    {
+                        _logger.LogInformation("Assigned drone {droneId} for delivery {deliveryId}", droneId, deliveryRequest.DeliveryId);
+
+                        return true;
+                    }
                 }
             }
             catch (Exception e)
@@ -43,12 +51,6 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
             }
 
             return false;
-        }
-
-        private async Task<PackageGen> CreatePackageAsync(PackageInfo packageInfo)
-        {
-            var packageGen = await _packageServiceCaller.CreatePackageAsync(packageInfo);
-            return packageGen;
         }
     }
 }

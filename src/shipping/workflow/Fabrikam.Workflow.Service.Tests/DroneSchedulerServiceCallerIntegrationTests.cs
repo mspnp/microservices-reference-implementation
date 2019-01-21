@@ -21,7 +21,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Fabrikam.Workflow.Service.Models;
-using Fabrikam.Workflow.Service.RequestProcessing;
+using Fabrikam.Workflow.Service.Services;
 using Fabrikam.Workflow.Service.Tests.Utils;
 using Moq;
 using Newtonsoft.Json;
@@ -29,26 +29,24 @@ using Xunit;
 
 namespace Fabrikam.Workflow.Service.Tests
 {
-    public class RequestProcessorIntegrationTests : IDisposable
+    public class DroneSchedulerServiceCallerIntegrationTests : IDisposable
     {
         private const string DroneSchedulerHost = "dronescheduler";
         private static readonly string DroneSchedulerUri = $"http://{DroneSchedulerHost}/api/DroneDeliveries/";
-        private const string PackageHost = "packagehost";
-        private static readonly string PackageUri = $"http://{PackageHost}/api/packages/";
 
-        private readonly IRequestProcessor _requestProcessor;
         private readonly TestServer _testServer;
         private RequestDelegate _handleHttpRequest = ctx => Task.CompletedTask;
 
-        public RequestProcessorIntegrationTests()
+        private readonly IDroneSchedulerServiceCaller _caller;
+
+        public DroneSchedulerServiceCallerIntegrationTests()
         {
             var context = new HostBuilderContext(new Dictionary<object, object>());
             context.Configuration =
                 new ConfigurationBuilder().AddInMemoryCollection(
                     new Dictionary<string, string>
                     {
-                        ["SERVICE_URI_DRONE"] = DroneSchedulerUri,
-                        ["SERVICE_URI_PACKAGE"] = PackageUri
+                        ["SERVICE_URI_DRONE"] = DroneSchedulerUri
                     }).Build();
             context.HostingEnvironment =
                 Mock.Of<Microsoft.Extensions.Hosting.IHostingEnvironment>(e => e.EnvironmentName == "Test");
@@ -75,7 +73,7 @@ namespace Fabrikam.Workflow.Service.Tests
                     sp => new TestServerMessageHandlerBuilder(_testServer)));
             var serviceProvider = serviceCollection.BuildServiceProvider();
 
-            _requestProcessor = serviceProvider.GetService<IRequestProcessor>();
+            _caller = serviceProvider.GetService<IDroneSchedulerServiceCaller>();
         }
 
         public void Dispose()
@@ -84,29 +82,50 @@ namespace Fabrikam.Workflow.Service.Tests
         }
 
         [Fact]
-        public async Task ProcessingDelivery_InvokesPackageServiceAndDroneSchedulerService()
+        public async Task WhenGettingDroneId_ThenInvokesDroneSchedulerAPI()
         {
-            PackageGen actualPackage = null;
+            string actualDeliveryId = null;
             DroneDelivery actualDelivery = null;
+            _handleHttpRequest = ctx =>
+            {
+                if (ctx.Request.Host.Host == DroneSchedulerHost)
+                {
+                    actualDeliveryId = ctx.Request.Path;
+                    actualDelivery =
+                        new JsonSerializer().Deserialize<DroneDelivery>(new JsonTextReader(new StreamReader(ctx.Request.Body, Encoding.UTF8)));
+                }
+                else
+                {
+                    ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                }
+
+                return Task.CompletedTask;
+            };
+
+            var delivery =
+                new Delivery
+                {
+                    DeliveryId = "someDeliveryId",
+                    PackageInfo = new PackageInfo { PackageId = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d }
+                };
+            await _caller.GetDroneIdAsync(delivery);
+
+            Assert.NotNull(actualDeliveryId);
+            Assert.Equal($"/api/DroneDeliveries/{delivery.DeliveryId}", actualDeliveryId);
+
+            Assert.NotNull(actualDelivery);
+            Assert.Equal(delivery.DeliveryId, actualDelivery.DeliveryId);
+            Assert.Equal(delivery.PackageInfo.PackageId, actualDelivery.PackageDetail.Id);
+            Assert.Equal((int)delivery.PackageInfo.Size, (int)actualDelivery.PackageDetail.Size);
+        }
+
+        [Fact]
+        public async Task WhenDroneSchedulerAPIReturnsOK_ThenReturnsDroneId()
+        {
             _handleHttpRequest = async ctx =>
             {
-                var serializer = new JsonSerializer();
-
-                if (ctx.Request.Host.Host == PackageHost)
+                if (ctx.Request.Host.Host == DroneSchedulerHost)
                 {
-                    actualPackage = serializer.Deserialize<PackageGen>(new JsonTextReader(new StreamReader(ctx.Request.Body, Encoding.UTF8)));
-
-                    await ctx.WriteResultAsync(
-                        new ObjectResult(
-                            new PackageGen { Id = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d })
-                        {
-                            StatusCode = (int)HttpStatusCode.Created
-                        });
-                }
-                else if (ctx.Request.Host.Host == DroneSchedulerHost)
-                {
-                    actualDelivery = serializer.Deserialize<DroneDelivery>(new JsonTextReader(new StreamReader(ctx.Request.Body, Encoding.UTF8)));
-
                     await ctx.WriteResultAsync(new ContentResult { Content = "someDroneId", StatusCode = (int)HttpStatusCode.OK });
                 }
                 else
@@ -121,17 +140,36 @@ namespace Fabrikam.Workflow.Service.Tests
                     DeliveryId = "someDeliveryId",
                     PackageInfo = new PackageInfo { PackageId = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d }
                 };
-            await _requestProcessor.ProcessDeliveryRequestAsync(delivery, new Dictionary<string, object>());
+            var actualDroneId = await _caller.GetDroneIdAsync(delivery);
 
-            Assert.NotNull(actualPackage);
-            Assert.Equal((int)delivery.PackageInfo.Size, (int)actualPackage.Size);
-            Assert.Equal(delivery.PackageInfo.Tag, actualPackage.Tag);
-            Assert.Equal(delivery.PackageInfo.Weight, actualPackage.Weight);
+            Assert.Equal("someDroneId", actualDroneId);
+        }
 
-            Assert.NotNull(actualDelivery);
-            Assert.Equal(delivery.DeliveryId, actualDelivery.DeliveryId);
-            Assert.Equal(delivery.PackageInfo.PackageId, actualDelivery.PackageDetail.Id);
-            Assert.Equal((int)delivery.PackageInfo.Size, (int)actualDelivery.PackageDetail.Size);
+        [Fact]
+        public async Task WhenDroneSchedulerAPIDoesNotReturnOK_ThenThrows()
+        {
+            _handleHttpRequest = ctx =>
+            {
+                if (ctx.Request.Host.Host == DroneSchedulerHost)
+                {
+                    ctx.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                }
+                else
+                {
+                    ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                }
+
+                return Task.CompletedTask;
+            };
+
+            var delivery =
+                new Delivery
+                {
+                    DeliveryId = "someDeliveryId",
+                    PackageInfo = new PackageInfo { PackageId = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d }
+                };
+
+            await Assert.ThrowsAsync<BackendServiceCallFailedException>(() => _caller.GetDroneIdAsync(delivery));
         }
     }
 }

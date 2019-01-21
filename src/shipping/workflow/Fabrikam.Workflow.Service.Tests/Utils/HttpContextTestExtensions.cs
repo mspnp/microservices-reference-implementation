@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Fabrikam.Workflow.Service.Tests
+namespace Fabrikam.Workflow.Service.Tests.Utils
 {
     public static class HttpContextTestExtensions
     {

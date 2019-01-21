@@ -6,21 +6,17 @@
 using System;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Formatting;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Fabrikam.Workflow.Service.Models;
 
 namespace Fabrikam.Workflow.Service.Services
 {
     public class PackageServiceCaller : IPackageServiceCaller
     {
-        private readonly ILogger<PackageServiceCaller> _logger;
         private readonly HttpClient _httpClient;
 
-        public PackageServiceCaller(ILogger<PackageServiceCaller> logger, HttpClient httpClient)
+        public PackageServiceCaller(HttpClient httpClient)
         {
-            _logger = logger;
             _httpClient = httpClient;
         }
 
@@ -28,7 +24,7 @@ namespace Fabrikam.Workflow.Service.Services
         {
             try
             {
-                var response = await _httpClient.PutAsync($"{packageInfo.PackageId}", packageInfo, new JsonMediaTypeFormatter());
+                var response = await _httpClient.PutAsJsonAsync($"{packageInfo.PackageId}", packageInfo);
                 if (response.StatusCode == HttpStatusCode.Created)
                 {
                     return await response.Content.ReadAsAsync<PackageGen>();

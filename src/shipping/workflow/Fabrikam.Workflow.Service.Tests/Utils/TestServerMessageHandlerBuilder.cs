@@ -8,7 +8,7 @@ using System.Net.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Http;
 
-namespace Fabrikam.Workflow.Service.Tests
+namespace Fabrikam.Workflow.Service.Tests.Utils
 {
     public class TestServerMessageHandlerBuilder : HttpMessageHandlerBuilder
     {
