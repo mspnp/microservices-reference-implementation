@@ -31,6 +31,11 @@ namespace Fabrikam.Workflow.Service
             {
                 c.BaseAddress = new Uri(context.Configuration["SERVICE_URI_DRONE"]);
             });
+
+            services.AddHttpClient<IDeliveryServiceCaller, DeliveryServiceCaller>(c =>
+            {
+                c.BaseAddress = new Uri(context.Configuration["SERVICE_URI_DELIVERY"]);
+            });
         }
     }
 }

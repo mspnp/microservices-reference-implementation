@@ -20,6 +20,7 @@ namespace Fabrikam.Workflow.Service.Tests
     {
         private readonly Mock<IPackageServiceCaller> _packageServiceCallerMock;
         private readonly Mock<IDroneSchedulerServiceCaller> _droneSchedulerServiceCallerMock;
+        private readonly Mock<IDeliveryServiceCaller> _deliveryServiceCallerMock;
         private readonly RequestProcessor _processor;
 
         public RequestProcessorTests()
@@ -30,18 +31,22 @@ namespace Fabrikam.Workflow.Service.Tests
 
             _packageServiceCallerMock = new Mock<IPackageServiceCaller>();
             _droneSchedulerServiceCallerMock = new Mock<IDroneSchedulerServiceCaller>();
+            _deliveryServiceCallerMock = new Mock<IDeliveryServiceCaller>();
 
             _processor =
                 new RequestProcessor(
                     services.GetService<ILogger<RequestProcessor>>(),
                     _packageServiceCallerMock.Object,
-                    _droneSchedulerServiceCallerMock.Object);
+                    _droneSchedulerServiceCallerMock.Object,
+                    _deliveryServiceCallerMock.Object);
         }
 
         [Fact]
         public async Task WhenInvokingPackageServiceThrows_ProcessingFails()
         {
-            _packageServiceCallerMock.Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>())).ThrowsAsync(new Exception()).Verifiable();
+            _packageServiceCallerMock
+                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .ThrowsAsync(new Exception()).Verifiable();
 
             var delivery =
                 new Delivery
@@ -54,12 +59,15 @@ namespace Fabrikam.Workflow.Service.Tests
             Assert.False(success);
             _packageServiceCallerMock.Verify();
             _droneSchedulerServiceCallerMock.VerifyNoOtherCalls();
+            _deliveryServiceCallerMock.VerifyNoOtherCalls();
         }
 
         [Fact]
         public async Task WhenInvokingPackageServiceFails_ProcessingFails()
         {
-            _packageServiceCallerMock.Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>())).ReturnsAsync(default(PackageGen)).Verifiable();
+            _packageServiceCallerMock
+                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .ReturnsAsync(default(PackageGen)).Verifiable();
 
             var delivery =
                 new Delivery
@@ -72,13 +80,18 @@ namespace Fabrikam.Workflow.Service.Tests
             Assert.False(success);
             _packageServiceCallerMock.Verify();
             _droneSchedulerServiceCallerMock.VerifyNoOtherCalls();
+            _deliveryServiceCallerMock.VerifyNoOtherCalls();
         }
 
         [Fact]
         public async Task WhenInvokingDroneSchedulerThrows_ProcessingFails()
         {
-            _packageServiceCallerMock.Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>())).ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
-            _droneSchedulerServiceCallerMock.Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>())).ThrowsAsync(new Exception()).Verifiable();
+            _packageServiceCallerMock
+                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
+            _droneSchedulerServiceCallerMock
+                .Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>()))
+                .ThrowsAsync(new Exception()).Verifiable();
 
             var delivery =
                 new Delivery
@@ -91,13 +104,18 @@ namespace Fabrikam.Workflow.Service.Tests
             Assert.False(success);
             _packageServiceCallerMock.Verify();
             _droneSchedulerServiceCallerMock.Verify();
+            _deliveryServiceCallerMock.VerifyNoOtherCalls();
         }
 
         [Fact]
         public async Task WhenInvokingDroneSchedulerFails_ProcessingFails()
         {
-            _packageServiceCallerMock.Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>())).ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
-            _droneSchedulerServiceCallerMock.Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>())).ReturnsAsync(default(string)).Verifiable();
+            _packageServiceCallerMock
+                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
+            _droneSchedulerServiceCallerMock
+                .Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>()))
+                .ReturnsAsync(default(string)).Verifiable();
 
             var delivery =
                 new Delivery
@@ -110,13 +128,75 @@ namespace Fabrikam.Workflow.Service.Tests
             Assert.False(success);
             _packageServiceCallerMock.Verify();
             _droneSchedulerServiceCallerMock.Verify();
+            _deliveryServiceCallerMock.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public async Task WhenInvokingDeliverySchedulerThrows_ProcessingFails()
+        {
+            _packageServiceCallerMock
+                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
+            _droneSchedulerServiceCallerMock
+                .Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>()))
+                .ReturnsAsync("droneId").Verifiable();
+            _deliveryServiceCallerMock
+                .Setup(c => c.ScheduleDeliveryAsync(It.IsAny<Delivery>(), "droneId"))
+                .ThrowsAsync(new Exception()).Verifiable();
+
+            var delivery =
+                new Delivery
+                {
+                    DeliveryId = "someDeliveryId",
+                    PackageInfo = new PackageInfo { PackageId = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d }
+                };
+            var success = await _processor.ProcessDeliveryRequestAsync(delivery, new Dictionary<string, object>());
+
+            Assert.False(success);
+            _packageServiceCallerMock.Verify();
+            _droneSchedulerServiceCallerMock.Verify();
+            _deliveryServiceCallerMock.Verify();
+        }
+
+        [Fact]
+        public async Task WhenInvokingDeliverySchedulerFails_ProcessingFails()
+        {
+            _packageServiceCallerMock
+                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
+            _droneSchedulerServiceCallerMock
+                .Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>()))
+                .ReturnsAsync("droneId").Verifiable();
+            _deliveryServiceCallerMock
+                .Setup(c => c.ScheduleDeliveryAsync(It.IsAny<Delivery>(), "droneId"))
+                .ReturnsAsync(default(DeliverySchedule)).Verifiable();
+
+            var delivery =
+                new Delivery
+                {
+                    DeliveryId = "someDeliveryId",
+                    PackageInfo = new PackageInfo { PackageId = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d }
+                };
+            var success = await _processor.ProcessDeliveryRequestAsync(delivery, new Dictionary<string, object>());
+
+            Assert.False(success);
+            _packageServiceCallerMock.Verify();
+            _droneSchedulerServiceCallerMock.Verify();
+            _deliveryServiceCallerMock.Verify();
         }
 
         [Fact]
         public async Task WhenProcessingAValidDelivery_ProcessingSucceeds()
         {
-            _packageServiceCallerMock.Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>())).ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
-            _droneSchedulerServiceCallerMock.Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>())).ReturnsAsync("droneId").Verifiable();
+            _packageServiceCallerMock
+                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
+            _droneSchedulerServiceCallerMock
+                .Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>()))
+                .ReturnsAsync("droneId").Verifiable();
+            _deliveryServiceCallerMock
+                .Setup(c => c.ScheduleDeliveryAsync(It.IsAny<Delivery>(), "droneId"))
+                .ReturnsAsync(new DeliverySchedule { Id = "someDeliveryId" }).Verifiable();
 
             var delivery =
                 new Delivery
@@ -129,6 +209,7 @@ namespace Fabrikam.Workflow.Service.Tests
             Assert.True(success);
             _packageServiceCallerMock.Verify();
             _droneSchedulerServiceCallerMock.Verify();
+            _deliveryServiceCallerMock.Verify();
         }
     }
 }
