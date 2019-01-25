@@ -51,6 +51,8 @@ steps:
 
     buildContext: $(buildContext)
 
+    useDefaultContext: false
+
 - task: Docker@1
   condition: eq(variables['fullCI'],True)
   displayName: 'Push runtime image'
