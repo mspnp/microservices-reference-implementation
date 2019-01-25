@@ -11,7 +11,7 @@ export class PackageServiceInitializer
 {
     static async initialize(connection: string, collectionName: string) {
         try {
-            var db = await MongoClient.connect(connection);
+            var db = (await MongoClient.connect(connection)).db();
             await db.command({ shardCollection: db.databaseName + '.' + collectionName, key: { tag: "hashed" } });
         }
         catch (ex) {

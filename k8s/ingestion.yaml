@@ -62,23 +62,23 @@ spec:
           initialDelaySeconds: 30
           periodSeconds: 20
         env:
-        - name: EH_NAMESPACE
+        - name: QUEUE_NAMESPACE
           valueFrom:
             secretKeyRef:
               name: ingestion-secrets
-              key: eventhub_namespace
-        - name: EH_NAME
+              key: queue_namespace
+        - name: QUEUE_NAME
           valueFrom:
             secretKeyRef:
               name: ingestion-secrets
-              key: eventhub_name
-        - name: EH_KEYNAME
+              key: queue_name
+        - name: QUEUE_KEYNAME
           valueFrom:
             secretKeyRef:
               name: ingestion-secrets
-              key: eventhub_keyname
-        - name: EH_KEYVALUE
+              key: queue_keyname
+        - name: QUEUE_KEYVALUE
           valueFrom:
             secretKeyRef:
               name: ingestion-secrets
-              key: eventhub_keyvalue
+              key: queue_keyvalue

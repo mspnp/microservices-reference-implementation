@@ -15,7 +15,7 @@ metadata:
     version: 0.1.0
     bc: shipping
     co: fabrikam
-    #aadpodidbinding: workflow
+    aadpodidbinding: workflow
 spec:
   replicas: 1
   selector:                # In API version apps/v1beta2, .spec.selector no longer default to .spec.template.metadata.labels.
@@ -44,6 +44,12 @@ spec:
         env:
         - name: CONFIGURATION_FOLDER
           value: /kvmnt
+        - name: SERVICE_URI_DELIVERY
+          value: http://delivery/api/Deliveries/
+        - name: SERVICE_URI_DRONE
+          value: http://dronescheduler/api/DroneDeliveries/
+        - name: SERVICE_URI_PACKAGE
+          value: http://package/api/packages/
         - name: no_proxy
           value: 169.254.169.254
         - name: CORRELATION_HEADER

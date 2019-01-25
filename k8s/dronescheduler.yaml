@@ -18,7 +18,7 @@ spec:
   ports:
   - name: http
     port: 80
-    targetPort: 80
+    targetPort: 8080
   selector:
     app: dronescheduler
   clusterIP: None
@@ -52,7 +52,7 @@ spec:
         image:
         ports:
         - name: service
-          containerPort: 80
+          containerPort: 8080
         resources:
            requests:
              cpu: 1

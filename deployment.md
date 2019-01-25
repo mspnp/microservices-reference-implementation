@@ -242,7 +242,7 @@ Deploy the Package service
 sed "s#image:#image: $ACR_SERVER/package:0.1.0#g" $K8S/package.yml > $K8S/package-0.yml
 
 # Create secret
-export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv)
+export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g')
 kubectl -n backend create secret generic package-secrets --from-literal=mongodb-pwd=$COSMOSDB_CONNECTION
 
 # Create KeyVault secret
@@ -353,36 +353,14 @@ kubectl get pods -n backend
 Provision Azure resources
 
 ```bash
-export INGESTION_EH_NS=[INGESTION_EVENT_HUB_NAMESPACE_HERE]
-export INGESTION_EH_NAME=[INGESTION_EVENT_HUB_NAME_HERE]
-export INGESTION_EH_CONSUMERGROUP_NAME=[INGESTION_EVENT_HUB_CONSUMERGROUP_NAME_HERE]
-
-# Create an Event Hubs namespace
-az eventhubs namespace create --name $INGESTION_EH_NS \
-                              --resource-group $RESOURCE_GROUP \
-                              --location $LOCATION
-
-# Create an event hub
-az eventhubs eventhub create --name $INGESTION_EH_NAME \
-                             --resource-group $RESOURCE_GROUP \
-                             --namespace-name $INGESTION_EH_NS \
-                             --partition-count 4
-
-# Create consumer group
-az eventhubs eventhub consumer-group create --eventhub-name $INGESTION_EH_NAME \
-                                            --name $INGESTION_EH_CONSUMERGROUP_NAME \
-                                            --namespace-name $INGESTION_EH_NS \
-                                            --resource-group $RESOURCE_GROUP
-
-# Create authorization rule
-az eventhubs eventhub authorization-rule create --eventhub-name $INGESTION_EH_NAME \
+# Create authorization rule to the ingestion queue
+az servicebus namespace authorization-rule create --namespace-name $INGESTION_QUEUE_NAMESPACE \
                                                 --name IngestionServiceAccessKey \
-                                                --namespace-name $INGESTION_EH_NS \
                                                 --resource-group $RESOURCE_GROUP \
-                                                --rights Listen Send
+                                                --rights Send
 
 # Get access key
-export EH_ACCESS_KEY_VALUE=$(az eventhubs eventhub authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_EH_NS --name IngestionServiceAccessKey --eventhub-name $INGESTION_EH_NAME --query primaryKey -o tsv)
+export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name IngestionServiceAccessKey --query primaryKey -o tsv)
 ```
 
 Build the Ingestion service
@@ -410,18 +388,18 @@ sed "s#image:#image: $ACR_SERVER/ingestion:0.1.0#g" $K8S/ingestion.yaml > $K8S/i
 
 # Create secret
 kubectl -n backend create secret generic ingestion-secrets \
---from-literal=eventhub_namespace=${INGESTION_EH_NS} \
---from-literal=eventhub_name=${INGESTION_EH_NAME} \
---from-literal=eventhub_keyname=IngestionServiceAccessKey \
---from-literal=eventhub_keyvalue=${EH_ACCESS_KEY_VALUE}
+--from-literal=queue_namespace=${INGESTION_QUEUE_NAMESPACE} \
+--from-literal=queue_name=${INGESTION_QUEUE_NAME} \
+--from-literal=queue_keyname=IngestionServiceAccessKey \
+--from-literal=queue_keyvalue=${INGESTION_ACCESS_KEY_VALUE}
 
 # Create KeyVault secrets
 export INGESTION_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-ingestion-kv"
 az keyvault create --name $INGESTION_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
-az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-namespace --value ${INGESTION_EH_NS}
-az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-name --value ${INGESTION_EH_NAME}
+az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-namespace --value ${INGESTION_QUEUE_NAMESPACE}
+az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-name --value ${INGESTION_QUEUE_NAME}
 az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-keyname --value IngestionServiceAccessKey
-az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-keyvalue --value ${EH_ACCESS_KEY_VALUE}
+az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-keyvalue --value ${INGESTION_ACCESS_KEY_VALUE}
 
 # Deploy service
 kubectl --namespace backend apply -f $K8S/ingestion-0.yaml
@@ -469,7 +447,7 @@ You can send delivery requests to the ingestion service using the Swagger UI.
 Get the public IP address of the Ingestion Service:
 
 ```bash
-export EXTERNAL_IP_ADDRESS=$(kubectl get --namespace shipping svc ingestion -o jsonpath="{.status.loadBalancer.ingress[0].*}")
+export EXTERNAL_IP_ADDRESS=$(kubectl get --namespace backend svc ingestion -o jsonpath="{.status.loadBalancer.ingress[0].*}")
 ```
 
 Use a web browser to navigate to `http://[EXTERNAL_IP_ADDRESS]/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST` and use the **Try it out** button to submit a delivery request.

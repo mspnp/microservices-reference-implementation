@@ -27,9 +27,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import com.microsoft.azure.servicebus.ServiceBusException;
+import com.microsoft.azure.servicebus.primitives.ServiceBusException;
 import java.io.IOException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+
 import org.apache.logging.log4j.Logger;
 
 @RestController

@@ -25,14 +25,14 @@ public class ApplicationProperties {
 	// the properties are overriden by values
 	// in application.properties
 
-	// Eventhub properties
-	private String namespace = "eventhubNamespace";
-	private String eventHubName = "eventHubName";
+	// Queue properties
+	private String namespace = "queueNamespace";
+	private String queueName = "queueName";
 	private String sasKeyName = "sasKeyName";
 	private String sasKey = "sasKey";
 
-	private String envNameSpace = "ENV_HUB_NS";
-	private String envHubName = "ENV_HUB_NAME";
+	private String envNameSpace = "ENV_QUEUE_NS";
+	private String envQueueName = "ENV_QUEUE_NAME";
 	private String envsasKeyName = "ENV_KEY_NAME";
 	private String envsasKey = "ENV_KEY_VALUE";
 	
@@ -56,12 +56,12 @@ public class ApplicationProperties {
 		this.namespace = nameSpace;
 	}
 
-	public String getEventHubName() {
-		return eventHubName;
+	public String getQueueName() {
+		return queueName;
 	}
 
-	public void setEventHubName(String eventHubName) {
-		this.eventHubName = eventHubName;
+	public void setQueueName(String queueName) {
+		this.queueName = queueName;
 	}
 
 	public String getSasKeyName() {
@@ -142,12 +142,12 @@ public class ApplicationProperties {
 		this.envNameSpace = envNameSpace;
 	}
 
-	public String getEnvHubName() {
-		return envHubName;
+	public String getEnvQueueName() {
+		return envQueueName;
 	}
 
-	public void setEnvHubName(String envHubName) {
-		this.envHubName = envHubName;
+	public void setEnvQueueName(String envQueueName) {
+		this.envQueueName = envQueueName;
 	}
 
 	public String getEnvsasKeyName() {

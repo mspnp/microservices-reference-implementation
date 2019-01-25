@@ -4,8 +4,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import com.microsoft.azure.servicebus.ServiceBusException;
-
+import com.microsoft.azure.servicebus.primitives.ServiceBusException;
 
 import java.util.Date;
 import java.util.UUID;
