@@ -21,7 +21,6 @@ spec:
     targetPort: 8080
   selector:
     app: delivery
-  clusterIP: None
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
