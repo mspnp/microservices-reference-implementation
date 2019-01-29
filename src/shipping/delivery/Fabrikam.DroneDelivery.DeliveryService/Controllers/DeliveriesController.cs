@@ -22,21 +22,18 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
         private readonly IDeliveryRepository deliveryRepository;
         private readonly INotifyMeRequestRepository notifyMeRequestRepository;
         private readonly INotificationService notificationService;
-        private readonly IDeliveryHistoryService deliveryHistoryService;
         private readonly IDeliveryTrackingEventRepository deliveryTrackingRepository;
         private readonly ILogger logger;
 
         public DeliveriesController(IDeliveryRepository deliveryRepository,
                                     INotifyMeRequestRepository notifyMeRequestRepository,
                                     INotificationService notificationService,
-                                    IDeliveryHistoryService deliveryHistoryRepository,
                                     IDeliveryTrackingEventRepository deliveryTrackingRepository,
                                     ILoggerFactory loggerFactory)
         {
             this.deliveryRepository = deliveryRepository;
             this.notifyMeRequestRepository = notifyMeRequestRepository;
             this.notificationService = notificationService;
-            this.deliveryHistoryService = deliveryHistoryRepository;
             this.deliveryTrackingRepository = deliveryTrackingRepository;
             this.logger = loggerFactory.CreateLogger<DeliveriesController>();
         }
@@ -179,10 +176,6 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
             var deliveryTrackingEvent = new DeliveryTrackingEvent { DeliveryId = id, Stage = DeliveryStage.Cancelled };
             await deliveryTrackingRepository.AddAsync(deliveryTrackingEvent);
 
-            // forwards cancelled delivery to the Delivery History
-            var allTrackingEvents = await deliveryTrackingRepository.GetByDeliveryIdAsync(id);
-            await deliveryHistoryService.CancelAsync(delivery, allTrackingEvents.ToArray());
-
             // logical delivery deletion
             await deliveryRepository.DeleteAsync(id, delivery);
 
@@ -261,11 +254,6 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
                                                                 DeliveryId = id,
                                                                 Stage = DeliveryStage.Completed
                                                             });
-            // get all the milestones from cache
-            var allTrackingEvents = await deliveryTrackingRepository.GetByDeliveryIdAsync(id);
-
-            // archives Delivery by sending it to the Delivery History + Confirmantion details as well as forwarding milestones to the Delivery History
-            await deliveryHistoryService.CompleteAsync(confirmedDelivery, internalConfirmation, allTrackingEvents.ToArray());
 
             // sends notifications
             var notifyMeRequests = await notifyMeRequestRepository.GetAllByDeliveryIdAsync(id);

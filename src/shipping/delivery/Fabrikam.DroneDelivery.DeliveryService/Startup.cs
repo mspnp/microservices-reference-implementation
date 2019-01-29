@@ -62,7 +62,6 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             services.AddSingleton<IDeliveryRepository, DeliveryRepository>();
             services.AddSingleton<INotifyMeRequestRepository, NotifyMeRequestRepository>();
             services.AddSingleton<INotificationService, NoOpNotificationService>();
-            services.AddSingleton<IDeliveryHistoryService, DeliveryHistoryService>();
             services.AddSingleton<IDeliveryTrackingEventRepository, DeliveryTrackingRepository>();
         }
 
@@ -98,7 +97,6 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             DocumentDBRepository<InternalNotifyMeRequest>.Configure(Configuration["CosmosDB-Endpoint"], Configuration["CosmosDB-Key"], Configuration["DOCDB_DATABASEID"], Configuration["DOCDB_COLLECTIONID"], loggerFactory);
             RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
             RedisCache<DeliveryTrackingEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
-            EventHubSender<DeliveryHistory>.Configure(Configuration["EH_CONNSTR"], Configuration["EH_ENTITYPATH"]);
         }
     }
 }

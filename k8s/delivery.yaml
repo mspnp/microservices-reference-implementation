@@ -61,13 +61,6 @@ spec:
           value: "CosmosDB_CollectionId"
         - name: KEY_VAULT_URI
           value: "KeyVault_Name"
-        - name: EH_CONNSTR
-          valueFrom:
-             secretKeyRef:
-              name: delivery-storageconf
-              key: EH_ConnectionString
-        - name: EH_ENTITYPATH
-          value: "EH_EntityPath"
         - name: no_proxy
           value: 169.254.169.254
         ports:

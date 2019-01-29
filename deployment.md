@@ -144,7 +144,7 @@ az acr login --name $ACR_NAME
 docker push $ACR_SERVER/delivery:0.1.0
 ```
 
-Create Kubernetes secrets
+Create resources
 
 ```bash
 export REDIS_ENDPOINT=$(az redis show --name $REDIS_NAME --resource-group $RESOURCE_GROUP --query hostName -o tsv)
@@ -152,9 +152,6 @@ export REDIS_KEY=$(az redis list-keys --name $REDIS_NAME --resource-group $RESOU
 
 export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query primaryMasterKey -o tsv)
 export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint -o tsv)
-
-kubectl --namespace backend create --save-config=true secret generic delivery-storageconf \
-    --from-literal=EH_ConnectionString=
 ```
 
 Create KeyVault and secrets
@@ -166,7 +163,6 @@ az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name CosmosDB-Key 
 az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name CosmosDB-Endpoint --value ${COSMOSDB_ENDPOINT}
 az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name Redis-Endpoint --value ${REDIS_ENDPOINT}
 az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name Redis-AccessKey --value ${REDIS_KEY}
-# az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name EH-ConnectionString    # cannot create a secret without a value or with an empty value
 
 export DELIVERY_KEYVAULT_ID=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DELIVERY_KEYVAULT_NAME --query "id" --output tsv)
 export DELIVERY_KEYVAULT_URI=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DELIVERY_KEYVAULT_NAME --query "properties.vaultUri" --output tsv)
@@ -203,7 +199,6 @@ Deploy the Delivery service:
 sed "s#image:#image: $ACR_SERVER/delivery:0.1.0#g" $K8S/delivery.yaml | \
     sed "s/value: \"CosmosDB_DatabaseId\"/value: $DATABASE_NAME/g" | \
     sed "s/value: \"CosmosDB_CollectionId\"/value: $COLLECTION_NAME/g" | \
-    sed "s/value: \"EH_EntityPath\"/value:/g" | \
     sed "s#value: \"KeyVault_Name\"#value: $DELIVERY_KEYVAULT_URI#g" > $K8S/delivery-0.yaml
 
 # Deploy the service
@@ -244,11 +239,6 @@ sed "s#image:#image: $ACR_SERVER/package:0.1.0#g" $K8S/package.yml > $K8S/packag
 # Create secret
 export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g')
 kubectl -n backend create secret generic package-secrets --from-literal=mongodb-pwd=$COSMOSDB_CONNECTION
-
-# Create KeyVault secret
-export PACKAGE_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-package-kv"
-az keyvault create --name $PACKAGE_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
-az keyvault secret set --vault-name $PACKAGE_KEYVAULT_NAME --name mongodb-pwd --value $COSMOSDB_CONNECTION
 
 # Deploy service
 kubectl --namespace backend apply -f $K8S/package-0.yml
@@ -392,14 +382,6 @@ kubectl -n backend create secret generic ingestion-secrets \
 --from-literal=queue_name=${INGESTION_QUEUE_NAME} \
 --from-literal=queue_keyname=IngestionServiceAccessKey \
 --from-literal=queue_keyvalue=${INGESTION_ACCESS_KEY_VALUE}
-
-# Create KeyVault secrets
-export INGESTION_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-ingestion-kv"
-az keyvault create --name $INGESTION_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
-az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-namespace --value ${INGESTION_QUEUE_NAMESPACE}
-az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-name --value ${INGESTION_QUEUE_NAME}
-az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-keyname --value IngestionServiceAccessKey
-az keyvault secret set --vault-name $INGESTION_KEYVAULT_NAME --name eventhub-keyvalue --value ${INGESTION_ACCESS_KEY_VALUE}
 
 # Deploy service
 kubectl --namespace backend apply -f $K8S/ingestion-0.yaml
