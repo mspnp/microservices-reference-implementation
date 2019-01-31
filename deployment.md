@@ -28,7 +28,8 @@ export LOCATION=[YOUR_LOCATION_HERE]
 export UNIQUE_APP_NAME_PREFIX=[YOUR_UNIQUE_APPLICATION_NAME_HERE]
 
 export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
-export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster"
+export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster" && \
+export AI_NAME="${UNIQUE_APP_NAME_PREFIX}-appinsights"
 
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
@@ -83,11 +84,33 @@ Grant the cluster access to the registry.
 
 ```bash
 # Acquire the necessary IDs
-export CLUSTER_CLIENT_ID=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query "servicePrincipalProfile.clientId" --output tsv)
 export ACR_ID=$(az acr show --name $ACR_NAME --resource-group $RESOURCE_GROUP --query "id" --output tsv)
 
 # Grant the cluster read access to the registry
-az role assignment create --assignee $CLUSTER_CLIENT_ID --role Reader --scope $ACR_ID
+az role assignment create --assignee $CLUSTER_SERVICE_PRINCIPAL --role Reader --scope $ACR_ID
+```
+
+Create an Application Insights instance
+
+```bash
+# Create AppInsights instance
+az resource create \
+   --resource-group $RESOURCE_GROUP \
+   --resource-type "Microsoft.Insights/components" \
+   --name $AI_NAME \
+   --location $LOCATION \
+   --properties '{"Application_Type":"other"}'
+
+# Acquire Instrumentation Key
+export AI_IKEY=$(az resource show \
+                    -g $RESOURCE_GROUP \
+                    -n $AI_NAME \
+                    --resource-type "Microsoft.Insights/components" \
+                    --query properties.InstrumentationKey \
+                    -o tsv)
+
+# add RBAC for AppInsights
+kubectl apply -f $K8S/k8s-rbac-ai.yaml
 ```
 
 ## Setup AAD pod identity and key vault flexvol infrastructure
@@ -163,6 +186,7 @@ az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name CosmosDB-Key 
 az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name CosmosDB-Endpoint --value ${COSMOSDB_ENDPOINT}
 az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name Redis-Endpoint --value ${REDIS_ENDPOINT}
 az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name Redis-AccessKey --value ${REDIS_KEY}
+az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name ApplicationInsights--InstrumentationKey --value ${AI_IKEY}
 
 export DELIVERY_KEYVAULT_ID=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DELIVERY_KEYVAULT_NAME --query "id" --output tsv)
 export DELIVERY_KEYVAULT_URI=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DELIVERY_KEYVAULT_NAME --query "properties.vaultUri" --output tsv)

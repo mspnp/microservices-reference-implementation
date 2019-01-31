@@ -1,10 +1,8 @@
 FROM microsoft/dotnet:2.2-aspnetcore-runtime as base
 WORKDIR /app
-EXPOSE 80
+EXPOSE 8080
 
 FROM microsoft/dotnet:2.2-sdk AS build
-
-MAINTAINER Fernando Antivero (https://github.com/ferantivero)
 
 WORKDIR /app
 COPY Fabrikam.DroneDelivery.Common/*.csproj ./Fabrikam.DroneDelivery.Common/
@@ -18,8 +16,6 @@ COPY Fabrikam.DroneDelivery.Common/. ./Fabrikam.DroneDelivery.Common/
 COPY Fabrikam.DroneDelivery.DeliveryService/. ./Fabrikam.DroneDelivery.DeliveryService/
 
 FROM build AS testrunner
-
-MAINTAINER Fernando Antivero (https://github.com/ferantivero)
 
 WORKDIR /app/tests
 COPY Fabrikam.DroneDelivery.DeliveryService.Tests/*.csproj .

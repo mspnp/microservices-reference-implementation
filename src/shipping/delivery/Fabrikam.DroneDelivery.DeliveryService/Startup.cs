@@ -47,6 +47,10 @@ namespace Fabrikam.DroneDelivery.DeliveryService
         {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+            // Configure AppInsights
+            services.AddApplicationInsightsKubernetesEnricher();
+            services.AddApplicationInsightsTelemetry(Configuration);
+
             services.AddLogging(loggingBuilder =>
                 loggingBuilder.AddSerilog(dispose: true));
 
@@ -58,7 +62,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             {
                 c.SwaggerDoc("v1", new Info { Title = "Fabrikam DroneDelivery DeliveryService API", Version = "v1" });
             });
-            
+
             services.AddSingleton<IDeliveryRepository, DeliveryRepository>();
             services.AddSingleton<INotifyMeRequestRepository, NotifyMeRequestRepository>();
             services.AddSingleton<INotificationService, NoOpNotificationService>();
@@ -71,7 +75,6 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             Log.Logger = new LoggerConfiguration()
               .WriteTo.Console(new CompactJsonFormatter())
               .ReadFrom.Configuration(Configuration)
-              .Enrich.With(new CorrelationLogEventEnricher(httpContextAccessor, Configuration["Logging:CorrelationHeaderKey"]))
               .CreateLogger();
 
             // Important: it has to be first: enable global logger
