@@ -422,6 +422,41 @@ Build the dronescheduler services
 export DRONE_PATH=microservices-reference-implementation/src/shipping/dronescheduler
 ```
 
+Create KeyVault and secrets
+
+```bash
+export DRONESCHEDULER_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-drone-kv"
+az keyvault create --name $DRONESCHEDULER_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
+az keyvault secret set --vault-name $DRONESCHEDULER_KEYVAULT_NAME --name ApplicationInsights--InstrumentationKey --value ${AI_IKEY}
+
+export DRONESCHEDULER_KEYVAULT_ID=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DRONESCHEDULER_KEYVAULT_NAME --query "id" --output tsv)
+export DRONESCHEDULER_KEYVAULT_URI=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DRONESCHEDULER_KEYVAULT_NAME --query "properties.vaultUri" --output tsv)
+```
+
+Create and set up pod identity
+
+```bash
+# Create the identity and extract properties
+export DRONESCHEDULER_PRINCIPAL_NAME=dronescheduler
+az identity create --resource-group $RESOURCE_GROUP --name $DRONESCHEDULER_PRINCIPAL_NAME
+export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $DRONESCHEDULER_PRINCIPAL_NAME --query "id" --output tsv)
+export DRONESCHEDULER_PRINCIPAL_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $DRONESCHEDULER_PRINCIPAL_NAME --query "principalId" --output tsv)
+export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $DRONESCHEDULER_PRINCIPAL_NAME --query "clientId" --output tsv)
+
+# Grant the identity access to the KeyVault
+az role assignment create --role Reader --assignee $DRONESCHEDULER_PRINCIPAL_ID --scope $DRONESCHEDULER_KEYVAULT_ID
+az keyvault set-policy --name $DRONESCHEDULER_KEYVAULT_NAME --secret-permissions get list --spn $DRONESCHEDULER_PRINCIPAL_CLIENT_ID
+
+# Allow the cluster to manage the identity to assign to pods
+az role assignment create --role "Managed Identity Operator" --assignee $CLUSTER_SERVICE_PRINCIPAL --scope $DRONESCHEDULER_PRINCIPAL_RESOURCE_ID
+
+# Deploy the identity resources
+cat $K8S/dronescheduler-identity.yaml | \
+    sed "s#ResourceID: \"identityResourceId\"#ResourceID: $DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
+    sed "s#ClientID: \"identityClientid\"#ClientID: $DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" > $K8S/dronescheduler-identity-0.yaml
+kubectl apply -f $K8S/dronescheduler-identity-0.yaml
+```
+
 Build and publish the container image
 
 ```bash
@@ -437,7 +472,9 @@ Deploy the dronescheduler services:
 
 ```bash
 # Update the image tag in the deployment YAML
-sed "s#image:#image: $ACR_SERVER/dronescheduler:0.1.0#g" $K8S/dronescheduler.yaml > $K8S/dronescheduler-0.yaml
+cat $K8S/dronescheduler.yaml | \
+    sed "s#image:#image: $ACR_SERVER/dronescheduler:0.1.0#g"  | \
+    sed "s#value: \"KeyVault_Name\"#value: $DRONESCHEDULER_KEYVAULT_URI#g" > $K8S/dronescheduler-0.yaml
 
 # Deploy the service
 kubectl --namespace backend apply -f $K8S/dronescheduler-0.yaml

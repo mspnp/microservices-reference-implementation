@@ -13,7 +13,6 @@ using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Swagger;
 using Serilog;
 using Serilog.Formatting.Compact;
-using Fabrikam.DroneDelivery.Common;
 
 namespace MockDroneScheduler
 {
@@ -26,6 +25,14 @@ namespace MockDroneScheduler
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
                 .AddEnvironmentVariables();
+
+            var buildConfig = builder.Build();
+
+            if (buildConfig["KEY_VAULT_URI"] is var keyVaultUri && !string.IsNullOrEmpty(keyVaultUri))
+            {
+                builder.AddAzureKeyVault(keyVaultUri);
+            }
+
             Configuration = builder.Build();
         }
 
@@ -35,6 +42,10 @@ namespace MockDroneScheduler
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            // Configure AppInsights
+            services.AddApplicationInsightsKubernetesEnricher();
+            services.AddApplicationInsightsTelemetry(Configuration);
 
             services.AddLogging(loggingBuilder =>
                 loggingBuilder.AddSerilog(dispose: true));
@@ -55,7 +66,6 @@ namespace MockDroneScheduler
             Log.Logger = new LoggerConfiguration()
               .WriteTo.Console(new CompactJsonFormatter())
               .ReadFrom.Configuration(Configuration)
-              .Enrich.With(new CorrelationLogEventEnricher(httpContextAccessor, Configuration["Logging:CorrelationHeaderKey"]))
               .CreateLogger();
 
             app.UseMvc();
