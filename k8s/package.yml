@@ -3,7 +3,7 @@
 #   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 #  ------------------------------------------------------------
 
-apiVersion: apps/v1beta1 
+apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: package
@@ -26,8 +26,8 @@ spec:
         co: fabrikam
     spec:
       containers:
-      - name: package
-        image: 
+      - name: &package-container_name package
+        image:
         env:
         - name: CONNECTION_STRING
           valueFrom:
@@ -36,10 +36,15 @@ spec:
               key: mongodb-pwd
         - name: COLLECTION_NAME
           value: packages
-        - name: CORRELATION_HEADER
-          value: l5d-ctx-trace
+        - name: APPINSIGHTS_INSTRUMENTATIONKEY
+          valueFrom:
+            secretKeyRef:
+              name: package-secrets
+              key: appinsights-ikey
         - name: LOG_LEVEL
           value: error
+        - name: CONTAINER_NAME
+          value: *package-container_name
         ports:
         - containerPort: 80
         imagePullPolicy: Always

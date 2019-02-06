@@ -22,7 +22,7 @@ export class Repository
 
 
   static async initialize(connection: string) {
-      Repository.db = (await MongoClient.connect(connection)).db();
+      Repository.db = (await MongoClient.connect(connection));
   }
 
   private collection() {

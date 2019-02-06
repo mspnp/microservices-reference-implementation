@@ -14,8 +14,8 @@ export class Settings {
     return process.env["CONNECTION_STRING"]
   }
 
-  static correlationHeader() : string {
-    return process.env["CORRELATION_HEADER"]
+  static containerName() : string {
+    return process.env["CONTAINER_NAME"]
   }
 
   static logLevel() : string {

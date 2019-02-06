@@ -30,7 +30,7 @@ export class PackageService {
       .catch((ex) => {
         console.error("failed to initialize repository - make sure a connectiong string has been configured");
         console.error(ex.message);
-        process.exit(1);  // Crash the container 
+        process.exit(1);  // Crash the container
       });
 
     var packageControllers = new PackageControllers(new Repository());
@@ -38,9 +38,7 @@ export class PackageService {
     let app = new Koa();
 
     // Configure logging
-    app.use(logger(Settings.logLevel(), function (ctx) {
-      return ctx.headers[Settings.correlationHeader()];  
-    }));
+    app.use(logger(Settings.logLevel()));
 
     // Configure global exception handling
     // Use: ctx.throw('Error Message', 500);
@@ -54,7 +52,7 @@ export class PackageService {
         if (logger) {
           logger.error(ex.message);
         }
-          
+
         ctx.status = ex.status || 500;
         // consider api specific codes and localized messages as opposed to internal codes
         ctx.body = {

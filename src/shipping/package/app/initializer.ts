@@ -5,13 +5,25 @@
 
 import { MongoErrors } from './util/mongo-err'
 
+let appInsights = require('applicationinsights');
 var MongoClient = require('mongodb').MongoClient;
 
 export class PackageServiceInitializer
 {
-    static async initialize(connection: string, collectionName: string) {
+    static async initialize(connection: string, collectionName: string, containerName: string) {
         try {
-            var db = (await MongoClient.connect(connection)).db();
+            PackageServiceInitializer.initAppInsights(containerName);
+            await PackageServiceInitializer.initMongoDb(connection,
+                                                        collectionName);
+        }
+        catch(ex) {
+            console.log(ex);
+        }
+    }
+
+    private static async initMongoDb(connection: string, collectionName: string) {
+        try {
+            var db = (await MongoClient.connect(connection));
             await db.command({ shardCollection: db.databaseName + '.' + collectionName, key: { tag: "hashed" } });
         }
         catch (ex) {
@@ -19,6 +31,13 @@ export class PackageServiceInitializer
                 console.log(ex);
             }
         }
+    }
+
+    private static initAppInsights(cloudRole = "package") {
+        appInsights.setup();
+        appInsights.defaultClient.context.tags[appInsights.defaultClient.context.keys.cloudRole] = cloudRole;
+        appInsights.start();
+        console.log('Application Insights started');
     }
 }
 

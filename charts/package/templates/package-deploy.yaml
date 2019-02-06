@@ -30,7 +30,7 @@ spec:
         helm.sh/chart: {{ include "package.chart" . }}
     spec:
       containers:
-      - name: packageservice
+      - name: &package-container_name package
         image: {{ .Values.dockerregistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
         env:
         - name: CONNECTION_STRING
@@ -38,10 +38,15 @@ spec:
             secretKeyRef:
               name: package-secrets
               key: {{ .Release.Name }}-mongodb-pwd
+        - name: APPINSIGHTS_INSTRUMENTATIONKEY
+          valueFrom:
+            secretKeyRef:
+              name: package-secrets
+              key: {{ .Release.Name }}-appinsights-ikey
         - name: COLLECTION_NAME
           value: packages
-        - name: CORRELATION_HEADER
-          value: {{ .Values.correlationheader }}
+        - name: CONTAINER_NAME
+          value: *package-container_name
         ports:
         - name: service
           containerPort: 80
