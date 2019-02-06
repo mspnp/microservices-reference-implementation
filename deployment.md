@@ -317,12 +317,16 @@ export WORKFLOW_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-workflow-kv"
 az keyvault create --name $WORKFLOW_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
 az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name QueueName --value ${INGESTION_QUEUE_NAME}
 az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name QueueEndpoint --value ${INGESTION_QUEUE_NAMESPACE_ENDPOINT}
+az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name ApplicationInsights-InstrumentationKey --value ${AI_IKEY}
 
 export WORKFLOW_KEYVAULT_ID=$(az keyvault show --resource-group $RESOURCE_GROUP --name $WORKFLOW_KEYVAULT_NAME --query "id" --output tsv)
 export WORKFLOW_KEYVAULT_URI=$(az keyvault show --resource-group $RESOURCE_GROUP --name $WORKFLOW_KEYVAULT_NAME --query "properties.vaultUri" --output tsv)
 ```
 
 Create and set up pod identity
+
+
+> Note: after creating the identity, please wait for some time before assigning Reader role to the Workflow Principal Id. Otherwise it's possible to experience the following error: ```No matches in graph database for 'your-principal-id'```
 
 ```bash
 # Create the identity and extract properties

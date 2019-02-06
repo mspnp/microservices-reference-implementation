@@ -52,8 +52,6 @@ spec:
           value: http://package/api/packages/
         - name: no_proxy
           value: 169.254.169.254
-        - name: CORRELATION_HEADER
-          value: l5d-ctx-trace
       volumes:
       - name: workflow
         flexVolume:
@@ -61,8 +59,8 @@ spec:
           options:
             usepodidentity: "true"
             keyvaultname: "keyVaultName"
-            keyvaultobjectnames: QueueName;QueueEndpoint
-            keyvaultobjecttypes: secret;secret
+            keyvaultobjectnames: QueueName;QueueEndpoint;ApplicationInsights-InstrumentationKey
+            keyvaultobjecttypes: secret;secret;secret
             keyvaultobjectversions: ""
             resourcegroup: "keyVaultResourceGroup"
             subscriptionid: "keyVaultSubscriptionId"

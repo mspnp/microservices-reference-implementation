@@ -13,9 +13,16 @@ namespace Fabrikam.Workflow.Service
 {
     public static class ServiceStartup
     {
+        private const string AppInsightsInstrumentationKey = "ApplicationInsights-InstrumentationKey";
+
         public static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
         {
             services.AddOptions();
+
+            // Configure AppInsights
+            services.AddApplicationInsightsKubernetesEnricher();
+            services.AddApplicationInsightsTelemetry(
+                       context.Configuration[AppInsightsInstrumentationKey]);
 
             services.Configure<WorkflowServiceOptions>(context.Configuration);
             services.AddHostedService<WorkflowService>();
