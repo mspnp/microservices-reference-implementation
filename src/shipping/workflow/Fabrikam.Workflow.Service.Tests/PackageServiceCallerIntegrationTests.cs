@@ -6,8 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
+using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -29,7 +30,7 @@ using Xunit;
 
 namespace Fabrikam.Workflow.Service.Tests
 {
-    public class PackageServiceCallerIntegrationTests : IDisposable
+    public class PackageServiceCallerIntegrationTests : IDisposable, IClassFixture<ResiliencyEnvironmentVariablesFixture>
     {
         private const string PackageHost = "packagehost";
         private static readonly string PackageUri = $"http://{PackageHost}/api/packages/";
@@ -43,11 +44,10 @@ namespace Fabrikam.Workflow.Service.Tests
         {
             var context = new HostBuilderContext(new Dictionary<object, object>());
             context.Configuration =
-                new ConfigurationBuilder().AddInMemoryCollection(
-                    new Dictionary<string, string>
-                    {
-                        ["SERVICE_URI_PACKAGE"] = PackageUri
-                    }).Build();
+                new ConfigurationBuilder()
+                    .AddInMemoryCollection(new Dictionary<string, string> { ["SERVICE_URI_PACKAGE"] = PackageUri })
+                    .AddEnvironmentVariables()
+                    .Build();
             context.HostingEnvironment =
                 Mock.Of<Microsoft.Extensions.Hosting.IHostingEnvironment>(e => e.EnvironmentName == "Test");
 
@@ -93,11 +93,11 @@ namespace Fabrikam.Workflow.Service.Tests
                     actualPackageId = ctx.Request.Path;
                     actualPackage =
                         new JsonSerializer().Deserialize<PackageGen>(new JsonTextReader(new StreamReader(ctx.Request.Body, Encoding.UTF8)));
-                    ctx.Response.StatusCode = (int)HttpStatusCode.Created;
+                    ctx.Response.StatusCode = StatusCodes.Status201Created;
                 }
                 else
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 }
 
                 return Task.CompletedTask;
@@ -126,12 +126,12 @@ namespace Fabrikam.Workflow.Service.Tests
                         new ObjectResult(
                             new PackageGen { Id = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d })
                         {
-                            StatusCode = (int)HttpStatusCode.Created
+                            StatusCode = StatusCodes.Status201Created
                         });
                 }
                 else
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 }
             };
 
@@ -151,11 +151,11 @@ namespace Fabrikam.Workflow.Service.Tests
             {
                 if (ctx.Request.Host.Host == PackageHost)
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
                 }
                 else
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 }
 
                 return Task.CompletedTask;
@@ -164,6 +164,121 @@ namespace Fabrikam.Workflow.Service.Tests
             var packageInfo = new PackageInfo { PackageId = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d };
 
             await Assert.ThrowsAsync<BackendServiceCallFailedException>(() => _caller.CreatePackageAsync(packageInfo));
+        }
+
+        [Fact]
+        public async Task WhenRequestsFail_TheyAreRetried()
+        {
+            var receivedRequests = 0;
+
+            _handleHttpRequest = async ctx =>
+            {
+                if (ctx.Request.Host.Host == PackageHost)
+                {
+                    await ctx.WriteResultAsync(
+                        new ObjectResult(
+                            new PackageGen { Id = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d })
+                        {
+                            StatusCode = Interlocked.Increment(ref receivedRequests) <= 2 ? StatusCodes.Status500InternalServerError : StatusCodes.Status201Created
+                        });
+                }
+                else
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                }
+            };
+
+            var result =
+                await _caller.CreatePackageAsync(new PackageInfo { PackageId = "package", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d });
+
+            Assert.Equal(3, receivedRequests);
+        }
+
+        [Fact]
+        public async Task WhenMultipleRequestsAreIssued_ThenBulkheadRestrictsConcurrentAccess()
+        {
+            const int totalRequests = 20;
+            var receivedRequests = 0;
+            var successfulRequests = 0;
+            var failedRequests = 0;
+
+            _handleHttpRequest = async ctx =>
+            {
+                if (ctx.Request.Host.Host == PackageHost)
+                {
+                    Interlocked.Increment(ref receivedRequests);
+                    await Task.Delay(TimeSpan.FromSeconds(1));
+                    await ctx.WriteResultAsync(
+                        new ObjectResult(
+                            new PackageGen { Id = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d })
+                        {
+                            StatusCode = StatusCodes.Status201Created
+                        });
+                }
+                else
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                }
+            };
+
+            var requestTasks =
+                Enumerable.Range(1, totalRequests)
+                    .Select(async i =>
+                    {
+                        try
+                        {
+                            var result =
+                                await _caller.CreatePackageAsync(new PackageInfo { PackageId = $"package{i}", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d });
+                            Interlocked.Increment(ref successfulRequests);
+                        }
+                        catch
+                        {
+                            Interlocked.Increment(ref failedRequests);
+                        }
+                    });
+            await Task.WhenAll(requestTasks);
+
+            Assert.Equal(8, receivedRequests);
+            Assert.Equal(8, successfulRequests);
+            Assert.Equal(12, failedRequests);
+        }
+
+        [Fact]
+        public async Task WhenRequestsFailAboveTheThreshold_ThenCircuitBreakerBreaks()
+        {
+            const int totalRequests = 100;
+            var receivedRequests = 0;
+            var successfulRequests = 0;
+            var failedRequests = 0;
+
+            _handleHttpRequest = ctx =>
+            {
+                Interlocked.Increment(ref receivedRequests);
+                ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                return Task.CompletedTask;
+            };
+
+            var requestTasks =
+                Enumerable.Range(1, totalRequests)
+                    .Select(async i =>
+                    {
+                        try
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(i / 10));
+                            var result =
+                                await _caller.CreatePackageAsync(new PackageInfo { PackageId = $"package{i}", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d });
+                            Interlocked.Increment(ref successfulRequests);
+                        }
+                        catch
+                        {
+                            Interlocked.Increment(ref failedRequests);
+                        }
+                    });
+            await Task.WhenAll(requestTasks);
+
+            Assert.NotEqual(totalRequests * 4, receivedRequests);
+            Assert.Equal(0, successfulRequests);
+            Assert.Equal(totalRequests, failedRequests);
         }
     }
 }

@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -29,7 +28,7 @@ using Xunit;
 
 namespace Fabrikam.Workflow.Service.Tests
 {
-    public class DroneSchedulerServiceCallerIntegrationTests : IDisposable
+    public class DroneSchedulerServiceCallerIntegrationTests : IDisposable, IClassFixture<ResiliencyEnvironmentVariablesFixture>
     {
         private const string DroneSchedulerHost = "dronescheduler";
         private static readonly string DroneSchedulerUri = $"http://{DroneSchedulerHost}/api/DroneDeliveries/";
@@ -43,11 +42,10 @@ namespace Fabrikam.Workflow.Service.Tests
         {
             var context = new HostBuilderContext(new Dictionary<object, object>());
             context.Configuration =
-                new ConfigurationBuilder().AddInMemoryCollection(
-                    new Dictionary<string, string>
-                    {
-                        ["SERVICE_URI_DRONE"] = DroneSchedulerUri
-                    }).Build();
+                new ConfigurationBuilder()
+                    .AddInMemoryCollection(new Dictionary<string, string> { ["SERVICE_URI_DRONE"] = DroneSchedulerUri })
+                    .AddEnvironmentVariables()
+                    .Build();
             context.HostingEnvironment =
                 Mock.Of<Microsoft.Extensions.Hosting.IHostingEnvironment>(e => e.EnvironmentName == "Test");
 
@@ -96,7 +94,7 @@ namespace Fabrikam.Workflow.Service.Tests
                 }
                 else
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 }
 
                 return Task.CompletedTask;
@@ -126,11 +124,11 @@ namespace Fabrikam.Workflow.Service.Tests
             {
                 if (ctx.Request.Host.Host == DroneSchedulerHost)
                 {
-                    await ctx.WriteResultAsync(new ContentResult { Content = "someDroneId", StatusCode = (int)HttpStatusCode.OK });
+                    await ctx.WriteResultAsync(new ContentResult { Content = "someDroneId", StatusCode = StatusCodes.Status200OK });
                 }
                 else
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 }
             };
 
@@ -152,11 +150,11 @@ namespace Fabrikam.Workflow.Service.Tests
             {
                 if (ctx.Request.Host.Host == DroneSchedulerHost)
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
                 }
                 else
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 }
 
                 return Task.CompletedTask;

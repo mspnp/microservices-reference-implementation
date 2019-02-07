@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -29,7 +28,7 @@ using Xunit;
 
 namespace Fabrikam.Workflow.Service.Tests
 {
-    public class DeliveryServiceCallerIntegrationTests : IDisposable
+    public class DeliveryServiceCallerIntegrationTests : IDisposable, IClassFixture<ResiliencyEnvironmentVariablesFixture>
     {
         private const string DeliveryHost = "deliveryhost";
         private static readonly string DeliveryUri = $"http://{DeliveryHost}/api/Deliveries/";
@@ -43,11 +42,10 @@ namespace Fabrikam.Workflow.Service.Tests
         {
             var context = new HostBuilderContext(new Dictionary<object, object>());
             context.Configuration =
-                new ConfigurationBuilder().AddInMemoryCollection(
-                    new Dictionary<string, string>
-                    {
-                        ["SERVICE_URI_DELIVERY"] = DeliveryUri
-                    }).Build();
+                new ConfigurationBuilder()
+                    .AddInMemoryCollection(new Dictionary<string, string> { ["SERVICE_URI_DELIVERY"] = DeliveryUri })
+                    .AddEnvironmentVariables()
+                    .Build();
             context.HostingEnvironment =
                 Mock.Of<Microsoft.Extensions.Hosting.IHostingEnvironment>(e => e.EnvironmentName == "Test");
 
@@ -93,11 +91,11 @@ namespace Fabrikam.Workflow.Service.Tests
                     actualDeliveryId = ctx.Request.Path;
                     actualDeliverySchedule =
                         new JsonSerializer().Deserialize<DeliverySchedule>(new JsonTextReader(new StreamReader(ctx.Request.Body, Encoding.UTF8)));
-                    ctx.Response.StatusCode = (int)HttpStatusCode.Created;
+                    ctx.Response.StatusCode = StatusCodes.Status201Created;
                 }
                 else
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 }
 
                 return Task.CompletedTask;
@@ -133,12 +131,12 @@ namespace Fabrikam.Workflow.Service.Tests
                         new ObjectResult(
                             new DeliverySchedule { Id = "someDeliveryId" })
                         {
-                            StatusCode = (int)HttpStatusCode.Created
+                            StatusCode = StatusCodes.Status201Created
                         });
                 }
                 else
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 }
             };
 
@@ -161,11 +159,11 @@ namespace Fabrikam.Workflow.Service.Tests
             {
                 if (ctx.Request.Host.Host == DeliveryHost)
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+                    ctx.Response.StatusCode = StatusCodes.Status400BadRequest;
                 }
                 else
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 }
 
                 return Task.CompletedTask;

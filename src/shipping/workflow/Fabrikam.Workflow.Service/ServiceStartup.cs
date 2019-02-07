@@ -4,10 +4,10 @@
 // ------------------------------------------------------------
 
 using System;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Fabrikam.Workflow.Service.RequestProcessing;
 using Fabrikam.Workflow.Service.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Fabrikam.Workflow.Service
 {
@@ -29,20 +29,26 @@ namespace Fabrikam.Workflow.Service
 
             services.AddTransient<IRequestProcessor, RequestProcessor>();
 
-            services.AddHttpClient<IPackageServiceCaller, PackageServiceCaller>(c =>
-            {
-                c.BaseAddress = new Uri(context.Configuration["SERVICE_URI_PACKAGE"]);
-            });
+            services
+                .AddHttpClient<IPackageServiceCaller, PackageServiceCaller>(c =>
+                {
+                    c.BaseAddress = new Uri(context.Configuration["SERVICE_URI_PACKAGE"]);
+                })
+                .AddResiliencyPolicies(context.Configuration);
 
-            services.AddHttpClient<IDroneSchedulerServiceCaller, DroneSchedulerServiceCaller>(c =>
-            {
-                c.BaseAddress = new Uri(context.Configuration["SERVICE_URI_DRONE"]);
-            });
+            services
+                .AddHttpClient<IDroneSchedulerServiceCaller, DroneSchedulerServiceCaller>(c =>
+                {
+                    c.BaseAddress = new Uri(context.Configuration["SERVICE_URI_DRONE"]);
+                })
+                .AddResiliencyPolicies(context.Configuration);
 
-            services.AddHttpClient<IDeliveryServiceCaller, DeliveryServiceCaller>(c =>
-            {
-                c.BaseAddress = new Uri(context.Configuration["SERVICE_URI_DELIVERY"]);
-            });
+            services
+                .AddHttpClient<IDeliveryServiceCaller, DeliveryServiceCaller>(c =>
+                {
+                    c.BaseAddress = new Uri(context.Configuration["SERVICE_URI_DELIVERY"]);
+                })
+                .AddResiliencyPolicies(context.Configuration);
         }
     }
 }

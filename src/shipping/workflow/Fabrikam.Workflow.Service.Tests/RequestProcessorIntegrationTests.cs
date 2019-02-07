@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
@@ -29,7 +28,7 @@ using Xunit;
 
 namespace Fabrikam.Workflow.Service.Tests
 {
-    public class RequestProcessorIntegrationTests : IDisposable
+    public class RequestProcessorIntegrationTests : IDisposable, IClassFixture<ResiliencyEnvironmentVariablesFixture>
     {
         private const string DeliveryHost = "deliveryhost";
         private static readonly string DeliveryUri = $"http://{DeliveryHost}/api/Deliveries/";
@@ -46,13 +45,16 @@ namespace Fabrikam.Workflow.Service.Tests
         {
             var context = new HostBuilderContext(new Dictionary<object, object>());
             context.Configuration =
-                new ConfigurationBuilder().AddInMemoryCollection(
-                    new Dictionary<string, string>
-                    {
-                        ["SERVICE_URI_DELIVERY"] = DeliveryUri,
-                        ["SERVICE_URI_DRONE"] = DroneSchedulerUri,
-                        ["SERVICE_URI_PACKAGE"] = PackageUri
-                    }).Build();
+                new ConfigurationBuilder()
+                    .AddInMemoryCollection(
+                        new Dictionary<string, string>
+                        {
+                            ["SERVICE_URI_DELIVERY"] = DeliveryUri,
+                            ["SERVICE_URI_DRONE"] = DroneSchedulerUri,
+                            ["SERVICE_URI_PACKAGE"] = PackageUri
+                        })
+                    .AddEnvironmentVariables()
+                    .Build();
             context.HostingEnvironment =
                 Mock.Of<Microsoft.Extensions.Hosting.IHostingEnvironment>(e => e.EnvironmentName == "Test");
 
@@ -104,14 +106,14 @@ namespace Fabrikam.Workflow.Service.Tests
                         new ObjectResult(
                             new PackageGen { Id = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d })
                         {
-                            StatusCode = (int)HttpStatusCode.Created
+                            StatusCode = StatusCodes.Status201Created
                         });
                 }
                 else if (ctx.Request.Host.Host == DroneSchedulerHost)
                 {
                     actualDelivery = serializer.Deserialize<DroneDelivery>(new JsonTextReader(new StreamReader(ctx.Request.Body, Encoding.UTF8)));
 
-                    await ctx.WriteResultAsync(new ContentResult { Content = "someDroneId", StatusCode = (int)HttpStatusCode.OK });
+                    await ctx.WriteResultAsync(new ContentResult { Content = "someDroneId", StatusCode = StatusCodes.Status200OK });
                 }
                 else if (ctx.Request.Host.Host == DeliveryHost)
                 {
@@ -120,12 +122,12 @@ namespace Fabrikam.Workflow.Service.Tests
                     await ctx.WriteResultAsync(
                         new ObjectResult(new DeliverySchedule { Id = "someDeliveryId" })
                         {
-                            StatusCode = (int)HttpStatusCode.Created
+                            StatusCode = StatusCodes.Status201Created
                         });
                 }
                 else
                 {
-                    ctx.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
                 }
             };
 
