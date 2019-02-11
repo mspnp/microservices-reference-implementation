@@ -167,29 +167,28 @@ az acr login --name $ACR_NAME
 docker push $ACR_SERVER/delivery:0.1.0
 ```
 
-Create resources
-
-```bash
-export REDIS_ENDPOINT=$(az redis show --name $REDIS_NAME --resource-group $RESOURCE_GROUP --query hostName -o tsv)
-export REDIS_KEY=$(az redis list-keys --name $REDIS_NAME --resource-group $RESOURCE_GROUP --query primaryKey -o tsv)
-
-export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query primaryMasterKey -o tsv)
-export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint -o tsv)
-```
-
 Create KeyVault and secrets
 
 ```bash
+# Create the vault
 export DELIVERY_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-kv"
 az keyvault create --name $DELIVERY_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
+
+export DELIVERY_KEYVAULT_ID=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DELIVERY_KEYVAULT_NAME --query "id" --output tsv)
+export DELIVERY_KEYVAULT_URI=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DELIVERY_KEYVAULT_NAME --query "properties.vaultUri" --output tsv)
+
+# Retrieve resource details
+export REDIS_ENDPOINT=$(az redis show --name $REDIS_NAME --resource-group $RESOURCE_GROUP --query hostName -o tsv)
+export REDIS_KEY=$(az redis list-keys --name $REDIS_NAME --resource-group $RESOURCE_GROUP --query primaryKey -o tsv)
+export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query primaryMasterKey -o tsv)
+export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint -o tsv)
+
+# Create secrets
 az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name CosmosDB-Key --value ${COSMOSDB_KEY} # (consider using encoding base64 to keep the actual values)
 az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name CosmosDB-Endpoint --value ${COSMOSDB_ENDPOINT}
 az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name Redis-Endpoint --value ${REDIS_ENDPOINT}
 az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name Redis-AccessKey --value ${REDIS_KEY}
 az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name ApplicationInsights--InstrumentationKey --value ${AI_IKEY}
-
-export DELIVERY_KEYVAULT_ID=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DELIVERY_KEYVAULT_NAME --query "id" --output tsv)
-export DELIVERY_KEYVAULT_URI=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DELIVERY_KEYVAULT_NAME --query "properties.vaultUri" --output tsv)
 ```
 
 Create and set up pod identity
@@ -371,6 +370,7 @@ kubectl get pods -n backend
 ```
 
 ## Deploy the Ingestion service
+
 Provision Azure resources
 
 ```bash
@@ -409,10 +409,10 @@ sed "s#image:#image: $ACR_SERVER/ingestion:0.1.0#g" $K8S/ingestion.yaml > $K8S/i
 
 # Create secret
 kubectl -n backend create secret generic ingestion-secrets \
---from-literal=queue_namespace=${INGESTION_QUEUE_NAMESPACE} \
---from-literal=queue_name=${INGESTION_QUEUE_NAME} \
---from-literal=queue_keyname=IngestionServiceAccessKey \
---from-literal=queue_keyvalue=${INGESTION_ACCESS_KEY_VALUE}
+    --from-literal=queue_namespace=${INGESTION_QUEUE_NAMESPACE} \
+    --from-literal=queue_name=${INGESTION_QUEUE_NAME} \
+    --from-literal=queue_keyname=IngestionServiceAccessKey \
+    --from-literal=queue_keyvalue=${INGESTION_ACCESS_KEY_VALUE}
 
 # Deploy service
 kubectl --namespace backend apply -f $K8S/ingestion-0.yaml
@@ -467,7 +467,7 @@ kubectl apply -f $K8S/dronescheduler-identity-0.yaml
 Build and publish the container image
 
 ```bash
-# Build the Docker images
+# Build the Docker image
 docker build -f $DRONE_PATH/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 $DRONE_PATH/../
 
 # Push the images to ACR
