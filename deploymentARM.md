@@ -62,23 +62,35 @@ Deployment
 
 > Note: this deployment might take up to 20 minutes
 
-* using Azure CLI 2.0
+```bash
+# Deploy the managed identities
+# These are deployed first in a separate template to avoid propagation delays with AAD
+az group deployment create -g $RESOURCE_GROUP --name azuredeploy-identities --template-file azuredeploy-identities.json
+export DELIVERY_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryIdName.value -o tsv)
+export DELIVERY_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalId.value -o tsv)
+export DRONESCHEDULER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerIdName.value -o tsv)
+export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerPrincipalId.value -o tsv)
+export WORKFLOW_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowIdName.value -o tsv)
+export WORKFLOW_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalId.value -o tsv)
 
-  ```bash
-  az group deployment create -g $RESOURCE_GROUP --name azuredeploy --template-file azuredeploy.json \
-    --parameters servicePrincipalClientId=${SP_APP_ID} \
-             servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
-             servicePrincipalId=${SP_OBJECT_ID} \
-             sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})"
-  ```
+# Wait for AAD propagation
+until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 
-* from Azure Portal
-
-  [![Deploy to Azure](http://azuredeploy.net/deploybutton.png)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmspnp%2Fmicroservices-reference-implementation%2Fmaster%2Fazuredeploy.json)
-  > Note:
-  > 1. paste the $RESOURCE_GROUP value in the resource group field. Important: choose use existing resource group
-  > 2. paste the content of your ssh-rsa public key file in the Ssh RSA Plublic Key field.
-  > 3. paste the $SP_APP_ID, $SP_CLIENT_SECRET, and $SP_OBJECT_ID in the corresponding fields.
+# Deploy all other resources
+az group deployment create -g $RESOURCE_GROUP --name azuredeploy --template-file azuredeploy.json \
+--parameters servicePrincipalClientId=${SP_APP_ID} \
+            servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
+            servicePrincipalId=${SP_OBJECT_ID} \
+            sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
+            deliveryIdName=${DELIVERY_ID_NAME} \
+            deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
+            droneSchedulerIdName=${DELIVERY_ID_NAME} \
+            droneSchedulerPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
+            workflowIdName=${DELIVERY_ID_NAME} \
+            workflowPrincipalId=${DELIVERY_ID_PRINCIPAL_ID}
+```
 
 Get outputs from Azure Deploy
 ```bash
