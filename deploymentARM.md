@@ -7,6 +7,7 @@
 - Azure suscription
 - [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
+- [JQ](https://stedolan.github.io/jq/download/)
 
 > Note: in linux systems, it is possible to run the docker command without prefacing
 >       with sudo. For more information, please refer to [the Post-installation steps
@@ -50,10 +51,10 @@ Infrastructure Prerequisites
 az login
 
 # Create a resource group and service principal for AKS
-export SP_CLIENT_SECRET=$(uuidgen)
-
 az group create --name $RESOURCE_GROUP --location $LOCATION && \
-export SP_APP_ID=$(az ad sp create-for-rbac --role="Contributor" -p $SP_CLIENT_SECRET -o tsv --query appId) && \
+export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor") && \
+export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
+export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
 export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
 ```
 
@@ -85,6 +86,11 @@ Get outputs from Azure Deploy
 export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acrName.value -o tsv) && \
 export ACR_SERVER=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acrLoginServer.value -o tsv) && \
 export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.aksClusterName.value -o tsv)
+```
+
+Enable Azure Monitoring for the AKS cluster
+```bash
+az aks enable-addons -a monitoring --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 ```
 
 Download kubectl and create a k8s namespace
