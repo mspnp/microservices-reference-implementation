@@ -51,19 +51,19 @@ spec:
         - name: SERVICE_URI_PACKAGE
           value: http://package/api/packages/
         - name: SERVICEREQUEST__MAXRETRIES
-          value: 3
+          value: "3"
         - name: SERVICEREQUEST__CIRCUITBREAKERTHRESHOLD
-          value: 0.5
+          value: "0.5"
         - name: SERVICEREQUEST__CIRCUITBREAKERSAMPLINGPERIODSECONDS
-          value: 5
+          value: "5"
         - name: SERVICEREQUEST__CIRCUITBREAKERMINIMUMTHROUGHPUT
-          value: 20
+          value: "20"
         - name: SERVICEREQUEST__CIRCUITBREAKERBREAKDURATION
-          value: 30
+          value: "30"
         - name: SERVICEREQUEST__MAXBULKHEADSIZE
-          value: 100
+          value: "100"
         - name: SERVICEREQUEST__MAXBULKHEADQUEUESIZE
-          value: 25
+          value: "25"
         - name: no_proxy
           value: 169.254.169.254
       volumes:
