@@ -329,6 +329,10 @@ docker push $ACR_SERVER/ingestion:0.1.0
 Deploy the Ingestion service
 
 ```bash
+# Deploy the ngnix ingress controller
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/mandatory.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/provider/cloud-generic.yaml
+
 # Update deployment YAML with image tage
 sed "s#image:#image: $ACR_SERVER/ingestion:0.1.0#g" $K8S/ingestion.yaml > $K8S/ingestion-0.yaml
 
@@ -407,7 +411,7 @@ You can send delivery requests to the ingestion service using the Swagger UI.
 Get the public IP address of the Ingestion Service:
 
 ```bash
-export EXTERNAL_IP_ADDRESS=$(kubectl get --namespace backend svc ingestion -o jsonpath="{.status.loadBalancer.ingress[0].*}")
+export EXTERNAL_IP_ADDRESS=$(kubectl get --namespace backend ingress/ingestion-ingress -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
 ```
 
 Use a web browser to navigate to `http://[EXTERNAL_IP_ADDRESS]/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST` and use the **Try it out** button to submit a delivery request.

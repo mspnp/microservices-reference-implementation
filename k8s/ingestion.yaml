@@ -21,7 +21,16 @@ spec:
   selector:
     app: ingestion
   type:
-    LoadBalancer
+    ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingestion-ingress
+spec:
+  backend:
+    serviceName: ingestion
+    servicePort: 80
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
