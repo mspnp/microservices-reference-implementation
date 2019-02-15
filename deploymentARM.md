@@ -86,10 +86,10 @@ az group deployment create -g $RESOURCE_GROUP --name azuredeploy --template-file
             sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
             deliveryIdName=${DELIVERY_ID_NAME} \
             deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
-            droneSchedulerIdName=${DELIVERY_ID_NAME} \
-            droneSchedulerPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
-            workflowIdName=${DELIVERY_ID_NAME} \
-            workflowPrincipalId=${DELIVERY_ID_PRINCIPAL_ID}
+            droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
+            droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
+            workflowIdName=${WORKFLOW_ID_NAME} \
+            workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID}
 ```
 
 Get outputs from Azure Deploy
