@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Azure suscription
+- Azure subscription
 - [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
 - [Docker Compose](https://docs.docker.com/compose/install/)
