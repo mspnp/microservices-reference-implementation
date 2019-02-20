@@ -389,10 +389,6 @@ Build the Ingestion service
 ```bash
 export INGESTION_PATH=./microservices-reference-implementation/src/shipping/ingestion
 
-# Build the app
-docker build -t openjdk_and_mvn-build:8-jdk -f $INGESTION_PATH/Dockerfilemaven $INGESTION_PATH
-docker run -it --rm -v $( cd "${INGESTION_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
-
 # Build the docker image
 docker build -f $INGESTION_PATH/Dockerfile -t $ACR_SERVER/ingestion:0.1.0 $INGESTION_PATH
 

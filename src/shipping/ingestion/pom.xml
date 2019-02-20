@@ -3,13 +3,13 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>DroneDelivery</groupId>
-	<artifactId>Ingestion</artifactId>
-	<version>1.0.0</version>
+	<groupId>com.fabrikam.dronedelivery</groupId>
+	<artifactId>ingestion</artifactId>
+    <version>0.1.0</version>
 	<packaging>jar</packaging>
 
 	<name>Ingestion</name>
-	<description>Ingestion Service </description>
+	<description>Fabrikam Drone Delivery Ingestion Service</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -44,13 +44,13 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.google.common.html.types</groupId>
 			<artifactId>types</artifactId>
 			<version>1.0.5</version>
 		</dependency>
-		
+
 		<!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
 		<dependency>
     		<groupId>org.mockito</groupId>
@@ -58,7 +58,7 @@
     		<version>2.13.0</version>
     		<scope>test</scope>
 		</dependency>
-		
+
   		<dependency>
       		<groupId>org.powermock</groupId>
       		<artifactId>powermock-module-junit4</artifactId>
@@ -73,7 +73,7 @@
  	  </dependency>
 
 
-		
+
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -94,27 +94,18 @@
 			<artifactId>openejb-core</artifactId>
 			<version>4.7.4</version>
 		</dependency>
-		
+
 		<dependency>
 		    <groupId>org.springframework.boot</groupId>
 		    <artifactId>spring-boot-starter-actuator</artifactId>
 		  </dependency>
-		
+
 		<dependency>
 		    <groupId>io.springfox</groupId>
 		    <artifactId>springfox-swagger2</artifactId>
 		    <version>2.7.0</version>
-		</dependency> 
-		
-		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-test -->
-		<dependency>
-  		  <groupId>org.springframework.boot</groupId>
- 		   <artifactId>spring-boot-starter-test</artifactId>
-		    <version>1.5.9.RELEASE</version>
-		    <scope>test</scope>
 		</dependency>
-		
-		 
+
 		<dependency>
 		    <groupId>io.springfox</groupId>
 		    <artifactId>springfox-swagger-ui</artifactId>
@@ -153,7 +144,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-			
+
 			<plugin>
        			<groupId>org.apache.maven.plugins</groupId>
         		<artifactId>maven-failsafe-plugin</artifactId>
@@ -172,7 +163,7 @@
           			</execution>
         		</executions>
   			</plugin>
-  			
+
 			<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -192,6 +183,4 @@
             </plugin>
 		</plugins>
 	</build>
-
-
 </project>
