@@ -58,7 +58,7 @@ spec:
           value: "5"
         - name: SERVICEREQUEST__CIRCUITBREAKERMINIMUMTHROUGHPUT
           value: "20"
-        - name: SERVICEREQUEST__CIRCUITBREAKERBREAKDURATION
+        - name: SERVICEREQUEST__CIRCUITBREAKERBREAKDURATIONSECONDS
           value: "30"
         - name: SERVICEREQUEST__MAXBULKHEADSIZE
           value: "100"
