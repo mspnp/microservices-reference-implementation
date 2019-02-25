@@ -5,7 +5,9 @@
 
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Formatting.Compact;
@@ -16,7 +18,25 @@ namespace Fabrikam.Workflow.Service
     {
         static async Task Main(string[] args)
         {
-            await CreateHostBuilder(args).Build().RunAsync();
+            var host = CreateHostBuilder(args).Build();
+
+            TelemetryClient telemetryClient = null;
+            try
+            {
+                telemetryClient = host.Services.GetService<TelemetryClient>();
+
+                telemetryClient.TrackTrace("Fabrikan Workflow Service is starting.");
+
+                await host.RunAsync();
+            }
+            finally
+            {
+                // before exit, flush the remaining data
+                telemetryClient?.Flush();
+
+                // flush is not blocking so wait a bit
+                Task.Delay(5000).Wait();
+            }
         }
 
         private static IHostBuilder CreateHostBuilder(string[] args)

@@ -4,25 +4,21 @@
 // ------------------------------------------------------------
 
 using System;
-using Fabrikam.Workflow.Service.RequestProcessing;
-using Fabrikam.Workflow.Service.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Fabrikam.Workflow.Service.RequestProcessing;
+using Fabrikam.Workflow.Service.Services;
 
 namespace Fabrikam.Workflow.Service
 {
     public static class ServiceStartup
     {
-        private const string AppInsightsInstrumentationKey = "ApplicationInsights-InstrumentationKey";
-
         public static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
         {
             services.AddOptions();
 
             // Configure AppInsights
-            services.AddApplicationInsightsKubernetesEnricher();
-            services.AddApplicationInsightsTelemetry(
-                       context.Configuration[AppInsightsInstrumentationKey]);
+            services.AddApplicationInsightsTelemetry(context.Configuration);
 
             services.Configure<WorkflowServiceOptions>(context.Configuration);
             services.AddHostedService<WorkflowService>();
