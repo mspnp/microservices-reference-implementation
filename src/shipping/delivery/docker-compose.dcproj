@@ -6,7 +6,7 @@
     <DockerServiceUrl>http://localhost:{ServicePort}/api/values</DockerServiceUrl>
     <DockerServiceName>fabrikam.dronedelivery.deliveryservice</DockerServiceName>
     <DockerTargetOS>Linux</DockerTargetOS>
-    <ProjectVersion>2.0</ProjectVersion>
+    <ProjectVersion>2.1</ProjectVersion>
   </PropertyGroup>
   <ItemGroup>
     <None Include="docker-compose.ci.build.yml" />
