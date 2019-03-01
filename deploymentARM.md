@@ -7,6 +7,7 @@
 - Azure suscription
 - [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
+- [Helm](https://docs.helm.sh/using_helm/#installing-helm)
 - [JQ](https://stedolan.github.io/jq/download/)
 
 > Note: in linux systems, it is possible to run the docker command without prefacing
@@ -118,6 +119,13 @@ kubectl create namespace backend && \
 kubectl create namespace frontend
 ```
 
+
+Setup Helm in the container
+
+```bash
+kubectl apply -f $K8S/tiller-rbac.yaml
+helm init --service-account tiller
+```
 
 Integrate Application Insights instance
 

@@ -5,6 +5,7 @@
 - Azure subscription
 - [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
+- [Helm](https://docs.helm.sh/using_helm/#installing-helm)
 
 > Note: in linux systems, it is possible to run the docker command without prefacing
 >       with sudo. For more information, please refer to [the Post-installation steps
@@ -61,6 +62,13 @@ export CLUSTER_SERVICE_PRINCIPAL=$(az aks show --name $CLUSTER_NAME --resource-g
 # Create namespaces
 kubectl create namespace backend && \
 kubectl create namespace frontend
+```
+
+Setup Helm in the container
+
+```bash
+kubectl apply -f $k8s/tiller-rbac.yaml
+helm init --service-account tiller
 ```
 
 Create an Azure Container Registry instance.
