@@ -1,10 +1,16 @@
 # Default values for dronedelivery.
 replicaCount: 1
+identity:
+  clientid:
+  resourceid:
+dockerregistry:
 image:
   repository:
   tag:
   pullPolicy: IfNotPresent
-service:
-  type: ClusterIP
-dockerregistry:
+cosmosdb:
+  id:
+  collectionid:
+keyvault:
+  uri:
 reason: unknown

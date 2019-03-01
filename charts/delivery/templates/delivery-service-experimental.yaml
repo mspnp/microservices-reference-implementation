@@ -4,7 +4,7 @@
 #  ------------------------------------------------------------
 
 ###################################################################################################
-# Delivery service
+# Delivery service experimental
 ###################################################################################################
 
 # the following object is meant ot be created first time only.
@@ -13,10 +13,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: delivery
+  name: delivery-experimental
   labels:
-    app: delivery
-    app.kubernetes.io/component: backend
+    app.kubernetes.io/name: delivery
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
     app.kubernetes.io/managed-by: azurepipelines

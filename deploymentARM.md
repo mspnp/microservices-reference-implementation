@@ -43,6 +43,7 @@ export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
 
 export K8S=./microservices-reference-implementation/k8s
+HELM_CHARTS=./microservices-reference-implementation/charts
 ```
 
 Infrastructure Prerequisites
@@ -182,34 +183,28 @@ az acr login --name $ACR_NAME
 docker push $ACR_SERVER/delivery:0.1.0
 ```
 
-Set up pod identity
-
-```bash
-# Extract outputs from deployment
-export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
-export DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
-
-# Deploy the identity resources
-cat $K8S/delivery-identity.yaml | \
-    sed "s#ResourceID: \"identityResourceId\"#ResourceID: $DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
-    sed "s#ClientID: \"identityClientid\"#ClientID: $DELIVERY_PRINCIPAL_CLIENT_ID#g" > $K8S/delivery-identity-0.yaml
-kubectl apply -f $K8S/delivery-identity-0.yaml
-```
-
 Deploy the Delivery service:
 
 ```bash
-# Update the image tag and config values in the deployment YAML
-sed "s#image:#image: $ACR_SERVER/delivery:0.1.0#g" $K8S/delivery.yaml | \
-    sed "s/value: \"CosmosDB_DatabaseId\"/value: $DATABASE_NAME/g" | \
-    sed "s/value: \"CosmosDB_CollectionId\"/value: $COLLECTION_NAME/g" | \
-    sed "s#value: \"KeyVault_Name\"#value: $DELIVERY_KEYVAULT_URI#g" > $K8S/delivery-0.yaml
+# Extract pod identity outputs from deployment
+export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
+export DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
 
 # Deploy the service
-kubectl --namespace backend apply -f $K8S/delivery-0.yaml
+helm install $HELM_CHARTS/delivery/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=delivery \
+     --set dockerregistry=$ACR_SERVER \
+     --set identity.clientid=$DELIVERY_PRINCIPAL_ID \
+     --set identity.resourceid=$DELIVERY_PRINCIPAL_RESOURCE_ID \
+     --set cosmosdb.id=$DATABASE_NAME \
+     --set cosmosdb.collectionid=$COLLECTION_NAME \
+     --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
+     --namespace backend \
+     --name delivery-v0.1.0
 
 # Verify the pod is created
-kubectl get pods -n backend
+helm status delivery-v0.1.0
 ```
 
 ## Deploy the Package service

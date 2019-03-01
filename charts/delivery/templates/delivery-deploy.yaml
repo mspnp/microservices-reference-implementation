@@ -1,3 +1,11 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+###################################################################################################
+# Delivery
+###################################################################################################
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
@@ -10,6 +18,7 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
     helm.sh/chart: {{ include "delivery.chart" . }}
+    aadpodidbinding: delivery
   annotations:
     kubernetes.io/change-cause: {{ .Values.reason }}
 spec:
@@ -28,31 +37,30 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: dronedelivery
         helm.sh/chart: {{ include "delivery.chart" . }}
+        aadpodidbinding: delivery
     spec:
+      securityContext:
+        fsGroup: 1
       containers:
-      - name: deliveryservice
+      - name: fabrikam-delivery
         image: {{ .Values.dockerregistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
         env:
-        - name: DOCDB_KEY
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Release.Name }}-dd-deliveryservice-cosmosdbconf
-              key: CosmosDB_Key
-        - name: DOCDB_ENDPOINT
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Release.Name }}-dd-deliveryservice-cosmosdbconf
-              key: CosmosDB_Endpoint
         - name: DOCDB_DATABASEID
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Release.Name }}-dd-deliveryservice-cosmosdbconf
-              key: CosmosDB_DatabaseId
+          value: {{ .Values.cosmosdb.id }}
         - name: DOCDB_COLLECTIONID
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Release.Name }}-dd-deliveryservice-cosmosdbconf
-              key: CosmosDB_CollectionId
-        ports:
+          value: {{ .Values.cosmosdb.collectionid }}
+        - name: KEY_VAULT_URI
+          value: {{ .Values.keyvault.uri }}
+        - name: no_proxy
+          value: 169.254.169.254
+      ports:
         - name: service
-          containerPort: 80
+          containerPort: 8080
+      resources:
+        requests:
+          cpu: 1
+          memory: 2G
+        limits:
+          cpu: 1
+          memory: 3G
