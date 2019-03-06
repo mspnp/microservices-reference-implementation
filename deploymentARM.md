@@ -1,7 +1,5 @@
 # Deploying the Reference Implementation
 
-
-
 ## Prerequisites
 
 - Azure suscription
@@ -20,7 +18,7 @@ Clone or download this repo locally.
 git clone https://github.com/mspnp/microservices-reference-implementation.git
 ```
 
-> The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
+The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
 
 ## Generate a SSH rsa public/private key pair
 
@@ -42,8 +40,9 @@ export RESOURCE_GROUP=[YOUR_RESOURCE_GROUP_HERE]
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
 
-export K8S=./microservices-reference-implementation/k8s
-HELM_CHARTS=./microservices-reference-implementation/charts
+export PROJECT_ROOT=./microservices-reference-implementation
+export K8S=$PROJECT_ROOT/k8s
+export HELM_CHARTS=$PROJECT_ROOT/charts
 ```
 
 Infrastructure Prerequisites
@@ -120,7 +119,6 @@ kubectl create namespace backend && \
 kubectl create namespace frontend
 ```
 
-
 Setup Helm in the container
 
 ```bash
@@ -169,7 +167,7 @@ export DELIVERY_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n az
 Build the Delivery service
 
 ```bash
-export DELIVERY_PATH=./microservices-reference-implementation/src/shipping/delivery
+export DELIVERY_PATH=$PROJECT_ROOT/src/shipping/delivery
 ```
 
 Build and publish the container image
@@ -187,8 +185,8 @@ Deploy the Delivery service:
 
 ```bash
 # Extract pod identity outputs from deployment
-export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
-export DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
+export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
+export DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
 
 # Deploy the service
 helm install $HELM_CHARTS/delivery/ \
@@ -218,7 +216,7 @@ export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeplo
 Build the Package service
 
 ```bash
-export PACKAGE_PATH=microservices-reference-implementation/src/shipping/package
+export PACKAGE_PATH=$PROJECT_ROOT/src/shipping/package
 
 # Build the docker image
 docker build -f $PACKAGE_PATH/Dockerfile -t $ACR_SERVER/package:0.1.0 $PACKAGE_PATH
@@ -260,7 +258,7 @@ export WORKFLOW_KEYVAULT_NAME=$(az group deployment show -g $RESOURCE_GROUP -n a
 Build the workflow service
 
 ```bash
-export WORKFLOW_PATH=./microservices-reference-implementation/src/shipping/workflow
+export WORKFLOW_PATH=$PROJECT_ROOT/src/shipping/workflow
 
 # Build the Docker image
 docker build --pull --compress -t $ACR_SERVER/workflow:0.1.0 $WORKFLOW_PATH/.
@@ -274,8 +272,8 @@ Create and set up pod identity
 
 ```bash
 # Extract outputs from deployment
-export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.workflowPrincipalResourceId.value -o tsv) && \
-export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.workflowPrincipalClientId.value -o tsv)
+export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalResourceId.value -o tsv) && \
+export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalClientId.value -o tsv)
 
 # Deploy the identity resources
 cat $K8S/workflow-identity.yaml | \
@@ -315,11 +313,7 @@ export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule k
 Build the Ingestion service
 
 ```bash
-export INGESTION_PATH=./microservices-reference-implementation/src/shipping/ingestion
-
-# Build the app
-docker build -t openjdk_and_mvn-build:8-jdk -f $INGESTION_PATH/Dockerfilemaven $INGESTION_PATH
-docker run -it --rm -v $( cd "${INGESTION_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
+export INGESTION_PATH=$PROJECT_ROOT/src/shipping/ingestion
 
 # Build the docker image
 docker build -f $INGESTION_PATH/Dockerfile -t $ACR_SERVER/ingestion:0.1.0 $INGESTION_PATH
@@ -333,11 +327,30 @@ Deploy the Ingestion service
 
 ```bash
 # Deploy the ngnix ingress controller
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/mandatory.yaml
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/provider/cloud-generic.yaml
+helm install stable/nginx-ingress --name nginx-ingress --namespace ingress-controllers --set rbac.create=true
 
-# Update deployment YAML with image tage
-sed "s#image:#image: $ACR_SERVER/ingestion:0.1.0#g" $K8S/ingestion.yaml > $K8S/ingestion-0.yaml
+# Obtain the load balancer ip address and assign a domain name
+until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-controller -n ingress-controllers -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
+export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv)
+export EXTERNAL_INGEST_DNS_NAME="${UNIQUE_APP_NAME_PREFIX}-ingest"
+export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
+
+# Create a self-signed certificate for TLS
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -out ingestion-ingress-tls.crt \
+    -keyout ingestion-ingress-tls.key \
+    -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
+
+kubectl create secret tls ingestion-ingress-tls \
+    --namespace backend \
+    --key ingestion-ingress-tls.key \
+    --cert ingestion-ingress-tls.crt
+
+# Update deployment YAML with image tag and the fqdn
+cat $K8S/ingestion.yaml | \
+    sed "s#image:#image: $ACR_SERVER/ingestion:0.1.0#g" | \
+    sed "s#ingestion-host-name#$EXTERNAL_INGEST_FQDN#g" \
+    > $K8S/ingestion-0.yaml
 
 # Create secret
 kubectl -n backend create secret generic ingestion-secrets \
@@ -364,15 +377,15 @@ export DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP
 Build the dronescheduler services
 
 ```bash
-export DRONE_PATH=microservices-reference-implementation/src/shipping/dronescheduler
+export DRONE_PATH=$PROJECT_ROOT/src/shipping/dronescheduler
 ```
 
 Create and set up pod identity
 
 ```bash
 # Extract outputs from deployment
-export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
-export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv)
+export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
+export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv)
 
 # Deploy the identity resources
 cat $K8S/dronescheduler-identity.yaml | \
@@ -411,16 +424,10 @@ kubectl get pods -n backend
 
 You can send delivery requests to the ingestion service using the Swagger UI.
 
-Get the public IP address of the Ingestion Service:
+Use a web browser to navigate to `https://[EXTERNAL_INGEST_FQDN]/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST` and use the **Try it out** button to submit a delivery request.
 
 ```bash
-export EXTERNAL_IP_ADDRESS=$(kubectl get --namespace backend ingress/ingestion-ingress -o jsonpath="{.status.loadBalancer.ingress[0].ip}")
-```
-
-Use a web browser to navigate to `http://[EXTERNAL_IP_ADDRESS]/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST` and use the **Try it out** button to submit a delivery request.
-
-```bash
-open "http://$EXTERNAL_IP_ADDRESS/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST"
+open "https://$EXTERNAL_INGEST_FQDN/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST"
 ```
 
 > We recommended putting an API Gateway in front of all public APIs. For convenience, the Ingestion service is directly exposed with a public IP address.

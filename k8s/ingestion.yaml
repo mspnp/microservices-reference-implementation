@@ -28,9 +28,18 @@ kind: Ingress
 metadata:
   name: ingestion-ingress
 spec:
-  backend:
-    serviceName: ingestion
-    servicePort: 80
+  tls:
+  - hosts:
+    - ingestion-host-name
+    secretName: ingestion-ingress-tls
+  rules:
+  - host: ingestion-host-name
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: ingestion
+          servicePort: 80
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment

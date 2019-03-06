@@ -576,7 +576,7 @@
                 },
                 {
                     "type": "secrets",
-                    "name": "ApplicationInsights--InstrumentationKey",
+                    "name": "ApplicationInsights-InstrumentationKey",
                     "apiVersion": "2015-06-01",
                     "properties": {
                         "value": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')),'2015-05-01').InstrumentationKey]"
