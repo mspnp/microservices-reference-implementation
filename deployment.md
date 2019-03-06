@@ -436,10 +436,11 @@ cat $K8S/ingestion.yaml | \
 
 # Create secret
 kubectl -n backend create secret generic ingestion-secrets \
-    --from-literal=queue_namespace=${INGESTION_QUEUE_NAMESPACE} \
-    --from-literal=queue_name=${INGESTION_QUEUE_NAME} \
-    --from-literal=queue_keyname=IngestionServiceAccessKey \
-    --from-literal=queue_keyvalue=${INGESTION_ACCESS_KEY_VALUE}
+        --from-literal=queue_namespace=${INGESTION_QUEUE_NAMESPACE} \
+        --from-literal=queue_name=${INGESTION_QUEUE_NAME} \
+        --from-literal=queue_keyname=IngestionServiceAccessKey \
+        --from-literal=queue_keyvalue=${INGESTION_ACCESS_KEY_VALUE} \
+        --from-literal=appinsights-ikey=${AI_IKEY}
 
 # Deploy service
 kubectl --namespace backend apply -f $K8S/ingestion-0.yaml

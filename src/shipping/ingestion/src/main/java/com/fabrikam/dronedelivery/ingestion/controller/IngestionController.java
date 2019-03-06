@@ -2,7 +2,6 @@ package com.fabrikam.dronedelivery.ingestion.controller;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.fabrikam.dronedelivery.ingestion.configuration.ApplicationProperties;
 import com.fabrikam.dronedelivery.ingestion.models.*;
 import com.fabrikam.dronedelivery.ingestion.service.*;
 
@@ -38,18 +37,12 @@ public class IngestionController {
 
 	private final static Logger log = LogManager.getLogger(IngestionController.class);
 	
-	private static final String CorrelationHeaderTag = "CorrelationId";
-	
-	@Autowired
-	private ApplicationProperties appProps;
-
 	@Autowired
 	private Ingestion ingestion;
 
 	@Autowired
-	public IngestionController(Ingestion ingestion, ApplicationProperties appProps) {
+	public IngestionController(Ingestion ingestion) {
 		this.ingestion = ingestion;
-		this.appProps = appProps;
 	}
 
 	@ResponseStatus(value = HttpStatus.BAD_REQUEST, reason = "Bad Format data") // 400
@@ -87,12 +80,9 @@ public class IngestionController {
 	public CompletableFuture<ResponseEntity<ExternalDelivery>> scheduleDeliveryAsync(HttpServletResponse response,
 			@RequestBody ExternalDelivery externalDelivery, @RequestHeader HttpHeaders httpHeaders) {
 		
-		// Extract the correlation id and log it
-		String correlationId = httpHeaders.getFirst(appProps.getServiceMeshCorrelationHeader());
 		String deliveryId = UUID.randomUUID().toString();
 		
-		try (final CloseableThreadContext.Instance ctc = CloseableThreadContext.put(CorrelationHeaderTag,
-				correlationId).put("DeliveryId", deliveryId)) {
+		try (final CloseableThreadContext.Instance ctc = CloseableThreadContext.put("DeliveryId", deliveryId)) {
 			log.info("In schedule delivery action with delivery request {}", externalDelivery.toString());
 
 			// Exceptions handled by exception handler
@@ -123,8 +113,7 @@ public class IngestionController {
 
 		// Exceptions handled by exception handler
 		// making standard in the controller
-		String correlationId = httpHeaders.getFirst(appProps.getServiceMeshCorrelationHeader());
-		try (final CloseableThreadContext.Instance ctc = CloseableThreadContext.put(CorrelationHeaderTag, correlationId))
+		try (final CloseableThreadContext.Instance ctc = CloseableThreadContext.put("DeliveryId", deliveryId))
 		{
 			log.info("In cancel delivery action with id: {}", deliveryId);
 			ingestion.cancelDeliveryAsync(deliveryId.toString(), httpHeaders.toSingleValueMap());
@@ -138,9 +127,7 @@ public class IngestionController {
 	public CompletableFuture<ResponseEntity<String>> rescheduleDeliveryAsync(HttpServletResponse response,
 			@RequestBody ExternalRescheduledDelivery externalRescheduledDelivery, @PathVariable("id") String deliveryId, @RequestHeader HttpHeaders httpHeaders) {
 
-		String correlationId = httpHeaders.getFirst(appProps.getServiceMeshCorrelationHeader());
-		try (final CloseableThreadContext.Instance ctc = CloseableThreadContext.put(CorrelationHeaderTag, correlationId)
-				.put("DeliveryId", deliveryId)) {
+		try (final CloseableThreadContext.Instance ctc = CloseableThreadContext.put("DeliveryId", deliveryId)) {
 
 			log.info("In reschedule delivery action with delivery request: {}", externalRescheduledDelivery.toString());
 

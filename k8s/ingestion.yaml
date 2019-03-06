@@ -44,7 +44,7 @@ spec:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: ingestion
+  name: &ingestion-container_name ingestion
   labels:
     app: ingestion
     version: 0.1.0
@@ -100,3 +100,11 @@ spec:
             secretKeyRef:
               name: ingestion-secrets
               key: queue_keyvalue
+        - name: APPINSIGHTS_INSTRUMENTATIONKEY
+          valueFrom:
+            secretKeyRef:
+              name: ingestion-secrets
+              key: appinsights-ikey
+        - name: CONTAINER_NAME
+          value: *ingestion-container_name
+

@@ -1,8 +1,5 @@
 package com.fabrikam.dronedelivery.ingestion.configuration;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
@@ -41,12 +38,6 @@ public class ApplicationProperties {
 	private int threadPoolExecutorQueueSize = 0;
 	private int threadPoolExecutorMaxPoolSize = 0;
 	private int messageAmqpClientPoolSize = 0;
-	
-	// Istio properties for distributed tracing
-	private List<String> serviceMeshHeaders = new ArrayList<String>();
-	
-	// Correlation header for breadcrumb trail
-	private String serviceMeshCorrelationHeader = "serviceMeshCorrelationHeader";
 
 	public String getNamespace() {
 		return namespace;
@@ -103,27 +94,11 @@ public class ApplicationProperties {
 	public void setThreadPoolExecutorMaxPoolSize(int maxPoolSize) {
 		this.threadPoolExecutorMaxPoolSize = maxPoolSize;
 	}
-	
-	public List<String> getServiceMeshHeaders() {
-		return serviceMeshHeaders;
-	}
-
-	public void setServiceMeshHeaders(List<String> serviceMeshHeaders) {
-		this.serviceMeshHeaders = serviceMeshHeaders;
-	}
-	
+		
 	//To resolve ${} in @Value
 	@Bean
 	public static PropertySourcesPlaceholderConfigurer propertyConfigInDev() {
 		return new PropertySourcesPlaceholderConfigurer();
-	}
-
-	public String getServiceMeshCorrelationHeader() {
-		return serviceMeshCorrelationHeader;
-	}
-
-	public void setServiceMeshCorrelationHeader(String serviceMeshCorrelationHeader) {
-		this.serviceMeshCorrelationHeader = serviceMeshCorrelationHeader;
 	}
 
 	public int getMessageAmqpClientPoolSize() {
