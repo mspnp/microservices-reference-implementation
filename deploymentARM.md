@@ -385,14 +385,8 @@ Create and set up pod identity
 
 ```bash
 # Extract outputs from deployment
-export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
-export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv)
-
-# Deploy the identity resources
-cat $K8S/dronescheduler-identity.yaml | \
-    sed "s#ResourceID: \"identityResourceId\"#ResourceID: $DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
-    sed "s#ClientID: \"identityClientid\"#ClientID: $DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" > $K8S/dronescheduler-identity-0.yaml
-kubectl apply -f $K8S/dronescheduler-identity-0.yaml
+export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
+export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv)
 ```
 
 Build and publish the container image
@@ -406,19 +400,21 @@ az acr login --name $ACR_NAME
 docker push $ACR_SERVER/dronescheduler:0.1.0
 ```
 
-Deploy the dronescheduler services:
-
+Deploy the dronescheduler service:
 ```bash
-# Update the image tag in the deployment YAML
-cat $K8S/dronescheduler.yaml | \
-    sed "s#image:#image: $ACR_SERVER/dronescheduler:0.1.0#g"  | \
-    sed "s#value: \"KeyVault_Name\"#value: $DRONESCHEDULER_KEYVAULT_URI#g" > $K8S/dronescheduler-0.yaml
-
 # Deploy the service
-kubectl --namespace backend apply -f $K8S/dronescheduler-0.yaml
+helm install $HELM_CHARTS/dronescheduler/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=dronescheduler \
+     --set dockerregistry=$ACR_SERVER \
+     --set identity.clientid=$DRONESCHEDULER_PRINCIPAL_ID \
+     --set identity.resourceid=$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID \
+     --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
+     --namespace backend \
+     --name dronescheduler-v0.1.0
 
-## Verify all services are running:
-kubectl get pods -n backend
+# Verify the pod is created
+helm status dronescheduler-v0.1.0
 ```
 
 ## Validate the application is running

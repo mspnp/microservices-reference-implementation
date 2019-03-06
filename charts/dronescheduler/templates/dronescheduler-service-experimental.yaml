@@ -4,18 +4,18 @@
 #  ------------------------------------------------------------
 
 ###################################################################################################
-# Delivery service
+# Dronescheduler service experimental
 ###################################################################################################
 
 # the following object is meant ot be created first time only.
 # its configuration will be later managed by CI/CD
-{{ if (eq .Release.Name "delivery-v0.1.0") }}
+{{ if (eq .Release.Name "dronescheduler-v0.1.0") }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: delivery
+  name: dronescheduler-experimental
   labels:
-    app.kubernetes.io/app: delivery
+    app.kubernetes.io/name: dronescheduler
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
     app.kubernetes.io/managed-by: azurepipelines
@@ -26,6 +26,6 @@ spec:
     port: 80
     targetPort: 8080
   selector:
-    app.kubernetes.io/name: delivery
-    app.kubernetes.io/instance: delivery-v0.1.0
+    app.kubernetes.io/name: dronescheduler
+    app.kubernetes.io/instance: dronescheduler-v0.1.0
 {{ end }}
