@@ -264,9 +264,6 @@ docker push $ACR_SERVER/package:0.1.0
 Deploy the Package service
 
 ```bash
-# Update deployment YAML with image tage
-sed "s#image:#image: $ACR_SERVER/package:0.1.0#g" $K8S/package.yml > $K8S/package-0.yml
-
 # Create secret
 export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g')
 kubectl -n backend create \
@@ -275,10 +272,15 @@ kubectl -n backend create \
                    --from-literal=appinsights-ikey=$AI_IKEY
 
 # Deploy service
-kubectl --namespace backend apply -f $K8S/package-0.yml
+helm install $HELM_CHARTS/package/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=package \
+     --set dockerregistry=$ACR_SERVER \
+     --namespace backend \
+     --name package-v0.1.0
 
 # Verify the pod is created
-kubectl get pods -n backend
+helm status package-v0.1.0
 ```
 
 ## Deploy the Workflow service

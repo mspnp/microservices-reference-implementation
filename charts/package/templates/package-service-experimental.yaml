@@ -4,7 +4,7 @@
 #  ------------------------------------------------------------
 
 ###################################################################################################
-# package service
+# Package service experimental
 ###################################################################################################
 
 # the following object is meant ot be created first time only.
@@ -13,7 +13,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: package
+  name: package-experimental
   labels:
     app.kubernetes.io/name: {{ template "package.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}

@@ -1,3 +1,11 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+###################################################################################################
+# Package
+###################################################################################################
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
@@ -8,7 +16,7 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/component: backend
-    app.kubernetes.io/part-of: dronepackage
+    app.kubernetes.io/part-of: dronedelivery
     helm.sh/chart: {{ include "package.chart" . }}
   annotations:
     kubernetes.io/change-cause: {{ .Values.reason }}
@@ -30,21 +38,24 @@ spec:
         helm.sh/chart: {{ include "package.chart" . }}
     spec:
       containers:
-      - name: &package-container_name package
+      - name: &package-container_name fabrikam-package
         image: {{ .Values.dockerregistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
         env:
         - name: CONNECTION_STRING
           valueFrom:
             secretKeyRef:
               name: package-secrets
-              key: {{ .Release.Name }}-mongodb-pwd
+              key: mongodb-pwd
+        - name: COLLECTION_NAME
+          value: packages
         - name: APPINSIGHTS_INSTRUMENTATIONKEY
           valueFrom:
             secretKeyRef:
               name: package-secrets
-              key: {{ .Release.Name }}-appinsights-ikey
-        - name: COLLECTION_NAME
-          value: packages
+              key: appinsights-ikey
+        - name: LOG_LEVEL
+          value: {{ .Values.log.level }}
         - name: CONTAINER_NAME
           value: *package-container_name
         ports:
