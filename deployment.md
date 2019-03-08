@@ -5,7 +5,7 @@
 - Azure subscription
 - [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
-- [Helm](https://docs.helm.sh/using_helm/#installing-helm)
+- [Helm 2.12.3 or later](https://docs.helm.sh/using_helm/#installing-helm)
 
 > Note: in linux systems, it is possible to run the docker command without prefacing
 >       with sudo. For more information, please refer to [the Post-installation steps
@@ -354,29 +354,27 @@ az role assignment create --role Contributor --assignee $WORKFLOW_PRINCIPAL_ID -
 
 # Allow the cluster to manage the identity to assign to pods
 az role assignment create --role "Managed Identity Operator" --assignee $CLUSTER_SERVICE_PRINCIPAL --scope $WORKFLOW_PRINCIPAL_RESOURCE_ID
-
-# Deploy the identity resources
-cat $K8S/workflow-identity.yaml | \
-    sed "s#ResourceID: \"identityResourceId\"#ResourceID: $WORKFLOW_PRINCIPAL_RESOURCE_ID#g" | \
-    sed "s#ClientID: \"identityClientid\"#ClientID: $WORKFLOW_PRINCIPAL_CLIENT_ID#g" > $K8S/workflow-identity-0.yaml
-kubectl apply -f $K8S/workflow-identity-0.yaml
 ```
 
 Deploy the Workflow service:
 
 ```bash
-# Update the image tag and config values in the deployment YAML
-sed "s#image:#image: $ACR_SERVER/workflow:0.1.0#g" $K8S/workflow.yaml | \
-    sed "s#resourcegroup: \"keyVaultResourceGroup\"#resourcegroup: $RESOURCE_GROUP#g" | \
-    sed "s#subscriptionid: \"keyVaultSubscriptionId\"#subscriptionid: $SUBSCRIPTION_ID#g" | \
-    sed "s#tenantid: \"keyVaultTenantId\"#tenantid: $TENANT_ID#g" | \
-    sed "s#keyvaultname: \"keyVaultName\"#keyvaultname: $WORKFLOW_KEYVAULT_NAME#g" > $K8S/workflow-0.yaml
-
 # Deploy the service
-kubectl --namespace backend apply -f $K8S/workflow-0.yaml
+helm install $HELM_CHARTS/workflow/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=workflow \
+     --set dockerregistry=$ACR_SERVER \
+     --set identity.clientid=$WORKFLOW_PRINCIPAL_CLIENT_ID \
+     --set identity.resourceid=$WORKFLOW_PRINCIPAL_RESOURCE_ID \
+     --set keyvault.name=$WORKFLOW_KEYVAULT_NAME \
+     --set keyvault.resourcegroup=$RESOURCE_GROUP \
+     --set keyvault.subscriptionid=$SUBSCRIPTION_ID \
+     --set keyvault.tenantid=$TENANT_ID \
+     --namespace backend \
+     --name workflow-v0.1.0
 
 # Verify the pod is created
-kubectl get pods -n backend
+helm status workflow-v0.1.0
 ```
 
 ## Deploy the Ingestion service

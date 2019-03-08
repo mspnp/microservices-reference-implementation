@@ -1,8 +1,29 @@
 # Default values for workflow.
 replicaCount: 1
+dockerregistry:
+identity:
+  clientid:
+  resourceid:
 image:
   repository:
   tag:
   pullPolicy: IfNotPresent
-dockerregistry:
 reason: unknown
+serviceuri:
+  delivery: http://delivery/api/Deliveries/
+  drone: http://dronescheduler/api/DroneDeliveries/
+  package: http://package/api/packages/
+servicerequest:
+  maxretries: 3
+  circuitbreakerthreshold: 0.5
+  circuitbreakersamplingperiodseconds: 5
+  circuitbreakerminimumthroughput: 20
+  circuitbreakerbreakduration: 30
+  maxbulkheadsize: 100
+  maxbulkheadqueuesize: 25
+keyvault:
+  name:
+  resourcegroup:
+  subscriptionid:
+  tenantid:
+
