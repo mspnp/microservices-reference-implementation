@@ -506,7 +506,7 @@ helm install $HELM_CHARTS/dronescheduler/ \
      --set image.tag=0.1.0 \
      --set image.repository=dronescheduler \
      --set dockerregistry=$ACR_SERVER \
-     --set identity.clientid=$DRONESCHEDULER_PRINCIPAL_ID \
+     --set identity.clientid=$DRONESCHEDULER_PRINCIPAL_CLIENT_ID \
      --set identity.resourceid=$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID \
      --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
      --namespace backend \
