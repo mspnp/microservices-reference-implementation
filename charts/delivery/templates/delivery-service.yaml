@@ -15,10 +15,12 @@ kind: Service
 metadata:
   name: delivery
   labels:
-    app.kubernetes.io/app: delivery
+    app.kubernetes.io/name: {{ template "delivery.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: azurepipelines
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
-    app.kubernetes.io/managed-by: azurepipelines
     helm.sh/chart: {{ include "delivery.chart" . }}
 spec:
   ports:
@@ -26,6 +28,6 @@ spec:
     port: 80
     targetPort: 8080
   selector:
-    app.kubernetes.io/name: delivery
-    app.kubernetes.io/instance: delivery-v0.1.0
+    app.kubernetes.io/name: {{ template "delivery.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
 {{ end }}

@@ -193,7 +193,7 @@ helm install $HELM_CHARTS/delivery/ \
      --set image.tag=0.1.0 \
      --set image.repository=delivery \
      --set dockerregistry=$ACR_SERVER \
-     --set identity.clientid=$DELIVERY_PRINCIPAL_ID \
+     --set identity.clientid=$DELIVERY_PRINCIPAL_CLIENT_ID \
      --set identity.resourceid=$DELIVERY_PRINCIPAL_RESOURCE_ID \
      --set cosmosdb.id=$DATABASE_NAME \
      --set cosmosdb.collectionid=$COLLECTION_NAME \
