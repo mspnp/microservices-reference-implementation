@@ -13,11 +13,3 @@
 ```
 docker build -f ./Dockerfile -t <repo>/package-service .
 ```
-
-## Provision database and create secrets
-
-1. In Azure, create a Cosmos DB database with MongoDB API
-2. Install Azure CLI 2.0
-3. Run `az login`
-4. Run create-secrets.sh
-
