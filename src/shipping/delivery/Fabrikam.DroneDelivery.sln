@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.26730.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fabrikam.DroneDelivery.DeliveryService", "Fabrikam.DroneDelivery.DeliveryService\Fabrikam.DroneDelivery.DeliveryService.csproj", "{D01A5347-3D4F-44F4-98C2-AD73D363631B}"
 EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{2670610E-2495-42AA-BB4C-915D0B74E5CE}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fabrikam.DroneDelivery.Common", "Fabrikam.DroneDelivery.Common\Fabrikam.DroneDelivery.Common.csproj", "{530D7BEC-E8B0-4B0A-B608-EAC10E4E858E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{4D81DB69-724B-44C2-A779-66778C21722E}"
@@ -23,10 +21,6 @@ Global
 		{D01A5347-3D4F-44F4-98C2-AD73D363631B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D01A5347-3D4F-44F4-98C2-AD73D363631B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D01A5347-3D4F-44F4-98C2-AD73D363631B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2670610E-2495-42AA-BB4C-915D0B74E5CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2670610E-2495-42AA-BB4C-915D0B74E5CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2670610E-2495-42AA-BB4C-915D0B74E5CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2670610E-2495-42AA-BB4C-915D0B74E5CE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{530D7BEC-E8B0-4B0A-B608-EAC10E4E858E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{530D7BEC-E8B0-4B0A-B608-EAC10E4E858E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{530D7BEC-E8B0-4B0A-B608-EAC10E4E858E}.Release|Any CPU.ActiveCfg = Release|Any CPU
