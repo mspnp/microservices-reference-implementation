@@ -22,7 +22,7 @@ metadata:
   annotations:
     kubernetes.io/change-cause: {{ .Values.reason }}
 spec:
-  replicas: 1
+  replicas: {{ default 1 .Values.replicaCount }}
   selector:
     matchLabels:
       app.kubernetes.io/name: {{ include "workflow.name" . }}
