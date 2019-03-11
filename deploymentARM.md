@@ -337,6 +337,7 @@ until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-contr
 export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv)
 export EXTERNAL_INGEST_DNS_NAME="${UNIQUE_APP_NAME_PREFIX}-ingest"
 export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
+INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
 
 # Create a self-signed certificate for TLS
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -344,30 +345,28 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout ingestion-ingress-tls.key \
     -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
 
-kubectl create secret tls ingestion-ingress-tls \
-    --namespace backend \
-    --key ingestion-ingress-tls.key \
-    --cert ingestion-ingress-tls.crt
-
-# Update deployment YAML with image tag and the fqdn
-cat $K8S/ingestion.yaml | \
-    sed "s#image:#image: $ACR_SERVER/ingestion:0.1.0#g" | \
-    sed "s#ingestion-host-name#$EXTERNAL_INGEST_FQDN#g" \
-    > $K8S/ingestion-0.yaml
-
-# Create secret
-kubectl -n backend create secret generic ingestion-secrets \
-    --from-literal=queue_namespace=${INGESTION_QUEUE_NAMESPACE} \
-    --from-literal=queue_name=${INGESTION_QUEUE_NAME} \
-    --from-literal=queue_keyname=${INGESTION_ACCESS_KEY_NAME} \
-    --from-literal=queue_keyvalue=${INGESTION_ACCESS_KEY_VALUE} \
-    --from-literal=appinsights-ikey=${AI_IKEY}
-
 # Deploy service
-kubectl --namespace backend apply -f $K8S/ingestion-0.yaml
+helm install $HELM_CHARTS/ingestion/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=ingestion \
+     --set dockerregistry=$ACR_SERVER \
+     --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
+     --set ingress.hosts[0].serviceName=ingestion \
+     --set ingress.hosts[0].tls=true \
+     --set ingress.hosts[0].tlsSecretName=$INGRESS_TLS_SECRET_NAME \
+     --set ingress.tls.secrets[0].name=$INGRESS_TLS_SECRET_NAME \
+     --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
+     --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
+     --set secrets.appinsights.ikey=${AI_IKEY} \
+     --set secrets.queue.keyname=IngestionServiceAccessKey \
+     --set secrets.queue.keyvalue=${INGESTION_ACCESS_KEY_VALUE} \
+     --set secrets.queue.name=${INGESTION_QUEUE_NAME} \
+     --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
+     --namespace backend \
+     --name ingestion-v0.1.0
 
 # Verify the pod is created
-kubectl get pods -n backend
+helm status ingestion-v0.1.0
 ```
 
 ## Deploy DroneScheduler service

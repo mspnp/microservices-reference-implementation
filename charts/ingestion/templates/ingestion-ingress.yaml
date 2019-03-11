@@ -1,0 +1,32 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+###################################################################################################
+# ingestion ingress
+###################################################################################################
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ingestion-ingress
+spec:
+  tls:
+  {{- range .Values.ingress.hosts }}
+  {{- if .tls }}
+  - hosts:
+    - {{ .name }}
+    secretName: {{ .tlsSecretName }}
+  {{ end }}
+  {{ end }}
+  rules:
+  {{- range .Values.ingress.hosts }}
+  - host: {{ .name }}
+    http:
+      paths:
+      - path: {{ default "/" .path }}
+        backend:
+          serviceName: "{{ .serviceName }}"
+          servicePort: http
+  {{ end }}

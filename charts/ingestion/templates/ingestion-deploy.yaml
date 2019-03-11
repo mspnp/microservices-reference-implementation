@@ -1,0 +1,83 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+##################################################################################################
+# Ingestion
+##################################################################################################
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ include "ingestion.fullname" . | replace "." "" }}
+  labels:
+    app.kubernetes.io/name: {{ include "ingestion.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: dronedelivery
+    helm.sh/chart: {{ include "ingestion.chart" . }}
+  annotations:
+    kubernetes.io/change-cause: {{ .Values.reason }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "ingestion.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "ingestion.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/version: {{ .Chart.AppVersion }}
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: dronedelivery
+        helm.sh/chart: {{ include "ingestion.chart" . }}
+    spec:
+      containers:
+      - name: &ingestion-container_name fabrikam-ingestion
+        image: {{ .Values.dockerregistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /api/probe
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 20
+        env:
+        - name: QUEUE_NAMESPACE
+          valueFrom:
+            secretKeyRef:
+              name: ingestion-secrets
+              key: queue_namespace
+        - name: QUEUE_NAME
+          valueFrom:
+            secretKeyRef:
+              name: ingestion-secrets
+              key: queue_name
+        - name: QUEUE_KEYNAME
+          valueFrom:
+            secretKeyRef:
+              name: ingestion-secrets
+              key: queue_keyname
+        - name: QUEUE_KEYVALUE
+          valueFrom:
+            secretKeyRef:
+              name: ingestion-secrets
+              key: queue_keyvalue
+        - name: APPINSIGHTS_INSTRUMENTATIONKEY
+          valueFrom:
+            secretKeyRef:
+              name: ingestion-secrets
+              key: appinsights-ikey
+        - name: CONTAINER_NAME
+          value: *ingestion-container_name
