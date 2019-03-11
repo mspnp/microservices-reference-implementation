@@ -266,15 +266,13 @@ Deploy the Package service
 ```bash
 # Create secret
 export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g')
-kubectl -n backend create \
-                   secret generic package-secrets \
-                   --from-literal=mongodb-pwd=$COSMOSDB_CONNECTION \
-                   --from-literal=appinsights-ikey=$AI_IKEY
 
 # Deploy service
 helm install $HELM_CHARTS/package/ \
      --set image.tag=0.1.0 \
      --set image.repository=package \
+     --set secrets.appinsights.ikey=$AI_IKEY \
+     --set secrets.mongo.pwd=$COSMOSDB_CONNECTION \
      --set dockerregistry=$ACR_SERVER \
      --namespace backend \
      --name package-v0.1.0
