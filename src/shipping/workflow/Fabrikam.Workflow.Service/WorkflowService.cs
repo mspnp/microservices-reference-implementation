@@ -10,7 +10,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.ServiceBus.Primitives;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -46,8 +45,16 @@ namespace Fabrikam.Workflow.Service
 
         private static IQueueClient CreateQueueClient(IOptions<WorkflowServiceOptions> options)
         {
-            TokenProvider tokenProvider = TokenProvider.CreateManagedServiceIdentityTokenProvider();
-            return new QueueClient(options.Value.QueueEndpoint, options.Value.QueueName, tokenProvider, receiveMode: ReceiveMode.PeekLock, transportType: TransportType.Amqp)
+            var connectionStringBuilder = new ServiceBusConnectionStringBuilder
+            {
+                Endpoint = options.Value.QueueEndpoint,
+                EntityPath = options.Value.QueueName,
+                SasKeyName = options.Value.QueueAccessPolicyName,
+                SasKey = options.Value.QueueAccessPolicyKey,
+                TransportType = TransportType.Amqp
+            };
+
+            return new QueueClient(connectionStringBuilder)
             {
                 PrefetchCount = options.Value.PrefetchCount
             };

@@ -80,10 +80,13 @@ until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do ech
 until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 
 # Deploy all other resources
+# The version of kubernetes must be supported in the target region
+export KUBERNETES_VERSION='1.12.6'
 az group deployment create -g $RESOURCE_GROUP --name azuredeploy --template-file azuredeploy.json \
 --parameters servicePrincipalClientId=${SP_APP_ID} \
             servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
             servicePrincipalId=${SP_OBJECT_ID} \
+            kubernetesVersion=${KUBERNETES_VERSION} \
             sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
             deliveryIdName=${DELIVERY_ID_NAME} \
             deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \

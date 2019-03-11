@@ -110,18 +110,8 @@
         },
         "kubernetesVersion": {
             "type": "string",
-            "defaultValue": "1.12.4",
-            "allowedValues": [
-                "1.9.10",
-                "1.9.11",
-                "1.10.9",
-                "1.10.12",
-                "1.11.5",
-                "1.11.6",
-                "1.12.4"
-            ],
             "metadata": {
-                "description": "The version of Kubernetes."
+                "description": "The version of Kubernetes. It must be supported in the target location."
             }
         },
         "deliveryRedisStorageType": {
@@ -200,10 +190,9 @@
         "ingestionServiceAccessKey": "IngestionServiceAccessKey",
         "droneSchedulerKeyVaultName": "[concat(resourceGroup().name, '-ds-kv')]",
         "workflowKeyVaultName": "[concat(resourceGroup().name, '-wf-kv')]",
+        "workflowServiceAccessKey": "WorkflowServiceAccessKey",
         "readerRoleObjectId": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
         "readerRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('readerRoleObjectId'))]",
-        "contributorRoleObjectId": "b24988ac-6180-42a0-ab88-20f7382dd24c",
-        "contributorRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('contributorRoleObjectId'))]",
         "managedIdentityOperatorRoleObjectId": "f1a07417-d97a-45cb-824c-7a7467783830",
         "managedIdentityOperatorRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('managedIdentityOperatorRoleObjectId'))]"
     },
@@ -379,6 +368,19 @@
                     "properties": {
                         "rights": [
                             "Send"
+                        ]
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.ServiceBus/namespaces', variables('ingestionSBNamespace'))]"
+                    ]
+                },
+                {
+                    "name": "[variables('workflowServiceAccessKey')]",
+                    "type": "AuthorizationRules",
+                    "apiVersion": "2017-04-01",
+                    "properties": {
+                        "rights": [
+                            "Listen"
                         ]
                     },
                     "dependsOn": [
@@ -576,6 +578,29 @@
                 },
                 {
                     "type": "secrets",
+                    "name": "QueueAccessPolicyName",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "[variables('workflowServiceAccessKey')]"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('workflowKeyVaultName'))]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "QueueAccessPolicyKey",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('ingestionSBNamespace'), variables('workflowServiceAccessKey')), '2017-04-01').primaryKey]"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('workflowKeyVaultName'))]",
+                        "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('ingestionSBNamespace'), variables('workflowServiceAccessKey'))]"
+                    ]
+                },
+                {
+                    "type": "secrets",
                     "name": "ApplicationInsights-InstrumentationKey",
                     "apiVersion": "2015-06-01",
                     "properties": {
@@ -612,19 +637,6 @@
             },
             "dependsOn": [
                 "[resourceId('Microsoft.KeyVault/vaults', variables('droneSchedulerKeyVaultName'))]"
-            ]
-        },
-        {
-            "type": "Microsoft.ServiceBus/namespaces/providers/roleAssignments",
-            "name": "[concat(variables('ingestionSBNamespace'), '/Microsoft.Authorization/', guid('workflow-sb', resourceGroup().id))]",
-            "apiVersion": "2017-05-01",
-            "properties": {
-                "roleDefinitionId": "[variables('contributorRoleId')]",
-                "principalId": "[parameters('workflowPrincipalId')]",
-                "scope": "[resourceId('Microsoft.ServiceBus/namespaces', variables('ingestionSBNamespace'))]"
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.ServiceBus/namespaces', variables('ingestionSBNamespace'))]"
             ]
         },
         {

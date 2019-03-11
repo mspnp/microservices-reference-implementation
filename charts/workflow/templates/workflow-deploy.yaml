@@ -79,8 +79,8 @@ spec:
           options:
             usepodidentity: "true"
             keyvaultname: {{ .Values.keyvault.name }}
-            keyvaultobjectnames: QueueName;QueueEndpoint;ApplicationInsights-InstrumentationKey
-            keyvaultobjecttypes: secret;secret;secret
+            keyvaultobjectnames: QueueName;QueueEndpoint;QueueAccessPolicyName;QueueAccessPolicyKey;ApplicationInsights-InstrumentationKey
+            keyvaultobjecttypes: secret;secret;secret;secret;secret
             keyvaultobjectversions: ""
             resourcegroup: {{ .Values.keyvault.resourcegroup }}
             subscriptionid: {{ .Values.keyvault.subscriptionid }}

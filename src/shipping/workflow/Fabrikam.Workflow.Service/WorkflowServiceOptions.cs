@@ -17,6 +17,10 @@ namespace Fabrikam.Workflow.Service
 
         public string QueueName { get; set; }
 
+        public string QueueAccessPolicyName { get; set; }
+
+        public string QueueAccessPolicyKey { get; set; }
+
         public int MaxConcurrency { get; internal set; }
 
         public int PrefetchCount { get; internal set; }

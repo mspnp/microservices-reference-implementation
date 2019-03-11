@@ -300,9 +300,15 @@ az servicebus queue create --name $INGESTION_QUEUE_NAME \
                            --namespace-name $INGESTION_QUEUE_NAMESPACE \
                            --resource-group $RESOURCE_GROUP
 
+az servicebus namespace authorization-rule create --namespace-name $INGESTION_QUEUE_NAMESPACE \
+                                                --name WorkflowServiceAccessKey \
+                                                --resource-group $RESOURCE_GROUP \
+                                                --rights Listen
+
 export INGESTION_QUEUE_ID=$(az servicebus queue show --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_QUEUE_NAME --query "id" --output tsv)
 export INGESTION_QUEUE_NAMESPACE_ID=$(az servicebus namespace show --resource-group $RESOURCE_GROUP --name $INGESTION_QUEUE_NAMESPACE --query "id" --output tsv)
 export INGESTION_QUEUE_NAMESPACE_ENDPOINT=$(az servicebus namespace show --resource-group $RESOURCE_GROUP --name $INGESTION_QUEUE_NAMESPACE --query "serviceBusEndpoint" --output tsv)
+export WORKFLOW_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name WorkflowServiceAccessKey --query primaryKey -o tsv)
 ```
 
 Build the workflow service
@@ -326,6 +332,8 @@ export WORKFLOW_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-workflow-kv"
 az keyvault create --name $WORKFLOW_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
 az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name QueueName --value ${INGESTION_QUEUE_NAME}
 az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name QueueEndpoint --value ${INGESTION_QUEUE_NAMESPACE_ENDPOINT}
+az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name QueueAccessPolicyName --value WorkflowServiceAccessKey
+az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name QueueAccessPolicyKey --value ${WORKFLOW_ACCESS_KEY_VALUE}
 az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name ApplicationInsights-InstrumentationKey --value ${AI_IKEY}
 
 export WORKFLOW_KEYVAULT_ID=$(az keyvault show --resource-group $RESOURCE_GROUP --name $WORKFLOW_KEYVAULT_NAME --query "id" --output tsv)
@@ -348,9 +356,6 @@ export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az identity show --resource-group $RESOURC
 # Grant the identity access to the KeyVault
 az role assignment create --role Reader --assignee $WORKFLOW_PRINCIPAL_ID --scope $WORKFLOW_KEYVAULT_ID
 az keyvault set-policy --name $WORKFLOW_KEYVAULT_NAME --secret-permissions get list --spn $WORKFLOW_PRINCIPAL_CLIENT_ID
-
-# Grant the identity access to the ingestion queue
-az role assignment create --role Contributor --assignee $WORKFLOW_PRINCIPAL_ID --scope $INGESTION_QUEUE_NAMESPACE_ID
 
 # Allow the cluster to manage the identity to assign to pods
 az role assignment create --role "Managed Identity Operator" --assignee $CLUSTER_SERVICE_PRINCIPAL --scope $WORKFLOW_PRINCIPAL_RESOURCE_ID
