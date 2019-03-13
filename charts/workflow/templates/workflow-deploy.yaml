@@ -50,6 +50,8 @@ spec:
           mountPath: /kvmnt
           readOnly: true
         env:
+        - name: CONFIGURATION_FOLDER
+          value: /kvmnt
         - name: SERVICE_URI_DELIVERY
           value: {{ .Values.serviceuri.delivery }}
         - name: SERVICE_URI_DRONE
