@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ApplicationInsightsAgent>
+    <Instrumentation>
+        <!-- Collect remote dependency data -->
+        <BuiltIn enabled="true">
+            <HTTP enabled="true" W3C="false" enableW3CBackCompat="false"/>
+            <!-- Disable Redis or alter threshold call duration above which arguments are sent.
+                Defaults: enabled, 10000 ms -->
+            <!-- <Jedis enabled="true" thresholdInMS="10000"/> -->
+
+            <!-- Set SQL query duration above which query plan is reported (MySQL, PostgreSQL). Default is 10000 ms. -->
+            <!-- <MaxStatementQueryLimitInMS>10000</MaxStatementQueryLimitInMS> -->
+        </BuiltIn>
+    </Instrumentation>
+</ApplicationInsightsAgent>

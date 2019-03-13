@@ -10,8 +10,10 @@ import java.util.concurrent.CompletableFuture;
 
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.logging.log4j.CloseableThreadContext;
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -30,12 +32,10 @@ import com.microsoft.azure.servicebus.primitives.ServiceBusException;
 import java.io.IOException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import org.apache.logging.log4j.Logger;
-
 @RestController
 public class IngestionController {
 
-	private final static Logger log = LogManager.getLogger(IngestionController.class);
+	private final static Logger log = LoggerFactory.getLogger(IngestionController.class);
 	
 	@Autowired
 	private Ingestion ingestion;
@@ -81,8 +81,10 @@ public class IngestionController {
 			@RequestBody ExternalDelivery externalDelivery, @RequestHeader HttpHeaders httpHeaders) {
 		
 		String deliveryId = UUID.randomUUID().toString();
-		
-		try (final CloseableThreadContext.Instance ctc = CloseableThreadContext.put("DeliveryId", deliveryId)) {
+
+		try {
+			MDC.put("DeliveryId", deliveryId);
+
 			log.info("In schedule delivery action with delivery request {}", externalDelivery.toString());
 
 			// Exceptions handled by exception handler
@@ -100,6 +102,8 @@ public class IngestionController {
 			// Extract the headers as a map and pass on to eventhub message
 			// dumper
 			ingestion.scheduleDeliveryAsync(delivery, httpHeaders.toSingleValueMap());
+        } finally {
+            MDC.remove("DeliveryId");
 		}
 
 		return CompletableFuture.completedFuture(new ResponseEntity<>(externalDelivery, HttpStatus.ACCEPTED));
@@ -113,12 +117,15 @@ public class IngestionController {
 
 		// Exceptions handled by exception handler
 		// making standard in the controller
-		try (final CloseableThreadContext.Instance ctc = CloseableThreadContext.put("DeliveryId", deliveryId))
-		{
+		try {
+			MDC.put("DeliveryId", deliveryId);
+
 			log.info("In cancel delivery action with id: {}", deliveryId);
 			ingestion.cancelDeliveryAsync(deliveryId.toString(), httpHeaders.toSingleValueMap());
+		} finally {
+            MDC.remove("DeliveryId");
 		}
-		
+
 		return CompletableFuture.completedFuture(new ResponseEntity<>(deliveryId, HttpStatus.NO_CONTENT));
 	}
 
@@ -126,8 +133,8 @@ public class IngestionController {
 	@ResponseBody
 	public CompletableFuture<ResponseEntity<String>> rescheduleDeliveryAsync(HttpServletResponse response,
 			@RequestBody ExternalRescheduledDelivery externalRescheduledDelivery, @PathVariable("id") String deliveryId, @RequestHeader HttpHeaders httpHeaders) {
-
-		try (final CloseableThreadContext.Instance ctc = CloseableThreadContext.put("DeliveryId", deliveryId)) {
+		try {
+			MDC.put("DeliveryId", deliveryId);
 
 			log.info("In reschedule delivery action with delivery request: {}", externalRescheduledDelivery.toString());
 
@@ -141,6 +148,8 @@ public class IngestionController {
 					externalRescheduledDelivery.getDeadline(), externalRescheduledDelivery.getPickupTime());
 
 			ingestion.rescheduleDeliveryAsync(rescheduledDelivery, httpHeaders.toSingleValueMap());
+        } finally {
+            MDC.remove("DeliveryId");
 		}
 
 		return CompletableFuture.completedFuture(new ResponseEntity<>(deliveryId, HttpStatus.OK));

@@ -79,5 +79,7 @@ spec:
             secretKeyRef:
               name: ingestion-secrets
               key: appinsights-ikey
+        - name: APPINSIGHTS_LOGGERLEVEL
+          value: {{ default "error" .Values.appinsights.loggerlevel }}
         - name: CONTAINER_NAME
           value: *ingestion-container_name
