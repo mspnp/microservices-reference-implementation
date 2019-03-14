@@ -6,6 +6,7 @@
 - [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
 - [Helm 2.12.3 or later](https://docs.helm.sh/using_helm/#installing-helm)
+- [JQ](https://stedolan.github.io/jq/download/)
 
 > Note: in linux systems, it is possible to run the docker command without prefacing
 >       with sudo. For more information, please refer to [the Post-installation steps
@@ -19,18 +20,22 @@ git clone https://github.com/mspnp/microservices-reference-implementation.git
 
 The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
 
-## Create the Kubernetes cluster
+## Generate a SSH rsa public/private key pair
+
+the SSH rsa key pair can be generated using ssh-keygen, among other tools, on Linux, Mac, or Windows. If you already have an ~/.ssh/id_rsa.pub file, you could provide the same later on. If you need to create an SSH key pair, see [How to create and use an SSH key pair](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys).
+> Note: the SSH rsa public key will be requested when deploying your Kubernetes cluster in Azure.
+
+## Azure Resources Provisioning
 
 Set environment variables.
 
 ```bash
+export SSH_PUBLIC_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PUBLIC_KEY_FILE_HERE]
+export SSH_PRIVATE_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PRIVAYE_KEY_FILE_HERE]
+
 export LOCATION=[YOUR_LOCATION_HERE]
 
-export UNIQUE_APP_NAME_PREFIX=[YOUR_UNIQUE_APPLICATION_NAME_HERE]
-
-export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
-export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster" && \
-export AI_NAME="${UNIQUE_APP_NAME_PREFIX}-appinsights"
+export RESOURCE_GROUP=[YOUR_RESOURCE_GROUP_HERE]
 
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
@@ -40,26 +45,77 @@ export K8S=$PROJECT_ROOT/k8s
 export HELM_CHARTS=$PROJECT_ROOT/charts
 ```
 
-Provision a Kubernetes cluster in AKS
+Infrastructure Prerequisites
 
 ```bash
 # Log in to Azure
 az login
 
-# Create a resource group for AKS
-az group create --name $RESOURCE_GROUP --location $LOCATION
+# Create a resource group and service principal for AKS
+az group create --name $RESOURCE_GROUP --location $LOCATION && \
+export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor") && \
+export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
+export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
+export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
+```
 
-# Create the AKS cluster
-az aks create --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --node-count 4 --enable-addons monitoring --generate-ssh-keys
+Deployment
 
-# Install kubectl
+> Note: this deployment might take up to 20 minutes
+
+```bash
+# Deploy the managed identities
+# These are deployed first in a separate template to avoid propagation delays with AAD
+az group deployment create -g $RESOURCE_GROUP --name azuredeploy-identities --template-file azuredeploy-identities.json
+export DELIVERY_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryIdName.value -o tsv)
+export DELIVERY_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalId.value -o tsv)
+export DRONESCHEDULER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerIdName.value -o tsv)
+export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerPrincipalId.value -o tsv)
+export WORKFLOW_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowIdName.value -o tsv)
+export WORKFLOW_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalId.value -o tsv)
+
+# Wait for AAD propagation
+until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+
+# Deploy all other resources
+# The version of kubernetes must be supported in the target region
+export KUBERNETES_VERSION='1.12.6'
+az group deployment create -g $RESOURCE_GROUP --name azuredeploy --template-file azuredeploy.json \
+--parameters servicePrincipalClientId=${SP_APP_ID} \
+            servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
+            servicePrincipalId=${SP_OBJECT_ID} \
+            kubernetesVersion=${KUBERNETES_VERSION} \
+            sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
+            deliveryIdName=${DELIVERY_ID_NAME} \
+            deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
+            droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
+            droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
+            workflowIdName=${WORKFLOW_ID_NAME} \
+            workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID}
+```
+
+Get outputs from Azure Deploy
+```bash
+# Shared
+export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acrName.value -o tsv) && \
+export ACR_SERVER=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acrLoginServer.value -o tsv) && \
+export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.aksClusterName.value -o tsv)
+```
+
+Enable Azure Monitoring for the AKS cluster
+```bash
+az aks enable-addons -a monitoring --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
+```
+
+Download kubectl and create a k8s namespace
+```bash
+#  Install kubectl
 sudo az aks install-cli
 
 # Get the Kubernetes cluster credentials
 az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
-
-# Get the cluster's principal
-export CLUSTER_SERVICE_PRINCIPAL=$(az aks show --name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --query servicePrincipalProfile.clientId --output tsv)
 
 # Create namespaces
 kubectl create namespace backend && \
@@ -73,45 +129,11 @@ kubectl apply -f $K8S/tiller-rbac.yaml
 helm init --service-account tiller
 ```
 
-Create an Azure Container Registry instance.
-
-> Note: Azure Container Registory is not required. If you prefer, you can store the Docker images for this solution in another container registry.
+Integrate Application Insights instance
 
 ```bash
-export ACR_NAME=[YOUR_CONTAINER_REGISTRY_NAME_HERE]
-
-# Create the ACR instance
-az acr create --name $ACR_NAME --resource-group $RESOURCE_GROUP --sku Basic
-
-# Log in to ACR
-az acr login --name $ACR_NAME
-
-# Get the ACR login server name
-export ACR_SERVER=$(az acr show -g $RESOURCE_GROUP -n $ACR_NAME --query "loginServer" -o tsv)
-```
-
-Grant the cluster access to the registry.
-
-```bash
-# Acquire the necessary IDs
-export ACR_ID=$(az acr show --name $ACR_NAME --resource-group $RESOURCE_GROUP --query "id" --output tsv)
-
-# Grant the cluster read access to the registry
-az role assignment create --assignee $CLUSTER_SERVICE_PRINCIPAL --role Reader --scope $ACR_ID
-```
-
-Create an Application Insights instance
-
-```bash
-# Create AppInsights instance
-az resource create \
-   --resource-group $RESOURCE_GROUP \
-   --resource-type "Microsoft.Insights/components" \
-   --name $AI_NAME \
-   --location $LOCATION \
-   --properties '{"Application_Type":"other"}'
-
 # Acquire Instrumentation Key
+export AI_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.appInsightsName.value -o tsv)
 export AI_IKEY=$(az resource show \
                     -g $RESOURCE_GROUP \
                     -n $AI_NAME \
@@ -127,6 +149,8 @@ kubectl apply -f $K8S/k8s-rbac-ai.yaml
 
 Complete instructions can be found at https://github.com/Azure/kubernetes-keyvault-flexvol
 
+Note: the tested nmi version was 1.4. It enables namespaced pod identity.
+
 ```bash
 # setup AAD pod identity
 kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/deployment-rbac.yaml
@@ -136,28 +160,13 @@ kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-fl
 
 ## Deploy the Delivery service
 
-Provision Azure resources
+Extract resource details from deployment
 
 ```bash
-export REDIS_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-redis" && \
-export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-cosmosdb" && \
+export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryCosmosDbName.value -o tsv) && \
 export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
-export COLLECTION_NAME="${DATABASE_NAME}-col"
-
-# Create Azure Redis Cache
-az redis create --location $LOCATION \
-            --name $REDIS_NAME \
-            --resource-group $RESOURCE_GROUP \
-            --sku Premium \
-            --vm-size P4
-
-# Create Cosmos DB account with DocumentDB API
-az cosmosdb create \
-    --name $COSMOSDB_NAME \
-    --kind GlobalDocumentDB \
-    --resource-group $RESOURCE_GROUP \
-    --max-interval 10 \
-    --max-staleness-prefix 200
+export COLLECTION_NAME="${DATABASE_NAME}-col" && \
+export DELIVERY_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryKeyVaultUri.value -o tsv)
 ```
 
 Build the Delivery service
@@ -177,51 +186,13 @@ az acr login --name $ACR_NAME
 docker push $ACR_SERVER/delivery:0.1.0
 ```
 
-Create KeyVault and secrets
-
-```bash
-# Create the vault
-export DELIVERY_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-kv"
-az keyvault create --name $DELIVERY_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
-
-export DELIVERY_KEYVAULT_ID=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DELIVERY_KEYVAULT_NAME --query "id" --output tsv)
-export DELIVERY_KEYVAULT_URI=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DELIVERY_KEYVAULT_NAME --query "properties.vaultUri" --output tsv)
-
-# Retrieve resource details
-export REDIS_ENDPOINT=$(az redis show --name $REDIS_NAME --resource-group $RESOURCE_GROUP --query hostName -o tsv)
-export REDIS_KEY=$(az redis list-keys --name $REDIS_NAME --resource-group $RESOURCE_GROUP --query primaryKey -o tsv)
-export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query primaryMasterKey -o tsv)
-export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint -o tsv)
-
-# Create secrets
-az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name CosmosDB-Key --value ${COSMOSDB_KEY} # (consider using encoding base64 to keep the actual values)
-az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name CosmosDB-Endpoint --value ${COSMOSDB_ENDPOINT}
-az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name Redis-Endpoint --value ${REDIS_ENDPOINT}
-az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name Redis-AccessKey --value ${REDIS_KEY}
-az keyvault secret set --vault-name $DELIVERY_KEYVAULT_NAME --name ApplicationInsights--InstrumentationKey --value ${AI_IKEY}
-```
-
-Create and set up pod identity
-
-```bash
-# Create the identity and extract properties
-export DELIVERY_PRINCIPAL_NAME=delivery
-az identity create --resource-group $RESOURCE_GROUP --name $DELIVERY_PRINCIPAL_NAME
-export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $DELIVERY_PRINCIPAL_NAME --query "id" --output tsv)
-export DELIVERY_PRINCIPAL_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $DELIVERY_PRINCIPAL_NAME --query "principalId" --output tsv)
-export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $DELIVERY_PRINCIPAL_NAME --query "clientId" --output tsv)
-
-# Grant the identity access to the KeyVault
-az role assignment create --role Reader --assignee $DELIVERY_PRINCIPAL_ID --scope $DELIVERY_KEYVAULT_ID
-az keyvault set-policy --name $DELIVERY_KEYVAULT_NAME --secret-permissions get list --spn $DELIVERY_PRINCIPAL_CLIENT_ID
-
-# Allow the cluster to manage the identity to assign to pods
-az role assignment create --role "Managed Identity Operator" --assignee $CLUSTER_SERVICE_PRINCIPAL --scope $DELIVERY_PRINCIPAL_RESOURCE_ID
-```
-
 Deploy the Delivery service:
 
 ```bash
+# Extract pod identity outputs from deployment
+export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
+export DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
+
 # Deploy the service
 helm install $HELM_CHARTS/delivery/ \
      --set image.tag=0.1.0 \
@@ -241,11 +212,10 @@ helm status delivery-v0.1.0
 
 ## Deploy the Package service
 
-Provision Azure resources
+Extract resource details from deployment
 
 ```bash
-export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-package-service-cosmosdb"
-az cosmosdb create --name $COSMOSDB_NAME --kind MongoDB --resource-group $RESOURCE_GROUP
+export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.packageMongoDbName.value -o tsv)
 ```
 
 Build the Package service
@@ -265,6 +235,7 @@ Deploy the Package service
 
 ```bash
 # Create secret
+# Note: Connection strings cannot be exported as outputs in ARM deployments
 export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g')
 
 # Deploy service
@@ -283,30 +254,10 @@ helm status package-v0.1.0
 
 ## Deploy the Workflow service
 
-Provision Azure resources
+Extract resource details from deployment
 
 ```bash
-export INGESTION_QUEUE_NAMESPACE="${UNIQUE_APP_NAME_PREFIX}-ingestion-ns"
-export INGESTION_QUEUE_NAME="${UNIQUE_APP_NAME_PREFIX}-ingestion"
-
-az servicebus namespace create --location $LOCATION \
-            --name $INGESTION_QUEUE_NAMESPACE \
-            --resource-group $RESOURCE_GROUP \
-            --sku Standard
-
-az servicebus queue create --name $INGESTION_QUEUE_NAME \
-                           --namespace-name $INGESTION_QUEUE_NAMESPACE \
-                           --resource-group $RESOURCE_GROUP
-
-az servicebus namespace authorization-rule create --namespace-name $INGESTION_QUEUE_NAMESPACE \
-                                                --name WorkflowServiceAccessKey \
-                                                --resource-group $RESOURCE_GROUP \
-                                                --rights Listen
-
-export INGESTION_QUEUE_ID=$(az servicebus queue show --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_QUEUE_NAME --query "id" --output tsv)
-export INGESTION_QUEUE_NAMESPACE_ID=$(az servicebus namespace show --resource-group $RESOURCE_GROUP --name $INGESTION_QUEUE_NAMESPACE --query "id" --output tsv)
-export INGESTION_QUEUE_NAMESPACE_ENDPOINT=$(az servicebus namespace show --resource-group $RESOURCE_GROUP --name $INGESTION_QUEUE_NAMESPACE --query "serviceBusEndpoint" --output tsv)
-export WORKFLOW_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name WorkflowServiceAccessKey --query primaryKey -o tsv)
+export WORKFLOW_KEYVAULT_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.workflowKeyVaultName.value -o tsv)
 ```
 
 Build the workflow service
@@ -322,41 +273,12 @@ az acr login --name $ACR_NAME
 docker push $ACR_SERVER/workflow:0.1.0
 ```
 
-
-Create KeyVault and secrets
-
-```bash
-export WORKFLOW_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-workflow-kv"
-az keyvault create --name $WORKFLOW_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
-az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name QueueName --value ${INGESTION_QUEUE_NAME}
-az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name QueueEndpoint --value ${INGESTION_QUEUE_NAMESPACE_ENDPOINT}
-az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name QueueAccessPolicyName --value WorkflowServiceAccessKey
-az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name QueueAccessPolicyKey --value ${WORKFLOW_ACCESS_KEY_VALUE}
-az keyvault secret set --vault-name $WORKFLOW_KEYVAULT_NAME --name ApplicationInsights-InstrumentationKey --value ${AI_IKEY}
-
-export WORKFLOW_KEYVAULT_ID=$(az keyvault show --resource-group $RESOURCE_GROUP --name $WORKFLOW_KEYVAULT_NAME --query "id" --output tsv)
-export WORKFLOW_KEYVAULT_URI=$(az keyvault show --resource-group $RESOURCE_GROUP --name $WORKFLOW_KEYVAULT_NAME --query "properties.vaultUri" --output tsv)
-```
-
 Create and set up pod identity
 
-
-> Note: after creating the identity, please wait for some time before assigning Reader role to the Workflow Principal Id. Otherwise it's possible to experience the following error: ```No matches in graph database for 'your-principal-id'```
-
 ```bash
-# Create the identity and extract properties
-export WORKFLOW_PRINCIPAL_NAME="workflow"
-az identity create --resource-group $RESOURCE_GROUP --name $WORKFLOW_PRINCIPAL_NAME
-export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $WORKFLOW_PRINCIPAL_NAME --query "id" --output tsv)
-export WORKFLOW_PRINCIPAL_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $WORKFLOW_PRINCIPAL_NAME --query "principalId" --output tsv)
-export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $WORKFLOW_PRINCIPAL_NAME --query "clientId" --output tsv)
-
-# Grant the identity access to the KeyVault
-az role assignment create --role Reader --assignee $WORKFLOW_PRINCIPAL_ID --scope $WORKFLOW_KEYVAULT_ID
-az keyvault set-policy --name $WORKFLOW_KEYVAULT_NAME --secret-permissions get list --spn $WORKFLOW_PRINCIPAL_CLIENT_ID
-
-# Allow the cluster to manage the identity to assign to pods
-az role assignment create --role "Managed Identity Operator" --assignee $CLUSTER_SERVICE_PRINCIPAL --scope $WORKFLOW_PRINCIPAL_RESOURCE_ID
+# Extract outputs from deployment
+export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalResourceId.value -o tsv) && \
+export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalClientId.value -o tsv)
 ```
 
 Deploy the Workflow service:
@@ -382,17 +304,13 @@ helm status workflow-v0.1.0
 
 ## Deploy the Ingestion service
 
-Provision Azure resources
+Extract resource details from deployment
 
 ```bash
-# Create authorization rule to the ingestion queue
-az servicebus namespace authorization-rule create --namespace-name $INGESTION_QUEUE_NAMESPACE \
-                                                --name IngestionServiceAccessKey \
-                                                --resource-group $RESOURCE_GROUP \
-                                                --rights Send
-
-# Get access key
-export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name IngestionServiceAccessKey --query primaryKey -o tsv)
+export INGESTION_QUEUE_NAMESPACE=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionQueueNamespace.value -o tsv) && \
+export INGESTION_QUEUE_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionQueueName.value -o tsv)
+export INGESTION_ACCESS_KEY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionServiceAccessKeyName.value -o tsv)
+export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_ACCESS_KEY_NAME --query primaryKey -o tsv)
 ```
 
 Build the Ingestion service
@@ -417,7 +335,7 @@ helm install stable/nginx-ingress --name nginx-ingress --namespace ingress-contr
 # Obtain the load balancer ip address and assign a domain name
 until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-controller -n ingress-controllers -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
 export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv)
-export EXTERNAL_INGEST_DNS_NAME="${UNIQUE_APP_NAME_PREFIX}-ingest"
+export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest"
 export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
 INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
 
@@ -453,39 +371,24 @@ helm status ingestion-v0.1.0
 
 ## Deploy DroneScheduler service
 
+Extract resource details from deployment
+
+```bash
+export DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
+```
+
 Build the dronescheduler services
 
 ```bash
 export DRONE_PATH=$PROJECT_ROOT/src/shipping/dronescheduler
 ```
 
-Create KeyVault and secrets
-
-```bash
-export DRONESCHEDULER_KEYVAULT_NAME="${UNIQUE_APP_NAME_PREFIX}-drone-kv"
-az keyvault create --name $DRONESCHEDULER_KEYVAULT_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
-az keyvault secret set --vault-name $DRONESCHEDULER_KEYVAULT_NAME --name ApplicationInsights--InstrumentationKey --value ${AI_IKEY}
-
-export DRONESCHEDULER_KEYVAULT_ID=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DRONESCHEDULER_KEYVAULT_NAME --query "id" --output tsv)
-export DRONESCHEDULER_KEYVAULT_URI=$(az keyvault show --resource-group $RESOURCE_GROUP --name $DRONESCHEDULER_KEYVAULT_NAME --query "properties.vaultUri" --output tsv)
-```
-
 Create and set up pod identity
 
 ```bash
-# Create the identity and extract properties
-export DRONESCHEDULER_PRINCIPAL_NAME=dronescheduler
-az identity create --resource-group $RESOURCE_GROUP --name $DRONESCHEDULER_PRINCIPAL_NAME
-export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $DRONESCHEDULER_PRINCIPAL_NAME --query "id" --output tsv)
-export DRONESCHEDULER_PRINCIPAL_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $DRONESCHEDULER_PRINCIPAL_NAME --query "principalId" --output tsv)
-export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az identity show --resource-group $RESOURCE_GROUP --name $DRONESCHEDULER_PRINCIPAL_NAME --query "clientId" --output tsv)
-
-# Grant the identity access to the KeyVault
-az role assignment create --role Reader --assignee $DRONESCHEDULER_PRINCIPAL_ID --scope $DRONESCHEDULER_KEYVAULT_ID
-az keyvault set-policy --name $DRONESCHEDULER_KEYVAULT_NAME --secret-permissions get list --spn $DRONESCHEDULER_PRINCIPAL_CLIENT_ID
-
-# Allow the cluster to manage the identity to assign to pods
-az role assignment create --role "Managed Identity Operator" --assignee $CLUSTER_SERVICE_PRINCIPAL --scope $DRONESCHEDULER_PRINCIPAL_RESOURCE_ID
+# Extract outputs from deployment
+export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
+export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv)
 ```
 
 Build and publish the container image

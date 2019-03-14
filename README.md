@@ -31,7 +31,7 @@ The Drone Delivery application is a sample application that consists of several 
 
 ## Deployment
 
-To deploy the solution, follow the steps listed [here](./deployment.md) to get deep understanding on the infrastructure or [just use ARM templates](./deploymentARM.md).
+To deploy the solution, follow the steps listed [here](./deployment.md).
 
 
 
