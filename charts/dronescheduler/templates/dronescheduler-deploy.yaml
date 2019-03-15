@@ -48,6 +48,8 @@ spec:
         env:
         - name: KEY_VAULT_URI
           value: {{ .Values.keyvault.uri }}
+        - name: APPLICATIONINSIGHTSLOGGER__TELEMETRYLOGLEVEL
+          value: {{ default "Error" .Values.telemetry.level | quote }}
         - name: no_proxy
           value: 169.254.169.254
       ports:

@@ -11,3 +11,5 @@ image:
 keyvault:
   uri:
 reason: unknown
+telemetry:
+  level: "Error"
