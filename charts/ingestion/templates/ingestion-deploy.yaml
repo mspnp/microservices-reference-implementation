@@ -80,6 +80,6 @@ spec:
               name: ingestion-secrets
               key: appinsights-ikey
         - name: APPINSIGHTS_LOGGERLEVEL
-          value: {{ default "error" .Values.appinsights.loggerlevel }}
+          value: {{ default "error" .Values.telemetry.level | quote }}
         - name: CONTAINER_NAME
           value: *ingestion-container_name

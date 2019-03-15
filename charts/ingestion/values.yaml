@@ -6,3 +6,5 @@ image:
   tag:
   pullPolicy: IfNotPresent
 reason: unknown
+telemetry:
+  level: "error"
