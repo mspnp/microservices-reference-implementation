@@ -16,7 +16,6 @@ using Fabrikam.DroneDelivery.DeliveryService.Services;
 using Fabrikam.DroneDelivery.DeliveryService.Middlewares.Builder;
 using Serilog;
 using Serilog.Formatting.Compact;
-using Fabrikam.DroneDelivery.Common;
 
 namespace Fabrikam.DroneDelivery.DeliveryService
 {
@@ -32,7 +31,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService
 
             var buildConfig = builder.Build();
 
-            if(buildConfig["KEY_VAULT_URI"] is var keyVaultUri && !string.IsNullOrEmpty(keyVaultUri))
+            if (buildConfig["KEY_VAULT_URI"] is var keyVaultUri && !string.IsNullOrEmpty(keyVaultUri))
             {
                 builder.AddAzureKeyVault(keyVaultUri);
             }
@@ -50,9 +49,6 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             // Configure AppInsights
             services.AddApplicationInsightsKubernetesEnricher();
             services.AddApplicationInsightsTelemetry(Configuration);
-
-            services.AddLogging(loggingBuilder =>
-                loggingBuilder.AddSerilog(dispose: true));
 
             // Add framework services.
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);

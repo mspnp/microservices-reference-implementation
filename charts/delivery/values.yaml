@@ -13,4 +13,6 @@ cosmosdb:
   collectionid:
 keyvault:
   uri:
+telemetry:
+  level: "Error"
 reason: unknown
