@@ -72,6 +72,8 @@ spec:
           value: "{{ .Values.servicerequest.maxbulkheadsize }}"
         - name: SERVICEREQUEST__MAXBULKHEADQUEUESIZE
           value: "{{ .Values.servicerequest.maxbulkheadqueuesize }}"
+        - name: APPLICATIONINSIGHTSLOGGER__TELEMETRYLOGLEVEL
+          value: {{ default "Error" .Values.telemetry.level | quote }}
         - name: no_proxy
           value: 169.254.169.254
       volumes:

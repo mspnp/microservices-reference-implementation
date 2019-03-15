@@ -9,6 +9,7 @@ using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Formatting.Compact;
 
@@ -20,23 +21,10 @@ namespace Fabrikam.Workflow.Service
         {
             var host = CreateHostBuilder(args).Build();
 
-            TelemetryClient telemetryClient = null;
-            try
-            {
-                telemetryClient = host.Services.GetService<TelemetryClient>();
+            var logger = host.Services.GetRequiredService<ILogger<Program>>();
+            logger.LogInformation("Fabrikan Workflow Service is starting.");
 
-                telemetryClient.TrackTrace("Fabrikan Workflow Service is starting.");
-
-                await host.RunAsync();
-            }
-            finally
-            {
-                // before exit, flush the remaining data
-                telemetryClient?.Flush();
-
-                // flush is not blocking so wait a bit
-                Task.Delay(5000).Wait();
-            }
+            await host.RunAsync();
         }
 
         private static IHostBuilder CreateHostBuilder(string[] args)
@@ -57,6 +45,8 @@ namespace Fabrikam.Workflow.Service
                 })
                 .ConfigureLogging((context, builder) =>
                 {
+                    builder.AddApplicationInsights(context.Configuration);
+
                     var serilogBuilder = new LoggerConfiguration()
                         .ReadFrom.Configuration(context.Configuration)
                         .WriteTo.Console(new CompactJsonFormatter());

@@ -3,16 +3,23 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.AspNetCore.TelemetryInitializers;
+using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DependencyCollector;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.Extensibility.Implementation.ApplicationId;
 using Microsoft.ApplicationInsights.Extensibility.PerfCounterCollector.QuickPulse;
+using Microsoft.ApplicationInsights.WindowsServer.TelemetryChannel;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.ApplicationInsights;
+using Microsoft.Extensions.Options;
 
 namespace Fabrikam.Workflow.Service
 {
@@ -24,66 +31,21 @@ namespace Fabrikam.Workflow.Service
     /// </remarks>
     internal static class TracingExtensions
     {
-        private const string CustomKeyVaultAIppInsightsIKey = "ApplicationInsights-InstrumentationKey";
+        private const string AppInsightsSectionName = "ApplicationInsightsLogger";
 
         public static IServiceCollection AddApplicationInsightsTelemetry(
           this IServiceCollection services,
           IConfiguration configuration)
         {
-            services.AddSingleton(s =>
-            {
-                var telemetryConfig = TelemetryConfiguration.CreateDefault();
+            // add initializers
+            services.AddSingleton<
+                ITelemetryInitializer,
+                DomainNameRoleInstanceTelemetryInitializer>();
+            services.AddSingleton<
+                ITelemetryInitializer,
+                HttpDependenciesParsingTelemetryInitializer>();
 
-                var config = s.GetService<IConfiguration>();
-                var instrumentationKey = config[CustomKeyVaultAIppInsightsIKey];
-
-                if (!string.IsNullOrWhiteSpace(instrumentationKey))
-                {
-                    telemetryConfig.InstrumentationKey = instrumentationKey;
-                }
-
-                // use processors
-                telemetryConfig
-                    .DefaultTelemetrySink
-                    .TelemetryProcessorChainBuilder
-                    .Use((next) =>
-                {
-                    var processor = new QuickPulseTelemetryProcessor(next);
-
-                    var quickPulseModule = s.GetServices<ITelemetryModule>()
-                                        .OfType<QuickPulseTelemetryModule>()
-                                        .Single();
-                    quickPulseModule.RegisterTelemetryProcessor(processor);
-
-                    return processor;
-                });
-
-                telemetryConfig
-                    .DefaultTelemetrySink
-                    .TelemetryProcessorChainBuilder
-                    .Build();
-
-                // add initializers: https://github.com/Microsoft/ApplicationInsights-aspnetcore/pull/672
-                telemetryConfig.TelemetryInitializers.Add(
-                        new DomainNameRoleInstanceTelemetryInitializer());
-                telemetryConfig.TelemetryInitializers.Add(
-                    new HttpDependenciesParsingTelemetryInitializer());
-                telemetryConfig.AddApplicationInsightsKubernetesEnricher(
-                    applyOptions: null);
-
-                // initialize all modules
-                foreach (var module in s.GetServices<ITelemetryModule>())
-                {
-                    module.Initialize(telemetryConfig);
-                }
-
-                // other config: https://github.com/Microsoft/ApplicationInsights-aspnetcore/blob/de1af6235a4cc365d64cbc78db9bdd2d579a37ee/src/Microsoft.ApplicationInsights.AspNetCore/Implementation/TelemetryConfigurationOptionsSetup.cs#L129
-                telemetryConfig.ApplicationIdProvider =
-                    s.GetRequiredService<IApplicationIdProvider>();
-
-                return telemetryConfig;
-            });
-
+            // add modules
             services.AddSingleton<ITelemetryModule>(s =>
             {
                 var module = new DependencyTrackingTelemetryModule();
@@ -101,8 +63,6 @@ namespace Fabrikam.Workflow.Service
                 }
 
                 var includedActivities = module.IncludeDiagnosticSourceActivities;
-                // TODO: in workflow scenario EventHubs activities may not be required.
-                includedActivities.Add("Microsoft.Azure.EventHubs");
                 includedActivities.Add("Microsoft.Azure.ServiceBus");
 
                 return module;
@@ -112,13 +72,177 @@ namespace Fabrikam.Workflow.Service
                 ITelemetryModule,
                 QuickPulseTelemetryModule>();
 
+            // add others
             services.TryAddSingleton<
                 IApplicationIdProvider,
                 ApplicationInsightsApplicationIdProvider>();
 
+            services.TryAddSingleton<
+                ITelemetryChannel,
+                ServerTelemetryChannel>();
+
             services.TryAddSingleton<TelemetryClient>();
 
+            services.AddSingleton(provider =>
+                provider.GetService<IOptions<TelemetryConfiguration>>().Value);
+
+            services.AddOptions();
+            services.AddSingleton<IOptions<TelemetryConfiguration>, TelemetryConfigurationOptions>();
+            services.AddSingleton<IConfigureOptions<TelemetryConfiguration>, TelemetryConfigurationOptionsSetup>();
+
             return services;
+        }
+
+        public static IServiceCollection AddApplicationInsightsKubernetesEnricher (this IServiceCollection services)
+        {
+            services.Configure<TelemetryConfiguration>(
+                (config) =>
+                    config.AddApplicationInsightsKubernetesEnricher(
+                            applyOptions: null)
+            );
+
+            return services;
+        }
+
+        public static ILoggingBuilder AddApplicationInsights(
+            this ILoggingBuilder loggingBuilder,
+            IConfiguration configuration)
+        {
+            var aiOptions =
+                    configuration
+                        .GetSection(AppInsightsSectionName)
+                        ?.Get<ApplicationInsightsLoggerExtendedOptions>() ??
+                        new ApplicationInsightsLoggerExtendedOptions();
+
+            loggingBuilder.AddFilter
+                    <ApplicationInsightsLoggerProvider>(
+                        "",
+                        aiOptions.TelemetryLogLevel);
+
+            loggingBuilder.AddApplicationInsights(
+                o =>
+                {
+                    o.IncludeScopes =
+                        aiOptions.IncludeScopes;
+                    o.TrackExceptionsAsExceptionTelemetry =
+                        aiOptions.TrackExceptionsAsExceptionTelemetry;
+                });
+
+            return loggingBuilder;
+        }
+
+        private class ApplicationInsightsLoggerExtendedOptions
+            : ApplicationInsightsLoggerOptions
+        {
+            public ApplicationInsightsLoggerExtendedOptions()
+                : base()
+            {
+                this.TelemetryLogLevel = LogLevel.Warning;
+            }
+            public LogLevel TelemetryLogLevel
+            { get; set; }
+        }
+
+        private class TelemetryConfigurationOptionsSetup : IConfigureOptions<TelemetryConfiguration>
+        {
+            private const string CustomKeyVaultAppInsightsIKey = "ApplicationInsights-InstrumentationKey";
+            private const string AppInsightsDeveloperMode = "ApplicationInsights:DeveloperMode";
+
+            private readonly IConfiguration _configuration;
+            private readonly IServiceProvider _serviceProvider;
+            private readonly IEnumerable<ITelemetryInitializer> _initializers;
+            private readonly IEnumerable<ITelemetryModule> _modules;
+            private readonly ITelemetryChannel _telemetryChannel;
+
+            public TelemetryConfigurationOptionsSetup(
+                IServiceProvider serviceProvider,
+                IEnumerable<ITelemetryInitializer> initializers,
+                IEnumerable<ITelemetryModule> modules,
+                ITelemetryChannel telemetryChannel,
+                IConfiguration configuration)
+            {
+                this._serviceProvider = serviceProvider;
+                this._initializers = initializers;
+                this._modules = modules;
+                this._telemetryChannel = telemetryChannel;
+                this._configuration = configuration;
+            }
+
+            public void Configure(TelemetryConfiguration telemetryConfig)
+            {
+                // flex volume
+                var instrumentationKey = _configuration[CustomKeyVaultAppInsightsIKey];
+
+                if (!string.IsNullOrWhiteSpace(instrumentationKey))
+                {
+                    telemetryConfig.InstrumentationKey = instrumentationKey;
+                }
+
+                // Fallback to default channel (InMemoryChannel) created by base sdk if no channel is found in DI
+                telemetryConfig.TelemetryChannel =
+                    this._telemetryChannel
+                    ?? telemetryConfig.TelemetryChannel;
+
+                if(bool.TryParse(_configuration[AppInsightsDeveloperMode], out bool developerMode))
+                    this._telemetryChannel.DeveloperMode = developerMode;
+
+                (telemetryConfig.TelemetryChannel as ITelemetryModule)
+                    ?.Initialize(telemetryConfig);
+
+                // use processors
+                telemetryConfig
+                    .DefaultTelemetrySink
+                    .TelemetryProcessorChainBuilder
+                    .Use((next) =>
+                {
+                    var processor = new QuickPulseTelemetryProcessor(next);
+
+                    var quickPulseModule = _serviceProvider
+                                            .GetServices<ITelemetryModule>()
+                                            .OfType<QuickPulseTelemetryModule>()
+                                            .Single();
+                    quickPulseModule.RegisterTelemetryProcessor(processor);
+
+                    return processor;
+                });
+
+                telemetryConfig
+                    .DefaultTelemetrySink
+                    .TelemetryProcessorChainBuilder
+                    .Build();
+
+                // add initializers: https://github.com/Microsoft/ApplicationInsights-aspnetcore/pull/672
+                foreach (var initializers in _initializers)
+                {
+                    telemetryConfig.TelemetryInitializers.Add(initializers);
+                }
+
+                // initialize all modules
+                foreach (var module in _modules)
+                {
+                    module.Initialize(telemetryConfig);
+                }
+
+                // other config: https://github.com/Microsoft/ApplicationInsights-aspnetcore/blob/de1af6235a4cc365d64cbc78db9bdd2d579a37ee/src/Microsoft.ApplicationInsights.AspNetCore/Implementation/TelemetryConfigurationOptionsSetup.cs#L129
+                telemetryConfig.ApplicationIdProvider =
+                    _serviceProvider.GetRequiredService<IApplicationIdProvider>();
+            }
+        }
+
+        private class TelemetryConfigurationOptions : IOptions<TelemetryConfiguration>
+        {
+            public TelemetryConfigurationOptions(IEnumerable<IConfigureOptions<TelemetryConfiguration>> configureOptions)
+            {
+                this.Value = TelemetryConfiguration.CreateDefault();
+
+                var configureOptionsArray = configureOptions.ToArray();
+                foreach (var c in configureOptionsArray)
+                {
+                    c.Configure(this.Value);
+                }
+            }
+
+            public TelemetryConfiguration Value { get; }
         }
     }
 }
