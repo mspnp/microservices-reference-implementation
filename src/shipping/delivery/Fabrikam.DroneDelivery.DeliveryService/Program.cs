@@ -28,7 +28,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService
                 .UseStartup<Startup>()
                 .ConfigureLogging((hostingContext, loggingBuilder) =>
                 {
-                    loggingBuilder.AddApplicationInsights(hostingContext.Configuration);
+                    loggingBuilder.AddApplicationInsights();
                     loggingBuilder.AddSerilog(dispose: true);
                 })
                 .UseUrls("http://0.0.0.0:8080");

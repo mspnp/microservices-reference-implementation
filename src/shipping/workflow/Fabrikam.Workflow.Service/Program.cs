@@ -45,7 +45,8 @@ namespace Fabrikam.Workflow.Service
                 })
                 .ConfigureLogging((context, builder) =>
                 {
-                    builder.AddApplicationInsights(context.Configuration);
+                    builder.AddConfiguration(context.Configuration.GetSection("Logging"));
+                    builder.AddApplicationInsights();
 
                     var serilogBuilder = new LoggerConfiguration()
                         .ReadFrom.Configuration(context.Configuration)
