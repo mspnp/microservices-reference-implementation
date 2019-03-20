@@ -12,14 +12,16 @@ kind: Ingress
 metadata:
   name: ingestion-ingress
 spec:
+  {{- if .Values.ingress.tls }}
   tls:
   {{- range .Values.ingress.hosts }}
   {{- if .tls }}
   - hosts:
     - {{ .name }}
     secretName: {{ .tlsSecretName }}
-  {{ end }}
-  {{ end }}
+  {{- end }}
+  {{- end }}
+  {{- end }}
   rules:
   {{- range .Values.ingress.hosts }}
   - host: {{ .name }}
