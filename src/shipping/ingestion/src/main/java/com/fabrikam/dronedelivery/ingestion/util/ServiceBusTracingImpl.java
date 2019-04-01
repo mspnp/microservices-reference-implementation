@@ -36,7 +36,7 @@ public class ServiceBusTracingImpl implements ServiceBusTracing {
 
 	private final TelemetryClient telemetryClient;
 
-	@Autowired	
+	@Autowired
 	public ServiceBusTracingImpl(TelemetryClient telemetryClient)
 	{
 		this.telemetryClient = telemetryClient;
@@ -44,21 +44,24 @@ public class ServiceBusTracingImpl implements ServiceBusTracing {
 
 	@Override
 	public CompletableFuture<Void> trackAndCorrelateServiceBusDependency(
-		String endpoint, 
+		String endpoint,
 		String queueName,
 		IMessage message,
 		Function<IMessage, CompletableFuture<Void>> func) {
 
 		CompletableFuture<Void> result;
-		
+
 		String target = String.format(
-							Locale.US, 
-							TARGET_REMOTE_DEPENDENDENCY_FORMAT, 
+							Locale.US,
+							TARGET_REMOTE_DEPENDENDENCY_FORMAT,
 							endpoint,
 							queueName);
 
 		propagateCorrelationProperties(message);
-		
+
+		final RemoteDependencyTelemetry remoteDependency = createRemoteDependencyTelemetry(
+			target);
+
 		final long start = System.nanoTime();
 		result = func.apply(message);
 		result.whenComplete((r,t) -> {
@@ -68,19 +71,18 @@ public class ServiceBusTracingImpl implements ServiceBusTracing {
 			if (t == null) {
 				successful = true;
 			}
-			
-			telemetryClient.trackDependency(
-				createRemoteDependencyTelemetry(
-					target,
-					new Duration(intervalMs), 
-					successful));
+
+			remoteDependency.setDuration(new Duration(intervalMs));
+			remoteDependency.setSuccess(successful);
+
+			telemetryClient.trackDependency(remoteDependency);
 
 			if(successful == false){
 				RuntimeException runtimeEx = new RuntimeException(t);
-				telemetryClient.trackException(runtimeEx);	
+				telemetryClient.trackException(runtimeEx);
 			}
 		});
-			
+
 		return result;
 	}
 
@@ -89,11 +91,17 @@ public class ServiceBusTracingImpl implements ServiceBusTracing {
 							.getRequestTelemetryContext()
 							.getHttpRequestTelemetry()
 							.getId();
-		
+
 		// propagate Service Bus required properties
 		// https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-end-to-end-tracing
 		// https://docs.microsoft.com/en-us/azure/azure-monitor/app/correlation#telemetry-correlation-in-the-java-sdk
 		message.getProperties().put(DIAGNOSTIC_ID_PROPERTY_NAME, parentId);
+	}
+
+	private static RemoteDependencyTelemetry createRemoteDependencyTelemetry(
+		String target){
+
+		return createRemoteDependencyTelemetry(target, new Duration(0L), true);
 	}
 
 	private static RemoteDependencyTelemetry createRemoteDependencyTelemetry(
@@ -103,11 +111,11 @@ public class ServiceBusTracingImpl implements ServiceBusTracing {
 		String dependencyId = TelemetryCorrelationUtils
 								.generateChildDependencyId();
 
-		RemoteDependencyTelemetry dependencyTelemetry = 
+		RemoteDependencyTelemetry dependencyTelemetry =
 			new RemoteDependencyTelemetry(
-				SERVICE_BUS_REMOTE_DEPENDENDENCY_NAME, 
+				SERVICE_BUS_REMOTE_DEPENDENDENCY_NAME,
 				"",
-				duration, 
+				duration,
 				successful);
 
 		dependencyTelemetry.setId(dependencyId);
@@ -135,7 +143,7 @@ public class ServiceBusTracingImpl implements ServiceBusTracing {
 		if (rootEnd < 0) {
 		  rootEnd = parentId.length();
 		}
-	
+
 		int rootStart = parentId.charAt(0) == '|' ? 1 : 0;
 		return parentId.substring(rootStart, rootEnd);
 	  }
