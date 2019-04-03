@@ -10,6 +10,6 @@ namespace Fabrikam.Workflow.Service.Services
 {
     public interface IPackageServiceCaller
     {
-        Task<PackageGen> CreatePackageAsync(PackageInfo packageInfo);
+        Task<PackageGen> UpsertPackageAsync(PackageInfo packageInfo);
     }
 }

@@ -37,7 +37,7 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
 
             try
             {
-                var packageGen = await _packageServiceCaller.CreatePackageAsync(deliveryRequest.PackageInfo).ConfigureAwait(false);
+                var packageGen = await _packageServiceCaller.UpsertPackageAsync(deliveryRequest.PackageInfo).ConfigureAwait(false);
                 if (packageGen != null)
                 {
                     _logger.LogInformation("Generated package {packageId} for delivery {deliveryId}", packageGen.Id, deliveryRequest.DeliveryId);

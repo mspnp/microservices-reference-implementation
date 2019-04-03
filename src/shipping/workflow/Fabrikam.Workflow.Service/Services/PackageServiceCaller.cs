@@ -20,12 +20,38 @@ namespace Fabrikam.Workflow.Service.Services
             _httpClient = httpClient;
         }
 
-        public async Task<PackageGen> CreatePackageAsync(PackageInfo packageInfo)
+        public async Task<PackageGen> UpsertPackageAsync(PackageInfo packageInfo)
         {
             try
             {
                 var response = await _httpClient.PutAsJsonAsync($"{packageInfo.PackageId}", packageInfo);
                 if (response.StatusCode == HttpStatusCode.Created)
+                {
+                    return await response.Content.ReadAsAsync<PackageGen>();
+                }
+                else if (response.StatusCode == HttpStatusCode.NoContent)
+                {
+                    return  await this.GetPackageAsync(packageInfo.PackageId);
+                }
+
+                throw new BackendServiceCallFailedException(response.ReasonPhrase);
+            }
+            catch (BackendServiceCallFailedException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                throw new BackendServiceCallFailedException(e.Message, e);
+            }
+        }
+
+        private async Task<PackageGen> GetPackageAsync(string packageId)
+        {
+            try
+            {
+                var response = await _httpClient.GetAsync($"{packageId}");
+                if (response.StatusCode == HttpStatusCode.OK)
                 {
                     return await response.Content.ReadAsAsync<PackageGen>();
                 }

@@ -45,7 +45,7 @@ namespace Fabrikam.Workflow.Service.Tests
         public async Task WhenInvokingPackageServiceThrows_ProcessingFails()
         {
             _packageServiceCallerMock
-                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .Setup(c => c.UpsertPackageAsync(It.IsAny<PackageInfo>()))
                 .ThrowsAsync(new Exception()).Verifiable();
 
             var delivery =
@@ -66,7 +66,7 @@ namespace Fabrikam.Workflow.Service.Tests
         public async Task WhenInvokingPackageServiceFails_ProcessingFails()
         {
             _packageServiceCallerMock
-                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .Setup(c => c.UpsertPackageAsync(It.IsAny<PackageInfo>()))
                 .ReturnsAsync(default(PackageGen)).Verifiable();
 
             var delivery =
@@ -87,7 +87,7 @@ namespace Fabrikam.Workflow.Service.Tests
         public async Task WhenInvokingDroneSchedulerThrows_ProcessingFails()
         {
             _packageServiceCallerMock
-                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .Setup(c => c.UpsertPackageAsync(It.IsAny<PackageInfo>()))
                 .ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
             _droneSchedulerServiceCallerMock
                 .Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>()))
@@ -111,7 +111,7 @@ namespace Fabrikam.Workflow.Service.Tests
         public async Task WhenInvokingDroneSchedulerFails_ProcessingFails()
         {
             _packageServiceCallerMock
-                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .Setup(c => c.UpsertPackageAsync(It.IsAny<PackageInfo>()))
                 .ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
             _droneSchedulerServiceCallerMock
                 .Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>()))
@@ -135,7 +135,7 @@ namespace Fabrikam.Workflow.Service.Tests
         public async Task WhenInvokingDeliverySchedulerThrows_ProcessingFails()
         {
             _packageServiceCallerMock
-                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .Setup(c => c.UpsertPackageAsync(It.IsAny<PackageInfo>()))
                 .ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
             _droneSchedulerServiceCallerMock
                 .Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>()))
@@ -162,7 +162,7 @@ namespace Fabrikam.Workflow.Service.Tests
         public async Task WhenInvokingDeliverySchedulerFails_ProcessingFails()
         {
             _packageServiceCallerMock
-                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .Setup(c => c.UpsertPackageAsync(It.IsAny<PackageInfo>()))
                 .ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
             _droneSchedulerServiceCallerMock
                 .Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>()))
@@ -189,7 +189,7 @@ namespace Fabrikam.Workflow.Service.Tests
         public async Task WhenProcessingAValidDelivery_ProcessingSucceeds()
         {
             _packageServiceCallerMock
-                .Setup(c => c.CreatePackageAsync(It.IsAny<PackageInfo>()))
+                .Setup(c => c.UpsertPackageAsync(It.IsAny<PackageInfo>()))
                 .ReturnsAsync(new PackageGen { Id = "someid" }).Verifiable();
             _droneSchedulerServiceCallerMock
                 .Setup(c => c.GetDroneIdAsync(It.IsAny<Delivery>()))

@@ -104,8 +104,58 @@ namespace Fabrikam.Workflow.Service.Tests
             };
 
             var packageInfo = new PackageInfo { PackageId = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d };
-            await _caller.CreatePackageAsync(packageInfo);
+            await _caller.UpsertPackageAsync(packageInfo);
 
+            Assert.NotNull(actualPackageId);
+            Assert.Equal($"/api/packages/{packageInfo.PackageId}", actualPackageId);
+
+            Assert.NotNull(actualPackage);
+            Assert.Equal((int)packageInfo.Size, (int)actualPackage.Size);
+            Assert.Equal(packageInfo.Tag, actualPackage.Tag);
+            Assert.Equal(packageInfo.Weight, actualPackage.Weight);
+        }
+
+        [Fact]
+        public async Task WhenUpdatingPackage_ThenInvokesDroneSchedulerAPI()
+        {
+            // Arrange
+            string actualPackageId = null;
+            PackageGen actualPackage = null;
+            Stream body = null;
+            _handleHttpRequest = ctx =>
+            {
+                if (ctx.Request.Host.Host == PackageHost &&
+                    ctx.Request.Method.Equals("PUT"))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status204NoContent;
+                    body = ctx.Request.Body;
+                }
+                else if (ctx.Request.Host.Host == PackageHost &&
+                    ctx.Request.Method.Equals("GET"))
+                {
+                    actualPackageId = ctx.Request.Path;
+                    actualPackage =
+                        new JsonSerializer()
+                               .Deserialize<PackageGen>(
+                                       new JsonTextReader(
+                                           new StreamReader(
+                                               body,
+                                               Encoding.UTF8)));
+                }
+                else
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                }
+
+                return Task.CompletedTask;
+            };
+
+            var packageInfo = new PackageInfo { PackageId = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d };
+
+            // Act
+            await _caller.UpsertPackageAsync(packageInfo);
+
+            // Assert
             Assert.NotNull(actualPackageId);
             Assert.Equal($"/api/packages/{packageInfo.PackageId}", actualPackageId);
 
@@ -136,8 +186,48 @@ namespace Fabrikam.Workflow.Service.Tests
             };
 
             var packageInfo = new PackageInfo { PackageId = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d };
-            var actualPackage = await _caller.CreatePackageAsync(packageInfo);
+            var actualPackage = await _caller.UpsertPackageAsync(packageInfo);
 
+            Assert.NotNull(actualPackage);
+            Assert.Equal((int)packageInfo.Size, (int)actualPackage.Size);
+            Assert.Equal(packageInfo.Tag, actualPackage.Tag);
+            Assert.Equal(packageInfo.Weight, actualPackage.Weight);
+        }
+
+        [Fact]
+        public async Task WhenPackageAPIReturnsNoContent_ThenReturnsUpdatedPackage()
+        {
+            // Arrange
+            _handleHttpRequest = async ctx =>
+            {
+                if (ctx.Request.Host.Host == PackageHost &&
+                    ctx.Request.Method.Equals("PUT"))
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status204NoContent;
+                }
+                else if (ctx.Request.Host.Host == PackageHost &&
+                    ctx.Request.Method.Equals("GET"))
+                {
+                    await ctx.WriteResultAsync(
+                        new ObjectResult(
+                            new PackageGen { Id = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d })
+                        {
+                            StatusCode = StatusCodes.Status200OK
+                        });
+
+                }
+                else
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                }
+            };
+
+            var packageInfo = new PackageInfo { PackageId = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d };
+
+            // Act
+            var actualPackage = await _caller.UpsertPackageAsync(packageInfo);
+
+            // Assert
             Assert.NotNull(actualPackage);
             Assert.Equal((int)packageInfo.Size, (int)actualPackage.Size);
             Assert.Equal(packageInfo.Tag, actualPackage.Tag);
@@ -163,7 +253,7 @@ namespace Fabrikam.Workflow.Service.Tests
 
             var packageInfo = new PackageInfo { PackageId = "somePackageId", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d };
 
-            await Assert.ThrowsAsync<BackendServiceCallFailedException>(() => _caller.CreatePackageAsync(packageInfo));
+            await Assert.ThrowsAsync<BackendServiceCallFailedException>(() => _caller.UpsertPackageAsync(packageInfo));
         }
 
         [Fact]
@@ -189,7 +279,7 @@ namespace Fabrikam.Workflow.Service.Tests
             };
 
             var result =
-                await _caller.CreatePackageAsync(new PackageInfo { PackageId = "package", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d });
+                await _caller.UpsertPackageAsync(new PackageInfo { PackageId = "package", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d });
 
             Assert.Equal(3, receivedRequests);
         }
@@ -228,7 +318,7 @@ namespace Fabrikam.Workflow.Service.Tests
                         try
                         {
                             var result =
-                                await _caller.CreatePackageAsync(new PackageInfo { PackageId = $"package{i}", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d });
+                                await _caller.UpsertPackageAsync(new PackageInfo { PackageId = $"package{i}", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d });
                             Interlocked.Increment(ref successfulRequests);
                         }
                         catch
@@ -266,7 +356,7 @@ namespace Fabrikam.Workflow.Service.Tests
                         {
                             await Task.Delay(TimeSpan.FromSeconds(i / 10));
                             var result =
-                                await _caller.CreatePackageAsync(new PackageInfo { PackageId = $"package{i}", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d });
+                                await _caller.UpsertPackageAsync(new PackageInfo { PackageId = $"package{i}", Size = ContainerSize.Medium, Tag = "sometag", Weight = 100d });
                             Interlocked.Increment(ref successfulRequests);
                         }
                         catch
@@ -282,4 +372,3 @@ namespace Fabrikam.Workflow.Service.Tests
         }
     }
 }
-
