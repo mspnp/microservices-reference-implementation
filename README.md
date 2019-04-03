@@ -33,7 +33,7 @@ The Drone Delivery application is a sample application that consists of several 
 The Drone Delivery application has been tested up to 2000 messages/sec:
 
 
-|                                          | Replicas | ~Max CPU (mc) | ~Max Mem (MB) | Avg. Throughput*        | Max. Throughput*        | Avg (ms) | 50th (ms) | 95th (ms) | 99th (ms) |
+|                                          | Replicas | ~Max CPU (mc) | ~Max Mem (MB) | Avg. Throughput*        | Max. Throughput*        | Avg (ms) | 50<sup>th</sup> (ms) | 95<sup>th</sup> (ms) | 99<sup>th</sup> (ms) |
 |------------------------------------------|----------|---------------|---------------|-------------------------|-------------------------|----------|-----------|-----------|-----------|
 | Nginx                                    | 1        | N/A           | N/A           | serve: 1595 reqs/sec    | serve: 1923 reqs/sec    | N/A      | N/A       | N/A       | N/A       |
 | Ingestion                                | 10       | 474           | 488           | ingest: 1275 msgs/sec   | ingest: 1710 msgs/sec   | 251      | 50.1      | 1560      | 2540      |
@@ -50,7 +50,7 @@ The Drone Delivery application has been tested up to 2000 messages/sec:
 2. Ingest: Azure Service Bus metrics Incoming Messages/Sec
 3. Egress: Azure Service Bus metrics Outgoing Messages/Sec
 4. Complete: AI Service Bus Complete dependencies  
-5. Avg/50th/95th/99th: AI dependencies
+5. Avg/50<sup>th</sup>/95<sup>th</sup>/99<sup>th</sup>: AI dependencies
 6. CPU/Mem: Azure Monitor for Containers
 
 
