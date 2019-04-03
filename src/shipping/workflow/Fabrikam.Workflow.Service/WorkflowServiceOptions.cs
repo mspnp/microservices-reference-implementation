@@ -9,8 +9,8 @@ namespace Fabrikam.Workflow.Service
     {
         public WorkflowServiceOptions()
         {
-            MaxConcurrency = 10;
-            PrefetchCount = 10;
+            MaxConcurrency = 20;
+            PrefetchCount = 3000;
         }
 
         public string QueueEndpoint { get; set; }

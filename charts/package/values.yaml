@@ -1,5 +1,5 @@
 # Default values for package service.
-replicaCount: 1
+replicaCount: 3
 dockerregistry:
 image:
   repository:
@@ -8,3 +8,5 @@ image:
 reason: unknown
 log:
   level: error
+cosmosDb:
+  collectionName:

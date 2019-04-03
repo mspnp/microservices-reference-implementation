@@ -1,5 +1,5 @@
 # Default values for workflow.
-replicaCount: 1
+replicaCount: 3
 dockerregistry:
 identity:
   clientid:

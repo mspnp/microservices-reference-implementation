@@ -48,7 +48,7 @@ spec:
               name: package-secrets
               key: mongodb-pwd
         - name: COLLECTION_NAME
-          value: packages
+          value: {{ default "packages" .Values.cosmosDb.collectionName }}
         - name: APPINSIGHTS_INSTRUMENTATIONKEY
           valueFrom:
             secretKeyRef:

@@ -244,6 +244,7 @@ helm install $HELM_CHARTS/package/ \
      --set image.repository=package \
      --set secrets.appinsights.ikey=$AI_IKEY \
      --set secrets.mongo.pwd=$COSMOSDB_CONNECTION \
+     --set cosmosDb.collectionName=$COSMOSDB_COL_NAME \
      --set dockerregistry=$ACR_SERVER \
      --namespace backend \
      --name package-v0.1.0
