@@ -432,7 +432,14 @@ open "https://$EXTERNAL_INGEST_FQDN/swagger-ui.html#/ingestion45controller/sched
 
 > We recommended putting an API Gateway in front of all public APIs. For convenience, the Ingestion service is directly exposed with a public IP address.
 
+
 ## Optional steps
+
+### Load Test the application
+
+To run load testing against the solution, follow the steps listed [here](./src/shipping/ingress/readme.md).
+
+### Fluentd and Elastic Search
 
 Follow these steps to add logging and monitoring capabilities to the solution.
 
