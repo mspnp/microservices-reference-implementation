@@ -4,8 +4,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import com.microsoft.azure.servicebus.ServiceBusException;
-
+import com.microsoft.azure.servicebus.primitives.ServiceBusException;
 
 import java.util.Date;
 import java.util.UUID;
@@ -108,8 +107,6 @@ public class IngestionControllerTest {
 		Mockito.doNothing().when(ingestionimplMock)
 		.scheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
-		
 		MvcResult resultActions = mockMvc.perform(
 		            post("/api/deliveryrequests")
 		                    .contentType(MediaType.APPLICATION_JSON)
@@ -122,7 +119,6 @@ public class IngestionControllerTest {
 				
 		 Mockito.verify(ingestionimplMock, times(1))
 		 .scheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 		    
 	}
 	
@@ -132,7 +128,6 @@ public class IngestionControllerTest {
 		Mockito.doNothing().when(ingestionimplMock)
 		.rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		String deliveryId = externalRDelivery.getDeliveryId().toString();
 
 		MvcResult resultActions = mockMvc.perform(patch("/api/deliveryrequests/" + deliveryId)
@@ -145,7 +140,6 @@ public class IngestionControllerTest {
 		
 		 Mockito.verify(ingestionimplMock, times(1))
 		 .rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
     
 	@Test
@@ -154,7 +148,6 @@ public class IngestionControllerTest {
 		Mockito.doNothing().when(ingestionimplMock)
 		.cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 
 		MvcResult resultActions = mockMvc
 				.perform(delete("/api/deliveryrequests/" + deliveryId).contentType(MediaType.APPLICATION_JSON))
@@ -165,7 +158,6 @@ public class IngestionControllerTest {
 		
 		Mockito.verify(ingestionimplMock, times(1))
 		 .cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
     
     
@@ -185,7 +177,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.scheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 
 		mockMvc.perform(
 	            post("/api/deliveryrequests")
@@ -195,7 +186,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		 .scheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	@Test
@@ -205,7 +195,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.scheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 
 		mockMvc.perform(
 	            post("/api/deliveryrequests")
@@ -215,7 +204,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		 .scheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	@Test
@@ -225,7 +213,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.scheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 
 		mockMvc.perform(
 	            post("/api/deliveryrequests")
@@ -235,7 +222,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		 .scheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	@Test
@@ -245,7 +231,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.scheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		mockMvc.perform(
 	            post("/api/deliveryrequests")
 	                    .contentType(MediaType.APPLICATION_JSON)
@@ -254,8 +239,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		 .scheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
-				  
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	
@@ -266,7 +249,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.scheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		mockMvc.perform(
 	            post("/api/deliveryrequests")
 	                    .contentType(MediaType.APPLICATION_JSON)
@@ -275,8 +257,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		 .scheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
-				  
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	
@@ -289,7 +269,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		
 		String deliveryId = externalRDelivery.getDeliveryId().toString();
 
@@ -301,7 +280,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		 .rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	@Test
@@ -311,7 +289,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		
 		String deliveryId = externalRDelivery.getDeliveryId().toString();
 
@@ -324,7 +301,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		 .rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	@Test
@@ -334,7 +310,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		
 		String deliveryId = externalRDelivery.getDeliveryId().toString();
 
@@ -346,7 +321,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		 .rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	@Test
@@ -358,7 +332,6 @@ public class IngestionControllerTest {
 		
 		String deliveryId = externalRDelivery.getDeliveryId().toString();
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		mockMvc.perform(
 	            patch("/api/deliveryrequests/" + deliveryId)
 	                    .contentType(MediaType.APPLICATION_JSON)
@@ -367,8 +340,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		 .rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
-				  
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	
@@ -379,7 +350,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		String deliveryId = externalRDelivery.getDeliveryId().toString();
 		
 		mockMvc.perform(
@@ -390,8 +360,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		 .rescheduleDeliveryAsync(Mockito.any(DeliveryBase.class), Mockito.anyMap());
-				  
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	
@@ -404,7 +372,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		
 		String deliveryId = externalRDelivery.getDeliveryId().toString();
 
@@ -416,7 +383,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		  .cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	@Test
@@ -426,7 +392,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		
 		String deliveryId = externalRDelivery.getDeliveryId().toString();
 
@@ -439,7 +404,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		  .cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	@Test
@@ -450,7 +414,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		
 		String deliveryId = externalRDelivery.getDeliveryId().toString();
 
@@ -462,7 +425,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		  .cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	@Test
@@ -474,7 +436,6 @@ public class IngestionControllerTest {
 		
 		String deliveryId = externalRDelivery.getDeliveryId().toString();
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		mockMvc.perform(
 	            delete("/api/deliveryrequests/" + deliveryId)
 	                    .contentType(MediaType.APPLICATION_JSON)
@@ -483,8 +444,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		 .cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
-				  
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 	
 	
@@ -495,7 +454,6 @@ public class IngestionControllerTest {
 		.when(ingestionimplMock)
 		.cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
 		
-		Mockito.when(appPropsMock.getServiceMeshCorrelationHeader()).thenReturn("header");
 		String deliveryId = externalRDelivery.getDeliveryId().toString();
 		
 		mockMvc.perform(
@@ -506,8 +464,6 @@ public class IngestionControllerTest {
 
 		  Mockito.verify(ingestionimplMock, times(1))
 		  .cancelDeliveryAsync(Mockito.anyString(), Mockito.anyMap());
-				  
-		  Mockito.verify(appPropsMock, times(1)).getServiceMeshCorrelationHeader();
 	}
 
 	

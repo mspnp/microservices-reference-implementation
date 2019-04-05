@@ -1,0 +1,15 @@
+# Default values for dronescheduler.
+replicaCount: 3
+identity:
+  clientid:
+  resourceid:
+dockerregistry:
+image:
+  repository:
+  tag:
+  pullPolicy: IfNotPresent
+keyvault:
+  uri:
+reason: unknown
+telemetry:
+  level: "Error"

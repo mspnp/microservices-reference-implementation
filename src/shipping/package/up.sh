@@ -8,6 +8,6 @@ if ! docker network ls | grep -q dronedelivery; then
 docker network create dronedelivery
 fi
 
-docker-compose -p drone-package -f ./build/docker-compose.yml up -d
+docker-compose -p drone-package -f ./docker-compose.dev.yaml up -d
 
 docker attach dronepackage_app_1

@@ -1,8 +1,5 @@
 package com.fabrikam.dronedelivery.ingestion.configuration;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
@@ -25,14 +22,14 @@ public class ApplicationProperties {
 	// the properties are overriden by values
 	// in application.properties
 
-	// Eventhub properties
-	private String namespace = "eventhubNamespace";
-	private String eventHubName = "eventHubName";
+	// Queue properties
+	private String namespace = "queueNamespace";
+	private String queueName = "queueName";
 	private String sasKeyName = "sasKeyName";
 	private String sasKey = "sasKey";
 
-	private String envNameSpace = "ENV_HUB_NS";
-	private String envHubName = "ENV_HUB_NAME";
+	private String envNameSpace = "ENV_QUEUE_NS";
+	private String envQueueName = "ENV_QUEUE_NAME";
 	private String envsasKeyName = "ENV_KEY_NAME";
 	private String envsasKey = "ENV_KEY_VALUE";
 	
@@ -41,12 +38,6 @@ public class ApplicationProperties {
 	private int threadPoolExecutorQueueSize = 0;
 	private int threadPoolExecutorMaxPoolSize = 0;
 	private int messageAmqpClientPoolSize = 0;
-	
-	// Istio properties for distributed tracing
-	private List<String> serviceMeshHeaders = new ArrayList<String>();
-	
-	// Correlation header for breadcrumb trail
-	private String serviceMeshCorrelationHeader = "serviceMeshCorrelationHeader";
 
 	public String getNamespace() {
 		return namespace;
@@ -56,12 +47,12 @@ public class ApplicationProperties {
 		this.namespace = nameSpace;
 	}
 
-	public String getEventHubName() {
-		return eventHubName;
+	public String getQueueName() {
+		return queueName;
 	}
 
-	public void setEventHubName(String eventHubName) {
-		this.eventHubName = eventHubName;
+	public void setQueueName(String queueName) {
+		this.queueName = queueName;
 	}
 
 	public String getSasKeyName() {
@@ -103,27 +94,11 @@ public class ApplicationProperties {
 	public void setThreadPoolExecutorMaxPoolSize(int maxPoolSize) {
 		this.threadPoolExecutorMaxPoolSize = maxPoolSize;
 	}
-	
-	public List<String> getServiceMeshHeaders() {
-		return serviceMeshHeaders;
-	}
-
-	public void setServiceMeshHeaders(List<String> serviceMeshHeaders) {
-		this.serviceMeshHeaders = serviceMeshHeaders;
-	}
-	
+		
 	//To resolve ${} in @Value
 	@Bean
 	public static PropertySourcesPlaceholderConfigurer propertyConfigInDev() {
 		return new PropertySourcesPlaceholderConfigurer();
-	}
-
-	public String getServiceMeshCorrelationHeader() {
-		return serviceMeshCorrelationHeader;
-	}
-
-	public void setServiceMeshCorrelationHeader(String serviceMeshCorrelationHeader) {
-		this.serviceMeshCorrelationHeader = serviceMeshCorrelationHeader;
 	}
 
 	public int getMessageAmqpClientPoolSize() {
@@ -142,12 +117,12 @@ public class ApplicationProperties {
 		this.envNameSpace = envNameSpace;
 	}
 
-	public String getEnvHubName() {
-		return envHubName;
+	public String getEnvQueueName() {
+		return envQueueName;
 	}
 
-	public void setEnvHubName(String envHubName) {
-		this.envHubName = envHubName;
+	public void setEnvQueueName(String envQueueName) {
+		this.envQueueName = envQueueName;
 	}
 
 	public String getEnvsasKeyName() {

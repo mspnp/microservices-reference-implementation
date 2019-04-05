@@ -1,0 +1,10 @@
+# Default values for ingestion.
+replicaCount: 1
+dockerregistry:
+image:
+  repository:
+  tag:
+  pullPolicy: IfNotPresent
+reason: unknown
+telemetry:
+  level: "error"

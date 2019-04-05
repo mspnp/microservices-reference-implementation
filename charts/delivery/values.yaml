@@ -1,0 +1,18 @@
+# Default values for dronedelivery.
+replicaCount: 3
+identity:
+  clientid:
+  resourceid:
+dockerregistry:
+image:
+  repository:
+  tag:
+  pullPolicy: IfNotPresent
+cosmosdb:
+  id:
+  collectionid:
+keyvault:
+  uri:
+telemetry:
+  level: "Error"
+reason: unknown

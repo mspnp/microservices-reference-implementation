@@ -5,7 +5,12 @@
 - Azure subscription
 - [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
+- [Helm 2.12.3 or later](https://docs.helm.sh/using_helm/#installing-helm)
+- [JQ](https://stedolan.github.io/jq/download/)
+
+> Note: in linux systems, it is possible to run the docker command without prefacing
+>       with sudo. For more information, please refer to [the Post-installation steps
+>       for linux](https://docs.docker.com/install/linux/linux-postinstall/)
 
 Clone or download this repo locally.
 
@@ -15,238 +20,304 @@ git clone https://github.com/mspnp/microservices-reference-implementation.git
 
 The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
 
-## Create the Kubernetes cluster
+## Generate a SSH rsa public/private key pair
+
+the SSH rsa key pair can be generated using ssh-keygen, among other tools, on Linux, Mac, or Windows. If you already have an ~/.ssh/id_rsa.pub file, you could provide the same later on. If you need to create an SSH key pair, see [How to create and use an SSH key pair](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys).
+> Note: the SSH rsa public key will be requested when deploying your Kubernetes cluster in Azure.
+
+## Azure Resources Provisioning
 
 Set environment variables.
 
 ```bash
+export SSH_PUBLIC_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PUBLIC_KEY_FILE_HERE]
+export SSH_PRIVATE_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PRIVAYE_KEY_FILE_HERE]
+
 export LOCATION=[YOUR_LOCATION_HERE]
 
-export UNIQUE_APP_NAME_PREFIX=[YOUR_UNIQUE_APPLICATION_NAME_HERE]
+export RESOURCE_GROUP=[YOUR_RESOURCE_GROUP_HERE]
 
-export RESOURCE_GROUP="${UNIQUE_APP_NAME_PREFIX}-rg" && \
-export CLUSTER_NAME="${UNIQUE_APP_NAME_PREFIX}-cluster"
+export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+export TENANT_ID=$(az account show --query tenantId --output tsv)
 
-export K8S=./microservices-reference-implementation/k8s
+export PROJECT_ROOT=./microservices-reference-implementation
+export K8S=$PROJECT_ROOT/k8s
+export HELM_CHARTS=$PROJECT_ROOT/charts
 ```
 
-Provision a Kubernetes cluster in AKS
+Infrastructure Prerequisites
 
 ```bash
 # Log in to Azure
 az login
 
-# Create a resource group for AKS
-az group create --name $RESOURCE_GROUP --location $LOCATION
+# Create a resource group and service principal for AKS
+az group create --name $RESOURCE_GROUP --location $LOCATION && \
+export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor") && \
+export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
+export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
+export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
+```
 
-# Create the AKS cluster
-az aks create --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --node-count 4 --enable-addons monitoring --generate-ssh-keys
+Deployment
 
-# Install kubectl
+> Note: this deployment might take up to 20 minutes
+
+```bash
+# Deploy the managed identities
+# These are deployed first in a separate template to avoid propagation delays with AAD
+az group deployment create -g $RESOURCE_GROUP --name azuredeploy-identities --template-file azuredeploy-identities.json
+export DELIVERY_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryIdName.value -o tsv)
+export DELIVERY_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalId.value -o tsv)
+export DRONESCHEDULER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerIdName.value -o tsv)
+export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerPrincipalId.value -o tsv)
+export WORKFLOW_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowIdName.value -o tsv)
+export WORKFLOW_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalId.value -o tsv)
+
+# Wait for AAD propagation
+until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+
+# Deploy all other resources
+# The version of kubernetes must be supported in the target region
+export KUBERNETES_VERSION='1.12.6'
+az group deployment create -g $RESOURCE_GROUP --name azuredeploy --template-file azuredeploy.json \
+--parameters servicePrincipalClientId=${SP_APP_ID} \
+            servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
+            servicePrincipalId=${SP_OBJECT_ID} \
+            kubernetesVersion=${KUBERNETES_VERSION} \
+            sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
+            deliveryIdName=${DELIVERY_ID_NAME} \
+            deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
+            droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
+            droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
+            workflowIdName=${WORKFLOW_ID_NAME} \
+            workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID}
+```
+
+Get outputs from Azure Deploy
+```bash
+# Shared
+export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acrName.value -o tsv) && \
+export ACR_SERVER=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acrLoginServer.value -o tsv) && \
+export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.aksClusterName.value -o tsv)
+```
+
+Enable Azure Monitoring for the AKS cluster
+```bash
+az aks enable-addons -a monitoring --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
+```
+
+Download kubectl and create a k8s namespace
+```bash
+#  Install kubectl
 sudo az aks install-cli
 
 # Get the Kubernetes cluster credentials
 az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 
-# Create the BC namespaces
-kubectl create namespace shipping && \
-kubectl create namespace accounts && \
-kubectl create namespace dronemgmt && \
-kubectl create namespace 3rdparty 
+# Create namespaces
+kubectl create namespace backend && \
+kubectl create namespace frontend
 ```
 
-Create an Azure Container Registry instance. 
-
-> Note: Azure Container Registory is not required. If you prefer, you can store the Docker images for this solution in another container registry.
+Setup Helm in the container
 
 ```bash
-export ACR_NAME=[YOUR_CONTAINER_REGISTRY_NAME_HERE]
-
-# Create the ACR instance
-az acr create --name $ACR_NAME --resource-group $RESOURCE_GROUP --sku Basic
-
-# Log in to ACR
-az acr login --name $ACR_NAME
-
-# Get the ACR login server name
-export ACR_SERVER=$(az acr show -g $RESOURCE_GROUP -n $ACR_NAME --query "loginServer" -o tsv)
+kubectl apply -f $K8S/tiller-rbac.yaml
+helm init --service-account tiller
 ```
 
-Grant the cluster access to the registry.
+Integrate Application Insights instance
 
 ```bash
-# Acquire the necessary IDs
-export CLUSTER_CLIENT_ID=$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query "servicePrincipalProfile.clientId" --output tsv)
-export ACR_ID=$(az acr show --name $ACR_NAME --resource-group $RESOURCE_GROUP --query "id" --output tsv)
+# Acquire Instrumentation Key
+export AI_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.appInsightsName.value -o tsv)
+export AI_IKEY=$(az resource show \
+                    -g $RESOURCE_GROUP \
+                    -n $AI_NAME \
+                    --resource-type "Microsoft.Insights/components" \
+                    --query properties.InstrumentationKey \
+                    -o tsv)
 
-# Grant the cluster read access to the registry
-az role assignment create --assignee $CLUSTER_CLIENT_ID --role Reader --scope $ACR_ID
+# add RBAC for AppInsights
+kubectl apply -f $K8S/k8s-rbac-ai.yaml
+```
+
+## Setup AAD pod identity and key vault flexvol infrastructure
+
+Complete instructions can be found at https://github.com/Azure/kubernetes-keyvault-flexvol
+
+Note: the tested nmi version was 1.4. It enables namespaced pod identity.
+
+```bash
+# setup AAD pod identity
+kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/deployment-rbac.yaml
+
+kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
 
 ## Deploy the Delivery service
 
-Provision Azure resources
+Extract resource details from deployment
 
 ```bash
-export REDIS_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-redis" && \
-export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-delivery-service-cosmosdb" && \
+export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryCosmosDbName.value -o tsv) && \
 export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
-export COLLECTION_NAME="${DATABASE_NAME}-col"
-
-# Create Azure Redis Cache
-az redis create --location $LOCATION \
-            --name $REDIS_NAME \
-            --resource-group $RESOURCE_GROUP \
-            --sku Premium \
-            --vm-size P4
-
-# Create Cosmos DB account with DocumentDB API
-az cosmosdb create \
-    --name $COSMOSDB_NAME \
-    --kind GlobalDocumentDB \
-    --resource-group $RESOURCE_GROUP \
-    --max-interval 10 \
-    --max-staleness-prefix 200 
+export COLLECTION_NAME="${DATABASE_NAME}-col" && \
+export DELIVERY_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryKeyVaultUri.value -o tsv)
 ```
 
 Build the Delivery service
 
 ```bash
-export DELIVERY_PATH=./microservices-reference-implementation/src/shipping/delivery
-docker-compose -f $DELIVERY_PATH/docker-compose.ci.build.yml up
+export DELIVERY_PATH=$PROJECT_ROOT/src/shipping/delivery
 ```
 
-Build and publish the container image 
+Build and publish the container image
 
 ```bash
 # Build the Docker image
-docker build -t $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0 $DELIVERY_PATH/Fabrikam.DroneDelivery.DeliveryService/.
+docker build --pull --compress -t $ACR_SERVER/delivery:0.1.0 $DELIVERY_PATH/.
 
 # Push the image to ACR
 az acr login --name $ACR_NAME
-docker push $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0
-
-```
-
-Create Kubernetes secrets
-
-```bash
-export REDIS_ENDPOINT=$(az redis show --name $REDIS_NAME --resource-group $RESOURCE_GROUP --query hostName -o tsv)
-export REDIS_KEY=$(az redis list-keys --name $REDIS_NAME --resource-group $RESOURCE_GROUP --query primaryKey -o tsv)
-
-export COSMOSDB_KEY=$(az cosmosdb list-keys --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query primaryMasterKey -o tsv)
-export COSMOSDB_ENDPOINT=$(az cosmosdb show --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query documentEndpoint -o tsv)
-
-kubectl --namespace shipping create --save-config=true secret generic delivery-storageconf \
-    --from-literal=CosmosDB_Key=${COSMOSDB_KEY} \
-    --from-literal=CosmosDB_Endpoint=${COSMOSDB_ENDPOINT} \
-    --from-literal=Redis_Endpoint=${REDIS_ENDPOINT} \
-    --from-literal=Redis_AccessKey=${REDIS_KEY} \
-    --from-literal=EH_ConnectionString=
+docker push $ACR_SERVER/delivery:0.1.0
 ```
 
 Deploy the Delivery service:
 
 ```bash
-# Update the image tag and config values in the deployment YAML
-sed "s#image:#image: $ACR_SERVER/fabrikam.dronedelivery.deliveryservice:0.1.0#g" $K8S/delivery.yaml | \
-    sed "s/value: \"CosmosDB_DatabaseId\"/value: $DATABASE_NAME/g" | \
-    sed "s/value: \"CosmosDB_CollectionId\"/value: $COLLECTION_NAME/g" | \
-    sed "s/value: \"EH_EntityPath\"/value:/g" > $K8S/delivery-0.yaml
+# Extract pod identity outputs from deployment
+export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
+export DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
 
 # Deploy the service
-kubectl --namespace shipping apply -f $K8S/delivery-0.yaml
+helm install $HELM_CHARTS/delivery/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=delivery \
+     --set dockerregistry=$ACR_SERVER \
+     --set identity.clientid=$DELIVERY_PRINCIPAL_CLIENT_ID \
+     --set identity.resourceid=$DELIVERY_PRINCIPAL_RESOURCE_ID \
+     --set cosmosdb.id=$DATABASE_NAME \
+     --set cosmosdb.collectionid=$COLLECTION_NAME \
+     --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
+     --namespace backend \
+     --name delivery-v0.1.0
 
 # Verify the pod is created
-kubectl get pods -n shipping
+helm status delivery-v0.1.0
 ```
 
 ## Deploy the Package service
 
-Provision Azure resources
+Extract resource details from deployment
 
 ```bash
-export COSMOSDB_NAME="${UNIQUE_APP_NAME_PREFIX}-package-service-cosmosdb"
-az cosmosdb create --name $COSMOSDB_NAME --kind MongoDB --resource-group $RESOURCE_GROUP
+export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.packageMongoDbName.value -o tsv)
 ```
 
 Build the Package service
 
 ```bash
-export PACKAGE_PATH=microservices-reference-implementation/src/shipping/package
-
-# Build the app
-docker-compose -f $PACKAGE_PATH/build/docker-compose.ci.build.yml up
+export PACKAGE_PATH=$PROJECT_ROOT/src/shipping/package
 
 # Build the docker image
-sudo docker build -f $PACKAGE_PATH/build/prod.dockerfile -t $ACR_SERVER/package-service:0.1.0 $PACKAGE_PATH
+docker build -f $PACKAGE_PATH/Dockerfile -t $ACR_SERVER/package:0.1.0 $PACKAGE_PATH
 
 # Push the docker image to ACR
 az acr login --name $ACR_NAME
-docker push $ACR_SERVER/package-service:0.1.0
+docker push $ACR_SERVER/package:0.1.0
 ```
 
 Deploy the Package service
 
 ```bash
-# Update deployment YAML with image tage
-sed "s#image:#image: $ACR_SERVER/package-service:0.1.0#g" $K8S/package.yml > $K8S/package-0.yml
-
 # Create secret
-export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv)
-kubectl -n shipping create secret generic package-secrets --from-literal=mongodb-pwd=$COSMOSDB_CONNECTION
+# Note: Connection strings cannot be exported as outputs in ARM deployments
+export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g')
 
 # Deploy service
-kubectl --namespace shipping apply -f $K8S/package-0.yml
+helm install $HELM_CHARTS/package/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=package \
+     --set secrets.appinsights.ikey=$AI_IKEY \
+     --set secrets.mongo.pwd=$COSMOSDB_CONNECTION \
+     --set cosmosDb.collectionName=$COSMOSDB_COL_NAME \
+     --set dockerregistry=$ACR_SERVER \
+     --namespace backend \
+     --name package-v0.1.0
 
 # Verify the pod is created
-kubectl get pods -n shipping
+helm status package-v0.1.0
 ```
 
-## Deploy the Ingestion service 
-Provision Azure resources
+## Deploy the Workflow service
+
+Extract resource details from deployment
 
 ```bash
-export INGESTION_EH_NS=[INGESTION_EVENT_HUB_NAMESPACE_HERE]
-export INGESTION_EH_NAME=[INGESTION_EVENT_HUB_NAME_HERE]
-export INGESTION_EH_CONSUMERGROUP_NAME=[INGESTION_EVENT_HUB_CONSUMERGROUP_NAME_HERE]
+export WORKFLOW_KEYVAULT_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.workflowKeyVaultName.value -o tsv)
+```
 
-# Create an Event Hubs namespace
-az eventhubs namespace create --name $INGESTION_EH_NS \
-                              --resource-group $RESOURCE_GROUP \
-                              --location $LOCATION
+Build the workflow service
 
-# Create an event hub
-az eventhubs eventhub create --name $INGESTION_EH_NAME \
-                             --resource-group $RESOURCE_GROUP \
-                             --namespace-name $INGESTION_EH_NS \
-                             --partition-count 4
+```bash
+export WORKFLOW_PATH=$PROJECT_ROOT/src/shipping/workflow
 
-# Create consumer group
-az eventhubs eventhub consumer-group create --eventhub-name $INGESTION_EH_NAME \
-                                            --name $INGESTION_EH_CONSUMERGROUP_NAME \
-                                            --namespace-name $INGESTION_EH_NS \
-                                            --resource-group $RESOURCE_GROUP
+# Build the Docker image
+docker build --pull --compress -t $ACR_SERVER/workflow:0.1.0 $WORKFLOW_PATH/.
 
-# Create authorization rule
-az eventhubs eventhub authorization-rule create --eventhub-name $INGESTION_EH_NAME \
-                                                --name IngestionServiceAccessKey \
-                                                --namespace-name $INGESTION_EH_NS \
-                                                --resource-group $RESOURCE_GROUP \
-                                                --rights Listen Send
+# Push the image to ACR
+az acr login --name $ACR_NAME
+docker push $ACR_SERVER/workflow:0.1.0
+```
 
-# Get access key
-export EH_ACCESS_KEY_VALUE=$(az eventhubs eventhub authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_EH_NS --name IngestionServiceAccessKey --eventhub-name $INGESTION_EH_NAME --query primaryKey -o tsv)
+Create and set up pod identity
+
+```bash
+# Extract outputs from deployment
+export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalResourceId.value -o tsv) && \
+export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalClientId.value -o tsv)
+```
+
+Deploy the Workflow service:
+
+```bash
+# Deploy the service
+helm install $HELM_CHARTS/workflow/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=workflow \
+     --set dockerregistry=$ACR_SERVER \
+     --set identity.clientid=$WORKFLOW_PRINCIPAL_CLIENT_ID \
+     --set identity.resourceid=$WORKFLOW_PRINCIPAL_RESOURCE_ID \
+     --set keyvault.name=$WORKFLOW_KEYVAULT_NAME \
+     --set keyvault.resourcegroup=$RESOURCE_GROUP \
+     --set keyvault.subscriptionid=$SUBSCRIPTION_ID \
+     --set keyvault.tenantid=$TENANT_ID \
+     --namespace backend \
+     --name workflow-v0.1.0
+
+# Verify the pod is created
+helm status workflow-v0.1.0
+```
+
+## Deploy the Ingestion service
+
+Extract resource details from deployment
+
+```bash
+export INGESTION_QUEUE_NAMESPACE=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionQueueNamespace.value -o tsv) && \
+export INGESTION_QUEUE_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionQueueName.value -o tsv)
+export INGESTION_ACCESS_KEY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionServiceAccessKeyName.value -o tsv)
+export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_ACCESS_KEY_NAME --query primaryKey -o tsv)
 ```
 
 Build the Ingestion service
 
 ```bash
-export INGESTION_PATH=./microservices-reference-implementation/src/shipping/ingestion
-
-# Build the app 
-docker build -t openjdk_and_mvn-build:8-jdk -f $INGESTION_PATH/Dockerfilemaven $INGESTION_PATH
-docker run -it --rm -v $( cd "${INGESTION_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
+export INGESTION_PATH=$PROJECT_ROOT/src/shipping/ingestion
 
 # Build the docker image
 docker build -f $INGESTION_PATH/Dockerfile -t $ACR_SERVER/ingestion:0.1.0 $INGESTION_PATH
@@ -259,173 +330,116 @@ docker push $ACR_SERVER/ingestion:0.1.0
 Deploy the Ingestion service
 
 ```bash
-# Update deployment YAML with image tage
-sed "s#image:#image: $ACR_SERVER/ingestion:0.1.0#g" $K8S/ingestion.yaml > $K8S/ingestion-0.yaml
+# Deploy the ngnix ingress controller
+helm install stable/nginx-ingress --name nginx-ingress --namespace ingress-controllers --set rbac.create=true
 
-# Create secret
-kubectl -n shipping create secret generic ingestion-secrets --from-literal=eventhub_namespace=${INGESTION_EH_NS} \
---from-literal=eventhub_name=${INGESTION_EH_NAME} \
---from-literal=eventhub_keyname=IngestionServiceAccessKey \
---from-literal=eventhub_keyvalue=${EH_ACCESS_KEY_VALUE}
+# Obtain the load balancer ip address and assign a domain name
+until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-controller -n ingress-controllers -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
+export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv)
+export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest"
+export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
+INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
+
+# Create a self-signed certificate for TLS
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -out ingestion-ingress-tls.crt \
+    -keyout ingestion-ingress-tls.key \
+    -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
 
 # Deploy service
-kubectl --namespace shipping apply -f $K8S/ingestion-0.yaml
+helm install $HELM_CHARTS/ingestion/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=ingestion \
+     --set dockerregistry=$ACR_SERVER \
+     --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
+     --set ingress.hosts[0].serviceName=ingestion \
+     --set ingress.hosts[0].tls=true \
+     --set ingress.hosts[0].tlsSecretName=$INGRESS_TLS_SECRET_NAME \
+     --set ingress.tls.secrets[0].name=$INGRESS_TLS_SECRET_NAME \
+     --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
+     --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
+     --set secrets.appinsights.ikey=${AI_IKEY} \
+     --set secrets.queue.keyname=IngestionServiceAccessKey \
+     --set secrets.queue.keyvalue=${INGESTION_ACCESS_KEY_VALUE} \
+     --set secrets.queue.name=${INGESTION_QUEUE_NAME} \
+     --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
+     --namespace backend \
+     --name ingestion-v0.1.0
 
 # Verify the pod is created
-kubectl get pods -n shipping
+helm status ingestion-v0.1.0
 ```
 
-## Deploy the Scheduler service 
+## Deploy DroneScheduler service
 
-Provision Azure resources
+Extract resource details from deployment
+
 ```bash
-export SCHEDULER_STORAGE_ACCOUNT_NAME=[SCHEDULER_STORAGE_ACCOUNT_NAME_HERE]
-
-az storage account create --resource-group $RESOURCE_GROUP --name $SCHEDULER_STORAGE_ACCOUNT_NAME --sku Standard_LRS
+export DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
 ```
 
-Build the Scheduler service
+Build the dronescheduler services
 
 ```bash
-export SCHEDULER_PATH=./microservices-reference-implementation/src/shipping/scheduler
-
-# Build the app 
-docker build -t openjdk_and_mvn-build:8-jdk -f $SCHEDULER_PATH/Dockerfilemaven $SCHEDULER_PATH
-docker run -it --rm -v $( cd "${SCHEDULER_PATH}" && pwd )/:/sln openjdk_and_mvn-build:8-jdk
-
-# Build the docker image
-docker build -f $SCHEDULER_PATH/Dockerfile -t $ACR_SERVER/scheduler:0.1.0 $SCHEDULER_PATH
-
-# Push the docker image to ACR
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/scheduler:0.1.0
+export DRONE_PATH=$PROJECT_ROOT/src/shipping/dronescheduler
 ```
 
-Deploy the Scheduler service
+Create and set up pod identity
 
 ```bash
-# Update deployment YAML with image tage
-sed "s#image:#image: $ACR_SERVER/scheduler:0.1.0#g" $K8S/scheduler.yaml > $K8S/scheduler-0.yaml
-
-export EH_CONNECTION_STRING=$(az eventhubs eventhub authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_EH_NS --name IngestionServiceAccessKey --eventhub-name $INGESTION_EH_NAME --query primaryConnectionString -o tsv)
-
-export STORAGE_ACCOUNT_CONNECTION_STRING=$(az storage account show-connection-string  \
-    --name $SCHEDULER_STORAGE_ACCOUNT_NAME \
-    --resource-group $RESOURCE_GROUP \
-    --output tsv)
-
-export STORAGE_ACCOUNT_ACCESS_KEY=$(az storage account keys list \
-    --account-name $SCHEDULER_STORAGE_ACCOUNT_NAME  \
-    --resource-group $RESOURCE_GROUP \
-    --query "[0].value" \
-    --output tsv)
-
-# Create secrets
-kubectl -n shipping create secret generic scheduler-secrets --from-literal=eventhub_name=${INGESTION_EH_NAME} \
---from-literal=eventhub_sas_connection_string=${EH_CONNECTION_STRING} \
---from-literal=storageaccount_name=${SCHEDULER_STORAGE_ACCOUNT_NAME} \
---from-literal=storageaccount_key=${STORAGE_ACCOUNT_ACCESS_KEY} \
---from-literal=queueconstring=${STORAGE_ACCOUNT_CONNECTION_STRING}
-
-# Deploy service
-kubectl --namespace shipping apply -f ./microservices-reference-implementation/k8s/scheduler-0.yaml
-
-# Verify all pods are created
-kubectl get pods -n shipping
+# Extract outputs from deployment
+export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
+export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv)
 ```
 
-## Deploy mock services
-
-Build the mock services
+Build and publish the container image
 
 ```bash
-export MOCKS_PATH=microservices-reference-implementation/src/shipping/delivery
-docker-compose -f $MOCKS_PATH/docker-compose.ci.build.yml up
-```
-
-Build and publish the container image 
-
-```bash
-# Build the Docker images
-docker build -t $ACR_SERVER/account:0.1.0 $MOCKS_PATH/MockAccountService/. && \
-docker build -t $ACR_SERVER/dronescheduler:0.1.0 $MOCKS_PATH/MockDroneScheduler/. && \
-docker build -t $ACR_SERVER/thirdparty:0.1.0 $MOCKS_PATH/MockThirdPartyService/. 
+# Build the Docker image
+docker build -f $DRONE_PATH/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 $DRONE_PATH/../
 
 # Push the images to ACR
 az acr login --name $ACR_NAME
-docker push $ACR_SERVER/account:0.1.0 && \
-docker push $ACR_SERVER/dronescheduler:0.1.0 && \
-docker push $ACR_SERVER/thirdparty:0.1.0
+docker push $ACR_SERVER/dronescheduler:0.1.0
 ```
 
-Deploy the mock services:
-
+Deploy the dronescheduler service:
 ```bash
-# Update the image tag in the deployment YAML
-sed "s#image:#image: $ACR_SERVER/account:0.1.0#g" $K8S/account.yaml > $K8S/account-0.yaml && \
-sed "s#image:#image: $ACR_SERVER/dronescheduler:0.1.0#g" $K8S/dronescheduler.yaml > $K8S/dronescheduler-0.yaml && \
-sed "s#image:#image: $ACR_SERVER/thirdparty:0.1.0#g" $K8S/thirdparty.yaml > $K8S/thirdparty-0.yaml
-
 # Deploy the service
-kubectl --namespace accounts apply -f $K8S/account-0.yaml && \
-kubectl --namespace dronemgmt apply -f $K8S/dronescheduler-0.yaml && \
-kubectl --namespace 3rdparty apply -f $K8S/thirdparty-0.yaml
+helm install $HELM_CHARTS/dronescheduler/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=dronescheduler \
+     --set dockerregistry=$ACR_SERVER \
+     --set identity.clientid=$DRONESCHEDULER_PRINCIPAL_CLIENT_ID \
+     --set identity.resourceid=$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID \
+     --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
+     --namespace backend \
+     --name dronescheduler-v0.1.0
 
-## Verify all services are running:
-kubectl get all --all-namespaces -l co=fabrikam
+# Verify the pod is created
+helm status dronescheduler-v0.1.0
 ```
-
-## Deploy linkerd
-
-
-```bash
-kubectl create ns linkerd
-wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/servicemesh.yml && \
-sed -i "s#/default#/shipping#g" servicemesh.yml && \
-sed -i "149i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \ 
-sed -i "149i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.dronemgmt ;" servicemesh.yml && \
-sed -i "149i \ \ \ \ \ \ \ \ /svc/thirdparty => /svc/thirdparty.3rdparty ;" servicemesh.yml && \
-sed -i "176i \ \ \ \ \ \ \ \ /svc/account => /svc/account.accounts ;" servicemesh.yml && \
-sed -i "176i \ \ \ \ \ \ \ \ /svc/dronescheduler => /svc/dronescheduler.dronemgmt ;" servicemesh.yml && \
-sed -i "176i \ \ \ \ \ \ \ \ /svc/thirdparty => /svc/thirdparty.3rdparty ;" servicemesh.yml && \
-kubectl apply -f servicemesh.yml
-``` 
-
-For more information, see [https://linkerd.io/getting-started/k8s/](https://linkerd.io/getting-started/k8s/)
-
-> Note: 
-> The service mesh configuration linked above uses the default namespace for service discovery.  
-> Since Drone Delivery microservices are getting deployed into several custom namespaces, this config needs to be modified as shown. This change modifies the dtab rules.
-
-The linkerd accounts need to be granted permissions to query the cluster for resources, as RBAC is enabled by default on AKS.
-
-```bash
-wget https://raw.githubusercontent.com/linkerd/linkerd-examples/master/k8s-daemonset/k8s/linkerd-rbac.yml && \
-sed -i "s#namespace: default#namespace: linkerd#g" linkerd-rbac.yml && \
-kubectl apply -f linkerd-rbac.yml
-```
-
-For more information on using linkerd with an RBAC-enabled cluster see [https://blog.buoyant.io/2017/07/24/using-linkerd-kubernetes-rbac/](https://blog.buoyant.io/2017/07/24/using-linkerd-kubernetes-rbac/)
 
 ## Validate the application is running
 
 You can send delivery requests to the ingestion service using the Swagger UI.
 
-Get the public IP address of the Ingestion Service:
+Use a web browser to navigate to `https://[EXTERNAL_INGEST_FQDN]/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST` and use the **Try it out** button to submit a delivery request.
 
 ```bash
-export EXTERNAL_IP_ADDRESS=$(kubectl get --namespace shipping svc ingestion -o jsonpath="{.status.loadBalancer.ingress[0].*}")
-```
-
-Use a web browser to navigate to `http://[EXTERNAL_IP_ADDRESS]/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST` and use the **Try it out** button to submit a delivery request.
-
-```bash
-open "http://$EXTERNAL_IP_ADDRESS/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST"
+open "https://$EXTERNAL_INGEST_FQDN/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST"
 ```
 
 > We recommended putting an API Gateway in front of all public APIs. For convenience, the Ingestion service is directly exposed with a public IP address.
 
+
 ## Optional steps
+
+### Load Test the application
+
+To run load testing against the solution, follow the steps listed [here](./src/shipping/ingress/readme.md).
+
+### Fluentd and Elastic Search
 
 Follow these steps to add logging and monitoring capabilities to the solution.
 
@@ -444,13 +458,11 @@ Deploy Fluentd. For more information, see https://docs.fluentd.org/v0.12/article
 wget https://raw.githubusercontent.com/fluent/fluentd-kubernetes-daemonset/master/fluentd-daemonset-elasticsearch.yaml && \
 sed -i "s/elasticsearch-logging/elasticsearch/" fluentd-daemonset-elasticsearch.yaml
 
-# Commenting out X-Pack credentials for demo purposes. 
+# Commenting out X-Pack credentials for demo purposes.
 # Make sure to configure X-Pack in elasticsearch and provide credentials here for production workloads
 sed -i "s/- name: FLUENT_ELASTICSEARCH_USER/#- name: FLUENT_ELASTICSEARCH_USER/" fluentd-daemonset-elasticsearch.yaml && \
 sed -i 's/  value: "elastic"/#  value: "elastic"/' fluentd-daemonset-elasticsearch.yaml && \
 sed -i "s/- name: FLUENT_ELASTICSEARCH_PASSWORD/#- name: FLUENT_ELASTICSEARCH_PASSWORD/" fluentd-daemonset-elasticsearch.yaml && \
 sed -i 's/  value: "changeme"/#  value: "changeme"/' fluentd-daemonset-elasticsearch.yaml && \
 kubectl --namespace kube-system apply -f fluentd-daemonset-elasticsearch.yaml
-``` 
-
-Deploy Prometheus and Grafana. For more information, see https://github.com/linkerd/linkerd-viz#kubernetes-deploy
+```

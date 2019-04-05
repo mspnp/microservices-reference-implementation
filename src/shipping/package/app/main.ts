@@ -3,11 +3,11 @@
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-import { PackageService } from './server';
 import { PackageServiceInitializer } from './initializer'
+import { PackageService } from './server';
 import { Settings } from './util/settings';
 
-PackageServiceInitializer.initialize(Settings.connectionString(), Settings.collectionName())
+PackageServiceInitializer.initialize(Settings.connectionString(), Settings.collectionName(), Settings.containerName())
     .then(_ => {
         PackageService.start();
     });

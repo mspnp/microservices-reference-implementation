@@ -1,0 +1,37 @@
+variables:
+  BuildConfiguration: "Release"
+
+name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
+
+trigger:
+  batch: true
+  branches:
+    include:
+
+    # for new release to production: release flow strategy
+    - release/delivery/v*
+
+    - refs/relelase/delivery/v*
+
+  paths:
+     include:
+
+     - /src/shipping/delivery/
+
+resources:
+- repo: self
+
+jobs:
+
+# CI
+- job: deliveryjobci
+  displayName: "Delivery CI"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  timeoutInMinutes: 90
+  variables:
+    fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/delivery/v') ]
+  steps:
+  - script: echo $(fullCI)
+    name: echovar
+  - template: ./azure-pipelines-ci.yml

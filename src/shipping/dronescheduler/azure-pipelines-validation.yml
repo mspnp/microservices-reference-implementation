@@ -1,0 +1,60 @@
+variables:
+  BuildConfiguration: "Release"
+
+name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
+
+pr: # only valid for GitHub. Using Azure repo it must be configure as a Branch Policy
+  paths:
+    include:
+    - /src/shipping/dronescheduler/
+    exclude:
+    - /
+    - /src/
+
+  branches:
+    include:
+
+    - master
+
+    - release/dronescheduler/v* # for bug fixes
+
+trigger:
+  batch: true
+  paths:
+     include:
+     - /src/shipping/dronescheduler/
+     exclude:
+     - /
+     - /src/
+
+  branches:
+    include:
+
+    - master
+
+    - feature/*
+
+    - topic/*
+
+    exclude:
+
+    - feature/experimental/*
+
+    - topic/experimental/*
+
+resources:
+- repo: self
+
+jobs:
+
+# CI
+- job: droneschedulercivalidationjob
+  displayName: "dronescheduler CI Validation (build & test)"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  timeoutInMinutes: 90
+  variables:
+    fullCI: False
+    buildImage: $[ or(startsWith(variables['build.sourceBranch'], 'refs/pull/'),eq(variables['build.sourceBranch'], 'refs/head/master')) ]
+  steps:
+  - template: ./azure-pipelines-ci.yml

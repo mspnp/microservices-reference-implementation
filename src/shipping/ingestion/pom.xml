@@ -3,19 +3,18 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>DroneDelivery</groupId>
-	<artifactId>Ingestion</artifactId>
-	<version>1.0.0</version>
+	<groupId>com.fabrikam.dronedelivery</groupId>
+	<artifactId>ingestion</artifactId>
+    <version>0.1.0</version>
 	<packaging>jar</packaging>
 
 	<name>Ingestion</name>
-	<description>Ingestion Service </description>
+	<description>Fabrikam Drone Delivery Ingestion Service</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.2.RELEASE</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<version>2.1.2.RELEASE</version>
 	</parent>
 
 	<properties>
@@ -24,19 +23,14 @@
 		<java.version>1.8</java.version>
 		<lombok.version>1.16.10</lombok.version>
         <okhttp.version>2.7.5</okhttp.version>
-        <spring.boot.version>1.4.1.RELEASE</spring.boot.version>
-        <logback.version>1.1.3</logback.version>
-        <slf4j.version>1.7.12</slf4j.version>
+        <spring.boot.version>2.1.2.RELEASE</spring.boot.version>
+        <start-class>com.fabrikam.dronedelivery.ingestion.IngestionApplication</start-class>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-rest</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web-services</artifactId>
+			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
 		<dependency>
@@ -44,77 +38,30 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-		
-		<dependency>
-			<groupId>com.google.common.html.types</groupId>
-			<artifactId>types</artifactId>
-			<version>1.0.5</version>
-		</dependency>
-		
-		<!-- https://mvnrepository.com/artifact/org.mockito/mockito-core -->
+
 		<dependency>
     		<groupId>org.mockito</groupId>
     		<artifactId>mockito-core</artifactId>
     		<version>2.13.0</version>
     		<scope>test</scope>
 		</dependency>
-		
-  		<dependency>
-      		<groupId>org.powermock</groupId>
-      		<artifactId>powermock-module-junit4</artifactId>
-      		<version>1.7.1</version>
-      		<scope>test</scope>
-  		 </dependency>
-   		<dependency>
-     		<groupId>org.powermock</groupId>
-      		<artifactId>powermock-api-mockito2</artifactId>
-      		<version>1.7.1</version>
-  		    <scope>test</scope>
- 	  </dependency>
 
-
-		
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>com.microsoft.azure</groupId>
-			<artifactId>azure-storage</artifactId>
-			<version>5.0.0</version>
-		</dependency>
 
-		<dependency>
-			<groupId>javax.ejb</groupId>
-			<artifactId>ejb-api</artifactId>
-			<version>3.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.openejb</groupId>
-			<artifactId>openejb-core</artifactId>
-			<version>4.7.4</version>
-		</dependency>
-		
 		<dependency>
 		    <groupId>org.springframework.boot</groupId>
 		    <artifactId>spring-boot-starter-actuator</artifactId>
 		  </dependency>
-		
+
 		<dependency>
 		    <groupId>io.springfox</groupId>
 		    <artifactId>springfox-swagger2</artifactId>
 		    <version>2.7.0</version>
-		</dependency> 
-		
-		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-test -->
-		<dependency>
-  		  <groupId>org.springframework.boot</groupId>
- 		   <artifactId>spring-boot-starter-test</artifactId>
-		    <version>1.5.9.RELEASE</version>
-		    <scope>test</scope>
 		</dependency>
-		
-		 
+
 		<dependency>
 		    <groupId>io.springfox</groupId>
 		    <artifactId>springfox-swagger-ui</artifactId>
@@ -123,39 +70,28 @@
 
 		<dependency>
 			<groupId>com.microsoft.azure</groupId>
-			<artifactId>azure</artifactId>
-			<version>1.0.0</version>
+			<artifactId>azure-servicebus</artifactId>
+			<version>1.2.8</version>
 		</dependency>
+
+        <dependency>
+            <groupId>com.microsoft.azure</groupId>
+            <artifactId>applicationinsights-spring-boot-starter</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.microsoft.azure</groupId>
+            <artifactId>applicationinsights-web</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+
 		<dependency>
 			<groupId>com.microsoft.azure</groupId>
-			<artifactId>azure-core</artifactId>
-			<version>0.9.7</version>
+			<artifactId>applicationinsights-logging-logback</artifactId>
+			<version>2.3.0</version>
 		</dependency>
-		<dependency>
-			<groupId>com.microsoft.azure</groupId>
-			<artifactId>azure-eventhubs</artifactId>
-			<version>0.13.1</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-batch</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-configuration-processor</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-api</artifactId>
-			<version>2.9.1</version><!--$NO-MVN-MAN-VER$-->
-		</dependency>
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-			<version>2.9.1</version><!--$NO-MVN-MAN-VER$-->
-		</dependency>
-	</dependencies>
+    </dependencies>
 
 	<build>
 		<plugins>
@@ -163,7 +99,7 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
-			
+
 			<plugin>
        			<groupId>org.apache.maven.plugins</groupId>
         		<artifactId>maven-failsafe-plugin</artifactId>
@@ -182,7 +118,7 @@
           			</execution>
         		</executions>
   			</plugin>
-  			
+
 			<plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
@@ -202,6 +138,4 @@
             </plugin>
 		</plugins>
 	</build>
-
-
 </project>

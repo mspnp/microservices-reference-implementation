@@ -38,11 +38,11 @@ public class ApplicationPropertiesTest {
 	@Test
 	public void canGetPropertiesfromEnvVariables() {
 		Environment systemMock = Mockito.mock(Environment.class);
-		Mockito.when(systemMock.getenv("ENV_HUB_NAME")).thenReturn("variableMock");
+		Mockito.when(systemMock.getenv("ENV_QUEUE_NAME")).thenReturn("variableMock");
 		ApplicationProperties appProps = new ApplicationProperties();
-		assertEquals(systemMock.getenv(appProps.getEnvHubName()),"variableMock");
+		assertEquals(systemMock.getenv(appProps.getEnvQueueName()),"variableMock");
 		Mockito.verify(systemMock, times(1))
-		 .getenv(appProps.getEnvHubName());		
+		 .getenv(appProps.getEnvQueueName());		
 	}
 
 }

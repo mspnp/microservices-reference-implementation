@@ -4,7 +4,7 @@
 // ------------------------------------------------------------
 
 import * as winston from 'winston';
-import {Context} from "koa";
+
 export interface ILogger {
     log(level: string, msg: string, meta?: any)
     debug(msg: string, meta?: any)
@@ -12,27 +12,35 @@ export interface ILogger {
     warn(msg: string, meta?: any)
     error(msg: string, meta?: any)
 }
-export type CorrelationIdFn = (ctx: Context) => string;
-export function logger(level: string, getCorrelationId: CorrelationIdFn) {
-    
-    winston.configure({ 
+export function logger(level: string) {
+
+    winston.configure({
         level: level,
-        transports: [ new (winston.transports.Console)()]
+        transports: [
+            new (winston.transports.Console)({
+                level: level,
+                colorize: true,
+                timestamp: true
+            })]
         });
     return async function(ctx: any, next: any) {
-        ctx.state.logger = new WinstonLogger(getCorrelationId(ctx));
+        ctx.state.logger = new WinstonLogger();
         await next();
     }
 }
 class WinstonLogger {
-    constructor(private correlationId: string) {}
+    constructor() {}
     log(level: string, msg: string, payload?: any) {
         var meta : any = {};
-        if (payload) { meta.payload = payload };
-        if (this.correlationId) { meta.correlationId = this.correlationId }
-        winston.log(level, msg, meta)
+        if (payload) {
+            winston.log(level, msg, payload);
+        }
+        else
+        {
+            winston.log(level, msg);
+        }
     }
-  
+
     info(msg: string, payload?: any) {
         this.log('info', msg, payload);
     }

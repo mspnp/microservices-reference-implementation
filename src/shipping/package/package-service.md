@@ -2,23 +2,10 @@
 
 ## Create local development environment
 
-1. Install Docker
+1. Install Docker and docker-compose
 2. From a bash CLI navigate to the project root and type `./up.sh`
-3. From the app environment type `npm install` 
-4. To run the app in the local dev environment, type `npm start`
-5. The app listens on port 80. In the dev environment, this is mapped to localhost:7080
+3. try ```curl -X PUT --header 'Accept: application/json' 'http://localhost:7080/api/packages/42'```
 
-## Build docker image
-
-```
-npm run build
-docker build -f ./build/prod.dockerfile -t <repo>/package-service .
-```
-
-## Provision database and create secrets
-
-1. In Azure, create a Cosmos DB database with MongoDB API
-2. Install Azure CLI 2.0
-3. Run `az login`
-4. Run create-secrets.sh
-
+> Known issue:
+> ```'failed to connect to server [packagedb:27017] on first connect [MongoError: connect ECONNREFUSED 172.24.0.2:27017]'```
+>  First time the package service starts, it might fail connecting to mongo. Package would automatically restart if needed.

@@ -1,0 +1,12 @@
+# Default values for package service.
+replicaCount: 3
+dockerregistry:
+image:
+  repository:
+  tag:
+  pullPolicy: IfNotPresent
+reason: unknown
+log:
+  level: error
+cosmosDb:
+  collectionName:

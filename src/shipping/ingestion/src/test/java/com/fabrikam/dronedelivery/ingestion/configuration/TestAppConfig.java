@@ -1,0 +1,46 @@
+package com.fabrikam.dronedelivery.ingestion.configuration;
+
+import com.fabrikam.dronedelivery.ingestion.util.ClientPool;
+import com.fabrikam.dronedelivery.ingestion.util.ClientPoolImpl;
+import com.fabrikam.dronedelivery.ingestion.util.InstrumentedQueueClient;
+
+import com.microsoft.applicationinsights.TelemetryClient;
+import com.microsoft.azure.servicebus.IMessage;
+import com.microsoft.azure.servicebus.primitives.ServiceBusException;
+
+import org.mockito.Mockito;
+import static org.mockito.Mockito.*;
+
+import java.net.URISyntaxException;
+import java.util.concurrent.CompletableFuture;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+
+@Configuration
+public class TestAppConfig {
+
+    @Bean
+    @Primary
+    public TelemetryClient getTelemetryClient() {
+        return Mockito.mock(TelemetryClient.class);
+    }
+
+    @Bean
+    @Primary
+    public ClientPool getClientPool() throws InterruptedException, ServiceBusException, URISyntaxException {
+        ClientPool clientPoolMock = mock(ClientPoolImpl.class);
+        InstrumentedQueueClient instrumentedQueueClient =
+            mock(InstrumentedQueueClient.class);
+        CompletableFuture<Void> futureMock =
+            (CompletableFuture<Void>) mock(CompletableFuture.class);
+
+        when(instrumentedQueueClient.sendAsync(any(IMessage.class)))
+            .thenReturn(futureMock);
+        when(clientPoolMock.getConnection())
+            .thenReturn(instrumentedQueueClient);
+
+        return clientPoolMock;
+    }
+}

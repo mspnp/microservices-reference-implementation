@@ -1,0 +1,16 @@
+# env #
+.git
+.github
+.vscode
+
+# others
+.DS_Store
+ehthumbs.db
+Icon?
+Thumbs.db
+
+# Node files
+node_modules
+npm-debug.log
+npm-debug.log.*
+logs/*

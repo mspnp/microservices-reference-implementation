@@ -5,23 +5,11 @@ VisualStudioVersion = 15.0.26730.15
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fabrikam.DroneDelivery.DeliveryService", "Fabrikam.DroneDelivery.DeliveryService\Fabrikam.DroneDelivery.DeliveryService.csproj", "{D01A5347-3D4F-44F4-98C2-AD73D363631B}"
 EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{2670610E-2495-42AA-BB4C-915D0B74E5CE}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MockDroneScheduler", "MockDroneScheduler\MockDroneScheduler.csproj", "{D3DE4852-7375-44CE-B3A3-C358473776FD}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "MockServices", "MockServices", "{76102849-AD4D-4E0C-BE88-D212E0DDE108}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MockDeliveryScheduler", "MockDeliveryScheduler\MockDeliveryScheduler.csproj", "{6B8AA758-C692-4204-9F10-F4EB72C3868C}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fabrikam.DroneDelivery.Common", "Fabrikam.DroneDelivery.Common\Fabrikam.DroneDelivery.Common.csproj", "{530D7BEC-E8B0-4B0A-B608-EAC10E4E858E}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MockAccountService", "MockAccountService\MockAccountService.csproj", "{9C184612-E6AE-4A62-B66B-F7348B78E289}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MockThirdPartyService", "MockThirdPartyService\MockThirdPartyService.csproj", "{200F7B50-7D90-4BB8-BF28-87A3A3DA8CC2}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{4D81DB69-724B-44C2-A779-66778C21722E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fabrikam.DroneDelivery.DeliveryService.Tests", "Fabrikam.DroneDelivery.DeliveryService.Tests\Fabrikam.DroneDelivery.DeliveryService.Tests.csproj", "{5B8E1AE5-2C26-41D0-9035-74295F83FCB8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fabrikam.DroneDelivery.DeliveryService.Tests", "Fabrikam.DroneDelivery.DeliveryService.Tests\Fabrikam.DroneDelivery.DeliveryService.Tests.csproj", "{5B8E1AE5-2C26-41D0-9035-74295F83FCB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,30 +21,10 @@ Global
 		{D01A5347-3D4F-44F4-98C2-AD73D363631B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D01A5347-3D4F-44F4-98C2-AD73D363631B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D01A5347-3D4F-44F4-98C2-AD73D363631B}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2670610E-2495-42AA-BB4C-915D0B74E5CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2670610E-2495-42AA-BB4C-915D0B74E5CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2670610E-2495-42AA-BB4C-915D0B74E5CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2670610E-2495-42AA-BB4C-915D0B74E5CE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D3DE4852-7375-44CE-B3A3-C358473776FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D3DE4852-7375-44CE-B3A3-C358473776FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D3DE4852-7375-44CE-B3A3-C358473776FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D3DE4852-7375-44CE-B3A3-C358473776FD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6B8AA758-C692-4204-9F10-F4EB72C3868C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6B8AA758-C692-4204-9F10-F4EB72C3868C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6B8AA758-C692-4204-9F10-F4EB72C3868C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6B8AA758-C692-4204-9F10-F4EB72C3868C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{530D7BEC-E8B0-4B0A-B608-EAC10E4E858E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{530D7BEC-E8B0-4B0A-B608-EAC10E4E858E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{530D7BEC-E8B0-4B0A-B608-EAC10E4E858E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{530D7BEC-E8B0-4B0A-B608-EAC10E4E858E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{9C184612-E6AE-4A62-B66B-F7348B78E289}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{9C184612-E6AE-4A62-B66B-F7348B78E289}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{9C184612-E6AE-4A62-B66B-F7348B78E289}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{9C184612-E6AE-4A62-B66B-F7348B78E289}.Release|Any CPU.Build.0 = Release|Any CPU
-		{200F7B50-7D90-4BB8-BF28-87A3A3DA8CC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{200F7B50-7D90-4BB8-BF28-87A3A3DA8CC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{200F7B50-7D90-4BB8-BF28-87A3A3DA8CC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{200F7B50-7D90-4BB8-BF28-87A3A3DA8CC2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5B8E1AE5-2C26-41D0-9035-74295F83FCB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5B8E1AE5-2C26-41D0-9035-74295F83FCB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5B8E1AE5-2C26-41D0-9035-74295F83FCB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -66,10 +34,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{D3DE4852-7375-44CE-B3A3-C358473776FD} = {76102849-AD4D-4E0C-BE88-D212E0DDE108}
-		{6B8AA758-C692-4204-9F10-F4EB72C3868C} = {76102849-AD4D-4E0C-BE88-D212E0DDE108}
-		{9C184612-E6AE-4A62-B66B-F7348B78E289} = {76102849-AD4D-4E0C-BE88-D212E0DDE108}
-		{200F7B50-7D90-4BB8-BF28-87A3A3DA8CC2} = {76102849-AD4D-4E0C-BE88-D212E0DDE108}
 		{5B8E1AE5-2C26-41D0-9035-74295F83FCB8} = {4D81DB69-724B-44C2-A779-66778C21722E}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution

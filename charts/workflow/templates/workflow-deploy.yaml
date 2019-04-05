@@ -1,0 +1,91 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+###################################################################################################
+# Workflow
+###################################################################################################
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ include "workflow.fullname" . | replace "." "" }}
+  labels:
+    app.kubernetes.io/name: {{ include "workflow.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: dronedelivery
+    helm.sh/chart: {{ include "workflow.chart" . }}
+    aadpodidbinding: workflow
+  annotations:
+    kubernetes.io/change-cause: {{ .Values.reason }}
+spec:
+  replicas: {{ default 1 .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "workflow.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "workflow.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/version: {{ .Chart.AppVersion }}
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: dronedelivery
+        helm.sh/chart: {{ include "workflow.chart" . }}
+        aadpodidbinding: workflow
+    spec:
+      securityContext:
+        fsGroup: 1
+      containers:
+      - name: fabrikam-workflow
+        image: {{ .Values.dockerregistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        volumeMounts:
+        - name: workflow
+          mountPath: /kvmnt
+          readOnly: true
+        env:
+        - name: CONFIGURATION_FOLDER
+          value: /kvmnt
+        - name: SERVICE_URI_DELIVERY
+          value: {{ .Values.serviceuri.delivery }}
+        - name: SERVICE_URI_DRONE
+          value: {{ .Values.serviceuri.drone }}
+        - name: SERVICE_URI_PACKAGE
+          value: {{ .Values.serviceuri.package }}
+        - name: SERVICEREQUEST__MAXRETRIES
+          value: "{{ .Values.servicerequest.maxretries }}"
+        - name: SERVICEREQUEST__CIRCUITBREAKERTHRESHOLD
+          value: "{{ .Values.servicerequest.circuitbreakerthreshold }}"
+        - name: SERVICEREQUEST__CIRCUITBREAKERSAMPLINGPERIODSECONDS
+          value: "{{ .Values.servicerequest.circuitbreakersamplingperiodseconds }}"
+        - name: SERVICEREQUEST__CIRCUITBREAKERMINIMUMTHROUGHPUT
+          value: "{{ .Values.servicerequest.circuitbreakerminimumthroughput }}"
+        - name: SERVICEREQUEST__CIRCUITBREAKERBREAKDURATION
+          value: "{{ .Values.servicerequest.circuitbreakerbreakduration }}"
+        - name: SERVICEREQUEST__MAXBULKHEADSIZE
+          value: "{{ .Values.servicerequest.maxbulkheadsize }}"
+        - name: SERVICEREQUEST__MAXBULKHEADQUEUESIZE
+          value: "{{ .Values.servicerequest.maxbulkheadqueuesize }}"
+        - name: LOGGING__ApplicationInsights__LOGLEVEL__DEFAULT
+          value: {{ default "Error" .Values.telemetry.level | quote }}
+        - name: no_proxy
+          value: 169.254.169.254
+      volumes:
+      - name: workflow
+        flexVolume:
+          driver: "azure/kv"
+          options:
+            usepodidentity: "true"
+            keyvaultname: {{ .Values.keyvault.name }}
+            keyvaultobjectnames: QueueName;QueueEndpoint;QueueAccessPolicyName;QueueAccessPolicyKey;ApplicationInsights-InstrumentationKey
+            keyvaultobjecttypes: secret;secret;secret;secret;secret
+            keyvaultobjectversions: ""
+            resourcegroup: {{ .Values.keyvault.resourcegroup }}
+            subscriptionid: {{ .Values.keyvault.subscriptionid }}
+            tenantid: {{ .Values.keyvault.tenantid }}

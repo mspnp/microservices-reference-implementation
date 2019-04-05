@@ -1,12 +1,14 @@
 package com.fabrikam.dronedelivery.ingestion.util;
 
-import com.fabrikam.dronedelivery.ingestion.configuration.*;
-import com.microsoft.azure.eventhubs.EventHubClient;
-import com.microsoft.azure.servicebus.ConnectionStringBuilder;
-import com.microsoft.azure.servicebus.ServiceBusException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
-import java.io.IOException;
-import java.util.concurrent.ExecutionException;
+import com.fabrikam.dronedelivery.ingestion.configuration.*;
+
+import com.microsoft.azure.servicebus.QueueClient;
+import com.microsoft.azure.servicebus.ReceiveMode;
+import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
+import com.microsoft.azure.servicebus.primitives.ServiceBusException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -15,44 +17,52 @@ import org.springframework.stereotype.Service;
 @Service
 public class ClientPoolImpl implements ClientPool {
 
-	private final EventHubClient[] eventHubClients;
-	private final String[] eventHubNames;
+	private static final String SCHEME = "https";
+	
+	private final InstrumentedQueueClient[] queueClients;
+	private final String[] queueNames;
 	private final ApplicationProperties appProperties;
 	private final String nameSpace;
 	private final String sasKeyName;
 	private final String sasKey;
-	
+	private final ServiceBusTracing tracing;
 
 	@Autowired
-	public ClientPoolImpl(ApplicationProperties appProps)
-			throws IOException, ServiceBusException, InterruptedException, ExecutionException {
+	public ClientPoolImpl(ApplicationProperties appProps, ServiceBusTracing tracing) {
 		this.appProperties = appProps;
-		
-		
-		this.eventHubNames = System.getenv(appProperties.getEnvHubName()).split(",");		
-		nameSpace = System.getenv(appProperties.getEnvNameSpace());					
+		this.tracing = tracing;
+
+		this.queueNames = System.getenv(appProperties.getEnvQueueName()).split(",");
+		nameSpace = System.getenv(appProperties.getEnvNameSpace());
 		sasKeyName = System.getenv(appProperties.getEnvsasKeyName());
 		sasKey = System.getenv(appProperties.getEnvsasKey());
-			
-		this.eventHubClients = new EventHubClient[this.appProperties.getMessageAmqpClientPoolSize()];
+
+		this.queueClients = new InstrumentedQueueClient[this.appProperties.getMessageAmqpClientPoolSize()];
 	}
 
 	@Async
 	@Override
-	public EventHubClient getConnection()
-			throws InterruptedException, ExecutionException, ServiceBusException, IOException {
+	public InstrumentedQueueClient getConnection()
+			throws InterruptedException, ServiceBusException, URISyntaxException {
 
-		int poolId = (int) (Math.random() * eventHubClients.length);
-		int eventHubId = (int) (Math.random() * eventHubNames.length);
+		int poolId = (int) (Math.random() * queueClients.length);
+		int eventHubId = (int) (Math.random() * queueNames.length);
 
-		if (eventHubClients[poolId] == null) {
-			ConnectionStringBuilder connectionString = new ConnectionStringBuilder(nameSpace,
-					eventHubNames[eventHubId], sasKeyName, sasKey);
-			eventHubClients[poolId] = EventHubClient.createFromConnectionString(connectionString.toString()).get();
+		if (queueClients[poolId] == null) {
+			ConnectionStringBuilder connectionString = new ConnectionStringBuilder(nameSpace, queueNames[eventHubId],
+					sasKeyName, sasKey);
+
+			queueClients[poolId] = new InstrumentedQueueClientImpl(
+				new URI(SCHEME, 
+					connectionString
+						.getEndpoint()
+						.getHost(), 
+					"/", 
+					null).toString(),
+				new QueueClient(connectionString, ReceiveMode.PEEKLOCK),
+				tracing);
 		}
-		
 	
-		return eventHubClients[poolId];
+		return queueClients[poolId];
 	}
-
 }

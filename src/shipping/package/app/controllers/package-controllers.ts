@@ -118,7 +118,7 @@ export class PackageControllers {
 
         case MongoErrors.TooManyRequests:
           logger.error('Too many requests', ctx.request.body)
-          ctx.response.status, 429;
+          ctx.response.status = 429;
           break;
 
         default:

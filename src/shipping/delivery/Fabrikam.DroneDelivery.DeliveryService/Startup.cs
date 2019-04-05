@@ -6,6 +6,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,7 +16,6 @@ using Fabrikam.DroneDelivery.DeliveryService.Services;
 using Fabrikam.DroneDelivery.DeliveryService.Middlewares.Builder;
 using Serilog;
 using Serilog.Formatting.Compact;
-using Fabrikam.DroneDelivery.Common;
 
 namespace Fabrikam.DroneDelivery.DeliveryService
 {
@@ -28,6 +28,14 @@ namespace Fabrikam.DroneDelivery.DeliveryService
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                 .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
                 .AddEnvironmentVariables();
+
+            var buildConfig = builder.Build();
+
+            if (buildConfig["KEY_VAULT_URI"] is var keyVaultUri && !string.IsNullOrEmpty(keyVaultUri))
+            {
+                builder.AddAzureKeyVault(keyVaultUri);
+            }
+
             Configuration = builder.Build();
         }
 
@@ -38,22 +46,22 @@ namespace Fabrikam.DroneDelivery.DeliveryService
         {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-            services.AddLogging(loggingBuilder =>
-                loggingBuilder.AddSerilog(dispose: true));
+            // Configure AppInsights
+            services.AddApplicationInsightsKubernetesEnricher();
+            services.AddApplicationInsightsTelemetry(Configuration);
 
             // Add framework services.
-            services.AddMvc();
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Info { Title = "Fabrikam DroneDelivery DeliveryService API", Version = "v1" });
             });
-            
+
             services.AddSingleton<IDeliveryRepository, DeliveryRepository>();
             services.AddSingleton<INotifyMeRequestRepository, NotifyMeRequestRepository>();
             services.AddSingleton<INotificationService, NoOpNotificationService>();
-            services.AddSingleton<IDeliveryHistoryService, DeliveryHistoryService>();
             services.AddSingleton<IDeliveryTrackingEventRepository, DeliveryTrackingRepository>();
         }
 
@@ -63,7 +71,6 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             Log.Logger = new LoggerConfiguration()
               .WriteTo.Console(new CompactJsonFormatter())
               .ReadFrom.Configuration(Configuration)
-              .Enrich.With(new CorrelationLogEventEnricher(httpContextAccessor, Configuration["Logging:CorrelationHeaderKey"]))
               .CreateLogger();
 
             // Important: it has to be first: enable global logger
@@ -86,10 +93,9 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             });
 
             //TODO look into creating a factory of DocDBRepos/RedisCache/EventHubMessenger
-            DocumentDBRepository<InternalNotifyMeRequest>.Configure(Configuration["DOCDB_ENDPOINT"], Configuration["DOCDB_KEY"], Configuration["DOCDB_DATABASEID"], Configuration["DOCDB_COLLECTIONID"], loggerFactory);
-            RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["REDIS_ENDPOINT"], Configuration["REDIS_KEY"], loggerFactory);
-            RedisCache<DeliveryTrackingEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["REDIS_ENDPOINT"], Configuration["REDIS_KEY"], loggerFactory);
-            EventHubSender<DeliveryHistory>.Configure(Configuration["EH_CONNSTR"], Configuration["EH_ENTITYPATH"]);
+            DocumentDBRepository<InternalNotifyMeRequest>.Configure(Configuration["CosmosDB-Endpoint"], Configuration["CosmosDB-Key"], Configuration["DOCDB_DATABASEID"], Configuration["DOCDB_COLLECTIONID"], loggerFactory);
+            RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
+            RedisCache<DeliveryTrackingEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
         }
     }
 }

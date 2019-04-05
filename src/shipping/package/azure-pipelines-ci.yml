@@ -1,0 +1,118 @@
+steps:
+- script: echo '##vso[task.setvariable variable=repositoryName]package'
+  name: setvarAzureContainerRegistry
+- script: echo $(repositoryName)
+  name: echovarRepositoryName
+
+- script: echo '##vso[task.setvariable variable=chartPath]charts/package'
+  name: setvarChartPath
+- script: echo $(chartPath)
+  name: echovarChartPath
+
+- script: echo '##vso[task.setvariable variable=dockerFileName]src/shipping/package/Dockerfile'
+  name: setvarDockerFileName
+- script: echo $(dockerFileName)
+  name: echovarDockerFileName
+
+- script: echo '##vso[task.setvariable variable=releaseVersion]$(Build.SourceBranchName)'
+  name: setvarReleaseVersion
+- script: echo $(releaseVersion)
+  name: echovarReleaseVersion
+
+- script: echo '##vso[task.setvariable variable=aksNamespace]backend'
+  name: setvarAKSNamespace
+- script: echo $(aksNamespace)
+  name: echovarAKSNamespace
+
+- script: echo '##vso[task.setvariable variable=imageName]$(repositoryName):$(releaseVersion)'
+  name: setvarImageName
+- script: echo $(imageName)
+  name: echovarImageName
+
+- task: Docker@1
+  condition: or(eq(variables['buildImage'],True),eq(variables['fullCI'],True))
+  displayName: 'Build runtime image'
+  inputs:
+
+    azureSubscriptionEndpoint: $(AzureSubscription)
+
+    azureContainerRegistry: $(AzureContainerRegistry)
+
+    dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
+
+    includeLatestTag: true
+
+    imageName: '$(imageName)'
+
+- task: Docker@1
+  condition: eq(variables['fullCI'],True)
+  displayName: 'Push runtime image'
+  inputs:
+    azureSubscriptionEndpoint: $(AzureSubscription)
+
+    azureContainerRegistry: $(AzureContainerRegistry)
+
+    command: 'Push an image'
+
+    imageName: '$(imageName)'
+
+    includeSourceTags: false
+
+- task: HelmInstaller@0
+  condition: eq(variables['fullCI'],True)
+  displayName: 'Install Helm 2.9.1'
+  inputs:
+    kubectlVersion: 1.10.3
+
+    checkLatestKubectl: false
+
+- task: HelmDeploy@0
+  condition: eq(variables['fullCI'],True)
+  displayName: 'helm init --client-only'
+  inputs:
+    azureSubscription: $(AzureSubscription)
+
+    azureResourceGroup: $(ResourceGroup)
+
+    kubernetesCluster: $(AzureKubernetesService)
+
+    namespace: prod
+
+    command: init
+
+    upgradeTiller: false
+
+    arguments: '--client-only'
+
+- task: HelmDeploy@0
+  condition: eq(variables['fullCI'],True)
+  displayName: 'helm package'
+  inputs:
+    command: package
+
+    chartPath: $(chartPath)
+
+    chartVersion: $(Build.SourceBranchName)
+
+    arguments: '--app-version $(Build.SourceBranchName)'
+
+- task: AzureCLI@1
+  condition: eq(variables['fullCI'],True)
+  displayName: 'Push a helm package'
+  inputs:
+    azureSubscription: $(AzureSubscription)
+
+    scriptLocation: inlineScript
+
+    inlineScript: |
+     force='--force'
+     packageExists="$(az acr helm list -n $(AzureContainerRegistryHelmRepo) --query "$(repositoryName)[?version=='$(Build.SourceBranchName)'].version")"
+
+     export force
+     export packageExists
+
+     if [ "$packageExists" = "[]" ] || [ "$packageExists" = "" ]; then
+       force=''
+     fi
+
+     az acr helm push $(System.ArtifactsDirectory)/$(repositoryName)-$(Build.SourceBranchName).tgz --name $(AzureContainerRegistryHelmRepo) $force;

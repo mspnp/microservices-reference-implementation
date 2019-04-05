@@ -1,0 +1,28 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+###################################################################################################
+# Dronescheduler service
+###################################################################################################
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dronescheduler.fullname" . | replace "." "" }}
+  labels:
+    app.kubernetes.io/name: {{ template "dronescheduler.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: dronedelivery
+    helm.sh/chart: {{ include "dronescheduler.chart" . }}
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: {{ template "dronescheduler.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
