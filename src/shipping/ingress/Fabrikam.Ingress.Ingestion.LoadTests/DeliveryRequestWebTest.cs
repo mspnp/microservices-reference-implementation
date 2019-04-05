@@ -9,6 +9,7 @@ using System.Net;
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.VisualStudio.TestTools.WebTesting;
+using Newtonsoft.Json;
 
 namespace Fabrikam.Ingress.Ingestion.LoadTests
 {
@@ -75,29 +76,31 @@ namespace Fabrikam.Ingress.Ingestion.LoadTests
 
         private static StringHttpBody CreateRandomHttpBodyString()
         {
-            Guid tag = Guid.NewGuid();
+            Guid randomTag = Guid.NewGuid();
 
             var httpBodyRequestWithRandomTag = 
                 new StringHttpBody
             {
                 ContentType = "application/json",
                 InsertByteOrderMark = false,
-                BodyString = $@"{{
-    ""confirmationRequired"": ""FingerPrint"",
-    ""deadline"": ""DeadlyQueueOfZombiatedDemons"",
-    ""deliveryId"": ""{DeliveryId}"",
-    ""dropOffLocation"": ""{PackageLocationDropOff}"",
-    ""expedited"": true,
-    ""ownerId"": ""1"",
-    ""packageInfo"": {{
-        ""packageId"": ""{PackageId}"",
-        ""size"": ""Small"",
-        ""tag"": ""{tag}"",
-        ""weight"": 14
-    }},
-    ""pickupLocation"": ""{PackageLocationPickup}"",
-    ""pickupTime"": ""2017-11-08T23:26:30.118Z""
-}}"
+                BodyString = JsonConvert.SerializeObject(new
+                {
+                    confirmationRequired = "FingerPrint",
+                    deadline = "DeadlyQueueOfZombiatedDemons",
+                    deliveryId = DeliveryId,
+                    dropOffLocation = PackageLocationDropOff,
+                    expedited = true,
+                    ownerId = "1",
+                    packageInfo = new
+                    {
+                        packageId = PackageId,
+                        size = "Small",
+                        tag = randomTag,
+                        weight = "14"
+                    },
+                    pickupLocation = PackageLocationPickup,
+                    pickupTime = "2019-04-05T11:00:00.000Z"
+                })
             };
 
             return httpBodyRequestWithRandomTag;
