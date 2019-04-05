@@ -24,6 +24,7 @@
 		<lombok.version>1.16.10</lombok.version>
         <okhttp.version>2.7.5</okhttp.version>
         <spring.boot.version>2.1.2.RELEASE</spring.boot.version>
+        <start-class>com.fabrikam.dronedelivery.ingestion.IngestionApplication</start-class>
 	</properties>
 
 	<dependencies>
