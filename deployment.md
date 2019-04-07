@@ -31,7 +31,6 @@ Set environment variables.
 
 ```bash
 export SSH_PUBLIC_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PUBLIC_KEY_FILE_HERE]
-export SSH_PRIVATE_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PRIVAYE_KEY_FILE_HERE]
 
 export LOCATION=[YOUR_LOCATION_HERE]
 
@@ -66,7 +65,7 @@ Deployment
 ```bash
 # Deploy the managed identities
 # These are deployed first in a separate template to avoid propagation delays with AAD
-az group deployment create -g $RESOURCE_GROUP --name azuredeploy-identities --template-file azuredeploy-identities.json
+az group deployment create -g $RESOURCE_GROUP --name azuredeploy-identities --template-file ${PROJECT_ROOT}/azuredeploy-identities.json
 export DELIVERY_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryIdName.value -o tsv)
 export DELIVERY_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalId.value -o tsv)
 export DRONESCHEDULER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerIdName.value -o tsv)
@@ -82,7 +81,7 @@ until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Wai
 # Deploy all other resources
 # The version of kubernetes must be supported in the target region
 export KUBERNETES_VERSION='1.12.6'
-az group deployment create -g $RESOURCE_GROUP --name azuredeploy --template-file azuredeploy.json \
+az group deployment create -g $RESOURCE_GROUP --name azuredeploy --template-file ${PROJECT_ROOT}/azuredeploy.json \
 --parameters servicePrincipalClientId=${SP_APP_ID} \
             servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
             servicePrincipalId=${SP_OBJECT_ID} \
@@ -203,6 +202,7 @@ helm install $HELM_CHARTS/delivery/ \
      --set cosmosdb.id=$DATABASE_NAME \
      --set cosmosdb.collectionid=$COLLECTION_NAME \
      --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
+     --set reason="Initial deployment" \
      --namespace backend \
      --name delivery-v0.1.0
 
@@ -246,6 +246,7 @@ helm install $HELM_CHARTS/package/ \
      --set secrets.mongo.pwd=$COSMOSDB_CONNECTION \
      --set cosmosDb.collectionName=$COSMOSDB_COL_NAME \
      --set dockerregistry=$ACR_SERVER \
+     --set reason="Initial deployment" \
      --namespace backend \
      --name package-v0.1.0
 
@@ -296,6 +297,7 @@ helm install $HELM_CHARTS/workflow/ \
      --set keyvault.resourcegroup=$RESOURCE_GROUP \
      --set keyvault.subscriptionid=$SUBSCRIPTION_ID \
      --set keyvault.tenantid=$TENANT_ID \
+     --set reason="Initial deployment" \
      --namespace backend \
      --name workflow-v0.1.0
 
@@ -363,6 +365,7 @@ helm install $HELM_CHARTS/ingestion/ \
      --set secrets.queue.keyvalue=${INGESTION_ACCESS_KEY_VALUE} \
      --set secrets.queue.name=${INGESTION_QUEUE_NAME} \
      --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
+     --set reason="Initial deployment" \
      --namespace backend \
      --name ingestion-v0.1.0
 
@@ -413,6 +416,7 @@ helm install $HELM_CHARTS/dronescheduler/ \
      --set identity.clientid=$DRONESCHEDULER_PRINCIPAL_CLIENT_ID \
      --set identity.resourceid=$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID \
      --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
+     --set reason="Initial deployment" \
      --namespace backend \
      --name dronescheduler-v0.1.0
 
