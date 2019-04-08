@@ -19,6 +19,6 @@ WORKDIR /app
 ADD https://github.com/Microsoft/ApplicationInsights-Java/releases/download/2.3.0/applicationinsights-agent-2.3.0.jar ./appinsights/applicationinsights-agent-2.3.0.jar
 ADD /etc/AI-Agent.xml ./appinsights/AI-Agent.xml
 
-COPY --from=build /usr/src/app/target ./
+COPY --from=build /usr/src/app/target/ingestion-0.1.0.jar ./
 
 ENTRYPOINT ["java","-Djava.security.egdfile=file:/dev/./urandom","-javaagent:/app/appinsights/applicationinsights-agent-2.3.0.jar","-jar","ingestion-0.1.0.jar"]
