@@ -57,7 +57,7 @@ spec:
         - name: QUEUE_NAMESPACE
           valueFrom:
             secretKeyRef:
-              name: ingestion-secrets
+              name: {{ .Release.Name }}-secrets
               key: queue_namespace
         - name: QUEUE_NAME
           valueFrom:
@@ -67,17 +67,17 @@ spec:
         - name: QUEUE_KEYNAME
           valueFrom:
             secretKeyRef:
-              name: ingestion-secrets
+              name: {{ .Release.Name }}-secrets
               key: queue_keyname
         - name: QUEUE_KEYVALUE
           valueFrom:
             secretKeyRef:
-              name: ingestion-secrets
+              name: {{ .Release.Name }}-secrets
               key: queue_keyvalue
         - name: APPINSIGHTS_INSTRUMENTATIONKEY
           valueFrom:
             secretKeyRef:
-              name: ingestion-secrets
+              name: {{ .Release.Name }}-secrets
               key: appinsights-ikey
         - name: APPINSIGHTS_LOGGERLEVEL
           value: {{ default "error" .Values.telemetry.level | quote }}

@@ -13,12 +13,13 @@ metadata:
   name: ingestion-ingress
 spec:
   {{- if .Values.ingress.tls }}
+  {{- $relname := .Release.Name }}
   tls:
   {{- range .Values.ingress.hosts }}
   {{- if .tls }}
   - hosts:
     - {{ .name }}
-    secretName: {{ .tlsSecretName }}
+    secretName: {{ $relname }}-{{ .tlsSecretName }}
   {{- end }}
   {{- end }}
   {{- end }}

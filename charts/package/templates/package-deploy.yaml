@@ -45,14 +45,14 @@ spec:
         - name: CONNECTION_STRING
           valueFrom:
             secretKeyRef:
-              name: package-secrets
+              name: {{ .Release.Name }}-secrets
               key: mongodb-pwd
         - name: COLLECTION_NAME
           value: {{ default "packages" .Values.cosmosDb.collectionName }}
         - name: APPINSIGHTS_INSTRUMENTATIONKEY
           valueFrom:
             secretKeyRef:
-              name: package-secrets
+              name: {{ .Release.Name }}-secrets
               key: appinsights-ikey
         - name: LOG_LEVEL
           value: {{ .Values.log.level }}
