@@ -6,10 +6,11 @@
 ###################################################################################################
 # Delivery
 ###################################################################################################
+{{- $fullname := include "delivery.fullname" . | replace "." "" }}
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ include "delivery.fullname" . | replace "." "" }}
+  name: {{ $fullname }}
   labels:
     app.kubernetes.io/name: {{ include "delivery.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -18,7 +19,7 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
     helm.sh/chart: {{ include "delivery.chart" . }}
-    aadpodidbinding: delivery
+    aadpodidbinding: {{ $fullname }}
   annotations:
     kubernetes.io/change-cause: {{ .Values.reason }}
 spec:
@@ -37,7 +38,7 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: dronedelivery
         helm.sh/chart: {{ include "delivery.chart" . }}
-        aadpodidbinding: delivery
+        aadpodidbinding: {{ $fullname }}
     spec:
       securityContext:
         fsGroup: 1

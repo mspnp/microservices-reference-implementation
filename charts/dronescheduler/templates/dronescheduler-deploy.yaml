@@ -6,10 +6,11 @@
 ###################################################################################################
 # Dronescheduler
 ###################################################################################################
+{{- $fullname := include "dronescheduler.fullname" . | replace "." "" }}
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ include "dronescheduler.fullname" . | replace "." "" }}
+  name: {{ $fullname }}
   labels:
     app.kubernetes.io/name: {{ include "dronescheduler.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -18,7 +19,7 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
     helm.sh/chart: {{ include "dronescheduler.chart" . }}
-    aadpodidbinding: dronescheduler
+    aadpodidbinding: {{ $fullname }}
   annotations:
     kubernetes.io/change-cause: {{ .Values.reason }}
 spec:
@@ -37,7 +38,7 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: dronedelivery
         helm.sh/chart: {{ include "dronescheduler.chart" . }}
-        aadpodidbinding: dronescheduler
+        aadpodidbinding: {{ $fullname }}
     spec:
       securityContext:
         fsGroup: 1
