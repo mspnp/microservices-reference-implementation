@@ -6,28 +6,52 @@
 ###################################################################################################
 # Delivery service
 ###################################################################################################
-
-# the following object is meant ot be created first time only.
-# its configuration will be later managed by CI/CD
-{{ if (eq .Release.Name "delivery-v0.1.0") }}
+{{- $appname := include "delivery.name" . -}}
+{{- $chart := include "delivery.chart" . -}}
+{{- $instancename := .Release.Name }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: delivery
+  name: {{ include "delivery.fullname" . | replace "." "" }}
   labels:
-    app.kubernetes.io/name: {{ template "delivery.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: azurepipelines
+    app.kubernetes.io/name: {{ $appname }}
+    app.kubernetes.io/instance: {{ $instancename }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
-    helm.sh/chart: {{ include "delivery.chart" . }}
+    helm.sh/chart: {{ $chart }}
 spec:
   ports:
   - name: http
     port: 80
     targetPort: 8080
   selector:
-    app.kubernetes.io/name: {{ template "delivery.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ $appname }}
+    app.kubernetes.io/instance: {{ $instancename }}
+{{ if (eq .Release.Name "delivery-v0.1.0") }}
+{{- range tuple "delivery" "delivery-experimental" }}
+{{- $svcname := . }}
+---
+# the following object is meant ot be created first time only.
+# its configuration will be later managed by CI/CD
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $svcname }}
+  labels:
+    app.kubernetes.io/name: {{ $appname }}
+    app.kubernetes.io/managed-by: azuredeveops
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: dronedelivery
+    helm.sh/chart: {{ $chart }}
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  selector:
+    app.kubernetes.io/name: {{ $appname }}
+    app.kubernetes.io/instance: {{ $instancename }}
+{{ end }}
 {{ end }}
