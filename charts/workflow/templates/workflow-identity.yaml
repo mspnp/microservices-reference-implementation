@@ -12,7 +12,8 @@ kind: AzureIdentity
 metadata:
  name: {{ $fullname }}-identity
  annotations:
-  "helm.sh/hook": "pre-install"
+  "helm.sh/hook": pre-install,pre-upgrade
+  "helm.sh/hook-delete-policy": hook-failed,before-hook-creation
   "helm.sh/hook-weight": "0"
 spec:
  type: 0
@@ -24,7 +25,8 @@ kind: AzureIdentityBinding
 metadata:
  name: {{ $fullname }}-identity-binding
  annotations:
-  "helm.sh/hook": "pre-install"
+  "helm.sh/hook": pre-install,pre-upgrade
+  "helm.sh/hook-delete-policy": hook-failed,before-hook-creation
   "helm.sh/hook-weight": "1"
 spec:
  AzureIdentity: {{ $fullname }}-identity
