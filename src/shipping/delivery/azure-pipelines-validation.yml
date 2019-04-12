@@ -1,6 +1,6 @@
 variables:
   BuildConfiguration: "Release"
-  
+
 name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
 
 pr: # only valid for GitHub. Using Azure repo it must be configure as a Branch Policy
@@ -33,10 +33,10 @@ trigger:
 
     - topic/experimental/*
 
-  paths:
-     include:
+  paths: # first commit into a new branch is not filter by path: https://developercommunity.visualstudio.com/content/problem/246323/push-of-new-branch-disregards-path-filters-in-ci-b.html
+    include:
 
-     - /src/shipping/delivery/
+    - /src/shipping/delivery/
 
 resources:
 - repo: self

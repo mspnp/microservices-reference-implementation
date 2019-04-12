@@ -20,12 +20,9 @@ pr: # only valid for GitHub. Using Azure repo it must be configure as a Branch P
 
 trigger:
   batch: true
-  paths:
-     include:
-     - /src/shipping/dronescheduler/
-     exclude:
-     - /
-     - /src/
+  paths: # first commit into a new branch is not filter by path: https://developercommunity.visualstudio.com/content/problem/246323/push-of-new-branch-disregards-path-filters-in-ci-b.html
+    include:
+    - /src/shipping/dronescheduler/
 
   branches:
     include:
