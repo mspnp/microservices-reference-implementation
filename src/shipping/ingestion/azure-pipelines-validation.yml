@@ -1,0 +1,49 @@
+variables:
+  BuildConfiguration: "Release"
+
+name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
+
+pr: # only valid for GitHub. Using Azure repo it must be configure as a Branch Policy
+  paths:
+    include:
+
+    - /src/shipping/ingestion/
+  branches:
+    include:
+
+    - master
+
+    - release/ingestion/v*
+
+
+trigger:
+  batch: true
+  paths: # first commit into a new branch is not filter by path: https://developercommunity.visualstudio.com/content/problem/246323/push-of-new-branch-disregards-path-filters-in-ci-b.html
+    include:
+
+    - /src/shipping/ingestion/
+  branches:
+     include:
+
+     - master
+
+     - feature/*
+
+     - topic/*
+
+resources:
+- repo: self
+
+jobs:
+
+# CI
+- job: ingestioncivalidationjob
+  displayName: "ingestion CI Validation (build & test)"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  timeoutInMinutes: 90
+  variables:
+    fullCI: False
+    buildImage: $[ or(startsWith(variables['build.sourceBranch'], 'refs/pull/'),eq(variables['build.sourceBranch'], 'refs/heads/master')) ]
+  steps:
+  - template: ./azure-pipelines-ci.yml

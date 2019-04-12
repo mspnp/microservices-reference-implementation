@@ -1,0 +1,31 @@
+variables:
+  BuildConfiguration: "Release"
+
+name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
+
+trigger:
+  branches:
+    include:
+
+    # for new release to production: release flow strategy
+    - release/ingestion/v*
+
+    - refs/relelase/ingestion/v*
+
+resources:
+- repo: self
+
+jobs:
+
+# CI
+- job: ingestionjobci
+  displayName: "ingestion CI"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  timeoutInMinutes: 90
+  variables:
+    fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/ingestion/v') ]
+  steps:
+  - script: echo $(fullCI)
+    name: echovar
+  - template: ./azure-pipelines-ci.yml
