@@ -391,8 +391,8 @@ Create and set up pod identity
 
 ```bash
 # Extract outputs from deployment
-export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
-export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv)
+export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
+export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv)
 ```
 
 Build and publish the container image
