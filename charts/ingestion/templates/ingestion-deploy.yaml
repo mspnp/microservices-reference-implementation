@@ -62,7 +62,7 @@ spec:
         - name: QUEUE_NAME
           valueFrom:
             secretKeyRef:
-              name: ingestion-secrets
+              name: {{ .Release.Name }}-secrets
               key: queue_name
         - name: QUEUE_KEYNAME
           valueFrom:
