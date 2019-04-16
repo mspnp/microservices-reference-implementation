@@ -16,6 +16,15 @@ subjects:
 - kind: ServiceAccount
   name: default
   namespace: backend
+- kind: ServiceAccount
+  name: default
+  namespace: backend-dev
+- kind: ServiceAccount
+  name: default
+  namespace: backend-qa
+- kind: ServiceAccount
+  name: default
+  namespace: backend-staging
 roleRef:
   kind: ClusterRole
   name: appinsights-k8s-property-reader
