@@ -5,7 +5,6 @@
 - Azure subscription
 - [Azure CLI 2.0.49 or later](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Azure DevOps account](https://azure.microsoft.com/services/devops)
-- [Docker](https://docs.docker.com/)
 - [Helm 2.12.3 or later](https://docs.helm.sh/using_helm/#installing-helm)
 - [JQ](https://stedolan.github.io/jq/download/)
 
@@ -168,6 +167,7 @@ az extension add --name azure-devops
 # export
 AZURE_DEVOPS_ORG_NAME=<devops-org-name>
 AZURE_DEVOPS_ORG=https://dev.azure.com/$AZURE_DEVOPS_ORG_NAME
+AZURE_DEVOPS_VSRM_ORG=https://vsrm.dev.azure.com/$AZURE_DEVOPS_ORG_NAME
 AZURE_DEVOPS_PROJECT_NAME=<new-or-existent-project-name>
 AZURE_REPOS_NAME=<new-repo-name>
 AZURE_PIPELINES_SERVICE_CONN_NAME=default_cicd_service-connection
@@ -223,12 +223,19 @@ git remote add newremote $NEW_REMOTE
 Extract details from devops, repos and projects
 
 ```bash
+# navigate to the organization tokens and create a new Personal Access Token
+open $AZURE_DEVOPS_ORG/_usersSettings/tokens
+
+# export token for making REST API calls
+export AZURE_DEVEOPS_USER=<devops-user-email>
+export AZURE_DEVOPS_PAT=<generated-PAT>
+export AZURE_DEVOPS_AUTHN_BASIC_TOKEN=$(echo -n ${AZURE_DEVOPS_USER}:${AZURE_DEVOPS_PAT} | base64 | sed -e ':a' -e 'N' -e '$!ba' -e 's/\n//g')
+
 export AZURE_DEVOPS_SERVICE_CONN_ID=$(az devops service-endpoint list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='${AZURE_PIPELINES_SERVICE_CONN_NAME}'].id" -o tsv) && \
 export AZURE_DEVOPS_REPOS_ID=$(az repos show --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --repository $AZURE_DEVOPS_REPOS_NAME --query id -o tsv) && \
-export AZURE_DEVOPS_PROJECT_ID=$(az devops project show --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query id -o tsv)
+export AZURE_DEVOPS_PROJECT_ID=$(az devops project show --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query id -o tsv) && \
+export AZURE_DEVOPS_USER_ID=$(az devops user show --user ${AZURE_DEVEOPS_USER} --organization ${AZURE_DEVOPS_ORG} --query id -o tsv)
 ```
-
-## Continuous Integration
 
 ### Build pipelines pre-requisites
 
@@ -259,7 +266,7 @@ git push newremote master && \
 cd -
 ```
 
-### Create Delivery build definition
+## Add Delivery CI/CD
 
 ```
 # add build definition
@@ -272,58 +279,53 @@ az pipelines create \
    --repository-type tfsgit \
    --repository $AZURE_DEVOPS_REPOS_NAME \
    --branch master
-```
 
-## Deploy the Delivery service
-
-Extract resource details from deployment
-
-```bash
+# query build definition details and resources
+export AZURE_DEVOPS_DELIVERY_BUILD_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='delivery-ci'].id" -o tsv) && \
+export AZURE_DEVOPS_DELIVERY_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='delivery-ci'].queue.id" -o tsv) && \
 export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryCosmosDbName.value -o tsv) && \
 export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
 export COLLECTION_NAME="${DATABASE_NAME}-col" && \
-export DELIVERY_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryKeyVaultUri.value -o tsv)
-```
-
-Build the Delivery service
-
-```bash
-export DELIVERY_PATH=$PROJECT_ROOT/src/shipping/delivery
-```
-
-Build and publish the container image
-
-```bash
-# Build the Docker image
-docker build --pull --compress -t $ACR_SERVER/delivery:0.1.0 $DELIVERY_PATH/.
-
-# Push the image to ACR
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/delivery:0.1.0
-```
-
-Deploy the Delivery service:
-
-```bash
-# Extract pod identity outputs from deployment
+export DELIVERY_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryKeyVaultUri.value -o tsv) && \
 export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
 export DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
 
-# Deploy the service
-helm install $HELM_CHARTS/delivery/ \
-     --set image.tag=0.1.0 \
-     --set image.repository=delivery \
-     --set dockerregistry=$ACR_SERVER \
-     --set identity.clientid=$DELIVERY_PRINCIPAL_CLIENT_ID \
-     --set identity.resourceid=$DELIVERY_PRINCIPAL_RESOURCE_ID \
-     --set cosmosdb.id=$DATABASE_NAME \
-     --set cosmosdb.collectionid=$COLLECTION_NAME \
-     --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
-     --set reason="Initial deployment" \
-     --namespace backend \
-     --name delivery-v0.1.0
+# add relese definition
+cat $DELIVERY_PATH/azure-pipelines-cd.json | \
+     sed "s#CLUSTER_NAME_VAR_VAL#$CLUSTER_NAME#g" | \
+     sed "s#RESOURCE_GROUP_VAR_VAL#$RESOURCE_GROUP#g" | \
+     sed "s#ACR_SERVER_VAR_VAL#$ACR_SERVER#g" | \
+     sed "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" | \
+     sed "s#DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL#$DELIVERY_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#DATABASE_NAME_VAR_VAL#$DATABASE_NAME#g" | \
+     sed "s#COLLECTION_NAME_VAR_VAL#$COLLECTION_NAME#g" | \
+     sed "s#DELIVERY_KEYVAULT_URI_VAR_VAL#$DELIVERY_KEYVAULT_URI#g" | \
+     sed "s#AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL#$AZURE_DEVOPS_SERVICE_CONN_ID#g" | \
+     sed "s#AZURE_DEVOPS_DELIVERY_BUILD_ID_VAR_VAL#$AZURE_DEVOPS_DELIVERY_BUILD_ID#g" | \
+     sed "s#AZURE_DEVOPS_REPOS_ID_VAR_VAL#$AZURE_DEVOPS_REPOS_ID#g" | \
+     sed "s#AZURE_DEVOPS_PROJECT_ID_VAR_VAL#$AZURE_DEVOPS_PROJECT_ID#g" | \
+     sed "s#AZURE_DEVOPS_QUEUE_ID_VAR_VAL#$AZURE_DEVOPS_DELIVERY_QUEUE_ID#g" | \
+     sed "s#AZURE_DEVOPS_USER_ID_VAR_VAL#$AZURE_DEVOPS_USER_ID#g" \
+     > $DELIVERY_PATH/azure-pipelines-cd-0.json
 
-# Verify the pod is created
+curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
+     -d@${DELIVERY_PATH}/azure-pipelines-cd-0.json \
+     -H "Authorization: Basic ${AZURE_DEVOPS_AUTHN_BASIC_TOKEN}" \
+     -H "Content-Type: application/json" \
+     -o /dev/null
+```
+
+Kick off CI/CD pipelines
+
+```bash
+git checkout -b release/delivery/v0.1.0 && \
+git push newremote release/delivery/v0.1.0
+```
+
+Verify delivery was deployed
+
+```bash
 helm status delivery-v0.1.0
 ```
 
