@@ -112,14 +112,4 @@ steps:
     scriptLocation: inlineScript
 
     inlineScript: |
-     force='--force'
-     packageExists="$(az acr helm list -n $(AzureContainerRegistryHelmRepo) --query "$(repositoryName)[?version=='$(Build.SourceBranchName)'].version")"
-
-     export force
-     export packageExists
-
-     if [ "$packageExists" = "[]" ] || [ "$packageExists" = "" ]; then
-       force=''
-     fi
-
-     az acr helm push $(System.ArtifactsDirectory)/$(repositoryName)-$(Build.SourceBranchName).tgz --name $(AzureContainerRegistryHelmRepo) $force;
+     az acr helm push $(System.ArtifactsDirectory)/$(repositoryName)-$(Build.SourceBranchName).tgz --name $(AzureContainerRegistryHelmRepo) --force;
