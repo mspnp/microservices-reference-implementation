@@ -388,7 +388,7 @@ Verify package was deployed
 helm status package-v0.1.0
 ```
 
-## Add Workflow CI
+## Add Workflow CI/CD
 
 ```
 # add build definitions
@@ -401,58 +401,53 @@ az pipelines create \
    --repository-type tfsgit \
    --repository $AZURE_DEVOPS_REPOS_NAME \
    --branch master
-```
 
-## Deploy the Workflow service
-
-Extract resource details from deployment
-
-```bash
-export WORKFLOW_KEYVAULT_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.workflowKeyVaultName.value -o tsv)
-```
-
-Build the workflow service
-
-```bash
-export WORKFLOW_PATH=$PROJECT_ROOT/src/shipping/workflow
-
-# Build the Docker image
-docker build --pull --compress -t $ACR_SERVER/workflow:0.1.0 $WORKFLOW_PATH/.
-
-# Push the image to ACR
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/workflow:0.1.0
-```
-
-Create and set up pod identity
-
-```bash
-# Extract outputs from deployment
+# query build definition details and resources
+export AZURE_DEVOPS_WORKFLOW_BUILD_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='workflow-ci'].id" -o tsv) && \
+export AZURE_DEVOPS_WORKFLOW_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='workflow-ci'].queue.id" -o tsv) && \
+export WORKFLOW_KEYVAULT_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.workflowKeyVaultName.value -o tsv) && \
 export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalResourceId.value -o tsv) && \
 export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalClientId.value -o tsv)
+
+# add relese definition
+cat $WORKFLOW_PATH/azure-pipelines-cd.json | \
+     sed "s#CLUSTER_NAME_VAR_VAL#$CLUSTER_NAME#g" | \
+     sed "s#RESOURCE_GROUP_VAR_VAL#$RESOURCE_GROUP#g" | \
+     sed "s#ACR_SERVER_VAR_VAL#$ACR_SERVER#g" | \
+     sed "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" | \
+     sed "s#WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL#$WORKFLOW_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL#$WORKFLOW_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#WORKFLOW_KEYVAULT_NAME_VAR_VAL#$WORKFLOW_KEYVAULT_NAME#g" | \
+     sed "s#SUBSCRIPTION_ID_VAR_VAL#$SUBSCRIPTION_ID#g" | \
+     sed "s#TENANT_ID_VAR_VAL#$TENANT_ID#g" | \
+     sed "s#AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL#$AZURE_DEVOPS_SERVICE_CONN_ID#g" | \
+     sed "s#AZURE_DEVOPS_WORKFLOW_BUILD_ID_VAR_VAL#$AZURE_DEVOPS_WORKFLOW_BUILD_ID#g" | \
+     sed "s#AZURE_DEVOPS_REPOS_ID_VAR_VAL#$AZURE_DEVOPS_REPOS_ID#g" | \
+     sed "s#AZURE_DEVOPS_PROJECT_ID_VAR_VAL#$AZURE_DEVOPS_PROJECT_ID#g" | \
+     sed "s#AZURE_DEVOPS_WORKFLOW_QUEUE_ID_VAR_VAL#$AZURE_DEVOPS_WORKFLOW_QUEUE_ID#g" | \
+     sed "s#AZURE_DEVOPS_USER_ID_VAR_VAL#$AZURE_DEVOPS_USER_ID#g" \
+     > $WORKFLOW_PATH/azure-pipelines-cd-0.json
+
+curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
+     -d@${WORKFLOW_PATH}/azure-pipelines-cd-0.json \
+     -H "Authorization: Basic ${AZURE_DEVOPS_AUTHN_BASIC_TOKEN}" \
+     -H "Content-Type: application/json" \
+     -o /dev/null
 ```
 
-Deploy the Workflow service:
+Kick off CI/CD pipeline
 
 ```bash
-# Deploy the service
-helm install $HELM_CHARTS/workflow/ \
-     --set image.tag=0.1.0 \
-     --set image.repository=workflow \
-     --set dockerregistry=$ACR_SERVER \
-     --set identity.clientid=$WORKFLOW_PRINCIPAL_CLIENT_ID \
-     --set identity.resourceid=$WORKFLOW_PRINCIPAL_RESOURCE_ID \
-     --set keyvault.name=$WORKFLOW_KEYVAULT_NAME \
-     --set keyvault.resourcegroup=$RESOURCE_GROUP \
-     --set keyvault.subscriptionid=$SUBSCRIPTION_ID \
-     --set keyvault.tenantid=$TENANT_ID \
-     --set reason="Initial deployment" \
-     --namespace backend \
-     --name workflow-v0.1.0
+git checkout -b release/workflow/v0.1.0 && \
+git push newremote release/workflow/v0.1.0
+```
 
-# Verify the pod is created
+Verify workflow was deployed
+
+```bash
 helm status workflow-v0.1.0
 ```
+
 ## Add Ingestion CI
 
 ```
