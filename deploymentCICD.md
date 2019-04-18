@@ -329,8 +329,9 @@ Verify delivery was deployed
 helm status delivery-v0.1.0
 ```
 
-## Add Package CI
+## Add Package CI/CD
 
+Create build and release pipeline definitions
 ```
 # add build definitions
 az pipelines create \
@@ -342,49 +343,48 @@ az pipelines create \
    --repository-type tfsgit \
    --repository $AZURE_DEVOPS_REPOS_NAME \
    --branch master
+
+# query build definition details and resources
+export AZURE_DEVOPS_PACKAGE_BUILD_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='package-ci'].id" -o tsv) && \
+export AZURE_DEVOPS_PACKAGE_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='package-ci'].queue.id" -o tsv) && \
+export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.packageMongoDbName.value -o tsv) && \
+export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g') && \
+export COSMOSDB_COL_NAME=packages
+
+# add relese definition
+cat $PACKAGE_PATH/azure-pipelines-cd.json | \
+     sed "s#CLUSTER_NAME_VAR_VAL#$CLUSTER_NAME#g" | \
+     sed "s#RESOURCE_GROUP_VAR_VAL#$RESOURCE_GROUP#g" | \
+     sed "s#ACR_SERVER_VAR_VAL#$ACR_SERVER#g" | \
+     sed "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" | \
+     sed "s#COSMOSDB_COL_NAME_VAR_VAL#$COSMOSDB_COL_NAME#g" | \
+     sed "s#COSMOSDB_CONNECTION_VAR_VAL#${COSMOSDB_CONNECTION//&/\\&}#g" | \
+     sed "s#AI_IKEY_VAR_VAL#$AI_IKEY#g" | \
+     sed "s#AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL#$AZURE_DEVOPS_SERVICE_CONN_ID#g" | \
+     sed "s#AZURE_DEVOPS_PACKAGE_BUILD_ID_VAR_VAL#$AZURE_DEVOPS_PACKAGE_BUILD_ID#g" | \
+     sed "s#AZURE_DEVOPS_REPOS_ID_VAR_VAL#$AZURE_DEVOPS_REPOS_ID#g" | \
+     sed "s#AZURE_DEVOPS_PROJECT_ID_VAR_VAL#$AZURE_DEVOPS_PROJECT_ID#g" | \
+     sed "s#AZURE_DEVOPS_PACKAGE_QUEUE_ID_VAR_VAL#$AZURE_DEVOPS_PACKAGE_QUEUE_ID#g" | \
+     sed "s#AZURE_DEVOPS_USER_ID_VAR_VAL#$AZURE_DEVOPS_USER_ID#g" \
+     > $PACKAGE_PATH/azure-pipelines-cd-0.json
+
+curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
+     -d@${PACKAGE_PATH}/azure-pipelines-cd-0.json \
+     -H "Authorization: Basic ${AZURE_DEVOPS_AUTHN_BASIC_TOKEN}" \
+     -H "Content-Type: application/json" \
+     -o /dev/null
 ```
 
-## Deploy the Package service
-
-Extract resource details from deployment
+Kick off CI/CD pipeline
 
 ```bash
-export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.packageMongoDbName.value -o tsv)
+git checkout -b release/package/v0.1.0 && \
+git push newremote release/package/v0.1.0
 ```
 
-Build the Package service
+Verify package was deployed
 
 ```bash
-export PACKAGE_PATH=$PROJECT_ROOT/src/shipping/package
-
-# Build the docker image
-docker build -f $PACKAGE_PATH/Dockerfile -t $ACR_SERVER/package:0.1.0 $PACKAGE_PATH
-
-# Push the docker image to ACR
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/package:0.1.0
-```
-
-Deploy the Package service
-
-```bash
-# Create secret
-# Note: Connection strings cannot be exported as outputs in ARM deployments
-export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g')
-
-# Deploy service
-helm install $HELM_CHARTS/package/ \
-     --set image.tag=0.1.0 \
-     --set image.repository=package \
-     --set secrets.appinsights.ikey=$AI_IKEY \
-     --set secrets.mongo.pwd=$COSMOSDB_CONNECTION \
-     --set cosmosDb.collectionName=$COSMOSDB_COL_NAME \
-     --set dockerregistry=$ACR_SERVER \
-     --set reason="Initial deployment" \
-     --namespace backend \
-     --name package-v0.1.0
-
-# Verify the pod is created
 helm status package-v0.1.0
 ```
 
