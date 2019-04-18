@@ -531,8 +531,9 @@ helm install $HELM_CHARTS/ingestion/ \
 helm status ingestion-v0.1.0
 ```
 
-## Add DroneScheduler CI
+## Add DroneScheduler CI/CD
 
+Create build and release pipeline definitions
 ```
 # add build definitions
 az pipelines create \
@@ -544,56 +545,48 @@ az pipelines create \
    --repository-type tfsgit \
    --repository $AZURE_DEVOPS_REPOS_NAME \
    --branch master
-```
 
-## Deploy DroneScheduler service
-
-Extract resource details from deployment
-
-```bash
-export DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
-```
-
-Build the dronescheduler services
-
-```bash
-export DRONE_PATH=$PROJECT_ROOT/src/shipping/dronescheduler
-```
-
-Create and set up pod identity
-
-```bash
-# Extract outputs from deployment
+# query build definition details and resources
+export AZURE_DEVOPS_DRONE_BUILD_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='dronescheduler-ci'].id" -o tsv) && \
+export AZURE_DEVOPS_DRONE_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='dronescheduler-ci'].queue.id" -o tsv) && \
 export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
-export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv)
+export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv) && \
+export DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
+
+# add relese definition
+cat $DRONE_PATH/azure-pipelines-cd.json | \
+     sed "s#CLUSTER_NAME_VAR_VAL#$CLUSTER_NAME#g" | \
+     sed "s#RESOURCE_GROUP_VAR_VAL#$RESOURCE_GROUP#g" | \
+     sed "s#ACR_SERVER_VAR_VAL#$ACR_SERVER#g" | \
+     sed "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" | \
+     sed "s#DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$DRONESCHEDULER_KEYVAULT_URI#g" | \
+     sed "s#AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL#$AZURE_DEVOPS_SERVICE_CONN_ID#g" | \
+     sed "s#AZURE_DEVOPS_DRONE_BUILD_ID_VAR_VAL#$AZURE_DEVOPS_DRONE_BUILD_ID#g" | \
+     sed "s#AZURE_DEVOPS_REPOS_ID_VAR_VAL#$AZURE_DEVOPS_REPOS_ID#g" | \
+     sed "s#AZURE_DEVOPS_PROJECT_ID_VAR_VAL#$AZURE_DEVOPS_PROJECT_ID#g" | \
+     sed "s#AZURE_DEVOPS_DRONE_QUEUE_ID_VAR_VAL#$AZURE_DEVOPS_DRONE_QUEUE_ID#g" | \
+     sed "s#AZURE_DEVOPS_USER_ID_VAR_VAL#$AZURE_DEVOPS_USER_ID#g" \
+     > $DRONE_PATH/azure-pipelines-cd-0.json
+
+curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
+     -d@${DRONE_PATH}/azure-pipelines-cd-0.json \
+     -H "Authorization: Basic ${AZURE_DEVOPS_AUTHN_BASIC_TOKEN}" \
+     -H "Content-Type: application/json" \
+     -o /dev/null
 ```
 
-Build and publish the container image
+Kick off CI/CD pipeline
 
 ```bash
-# Build the Docker image
-docker build -f $DRONE_PATH/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 $DRONE_PATH/../
-
-# Push the images to ACR
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/dronescheduler:0.1.0
+git checkout -b release/dronescheduler/v0.1.0 && \
+git push newremote release/dronescheduler/v0.1.0
 ```
 
-Deploy the dronescheduler service:
-```bash
-# Deploy the service
-helm install $HELM_CHARTS/dronescheduler/ \
-     --set image.tag=0.1.0 \
-     --set image.repository=dronescheduler \
-     --set dockerregistry=$ACR_SERVER \
-     --set identity.clientid=$DRONESCHEDULER_PRINCIPAL_CLIENT_ID \
-     --set identity.resourceid=$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID \
-     --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
-     --set reason="Initial deployment" \
-     --namespace backend \
-     --name dronescheduler-v0.1.0
+Verify dronescheduler was deployed
 
-# Verify the pod is created
+```bash
 helm status dronescheduler-v0.1.0
 ```
 
