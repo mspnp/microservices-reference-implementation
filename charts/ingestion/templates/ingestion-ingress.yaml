@@ -4,16 +4,20 @@
 #  ------------------------------------------------------------
 
 ###################################################################################################
-# ingestion ingress
+# ingress
 ###################################################################################################
-
+{{- $svcversion := .Chart.AppVersion | replace "." "" }}
+{{- $appversion := .Chart.AppVersion }}
+{{- $defaultversionedpath := printf "/%s" $appversion }}
+{{- $relname := .Release.Name }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: ingestion-ingress
+  name: {{ $relname }}-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   {{- if .Values.ingress.tls }}
-  {{- $relname := .Release.Name }}
   tls:
   {{- range .Values.ingress.hosts }}
   {{- if .tls }}
@@ -28,8 +32,18 @@ spec:
   - host: {{ .name }}
     http:
       paths:
+      {{ if .path }}
+      - path: {{ printf "%s/%s" .path $appversion | quote }}
+      {{ else }}
+      - path: {{ $defaultversionedpath | quote }}
+      {{ end }}
+        backend:
+          serviceName: "{{ .serviceName }}-{{ $svcversion }}"
+          servicePort: http
+      {{ if (eq $appversion "v0.1.0") }}
       - path: {{ default "/" .path }}
         backend:
           serviceName: "{{ .serviceName }}"
           servicePort: http
+      {{ end }}
   {{ end }}
