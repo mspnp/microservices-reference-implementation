@@ -34,7 +34,7 @@ Set environment variables.
 export SSH_PUBLIC_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PUBLIC_KEY_FILE_HERE]
 
 export LOCATION=[YOUR_LOCATION_HERE]
-#The resource group name should not greater than 17 char
+#The resource group name should not greater than 17 char or the key vault name will longer than 24 char
 export RESOURCE_GROUP=[YOUR_RESOURCE_GROUP_HERE]
 
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
