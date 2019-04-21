@@ -30,10 +30,11 @@ the SSH rsa key pair can be generated using ssh-keygen, among other tools, on Li
 Set environment variables.
 
 ```bash
+#The key file value should be the file path
 export SSH_PUBLIC_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PUBLIC_KEY_FILE_HERE]
 
 export LOCATION=[YOUR_LOCATION_HERE]
-
+#The resource group name should not greater than 17 char
 export RESOURCE_GROUP=[YOUR_RESOURCE_GROUP_HERE]
 
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
