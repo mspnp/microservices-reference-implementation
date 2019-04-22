@@ -448,46 +448,9 @@ Verify workflow was deployed
 helm status workflow-v0.1.0
 ```
 
-## Add Ingestion CI
+## Add Ingestion CI/CD
 
-```
-# add build definitions
-az pipelines create \
-   --organization $AZURE_DEVOPS_ORG \
-   --project $AZURE_DEVOPS_PROJECT_NAME \
-   --name ingestion-ci \
-   --service-connection $AZURE_DEVOPS_SERVICE_CONN_ID \
-   --yml-path src/shipping/ingestion/azure-pipelines.yml \
-   --repository-type tfsgit \
-   --repository $AZURE_DEVOPS_REPOS_NAME \
-   --branch master
-```
-
-## Deploy the Ingestion service
-
-Extract resource details from deployment
-
-```bash
-export INGESTION_QUEUE_NAMESPACE=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionQueueNamespace.value -o tsv) && \
-export INGESTION_QUEUE_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionQueueName.value -o tsv)
-export INGESTION_ACCESS_KEY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionServiceAccessKeyName.value -o tsv)
-export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_ACCESS_KEY_NAME --query primaryKey -o tsv)
-```
-
-Build the Ingestion service
-
-```bash
-export INGESTION_PATH=$PROJECT_ROOT/src/shipping/ingestion
-
-# Build the docker image
-docker build -f $INGESTION_PATH/Dockerfile -t $ACR_SERVER/ingestion:0.1.0 $INGESTION_PATH
-
-# Push the docker image to ACR
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/ingestion:0.1.0
-```
-
-Deploy the Ingestion service
+Ingestion pre-requisites
 
 ```bash
 # Deploy the ngnix ingress controller
@@ -505,29 +468,70 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -out ingestion-ingress-tls.crt \
     -keyout ingestion-ingress-tls.key \
     -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
+```
 
-# Deploy service
-helm install $HELM_CHARTS/ingestion/ \
-     --set image.tag=0.1.0 \
-     --set image.repository=ingestion \
-     --set dockerregistry=$ACR_SERVER \
-     --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
-     --set ingress.hosts[0].serviceName=ingestion \
-     --set ingress.hosts[0].tls=true \
-     --set ingress.hosts[0].tlsSecretName=$INGRESS_TLS_SECRET_NAME \
-     --set ingress.tls.secrets[0].name=$INGRESS_TLS_SECRET_NAME \
-     --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
-     --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
-     --set secrets.appinsights.ikey=${AI_IKEY} \
-     --set secrets.queue.keyname=IngestionServiceAccessKey \
-     --set secrets.queue.keyvalue=${INGESTION_ACCESS_KEY_VALUE} \
-     --set secrets.queue.name=${INGESTION_QUEUE_NAME} \
-     --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
-     --set reason="Initial deployment" \
-     --namespace backend \
-     --name ingestion-v0.1.0
+Create build and release pipeline definitions
+```
+# add build definitions
+az pipelines create \
+   --organization $AZURE_DEVOPS_ORG \
+   --project $AZURE_DEVOPS_PROJECT_NAME \
+   --name ingestion-ci \
+   --service-connection $AZURE_DEVOPS_SERVICE_CONN_ID \
+   --yml-path src/shipping/ingestion/azure-pipelines.yml \
+   --repository-type tfsgit \
+   --repository $AZURE_DEVOPS_REPOS_NAME \
+   --branch master
 
-# Verify the pod is created
+# query build definition details and resources
+export AZURE_DEVOPS_INGESTION_BUILD_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='ingestion-ci'].id" -o tsv) && \
+export AZURE_DEVOPS_INGESTION_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='ingestion-ci'].queue.id" -o tsv) && \
+export INGESTION_QUEUE_NAMESPACE=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionQueueNamespace.value -o tsv) && \
+export INGESTION_QUEUE_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionQueueName.value -o tsv) && \
+export INGESTION_ACCESS_KEY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionServiceAccessKeyName.value -o tsv) && \
+export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_ACCESS_KEY_NAME --query primaryKey -o tsv) && \
+export INGRESS_TLS_SECRET_CERT=$(echo $(cat ingestion-ingress-tls.crt) | tr '\n' "\\n") && \
+export INGRESS_TLS_SECRET_KEY=$(echo $(cat ingestion-ingress-tls.key) | tr '\n' "\\n")
+
+# add relese definition
+cat $INGESTION_PATH/azure-pipelines-cd.json | \
+     sed "s#CLUSTER_NAME_VAR_VAL#$CLUSTER_NAME#g" | \
+     sed "s#RESOURCE_GROUP_VAR_VAL#$RESOURCE_GROUP#g" | \
+     sed "s#ACR_SERVER_VAR_VAL#$ACR_SERVER#g" | \
+     sed "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" | \
+     sed "s#AI_IKEY_VAR_VAL#$AI_IKEY#g" | \
+     sed "s#INGESTION_QUEUE_NAMESPACE_VAR_VAL#$INGESTION_QUEUE_NAMESPACE#g" | \
+     sed "s#INGESTION_QUEUE_NAME_VAR_VAL#$INGESTION_QUEUE_NAME#g" | \
+     sed "s#INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$INGESTION_ACCESS_KEY_VALUE#g" | \
+     sed "s#INGRESS_TLS_SECRET_KEY_VAR_VAL#$INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#EXTERNAL_INGEST_FQDN_VAR_VAL#$EXTERNAL_INGEST_FQDN#g" | \
+     sed "s#INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#INGRESS_TLS_SECRET_CERT_VAR_VAL#$INGRESS_TLS_SECRET_CERT#g" | \
+     sed "s#AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL#$AZURE_DEVOPS_SERVICE_CONN_ID#g" | \
+     sed "s#AZURE_DEVOPS_INGESTION_BUILD_ID_VAR_VAL#$AZURE_DEVOPS_INGESTION_BUILD_ID#g" | \
+     sed "s#AZURE_DEVOPS_REPOS_ID_VAR_VAL#$AZURE_DEVOPS_REPOS_ID#g" | \
+     sed "s#AZURE_DEVOPS_PROJECT_ID_VAR_VAL#$AZURE_DEVOPS_PROJECT_ID#g" | \
+     sed "s#AZURE_DEVOPS_INGESTION_QUEUE_ID_VAR_VAL#$AZURE_DEVOPS_INGESTION_QUEUE_ID#g" | \
+     sed "s#AZURE_DEVOPS_USER_ID_VAR_VAL#$AZURE_DEVOPS_USER_ID#g" \
+     > $INGESTION_PATH/azure-pipelines-cd-0.json
+
+curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
+     -d@${INGESTION_PATH}/azure-pipelines-cd-0.json \
+     -H "Authorization: Basic ${AZURE_DEVOPS_AUTHN_BASIC_TOKEN}" \
+     -H "Content-Type: application/json" \
+     -o /dev/null
+```
+
+Kick off CI/CD pipeline
+
+```bash
+git checkout -b release/ingestion/v0.1.0 && \
+git push newremote release/ingestion/v0.1.0
+```
+
+Verify ingestion was deployed
+
+```bash
 helm status ingestion-v0.1.0
 ```
 
