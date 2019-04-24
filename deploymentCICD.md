@@ -451,6 +451,20 @@ helm install $HELM_CHARTS/workflow/ \
 # Verify the pod is created
 helm status workflow-v0.1.0
 ```
+## Add Ingestion CI
+
+```
+# add build definitions
+az pipelines create \
+   --organization $AZURE_DEVOPS_ORG \
+   --project $AZURE_DEVOPS_PROJECT_NAME \
+   --name ingestion-ci \
+   --service-connection $AZURE_DEVOPS_SERVICE_CONN_ID \
+   --yml-path src/shipping/ingestion/azure-pipelines.yml \
+   --repository-type tfsgit \
+   --repository $AZURE_DEVOPS_REPOS_NAME \
+   --branch master
+```
 
 ## Deploy the Ingestion service
 
