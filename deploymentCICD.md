@@ -534,6 +534,21 @@ helm install $HELM_CHARTS/ingestion/ \
 helm status ingestion-v0.1.0
 ```
 
+## Add DroneScheduler CI
+
+```
+# add build definitions
+az pipelines create \
+   --organization $AZURE_DEVOPS_ORG \
+   --project $AZURE_DEVOPS_PROJECT_NAME \
+   --name dronescheduler-ci \
+   --service-connection $AZURE_DEVOPS_SERVICE_CONN_ID \
+   --yml-path src/shipping/dronescheduler/azure-pipelines.yml \
+   --repository-type tfsgit \
+   --repository $AZURE_DEVOPS_REPOS_NAME \
+   --branch master
+```
+
 ## Deploy DroneScheduler service
 
 Extract resource details from deployment
