@@ -90,6 +90,12 @@
 			<artifactId>applicationinsights-logging-logback</artifactId>
 			<version>2.3.0</version>
 		</dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.61</version>
+        </dependency>
     </dependencies>
 
 	<build>
