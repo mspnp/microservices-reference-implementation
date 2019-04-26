@@ -1,0 +1,10 @@
+# Dev values for delivery.
+nameOverride: delivery
+exports:
+  data:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    telemetry:
+      level: "Information"
+    reason: "new dev deploy"

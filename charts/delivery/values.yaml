@@ -1,8 +1,10 @@
 # Default values for dronedelivery.
-replicaCount: 3
+nameOverride: delivery
+replicaCount: 1
 identity:
   clientid:
   resourceid:
+dockerregistrynamespace:
 dockerregistry:
 image:
   repository:
@@ -23,3 +25,8 @@ resources:
   limits:
     cpu: 500m
     memory: 500Mi
+tags:
+  dev: false
+  prod: false
+  qa: false
+  staging: false

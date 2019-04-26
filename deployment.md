@@ -209,6 +209,7 @@ helm install $HELM_CHARTS/delivery/ \
      --set cosmosdb.collectionid=$COLLECTION_NAME \
      --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
      --set reason="Initial deployment" \
+     --set tags.prod=true \
      --namespace backend \
      --name delivery-v0.1.0
 
