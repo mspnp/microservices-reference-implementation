@@ -1,5 +1,7 @@
 # Default values for package service.
-replicaCount: 3
+nameOverride: package
+replicaCount: 1
+dockerregistrynamespace:
 dockerregistry:
 image:
   repository:
@@ -17,3 +19,8 @@ resources:
   limits:
     cpu: 410m
     memory: 140Mi
+tags:
+  dev: false
+  prod: false
+  qa: false
+  staging: false

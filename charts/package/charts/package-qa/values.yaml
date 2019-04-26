@@ -1,0 +1,10 @@
+# QA values for package.
+nameOverride: package
+exports:
+  data:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    log:
+      level: "info"
+    reason: "new qa deploy"

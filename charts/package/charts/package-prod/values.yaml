@@ -1,0 +1,11 @@
+# Production values for package.
+nameOverride: package
+exports:
+  data:
+    replicaCount: 3
+    dockerregistrynamespace: "/prod"
+    image:
+      pullPolicy: IfNotPresent
+    log:
+      level: "error"
+    reason: "new prod deploy"

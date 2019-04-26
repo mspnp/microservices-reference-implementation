@@ -255,6 +255,7 @@ helm install $HELM_CHARTS/package/ \
      --set cosmosDb.collectionName=$COSMOSDB_COL_NAME \
      --set dockerregistry=$ACR_SERVER \
      --set reason="Initial deployment" \
+     --set tags.prod=true \
      --namespace backend \
      --name package-v0.1.0
 
