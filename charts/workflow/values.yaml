@@ -1,5 +1,7 @@
 # Default values for workflow.
-replicaCount: 3
+nameOverride: workflow
+replicaCount: 1
+dockerregistrynamespace:
 dockerregistry:
 identity:
   clientid:
@@ -35,3 +37,8 @@ resources:
   limits:
     cpu: 2300m
     memory: 140Mi
+tags:
+  dev: false
+  prod: false
+  qa: false
+  staging: false

@@ -307,6 +307,7 @@ helm install $HELM_CHARTS/workflow/ \
      --set keyvault.subscriptionid=$SUBSCRIPTION_ID \
      --set keyvault.tenantid=$TENANT_ID \
      --set reason="Initial deployment" \
+     --set tags.prod=true \
      --namespace backend \
      --name workflow-v0.1.0
 

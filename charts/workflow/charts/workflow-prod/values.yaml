@@ -1,0 +1,11 @@
+# Production values for workflow.
+nameOverride: workflow
+exports:
+  data:
+    replicaCount: 3
+    dockerregistrynamespace: "/prod"
+    image:
+      pullPolicy: IfNotPresent
+    telemetry:
+      level: "Error"
+    reason: "new prod deploy"

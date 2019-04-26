@@ -1,0 +1,10 @@
+# QA values for workflow.
+nameOverride: workflow
+exports:
+  data:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    telemetry:
+      level: "Information"
+    reason: "new qa deploy"
