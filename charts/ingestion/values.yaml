@@ -1,5 +1,6 @@
 # Default values for ingestion.
 replicaCount: 1
+dockerregistrynamespace:
 dockerregistry:
 image:
   repository:
@@ -15,3 +16,8 @@ resources:
   limits:
     cpu: 650m
     memory: 800Mi
+tags:
+  dev: false
+  prod: false
+  qa: false
+  staging: false

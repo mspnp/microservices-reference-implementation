@@ -1,0 +1,11 @@
+# Production values for ingestion.
+nameOverride: ingestion
+exports:
+  data:
+    replicaCount: 1
+    dockerregistrynamespace: "/prod"
+    image:
+      pullPolicy: IfNotPresent
+    telemetry:
+      level: "error"
+    reason: "new prod deploy"

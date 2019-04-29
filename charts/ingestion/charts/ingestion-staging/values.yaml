@@ -1,0 +1,10 @@
+# Staging values for ingestion.
+nameOverride: ingestion
+exports:
+  data:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    telemetry:
+      level: "info"
+    reason: "new staging deploy"

@@ -376,6 +376,7 @@ helm install $HELM_CHARTS/ingestion/ \
      --set secrets.queue.name=${INGESTION_QUEUE_NAME} \
      --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
      --set reason="Initial deployment" \
+     --set tags.prod=true \
      --namespace backend \
      --name ingestion-v0.1.0
 
