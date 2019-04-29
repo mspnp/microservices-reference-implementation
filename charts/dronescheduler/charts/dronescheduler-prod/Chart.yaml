@@ -1,0 +1,4 @@
+name: dronescheduler-prod
+version: v0.1.0
+appVersion: v0.1.0
+description: Fabrikam Drone Scheduler Service

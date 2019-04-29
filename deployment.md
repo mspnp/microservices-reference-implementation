@@ -427,6 +427,7 @@ helm install $HELM_CHARTS/dronescheduler/ \
      --set identity.resourceid=$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID \
      --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
      --set reason="Initial deployment" \
+     --set tags.prod=true \
      --namespace backend \
      --name dronescheduler-v0.1.0
 

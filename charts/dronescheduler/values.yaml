@@ -3,6 +3,7 @@ replicaCount: 3
 identity:
   clientid:
   resourceid:
+dockerregistrynamespace:
 dockerregistry:
 image:
   repository:
@@ -20,3 +21,8 @@ resources:
   limits:
     cpu: 600m
     memory: 500Mi
+tags:
+  dev: false
+  prod: false
+  qa: false
+  staging: false
