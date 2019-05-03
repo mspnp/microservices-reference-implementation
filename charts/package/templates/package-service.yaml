@@ -12,7 +12,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "package.fullname" . | replace "." "" }}
+  name: {{ include "package.versionappname" . | replace "." "" }}
   labels:
     app.kubernetes.io/name: {{ $appname }}
     app.kubernetes.io/instance: {{ $instancename }}
