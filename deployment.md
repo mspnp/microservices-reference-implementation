@@ -157,6 +157,12 @@ kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/maste
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
 
+## Optional: Set up CI/CD with Azure DevOps
+
+Add [CI/CD to Drone Delivery using Azure Pipelines with YAML](./deploymentCICD.md).
+
+> Important: If you don't want to set up the CI/CD pipelines, you can manually deploy the application as follows.
+
 ## Deploy the Delivery service
 
 Extract resource details from deployment

@@ -1,4 +1,4 @@
-# Deploying the Reference Implementation
+# Setup Reference Implementation CI/CD with Azure DevOps
 
 ## Prerequisites
 
@@ -6,157 +6,7 @@
 - [Azure CLI 2.0.49 or later](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Azure DevOps account](https://azure.microsoft.com/services/devops)
 - [Helm 2.12.3 or later](https://docs.helm.sh/using_helm/#installing-helm)
-- [JQ](https://stedolan.github.io/jq/download/)
-
-> Note: in linux systems, it is possible to run the docker command without prefacing
->       with sudo. For more information, please refer to [the Post-installation steps
->       for linux](https://docs.docker.com/install/linux/linux-postinstall/)
-
-Clone or download this repo locally.
-
-```bash
-git clone https://github.com/mspnp/microservices-reference-implementation.git
-```
-
-The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
-
-## Generate a SSH rsa public/private key pair
-
-the SSH rsa key pair can be generated using ssh-keygen, among other tools, on Linux, Mac, or Windows. If you already have an ~/.ssh/id_rsa.pub file, you could provide the same later on. If you need to create an SSH key pair, see [How to create and use an SSH key pair](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys).
-> Note: the SSH rsa public key will be requested when deploying your Kubernetes cluster in Azure.
-
-## Azure Resources Provisioning
-
-Set environment variables.
-
-```bash
-export SSH_PUBLIC_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PUBLIC_KEY_FILE_HERE]
-
-export LOCATION=[YOUR_LOCATION_HERE]
-
-export RESOURCE_GROUP=[YOUR_RESOURCE_GROUP_HERE]
-
-export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
-export SUBSCRIPTION_NAME=$(az account show --query name --output tsv)
-export TENANT_ID=$(az account show --query tenantId --output tsv)
-
-export PROJECT_ROOT=./microservices-reference-implementation
-export K8S=$PROJECT_ROOT/k8s
-export HELM_CHARTS=$PROJECT_ROOT/charts
-```
-
-Infrastructure Prerequisites
-
-```bash
-# Log in to Azure
-az login
-
-# Create a resource group and service principal for AKS
-az group create --name $RESOURCE_GROUP --location $LOCATION && \
-export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor") && \
-export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
-export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
-export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
-```
-
-Deployment
-
-> Note: this deployment might take up to 20 minutes
-
-```bash
-# Deploy the managed identities
-# These are deployed first in a separate template to avoid propagation delays with AAD
-az group deployment create -g $RESOURCE_GROUP --name azuredeploy-identities --template-file ${PROJECT_ROOT}/azuredeploy-identities.json
-export DELIVERY_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryIdName.value -o tsv)
-export DELIVERY_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalId.value -o tsv)
-export DRONESCHEDULER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerIdName.value -o tsv)
-export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.droneSchedulerPrincipalId.value -o tsv)
-export WORKFLOW_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowIdName.value -o tsv)
-export WORKFLOW_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalId.value -o tsv)
-
-# Wait for AAD propagation
-until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-
-# Deploy all other resources
-# The version of kubernetes must be supported in the target region
-export KUBERNETES_VERSION='1.12.6'
-az group deployment create -g $RESOURCE_GROUP --name azuredeploy --template-file ${PROJECT_ROOT}/azuredeploy.json \
---parameters servicePrincipalClientId=${SP_APP_ID} \
-            servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
-            servicePrincipalId=${SP_OBJECT_ID} \
-            kubernetesVersion=${KUBERNETES_VERSION} \
-            sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
-            deliveryIdName=${DELIVERY_ID_NAME} \
-            deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
-            droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
-            droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
-            workflowIdName=${WORKFLOW_ID_NAME} \
-            workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID}
-```
-
-Get outputs from Azure Deploy
-```bash
-# Shared
-export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acrName.value -o tsv) && \
-export ACR_SERVER=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.acrLoginServer.value -o tsv) && \
-export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.aksClusterName.value -o tsv)
-```
-
-Enable Azure Monitoring for the AKS cluster
-```bash
-az aks enable-addons -a monitoring --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
-```
-
-Download kubectl and create a k8s namespace
-```bash
-#  Install kubectl
-sudo az aks install-cli
-
-# Get the Kubernetes cluster credentials
-az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
-
-# Create namespaces
-kubectl create namespace backend && \
-kubectl create namespace frontend
-```
-
-Setup Helm in the container
-
-```bash
-kubectl apply -f $K8S/tiller-rbac.yaml
-helm init --service-account tiller
-```
-
-Integrate Application Insights instance
-
-```bash
-# Acquire Instrumentation Key
-export AI_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.appInsightsName.value -o tsv)
-export AI_IKEY=$(az resource show \
-                    -g $RESOURCE_GROUP \
-                    -n $AI_NAME \
-                    --resource-type "Microsoft.Insights/components" \
-                    --query properties.InstrumentationKey \
-                    -o tsv)
-
-# add RBAC for AppInsights
-kubectl apply -f $K8S/k8s-rbac-ai.yaml
-```
-
-## Setup AAD pod identity and key vault flexvol infrastructure
-
-Complete instructions can be found at https://github.com/Azure/kubernetes-keyvault-flexvol
-
-Note: the tested nmi version was 1.4. It enables namespaced pod identity.
-
-```bash
-# setup AAD pod identity
-kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/deployment-rbac.yaml
-
-kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
-```
+- [Values from deployment instructions](./deployment.md)
 
 ## Setup Azure DevOps
 
@@ -204,7 +54,7 @@ open $AZURE_DEVOPS_ORG/$AZURE_DEVOPS_PROJECT_NAME/_git/$AZURE_REPOS_NAME
 ```
 
 > Follow instructions at [Use SSH Key authentication](https://docs.microsoft.com/en-us/azure/devops/repos/git/use-ssh-keys-to-authenticate?view=azure-devops) to add ssh.
-For more information on the different authentication types, please take a look at [Authtentication comparison](https://docs.microsoft.com/en-us/azure/devops/repos/git/auth-overview?view=azure-devops#authentication-comparison)
+For more information on the different authentication types, please take a look at [Authentication comparison](https://docs.microsoft.com/en-us/azure/devops/repos/git/auth-overview?view=azure-devops#authentication-comparison)
 
 ![](https://docs.microsoft.com/en-us/azure/devops/repos/git/_img/ssh_add_public_key.gif?view=azure-devops)
 
@@ -596,47 +446,4 @@ helm status dronescheduler-v0.1.0
 
 ## Validate the application is running
 
-You can send delivery requests to the ingestion service using the Swagger UI.
-
-Use a web browser to navigate to `https://[EXTERNAL_INGEST_FQDN]/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST` and use the **Try it out** button to submit a delivery request.
-
-```bash
-open "https://$EXTERNAL_INGEST_FQDN/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST"
-```
-
-> We recommended putting an API Gateway in front of all public APIs. For convenience, the Ingestion service is directly exposed with a public IP address.
-
-
-## Optional steps
-
-### Load Test the application
-
-To run load testing against the solution, follow the steps listed [here](./src/shipping/ingress/readme.md).
-
-### Fluentd and Elastic Search
-
-Follow these steps to add logging and monitoring capabilities to the solution.
-
-Deploy Elasticsearch. For more information, see https://github.com/kubernetes/examples/tree/master/staging/elasticsearch
-
-```bash
-kubectl --namespace kube-system apply -f https://raw.githubusercontent.com/kubernetes/examples/master/staging/elasticsearch/service-account.yaml && \
-kubectl --namespace kube-system apply -f https://raw.githubusercontent.com/kubernetes/examples/master/staging/elasticsearch/es-svc.yaml && \
-kubectl --namespace kube-system apply -f https://raw.githubusercontent.com/kubernetes/examples/master/staging/elasticsearch/es-rc.yaml
-```
-
-Deploy Fluentd. For more information, see https://docs.fluentd.org/v0.12/articles/kubernetes-fluentd
-
-```bash
-# The example elasticsearch yaml files deploy a service named "elasticsearch"
-wget https://raw.githubusercontent.com/fluent/fluentd-kubernetes-daemonset/master/fluentd-daemonset-elasticsearch.yaml && \
-sed -i "s/elasticsearch-logging/elasticsearch/" fluentd-daemonset-elasticsearch.yaml
-
-# Commenting out X-Pack credentials for demo purposes.
-# Make sure to configure X-Pack in elasticsearch and provide credentials here for production workloads
-sed -i "s/- name: FLUENT_ELASTICSEARCH_USER/#- name: FLUENT_ELASTICSEARCH_USER/" fluentd-daemonset-elasticsearch.yaml && \
-sed -i 's/  value: "elastic"/#  value: "elastic"/' fluentd-daemonset-elasticsearch.yaml && \
-sed -i "s/- name: FLUENT_ELASTICSEARCH_PASSWORD/#- name: FLUENT_ELASTICSEARCH_PASSWORD/" fluentd-daemonset-elasticsearch.yaml && \
-sed -i 's/  value: "changeme"/#  value: "changeme"/' fluentd-daemonset-elasticsearch.yaml && \
-kubectl --namespace kube-system apply -f fluentd-daemonset-elasticsearch.yaml
-```
+You can resume the [the original deployment instructions](./deployment.md#validate-the-application-is-running) to validate the application is running.
