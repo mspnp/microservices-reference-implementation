@@ -10,15 +10,6 @@
         "ACR_SERVER": {
             "value": "ACR_SERVER_VAR_VAL"
         },
-        "DRONESCHEDULER_KEYVAULT_URI": {
-            "value": "DRONESCHEDULER_KEYVAULT_URI_VAR_VAL"
-        },
-        "DRONESCHEDULER_PRINCIPAL_CLIENT_ID": {
-            "value": "DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL"
-        },
-        "DRONESCHEDULER_PRINCIPAL_RESOURCE_ID": {
-            "value": "DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL"
-        },
         "REASON": {
             "value": "Azure DevOps CD Pipeline",
             "allowOverride": true
@@ -36,7 +27,17 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                "DRONESCHEDULER_KEYVAULT_URI": {
+                    "value": "DEV_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL"
+                },
+                "DRONESCHEDULER_PRINCIPAL_CLIENT_ID": {
+                    "value": "DEV_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL"
+                },
+                "DRONESCHEDULER_PRINCIPAL_RESOURCE_ID": {
+                    "value": "DEV_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -392,7 +393,17 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                "DRONESCHEDULER_KEYVAULT_URI": {
+                    "value": "QA_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL"
+                },
+                "DRONESCHEDULER_PRINCIPAL_CLIENT_ID": {
+                    "value": "QA_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL"
+                },
+                "DRONESCHEDULER_PRINCIPAL_RESOURCE_ID": {
+                    "value": "QA_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -748,7 +759,17 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                "DRONESCHEDULER_KEYVAULT_URI": {
+                    "value": "STAGING_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL"
+                },
+                "DRONESCHEDULER_PRINCIPAL_CLIENT_ID": {
+                    "value": "STAGING_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL"
+                },
+                "DRONESCHEDULER_PRINCIPAL_RESOURCE_ID": {
+                    "value": "STAGING_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -1104,7 +1125,17 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                "DRONESCHEDULER_KEYVAULT_URI": {
+                    "value": "PROD_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL"
+                },
+                "DRONESCHEDULER_PRINCIPAL_CLIENT_ID": {
+                    "value": "PROD_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL"
+                },
+                "DRONESCHEDULER_PRINCIPAL_RESOURCE_ID": {
+                    "value": "PROD_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [

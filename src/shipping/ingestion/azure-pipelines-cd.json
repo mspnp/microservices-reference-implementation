@@ -14,29 +14,6 @@
             "value": "AI_IKEY_VAR_VAL",
             "isSecret": true
         },
-        "EXTERNAL_INGEST_FQDN": {
-            "value": "EXTERNAL_INGEST_FQDN_VAR_VAL"
-        },
-        "INGESTION_ACCESS_KEY_VALUE": {
-            "value": "INGESTION_ACCESS_KEY_VALUE_VAR_VAL",
-            "isSecret": true
-        },
-        "INGESTION_QUEUE_NAME": {
-            "value": "INGESTION_QUEUE_NAME_VAR_VAL"
-        },
-        "INGESTION_QUEUE_NAMESPACE": {
-            "value": "INGESTION_QUEUE_NAMESPACE_VAR_VAL"
-        },
-        "INGRESS_TLS_SECRET_CERT": {
-            "value": "INGRESS_TLS_SECRET_CERT_VAR_VAL"
-        },
-        "INGRESS_TLS_SECRET_KEY": {
-            "value": "INGRESS_TLS_SECRET_KEY_VAR_VAL",
-            "isSecret": true
-        },
-        "INGRESS_TLS_SECRET_NAME": {
-            "value": "INGRESS_TLS_SECRET_NAME_VAR_VAL"
-        },
         "REASON": {
             "value": "Azure DevOps CD Pipeline",
             "allowOverride": true
@@ -57,7 +34,31 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+               "EXTERNAL_INGEST_FQDN": {
+                   "value": "DEV_EXTERNAL_INGEST_FQDN_VAR_VAL"
+               },
+               "INGESTION_ACCESS_KEY_VALUE": {
+                   "value": "DEV_INGESTION_ACCESS_KEY_VALUE_VAR_VAL",
+                   "isSecret": true
+               },
+               "INGESTION_QUEUE_NAME": {
+                   "value": "DEV_INGESTION_QUEUE_NAME_VAR_VAL"
+               },
+               "INGESTION_QUEUE_NAMESPACE": {
+                   "value": "DEV_INGESTION_QUEUE_NAMESPACE_VAR_VAL"
+               },
+               "INGRESS_TLS_SECRET_CERT": {
+                   "value": "DEV_INGRESS_TLS_SECRET_CERT_VAR_VAL"
+               },
+               "INGRESS_TLS_SECRET_KEY": {
+                   "value": "DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL",
+                   "isSecret": true
+               },
+               "INGRESS_TLS_SECRET_NAME": {
+                   "value": "DEV_INGRESS_TLS_SECRET_NAME_VAR_VAL"
+               }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -406,7 +407,31 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+               "EXTERNAL_INGEST_FQDN": {
+                   "value": "QA_EXTERNAL_INGEST_FQDN_VAR_VAL"
+               },
+               "INGESTION_ACCESS_KEY_VALUE": {
+                   "value": "QA_INGESTION_ACCESS_KEY_VALUE_VAR_VAL",
+                   "isSecret": true
+               },
+               "INGESTION_QUEUE_NAME": {
+                   "value": "QA_INGESTION_QUEUE_NAME_VAR_VAL"
+               },
+               "INGESTION_QUEUE_NAMESPACE": {
+                   "value": "QA_INGESTION_QUEUE_NAMESPACE_VAR_VAL"
+               },
+               "INGRESS_TLS_SECRET_CERT": {
+                   "value": "QA_INGRESS_TLS_SECRET_CERT_VAR_VAL"
+               },
+               "INGRESS_TLS_SECRET_KEY": {
+                   "value": "QA_INGRESS_TLS_SECRET_KEY_VAR_VAL",
+                   "isSecret": true
+               },
+               "INGRESS_TLS_SECRET_NAME": {
+                   "value": "QA_INGRESS_TLS_SECRET_NAME_VAR_VAL"
+               }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -755,7 +780,31 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+               "EXTERNAL_INGEST_FQDN": {
+                   "value": "STAGING_EXTERNAL_INGEST_FQDN_VAR_VAL"
+               },
+               "INGESTION_ACCESS_KEY_VALUE": {
+                   "value": "STAGING_INGESTION_ACCESS_KEY_VALUE_VAR_VAL",
+                   "isSecret": true
+               },
+               "INGESTION_QUEUE_NAME": {
+                   "value": "STAGING_INGESTION_QUEUE_NAME_VAR_VAL"
+               },
+               "INGESTION_QUEUE_NAMESPACE": {
+                   "value": "STAGING_INGESTION_QUEUE_NAMESPACE_VAR_VAL"
+               },
+               "INGRESS_TLS_SECRET_CERT": {
+                   "value": "STAGING_INGRESS_TLS_SECRET_CERT_VAR_VAL"
+               },
+               "INGRESS_TLS_SECRET_KEY": {
+                   "value": "STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL",
+                   "isSecret": true
+               },
+               "INGRESS_TLS_SECRET_NAME": {
+                   "value": "STAGING_INGRESS_TLS_SECRET_NAME_VAR_VAL"
+               }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -1104,7 +1153,31 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+               "EXTERNAL_INGEST_FQDN": {
+                   "value": "PROD_EXTERNAL_INGEST_FQDN_VAR_VAL"
+               },
+               "INGESTION_ACCESS_KEY_VALUE": {
+                   "value": "PROD_INGESTION_ACCESS_KEY_VALUE_VAR_VAL",
+                   "isSecret": true
+               },
+               "INGESTION_QUEUE_NAME": {
+                   "value": "PROD_INGESTION_QUEUE_NAME_VAR_VAL"
+               },
+               "INGESTION_QUEUE_NAMESPACE": {
+                   "value": "PROD_INGESTION_QUEUE_NAMESPACE_VAR_VAL"
+               },
+               "INGRESS_TLS_SECRET_CERT": {
+                   "value": "PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL"
+               },
+               "INGRESS_TLS_SECRET_KEY": {
+                   "value": "PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL",
+                   "isSecret": true
+               },
+               "INGRESS_TLS_SECRET_NAME": {
+                   "value": "PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL"
+               }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [

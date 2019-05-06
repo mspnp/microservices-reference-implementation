@@ -16,24 +16,6 @@
         },
         "REPO_NAME": {
             "value": "workflow"
-        },
-        "RESOURCE_GROUP": {
-            "value": "RESOURCE_GROUP_VAR_VAL"
-        },
-        "SUBSCRIPTION_ID": {
-            "value": "SUBSCRIPTION_ID_VAR_VAL"
-        },
-        "TENANT_ID": {
-            "value": "TENANT_ID_VAR_VAL"
-        },
-        "WORKFLOW_KEYVAULT_NAME": {
-            "value": "WORKFLOW_KEYVAULT_NAME_VAR_VAL"
-        },
-        "WORKFLOW_PRINCIPAL_CLIENT_ID": {
-            "value": "WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL"
-        },
-        "WORKFLOW_PRINCIPAL_RESOURCE_ID": {
-            "value": "WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL"
         }
     },
     "variableGroups": [],
@@ -45,7 +27,26 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                "WORKFLOW_KEYVAULT_RESOURCE_GROUP": {
+                    "value": "DEV_WORKFLOW_KEYVAULT_RESOURCE_GROUP_VAR_VAL"
+                },
+                "SUBSCRIPTION_ID": {
+                    "value": "DEV_SUBSCRIPTION_ID_VAR_VAL"
+                },
+                "TENANT_ID": {
+                    "value": "DEV_TENANT_ID_VAR_VAL"
+                },
+                "WORKFLOW_KEYVAULT_NAME": {
+                    "value": "DEV_WORKFLOW_KEYVAULT_NAME_VAR_VAL"
+                },
+                "WORKFLOW_PRINCIPAL_CLIENT_ID": {
+                    "value": "DEV_WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL"
+                },
+                "WORKFLOW_PRINCIPAL_RESOURCE_ID": {
+                    "value": "DEV_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -227,7 +228,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-dev",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.dev=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.dev=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -318,7 +319,7 @@
                         },
                         "name": "azureResourceGroup",
                         "label": "Resource group",
-                        "defaultValue": "RESOURCE_GROUP_VAR_VAL",
+                        "defaultValue": "CLUSTER_RESOURCE_GROUP_VAR_VAL",
                         "required": true,
                         "type": "pickList",
                         "helpMarkDown": "Select an Azure Resource Group.",
@@ -394,7 +395,26 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                 "WORKFLOW_KEYVAULT_RESOURCE_GROUP": {
+                    "value": "QA_WORKFLOW_KEYVAULT_RESOURCE_GROUP_VAR_VAL"
+                },
+                "SUBSCRIPTION_ID": {
+                    "value": "QA_SUBSCRIPTION_ID_VAR_VAL"
+                },
+                "TENANT_ID": {
+                    "value": "QA_TENANT_ID_VAR_VAL"
+                },
+                "WORKFLOW_KEYVAULT_NAME": {
+                    "value": "QA_WORKFLOW_KEYVAULT_NAME_VAR_VAL"
+                },
+                "WORKFLOW_PRINCIPAL_CLIENT_ID": {
+                    "value": "QA_WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL"
+                },
+                "WORKFLOW_PRINCIPAL_RESOURCE_ID": {
+                    "value": "QA_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -576,7 +596,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-qa",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.qa=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.qa=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -667,7 +687,7 @@
                         },
                         "name": "azureResourceGroup",
                         "label": "Resource group",
-                        "defaultValue": "RESOURCE_GROUP_VAR_VAL",
+                        "defaultValue": "CLUSTER_RESOURCE_GROUP_VAR_VAL",
                         "required": true,
                         "type": "pickList",
                         "helpMarkDown": "Select an Azure Resource Group.",
@@ -743,7 +763,26 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                 "WORKFLOW_KEYVAULT_RESOURCE_GROUP": {
+                    "value": "STAGING_WORKFLOW_KEYVAULT_RESOURCE_GROUP_VAR_VAL"
+                },
+                "SUBSCRIPTION_ID": {
+                    "value": "STAGING_SUBSCRIPTION_ID_VAR_VAL"
+                },
+                "TENANT_ID": {
+                    "value": "STAGING_TENANT_ID_VAR_VAL"
+                },
+                "WORKFLOW_KEYVAULT_NAME": {
+                    "value": "STAGING_WORKFLOW_KEYVAULT_NAME_VAR_VAL"
+                },
+                "WORKFLOW_PRINCIPAL_CLIENT_ID": {
+                    "value": "STAGING_WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL"
+                },
+                "WORKFLOW_PRINCIPAL_RESOURCE_ID": {
+                    "value": "STAGING_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -925,7 +964,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-staging",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.staging=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.staging=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -1016,7 +1055,7 @@
                         },
                         "name": "azureResourceGroup",
                         "label": "Resource group",
-                        "defaultValue": "RESOURCE_GROUP_VAR_VAL",
+                        "defaultValue": "CLUSTER_RESOURCE_GROUP_VAR_VAL",
                         "required": true,
                         "type": "pickList",
                         "helpMarkDown": "Select an Azure Resource Group.",
@@ -1092,7 +1131,26 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                 "WORKFLOW_KEYVAULT_RESOURCE_GROUP": {
+                    "value": "PROD_WORKFLOW_KEYVAULT_RESOURCE_GROUP_VAR_VAL"
+                },
+                "SUBSCRIPTION_ID": {
+                    "value": "PROD_SUBSCRIPTION_ID_VAR_VAL"
+                },
+                "TENANT_ID": {
+                    "value": "PROD_TENANT_ID_VAR_VAL"
+                },
+                "WORKFLOW_KEYVAULT_NAME": {
+                    "value": "PROD_WORKFLOW_KEYVAULT_NAME_VAR_VAL"
+                },
+                "WORKFLOW_PRINCIPAL_CLIENT_ID": {
+                    "value": "PROD_WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL"
+                },
+                "WORKFLOW_PRINCIPAL_RESOURCE_ID": {
+                    "value": "PROD_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -1426,7 +1484,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.prod=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.prod=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -1522,7 +1580,7 @@
                         },
                         "name": "azureResourceGroup",
                         "label": "Resource group",
-                        "defaultValue": "RESOURCE_GROUP_VAR_VAL",
+                        "defaultValue": "CLUSTER_RESOURCE_GROUP_VAR_VAL",
                         "required": true,
                         "type": "pickList",
                         "helpMarkDown": "Select an Azure Resource Group.",

@@ -16,21 +16,6 @@
         },
         "ACR_NAME": {
             "value": "ACR_NAME_VAR_VAL"
-        },
-        "DELIVERY_PRINCIPAL_CLIENT_ID": {
-            "value": "DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL"
-        },
-        "DELIVERY_PRINCIPAL_RESOURCE_ID": {
-            "value": "DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL"
-        },
-        "DATABASE_NAME": {
-            "value": "DATABASE_NAME_VAR_VAL"
-        },
-        "COLLECTION_NAME": {
-            "value": "COLLECTION_NAME_VAR_VAL"
-        },
-        "DELIVERY_KEYVAULT_URI": {
-            "value": "DELIVERY_KEYVAULT_URI_VAR_VAL"
         }
     },
     "variableGroups": [],
@@ -42,7 +27,23 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                "DELIVERY_PRINCIPAL_CLIENT_ID": {
+                    "value": "DEV_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL"
+                },
+                "DELIVERY_PRINCIPAL_RESOURCE_ID": {
+                    "value": "DEV_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                },
+                "DATABASE_NAME": {
+                    "value": "DEV_DATABASE_NAME_VAR_VAL"
+                },
+                "COLLECTION_NAME": {
+                    "value": "DEV_COLLECTION_NAME_VAR_VAL"
+                },
+                "DELIVERY_KEYVAULT_URI": {
+                    "value": "DEV_DELIVERY_KEYVAULT_URI_VAR_VAL"
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -404,7 +405,23 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                "DELIVERY_PRINCIPAL_CLIENT_ID": {
+                    "value": "QA_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL"
+                },
+                "DELIVERY_PRINCIPAL_RESOURCE_ID": {
+                    "value": "QA_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                },
+                "DATABASE_NAME": {
+                    "value": "QA_DATABASE_NAME_VAR_VAL"
+                },
+                "COLLECTION_NAME": {
+                    "value": "QA_COLLECTION_NAME_VAR_VAL"
+                },
+                "DELIVERY_KEYVAULT_URI": {
+                    "value": "QA_DELIVERY_KEYVAULT_URI_VAR_VAL"
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -761,7 +778,23 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                "DELIVERY_PRINCIPAL_CLIENT_ID": {
+                    "value": "STAGING_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL"
+                },
+                "DELIVERY_PRINCIPAL_RESOURCE_ID": {
+                    "value": "STAGING_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                },
+                "DATABASE_NAME": {
+                    "value": "STAGING_DATABASE_NAME_VAR_VAL"
+                },
+                "COLLECTION_NAME": {
+                    "value": "STAGING_COLLECTION_NAME_VAR_VAL"
+                },
+                "DELIVERY_KEYVAULT_URI": {
+                    "value": "STAGING_DELIVERY_KEYVAULT_URI_VAR_VAL"
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -1117,7 +1150,23 @@
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
             "rank": 4,
-            "variables": {},
+            "variables": {
+                "DELIVERY_PRINCIPAL_CLIENT_ID": {
+                    "value": "PROD_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL"
+                },
+                "DELIVERY_PRINCIPAL_RESOURCE_ID": {
+                    "value": "PROD_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                },
+                "DATABASE_NAME": {
+                    "value": "PROD_DATABASE_NAME_VAR_VAL"
+                },
+                "COLLECTION_NAME": {
+                    "value": "PROD_COLLECTION_NAME_VAR_VAL"
+                },
+                "DELIVERY_KEYVAULT_URI": {
+                    "value": "PROD_DELIVERY_KEYVAULT_URI_VAR_VAL"
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [

@@ -14,13 +14,6 @@
         "ACR_NAME": {
             "value": "ACR_NAME_VAR_VAL"
         },
-        "COSMOSDB_COL_NAME": {
-            "value": "COSMOSDB_COL_NAME_VAR_VAL"
-        },
-        "COSMOSDB_CONNECTION": {
-            "value": "COSMOSDB_CONNECTION_VAR_VAL",
-            "isSecret": true
-        },
         "REASON": {
             "value": "Azure DevOps CD Pipeline",
             "allowOverride": true
@@ -38,7 +31,15 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                "COSMOSDB_COL_NAME": {
+                    "value": "DEV_COSMOSDB_COL_NAME_VAR_VAL"
+                },
+                "COSMOSDB_CONNECTION": {
+                    "value": "DEV_COSMOSDB_CONNECTION_VAR_VAL",
+                    "isSecret": true
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -399,6 +400,15 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
+            "variables": {
+                "COSMOSDB_COL_NAME": {
+                    "value": "QA_COSMOSDB_COL_NAME_VAR_VAL"
+                },
+                "COSMOSDB_CONNECTION": {
+                    "value": "QA_COSMOSDB_CONNECTION_VAR_VAL",
+                    "isSecret": true
+                }
+            },
             "variables": {},
             "variableGroups": [],
             "preDeployApprovals": {
@@ -755,7 +765,15 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                "COSMOSDB_COL_NAME": {
+                    "value": "STAGING_COSMOSDB_COL_NAME_VAR_VAL"
+                },
+                "COSMOSDB_CONNECTION": {
+                    "value": "STAGING_COSMOSDB_CONNECTION_VAR_VAL",
+                    "isSecret": true
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
@@ -1111,7 +1129,15 @@
             "owner": {
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
-            "variables": {},
+            "variables": {
+                "COSMOSDB_COL_NAME": {
+                    "value": "PROD_COSMOSDB_COL_NAME_VAR_VAL"
+                },
+                "COSMOSDB_CONNECTION": {
+                    "value": "PROD_COSMOSDB_CONNECTION_VAR_VAL",
+                    "isSecret": true
+                }
+            },
             "variableGroups": [],
             "preDeployApprovals": {
                 "approvals": [
