@@ -4,41 +4,17 @@
 #  ------------------------------------------------------------
 
 ###################################################################################################
-# ingestion service
+# ingestion service experimental
 ###################################################################################################
 {{- $appname := include "ingestion.name" . -}}
 {{- $chart := include "ingestion.chart" . -}}
 {{- $instancename := .Release.Name }}
-apiVersion: v1
-kind: Service
-metadata:
-  name: {{ include "ingestion.versionappname" . | replace "." "" }}
-  labels:
-    app.kubernetes.io/name: {{ $appname }}
-    app.kubernetes.io/instance: {{ $instancename }}
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/version: {{ .Chart.AppVersion }}
-    app.kubernetes.io/component: backend
-    app.kubernetes.io/part-of: dronedelivery
-    helm.sh/chart: {{ $chart }}
-spec:
-  ports:
-  - name: http
-    port: 80
-    targetPort: 80
-  selector:
-    app.kubernetes.io/name: {{ $appname }}
-    app.kubernetes.io/instance: {{ $instancename }}
-{{ if (eq .Release.Name "ingestion-v0.1.0") }}
-{{- range tuple "ingestion" }}
-{{- $svcname := . }}
----
 # the following object is meant ot be created first time only.
 # its configuration will be later managed by CI/CD
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $svcname }}
+  name: ingestion-experimental
   labels:
     app.kubernetes.io/name: {{ $appname }}
     app.kubernetes.io/managed-by: azuredeveops
@@ -53,5 +29,3 @@ spec:
   selector:
     app.kubernetes.io/name: {{ $appname }}
     app.kubernetes.io/instance: {{ $instancename }}
-{{ end }}
-{{ end }}
