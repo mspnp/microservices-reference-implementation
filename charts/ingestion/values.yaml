@@ -8,3 +8,10 @@ image:
 reason: unknown
 telemetry:
   level: "error"
+resources:
+  requests:
+    cpu: 500m
+    memory: 600Mi
+  limits:
+    cpu: 650m
+    memory: 800Mi
