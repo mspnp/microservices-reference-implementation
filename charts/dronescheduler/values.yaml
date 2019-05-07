@@ -13,3 +13,10 @@ keyvault:
 reason: unknown
 telemetry:
   level: "Error"
+resources:
+  requests:
+    cpu: 450m
+    memory: 350Mi
+  limits:
+    cpu: 600m
+    memory: 500Mi

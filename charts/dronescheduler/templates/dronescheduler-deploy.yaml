@@ -57,9 +57,9 @@ spec:
         - name: service
           containerPort: 8080
       resources:
-         requests:
-           cpu: 1
-           memory: 1G
-         limits:
-           cpu: 1
-           memory: 1G
+        requests:
+          cpu:   {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
+          memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
+        limits:
+          cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
+          memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}
