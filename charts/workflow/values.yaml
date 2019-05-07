@@ -28,3 +28,10 @@ keyvault:
   tenantid:
 telemetry:
   level: "Error"
+resources:
+  requests:
+    cpu: 1700m
+    memory: 100Mi
+  limits:
+    cpu: 2300m
+    memory: 140Mi
