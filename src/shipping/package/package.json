@@ -35,14 +35,13 @@
     "koa-cors": "0.0.16",
     "koa-route": "^3.2.0",
     "mongodb": "3.2.1",
-    "winston": "^2.4.0"
+    "winston": "^3.2.1"
   },
   "devDependencies": {
     "@types/koa": "^2.0.48",
     "@types/koa-bodyparser": "^5.0.1",
     "@types/mocha": "^5.2.6",
     "@types/node": "^11.10.5",
-    "@types/winston": "^2.4.4",
     "del": "^4.0.0",
     "gulp": "^4.0.0",
     "gulp-cli": "^2.0.1",

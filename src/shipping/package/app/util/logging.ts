@@ -3,7 +3,27 @@
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-import * as winston from 'winston';
+import { createLogger, format, transports }  from 'winston';
+const { colorize, combine, timestamp, errors, printf, splat } = format;
+const defaultFormat = combine(
+        colorize(),
+        timestamp(),
+        splat(),
+        errors(),
+        printf(
+          ({
+            timestamp,
+            level,
+            message,
+            ...rest
+          }) => {
+            let restString = JSON.stringify(rest, undefined, 2);
+            restString = restString === '{}' ? '' : restString;
+
+            return `[${timestamp}] ${level} - ${message} ${restString}`;
+          },
+        ),
+      );
 
 export interface ILogger {
     log(level: string, msg: string, meta?: any)
@@ -12,45 +32,21 @@ export interface ILogger {
     warn(msg: string, meta?: any)
     error(msg: string, meta?: any)
 }
+
 export function logger(level: string) {
 
-    winston.configure({
+    const logger = createLogger({
         level: level,
         transports: [
-            new (winston.transports.Console)({
-                level: level,
-                colorize: true,
-                timestamp: true
-            })]
-        });
-    return async function(ctx: any, next: any) {
-        ctx.state.logger = new WinstonLogger();
-        await next();
-    }
-}
-class WinstonLogger {
-    constructor() {}
-    log(level: string, msg: string, payload?: any) {
-        var meta : any = {};
-        if (payload) {
-            winston.log(level, msg, payload);
-        }
-        else
-        {
-            winston.log(level, msg);
-        }
-    }
+            new transports.Console({ level: level})
+        ],
+        format: defaultFormat
+    });
 
-    info(msg: string, payload?: any) {
-        this.log('info', msg, payload);
-    }
-    debug(msg: string, payload?: any) {
-        this.log('debug', msg, payload);
-    }
-    warn(msg: string, payload?: any) {
-        this.log('warn', msg, payload);
-    }
-    error(msg: string, payload?: any) {
-        this.log('error', msg, payload);
+    logger.info('winston logger created');
+
+    return async function(ctx: any, next: any) {
+        ctx.state.logger = logger;
+        await next();
     }
 }
