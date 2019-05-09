@@ -5,7 +5,7 @@
 
 import { Package } from "./package"
 import { Settings } from '../util/settings';
-import * as Logger from '../util/logging';      
+import * as Logger from '../util/logging';
 import { MongoErrors } from '../util/mongo-err';
 
 var MongoClient = require('mongodb').MongoClient;
@@ -22,7 +22,7 @@ export class Repository
 
 
   static async initialize(connection: string) {
-      Repository.db = (await MongoClient.connect(connection));
+      Repository.db = (await MongoClient.connect(connection)).db();
   }
 
   private collection() {
@@ -44,7 +44,7 @@ export class Repository
         }
     }
   }
-  
+
   async updatePackage(p: Package) {
       await this.collection().update({_id:p._id}, p);
   }
