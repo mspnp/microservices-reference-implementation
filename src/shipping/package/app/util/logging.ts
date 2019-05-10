@@ -4,26 +4,26 @@
 // ------------------------------------------------------------
 
 import { createLogger, format, transports }  from 'winston';
-const { colorize, combine, timestamp, errors, printf, splat } = format;
+
+const { combine, timestamp, errors, printf, splat } = format;
 const defaultFormat = combine(
-        colorize(),
-        timestamp(),
-        splat(),
-        errors(),
-        printf(
-          ({
+    timestamp(),
+    splat(),
+    errors(),
+    printf(
+        ({
             timestamp,
             level,
             message,
             ...rest
-          }) => {
+        }) => {
             let restString = JSON.stringify(rest, undefined, 2);
             restString = restString === '{}' ? '' : restString;
 
             return `[${timestamp}] ${level} - ${message} ${restString}`;
-          },
-        ),
-      );
+        },
+    ),
+);
 
 export interface ILogger {
     log(level: string, msg: string, meta?: any)
@@ -34,7 +34,6 @@ export interface ILogger {
 }
 
 export function logger(level: string) {
-
     const logger = createLogger({
         level: level,
         transports: [
