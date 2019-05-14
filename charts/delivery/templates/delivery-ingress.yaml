@@ -15,7 +15,7 @@ kind: Ingress
 metadata:
   name: {{ $relname }}-ingress
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /api/deliveryrequests$1
+    nginx.ingress.kubernetes.io/rewrite-target: /api/deliveries/public$1
 spec:
   {{- if .Values.ingress.tls }}
   tls:
@@ -32,18 +32,18 @@ spec:
   - host: {{ .name }}
     http:
       paths:
-      {{ if .path }}
-      - path: {{ printf "%s/%s/" .path $appversion }}api/deliveryrequests(.*)
-      {{ else }}
-      - path: {{ $defaultversionedpath }}api/deliveryrequests(.*)
-      {{ end }}
+      {{- if .path }}
+      - path: {{ printf "%s/%s/" .path $appversion }}api/deliveries(.*)
+      {{- else }}
+      - path: {{ $defaultversionedpath }}api/deliveries(.*)
+      {{- end }}
         backend:
           serviceName: "{{ .serviceName }}-{{ $svcversion }}"
           servicePort: http
-      {{ if (eq $appversion "v0.1.0") }}
-      - path: {{ default "/" .path }}api/deliveryrequests(.*)
+      {{- if (eq $appversion "v0.1.0") }}
+      - path: {{ default "/" .path }}api/deliveries(.*)
         backend:
           serviceName: "{{ .serviceName }}"
           servicePort: http
-      {{ end }}
+      {{- end }}
   {{ end }}

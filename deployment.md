@@ -157,6 +157,25 @@ kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/maste
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
 
+## Deploy the ingress controller
+
+```bash
+# Deploy the ngnix ingress controller
+helm install stable/nginx-ingress --name nginx-ingress --namespace ingress-controllers --set rbac.create=true
+
+# Obtain the load balancer ip address and assign a domain name
+until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-controller -n ingress-controllers -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
+export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv)
+export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest"
+export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
+
+# Create a self-signed certificate for TLS
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -out ingestion-ingress-tls.crt \
+    -keyout ingestion-ingress-tls.key \
+    -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
+```
+
 ## Optional: Set up CI/CD with Azure DevOps
 
 Add [CI/CD to Drone Delivery using Azure Pipelines with YAML](./deploymentCICD.md).
@@ -197,12 +216,20 @@ Deploy the Delivery service:
 # Extract pod identity outputs from deployment
 export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
 export DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
+export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
 # Deploy the service
 helm install $HELM_CHARTS/delivery/ \
      --set image.tag=0.1.0 \
      --set image.repository=delivery \
      --set dockerregistry=$ACR_SERVER \
+     --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
+     --set ingress.hosts[0].serviceName=delivery \
+     --set ingress.hosts[0].tls=true \
+     --set ingress.hosts[0].tlsSecretName=$DELIVERY_INGRESS_TLS_SECRET_NAME \
+     --set ingress.tls.secrets[0].name=$DELIVERY_INGRESS_TLS_SECRET_NAME \
+     --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
+     --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
      --set identity.clientid=$DELIVERY_PRINCIPAL_CLIENT_ID \
      --set identity.resourceid=$DELIVERY_PRINCIPAL_RESOURCE_ID \
      --set cosmosdb.id=$DATABASE_NAME \
@@ -342,21 +369,8 @@ docker push $ACR_SERVER/ingestion:0.1.0
 Deploy the Ingestion service
 
 ```bash
-# Deploy the ngnix ingress controller
-helm install stable/nginx-ingress --name nginx-ingress --namespace ingress-controllers --set rbac.create=true
-
-# Obtain the load balancer ip address and assign a domain name
-until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-controller -n ingress-controllers -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
-export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv)
-export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest"
-export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
-INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
-
-# Create a self-signed certificate for TLS
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -out ingestion-ingress-tls.crt \
-    -keyout ingestion-ingress-tls.key \
-    -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
+# Set secreat name
+export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
 
 # Deploy service
 helm install $HELM_CHARTS/ingestion/ \
@@ -438,16 +452,36 @@ helm status dronescheduler-v0.1.0
 
 ## Validate the application is running
 
-You can send delivery requests to the ingestion service using the Swagger UI.
+You can send delivery requests and check their statuses using curl.
 
-Use a web browser to navigate to `https://[EXTERNAL_INGEST_FQDN]/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST` and use the **Try it out** button to submit a delivery request.
+### Send a request
+
+Since the certificate used for TLS is self-signed, the request disables TLS validation using the '-k' option.
 
 ```bash
-open "https://$EXTERNAL_INGEST_FQDN/swagger-ui.html#/ingestion45controller/scheduleDeliveryAsyncUsingPOST"
+curl -X POST "https://$EXTERNAL_INGEST_FQDN/api/deliveryrequests" --header 'Content-Type: application/json' --header 'Accept: application/json' -k -i -d '{  
+   "confirmationRequired": "None",  
+   "deadline": "",  
+   "deliveryId": "mydelivery",  
+   "dropOffLocation": "drop off",  
+   "expedited": true,  
+   "ownerId": "myowner",  
+   "packageInfo": {  
+     "packageId": "mypackage",  
+     "size": "Small",  
+     "tag": "mytag",  
+     "weight": 10  
+   },  
+   "pickupLocation": "my pickup", 
+   "pickupTime": "2019-05-08T20:00:00.000Z" 
+ }'  
 ```
 
-> We recommended putting an API Gateway in front of all public APIs. For convenience, the Ingestion service is directly exposed with a public IP address.
+### Check the request status
 
+```bash
+curl "https://$EXTERNAL_INGEST_FQDN/api/deliveries/mydelivery" --header 'Accept: application/json' -k -i
+```
 
 ## Optional steps
 
