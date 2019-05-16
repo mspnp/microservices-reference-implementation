@@ -237,6 +237,7 @@ helm install $HELM_CHARTS/delivery/ \
      --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
      --set reason="Initial deployment" \
      --set tags.prod=true \
+     --set current=true \
      --namespace backend \
      --name delivery-v0.1.0
 
@@ -283,6 +284,7 @@ helm install $HELM_CHARTS/package/ \
      --set dockerregistry=$ACR_SERVER \
      --set reason="Initial deployment" \
      --set tags.prod=true \
+     --set current=true \
      --namespace backend \
      --name package-v0.1.0
 
@@ -391,6 +393,7 @@ helm install $HELM_CHARTS/ingestion/ \
      --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
      --set reason="Initial deployment" \
      --set tags.prod=true \
+     --set current=true \
      --namespace backend \
      --name ingestion-v0.1.0
 
@@ -443,6 +446,7 @@ helm install $HELM_CHARTS/dronescheduler/ \
      --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
      --set reason="Initial deployment" \
      --set tags.prod=true \
+     --set current=true \
      --namespace backend \
      --name dronescheduler-v0.1.0
 

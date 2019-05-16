@@ -26,3 +26,4 @@ tags:
   prod: false
   qa: false
   staging: false
+current: false

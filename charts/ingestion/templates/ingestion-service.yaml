@@ -29,16 +29,12 @@ spec:
   selector:
     app.kubernetes.io/name: {{ $appname }}
     app.kubernetes.io/instance: {{ $instancename }}
-{{ if (eq .Release.Name "ingestion-v0.1.0") }}
-{{- range tuple "ingestion" }}
-{{- $svcname := . }}
+{{ if .Values.current }}
 ---
-# the following object is meant ot be created first time only.
-# its configuration will be later managed by CI/CD
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $svcname }}
+  name: ingestion
   labels:
     app.kubernetes.io/name: {{ $appname }}
     app.kubernetes.io/managed-by: azuredeveops
@@ -53,5 +49,4 @@ spec:
   selector:
     app.kubernetes.io/name: {{ $appname }}
     app.kubernetes.io/instance: {{ $instancename }}
-{{ end }}
 {{ end }}
