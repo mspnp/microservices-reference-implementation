@@ -9,3 +9,6 @@ exports:
     telemetry:
       level: "error"
     reason: "new prod deploy"
+    nginx-ingress:
+      controller:
+        replicaCount: 2

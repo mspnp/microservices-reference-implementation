@@ -8,3 +8,6 @@ exports:
     telemetry:
       level: "info"
     reason: "new staging deploy"
+    nginx-ingress:
+      controller:
+        replicaCount: 2

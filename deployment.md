@@ -157,6 +157,12 @@ kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/maste
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
 
+## Optional: Set up CI/CD with Azure DevOps
+
+Add [CI/CD to Drone Delivery using Azure Pipelines with YAML](./deploymentCICD.md).
+
+> Important: If you don't want to set up the CI/CD pipelines, you can manually deploy the application as follows.
+
 ## Deploy the ingress controller
 
 ```bash
@@ -175,13 +181,6 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -keyout ingestion-ingress-tls.key \
     -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
 ```
-
-## Optional: Set up CI/CD with Azure DevOps
-
-Add [CI/CD to Drone Delivery using Azure Pipelines with YAML](./deploymentCICD.md).
-
-> Important: If you don't want to set up the CI/CD pipelines, you can manually deploy the application as follows.
-
 ## Deploy the Delivery service
 
 Extract resource details from deployment
@@ -463,22 +462,22 @@ You can send delivery requests and check their statuses using curl.
 Since the certificate used for TLS is self-signed, the request disables TLS validation using the '-k' option.
 
 ```bash
-curl -X POST "https://$EXTERNAL_INGEST_FQDN/api/deliveryrequests" --header 'Content-Type: application/json' --header 'Accept: application/json' -k -i -d '{  
-   "confirmationRequired": "None",  
-   "deadline": "",  
-   "deliveryId": "mydelivery",  
-   "dropOffLocation": "drop off",  
-   "expedited": true,  
-   "ownerId": "myowner",  
-   "packageInfo": {  
-     "packageId": "mypackage",  
-     "size": "Small",  
-     "tag": "mytag",  
-     "weight": 10  
-   },  
-   "pickupLocation": "my pickup", 
-   "pickupTime": "2019-05-08T20:00:00.000Z" 
- }'  
+curl -X POST "https://$EXTERNAL_INGEST_FQDN/api/deliveryrequests" --header 'Content-Type: application/json' --header 'Accept: application/json' -k -i -d '{
+   "confirmationRequired": "None",
+   "deadline": "",
+   "deliveryId": "mydelivery",
+   "dropOffLocation": "drop off",
+   "expedited": true,
+   "ownerId": "myowner",
+   "packageInfo": {
+     "packageId": "mypackage",
+     "size": "Small",
+     "tag": "mytag",
+     "weight": 10
+   },
+   "pickupLocation": "my pickup",
+   "pickupTime": "2019-05-08T20:00:00.000Z"
+ }'
 ```
 
 ### Check the request status

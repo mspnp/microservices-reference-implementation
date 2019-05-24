@@ -89,7 +89,25 @@ export AZURE_DEVOPS_USER_ID=$(az devops user show --user ${AZURE_DEVEOPS_USER} -
 
 ### Build pipelines pre-requisites
 
-```
+```bash
+# Create a self-signed certificate for TLS and public ip addresses
+export RESOURCE_GROUP_NODE=$(az aks show -g $RESOURCE_GROUP -n $CLUSTER_NAME --query "nodeResourceGroup" -o tsv) && \
+export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest"
+
+for env in dev qa staging prod;do
+ENV=${env^^}
+az network public-ip create --name ${EXTERNAL_INGEST_DNS_NAME}-${env}-pip --dns-name ${EXTERNAL_INGEST_DNS_NAME}-${env} --allocation-method static -g $RESOURCE_GROUP_NODE
+EXTERNAL_INGEST_FQDN=$(az network public-ip show --name ${EXTERNAL_INGEST_DNS_NAME}-${env}-pip --query "dnsSettings.fqdn" -g $RESOURCE_GROUP_NODE --output tsv)
+export ${ENV}_EXTERNAL_INGEST_FQDN=${EXTERNAL_INGEST_FQDN}
+export ${ENV}_INGRESS_LOAD_BALANCER_IP=$(az network public-ip show --name ${EXTERNAL_INGEST_DNS_NAME}-${env}-pip --query "ipAddress" -g $RESOURCE_GROUP_NODE --output tsv)
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -out ingestion-ingress-tls-${env}.crt \
+    -keyout ingestion-ingress-tls-${env}.key \
+    -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
+export "${ENV}_INGRESS_TLS_SECRET_CERT=$(echo $(cat ingestion-ingress-tls-${env}.crt) | tr '\n' "\\n")"
+export "${ENV}_INGRESS_TLS_SECRET_KEY=$(echo $(cat ingestion-ingress-tls-${env}.key) | tr '\n' "\\n")"
+done
+
 # export app paths
 export DELIVERY_PATH=$PROJECT_ROOT/src/shipping/delivery && \
 export PACKAGE_PATH=$PROJECT_ROOT/src/shipping/package && \
@@ -354,24 +372,6 @@ helm status workflow-v0.1.0
 
 Ingestion pre-requisites
 
-```bash
-# Deploy the ngnix ingress controller
-helm install stable/nginx-ingress --name nginx-ingress --namespace ingress-controllers --set rbac.create=true
-
-# Obtain the load balancer ip address and assign a domain name
-until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-controller -n ingress-controllers -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
-export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv)
-export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest"
-export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
-INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
-
-# Create a self-signed certificate for TLS
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -out ingestion-ingress-tls.crt \
-    -keyout ingestion-ingress-tls.key \
-    -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
-```
-
 Create build and release pipeline definitions
 ```
 # add build definitions
@@ -392,8 +392,7 @@ export INGESTION_QUEUE_NAMESPACE=$(az group deployment show -g $RESOURCE_GROUP -
 export INGESTION_QUEUE_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionQueueName.value -o tsv) && \
 export INGESTION_ACCESS_KEY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionServiceAccessKeyName.value -o tsv) && \
 export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_ACCESS_KEY_NAME --query primaryKey -o tsv) && \
-export INGRESS_TLS_SECRET_CERT=$(echo $(cat ingestion-ingress-tls.crt) | tr '\n' "\\n") && \
-export INGRESS_TLS_SECRET_KEY=$(echo $(cat ingestion-ingress-tls.key) | tr '\n' "\\n")
+export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
 
 # add relese definition
 cat $INGESTION_PATH/azure-pipelines-cd.json | \
@@ -412,34 +411,38 @@ cat $INGESTION_PATH/azure-pipelines-cd.json | \
      sed "s#DEV_INGESTION_QUEUE_NAMESPACE_VAR_VAL#$INGESTION_QUEUE_NAMESPACE#g" | \
      sed "s#DEV_INGESTION_QUEUE_NAME_VAR_VAL#$INGESTION_QUEUE_NAME#g" | \
      sed "s#DEV_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$INGESTION_ACCESS_KEY_VALUE#g" | \
-     sed "s#DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL#$INGRESS_TLS_SECRET_KEY#g" | \
-     sed "s#DEV_EXTERNAL_INGEST_FQDN_VAR_VAL#$EXTERNAL_INGEST_FQDN#g" | \
+     sed "s#DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL#$DEV_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#DEV_INGRESS_LOAD_BALANCER_IP_VAR_VAL#$DEV_INGRESS_LOAD_BALANCER_IP#g" | \
+     sed "s#DEV_EXTERNAL_INGEST_FQDN_VAR_VAL#$DEV_EXTERNAL_INGEST_FQDN#g" | \
      sed "s#DEV_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
-     sed "s#DEV_INGRESS_TLS_SECRET_CERT_VAR_VAL#$INGRESS_TLS_SECRET_CERT#g" | \
+     sed "s#DEV_INGRESS_TLS_SECRET_CERT_VAR_VAL#$DEV_INGRESS_TLS_SECRET_CERT#g" | \
      # qa resources
      sed "s#QA_INGESTION_QUEUE_NAMESPACE_VAR_VAL#$INGESTION_QUEUE_NAMESPACE#g" | \
      sed "s#QA_INGESTION_QUEUE_NAME_VAR_VAL#$INGESTION_QUEUE_NAME#g" | \
      sed "s#QA_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$INGESTION_ACCESS_KEY_VALUE#g" | \
-     sed "s#QA_INGRESS_TLS_SECRET_KEY_VAR_VAL#$INGRESS_TLS_SECRET_KEY#g" | \
-     sed "s#QA_EXTERNAL_INGEST_FQDN_VAR_VAL#$EXTERNAL_INGEST_FQDN#g" | \
+     sed "s#QA_INGRESS_TLS_SECRET_KEY_VAR_VAL#$QA_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#QA_INGRESS_LOAD_BALANCER_IP_VAR_VAL#$QA_INGRESS_LOAD_BALANCER_IP#g" | \
+     sed "s#QA_EXTERNAL_INGEST_FQDN_VAR_VAL#$QA_EXTERNAL_INGEST_FQDN#g" | \
      sed "s#QA_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
-     sed "s#QA_INGRESS_TLS_SECRET_CERT_VAR_VAL#$INGRESS_TLS_SECRET_CERT#g" | \
+     sed "s#QA_INGRESS_TLS_SECRET_CERT_VAR_VAL#$QA_INGRESS_TLS_SECRET_CERT#g" | \
      # staging resources
      sed "s#STAGING_INGESTION_QUEUE_NAMESPACE_VAR_VAL#$INGESTION_QUEUE_NAMESPACE#g" | \
      sed "s#STAGING_INGESTION_QUEUE_NAME_VAR_VAL#$INGESTION_QUEUE_NAME#g" | \
      sed "s#STAGING_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$INGESTION_ACCESS_KEY_VALUE#g" | \
-     sed "s#STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL#$INGRESS_TLS_SECRET_KEY#g" | \
-     sed "s#STAGING_EXTERNAL_INGEST_FQDN_VAR_VAL#$EXTERNAL_INGEST_FQDN#g" | \
+     sed "s#STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#STAGING_INGRESS_LOAD_BALANCER_IP_VAR_VAL#$STAGING_INGRESS_LOAD_BALANCER_IP#g" | \
+     sed "s#STAGING_EXTERNAL_INGEST_FQDN_VAR_VAL#$STAGING_EXTERNAL_INGEST_FQDN#g" | \
      sed "s#STAGING_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
-     sed "s#STAGING_INGRESS_TLS_SECRET_CERT_VAR_VAL#$INGRESS_TLS_SECRET_CERT#g" | \
+     sed "s#STAGING_INGRESS_TLS_SECRET_CERT_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_CERT#g" | \
      # production resources
      sed "s#PROD_INGESTION_QUEUE_NAMESPACE_VAR_VAL#$INGESTION_QUEUE_NAMESPACE#g" | \
      sed "s#PROD_INGESTION_QUEUE_NAME_VAR_VAL#$INGESTION_QUEUE_NAME#g" | \
      sed "s#PROD_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$INGESTION_ACCESS_KEY_VALUE#g" | \
-     sed "s#PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL#$INGRESS_TLS_SECRET_KEY#g" | \
-     sed "s#PROD_EXTERNAL_INGEST_FQDN_VAR_VAL#$EXTERNAL_INGEST_FQDN#g" | \
+     sed "s#PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL#$PROD_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#PROD_INGRESS_LOAD_BALANCER_IP_VAR_VAL#$PROD_INGRESS_LOAD_BALANCER_IP#g" | \
+     sed "s#PROD_EXTERNAL_INGEST_FQDN_VAR_VAL#$PROD_EXTERNAL_INGEST_FQDN#g" | \
      sed "s#PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
-     sed "s#PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL#$INGRESS_TLS_SECRET_CERT#g" \
+     sed "s#PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL#$PROD_INGRESS_TLS_SECRET_CERT#g" \
      > $INGESTION_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
