@@ -4,10 +4,6 @@
     "description": null,
     "isDeleted": false,
     "variables": {
-        "AI_IKEY": {
-            "value": "AI_IKEY_VAR_VAL",
-            "isSecret": true
-        },
         "ACR_SERVER": {
             "value": "ACR_SERVER_VAR_VAL"
         },
@@ -32,6 +28,10 @@
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
             "variables": {
+                "AI_IKEY": {
+                    "value": "DEV_AI_IKEY_VAR_VAL",
+                    "isSecret": true
+                },
                 "COSMOSDB_COL_NAME": {
                     "value": "DEV_COSMOSDB_COL_NAME_VAR_VAL"
                 },
@@ -401,6 +401,10 @@
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
             "variables": {
+                "AI_IKEY": {
+                    "value": "QA_AI_IKEY_VAR_VAL",
+                    "isSecret": true
+                },
                 "COSMOSDB_COL_NAME": {
                     "value": "QA_COSMOSDB_COL_NAME_VAR_VAL"
                 },
@@ -766,6 +770,10 @@
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
             "variables": {
+                "AI_IKEY": {
+                    "value": "STAGING_AI_IKEY_VAR_VAL",
+                    "isSecret": true
+                },
                 "COSMOSDB_COL_NAME": {
                     "value": "STAGING_COSMOSDB_COL_NAME_VAR_VAL"
                 },
@@ -1130,6 +1138,10 @@
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
             "variables": {
+                "AI_IKEY": {
+                    "value": "PROD_AI_IKEY_VAR_VAL",
+                    "isSecret": true
+                },
                 "COSMOSDB_COL_NAME": {
                     "value": "PROD_COSMOSDB_COL_NAME_VAR_VAL"
                 },

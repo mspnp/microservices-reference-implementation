@@ -8,6 +8,103 @@
 - [Helm 2.12.3 or later](https://docs.helm.sh/using_helm/#installing-helm)
 - [Values from deployment instructions](./deployment.md)
 
+## Infrastructure for dev, test, staging and production
+
+```bash
+# Export the kubernetes cluster version and deploy
+export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv) && \
+for env in dev qa staging prod; do
+ENV=${env^^}
+az group deployment create \
+   -g $RESOURCE_GROUP \
+   --name azuredeploy-identities-${env} \
+   --template-file ${PROJECT_ROOT}/azuredeploy-identities.json \
+   --parameters environmentName=${env}
+
+export DELIVERY_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.deliveryIdName.value -o tsv)
+export DELIVERY_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.deliveryPrincipalId.value -o tsv)
+export DRONESCHEDULER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.droneSchedulerIdName.value -o tsv)
+export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.droneSchedulerPrincipalId.value -o tsv)
+export WORKFLOW_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.workflowIdName.value -o tsv)
+export WORKFLOW_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.workflowPrincipalId.value -o tsv)
+
+# Wait for AAD propagation
+until az ad sp show --id $DELIVERY_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id $DRONESCHEDULER_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id $WORKFLOW_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+
+az group deployment create -g $RESOURCE_GROUP --name azuredeploy-${env} --template-file ${PROJECT_ROOT}/azuredeploy.json \
+   --parameters servicePrincipalClientId=${SP_APP_ID} \
+               servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
+               servicePrincipalId=${SP_OBJECT_ID} \
+               kubernetesVersion=${KUBERNETES_VERSION} \
+               sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
+               deliveryIdName="$DELIVERY_ID_NAME" \
+               deliveryPrincipalId=$DELIVERY_ID_PRINCIPAL_ID \
+               droneSchedulerIdName=$DRONESCHEDULER_ID_NAME \
+               droneSchedulerPrincipalId=$DRONESCHEDULER_ID_PRINCIPAL_ID \
+               workflowIdName=$WORKFLOW_ID_NAME \
+               workflowPrincipalId=$WORKFLOW_ID_PRINCIPAL_ID \
+               environmentName=${env}
+
+export {${ENV}_AI_NAME,AI_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appInsightsName.value -o tsv)
+export ${ENV}_AI_IKEY=$(az resource show -g $RESOURCE_GROUP -n $AI_NAME --resource-type "Microsoft.Insights/components" --query properties.InstrumentationKey -o tsv)
+
+done
+```
+
+Get outputs from Azure Deploy
+```bash
+# Shared
+export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.acrName.value -o tsv) && \
+export ACR_SERVER=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.acrLoginServer.value -o tsv) && \
+export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksClusterName.value -o tsv) && \
+```
+
+Enable Azure Monitoring for Containers in the AKS cluster
+```bash
+az aks enable-addons -a monitoring --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
+```
+
+Download kubectl and create a k8s namespace
+```bash
+#  Install kubectl
+sudo az aks install-cli
+
+# Get the Kubernetes cluster credentials
+az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
+
+# Create namespaces
+kubectl create namespace backend
+```
+
+Setup Helm in the container
+
+```bash
+kubectl apply -f $K8S/tiller-rbac.yaml
+helm init --service-account tiller
+```
+
+## Integrate Application Insights instance
+
+```bash
+# add RBAC for AppInsights
+kubectl apply -f $K8S/k8s-rbac-ai.yaml
+```
+
+## Setup AAD pod identity and key vault flexvol infrastructure
+
+Complete instructions can be found at https://github.com/Azure/kubernetes-keyvault-flexvol
+
+Note: the tested nmi version was 1.4. It enables namespaced pod identity.
+
+```bash
+# setup AAD pod identity
+kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/deployment-rbac.yaml
+
+kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
+```
+
 ## Setup Azure DevOps
 
 ```
@@ -151,12 +248,14 @@ az pipelines create \
 # query build definition details and resources
 export AZURE_DEVOPS_DELIVERY_BUILD_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='delivery-ci'].id" -o tsv) && \
 export AZURE_DEVOPS_DELIVERY_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='delivery-ci'].queue.id" -o tsv) && \
-export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryCosmosDbName.value -o tsv) && \
-export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
-export COLLECTION_NAME="${DATABASE_NAME}-col" && \
-export DELIVERY_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.deliveryKeyVaultUri.value -o tsv) && \
-export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
-export DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
+for env in dev qa staging prod;do
+ENV=${env^^}
+export ${ENV}_DATABASE_NAME="deliveries-db"
+export ${ENV}_COLLECTION_NAME="deliveries-col"
+export ${ENV}_DELIVERY_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.deliveryKeyVaultUri.value -o tsv)
+export ${ENV}_DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.deliveryPrincipalResourceId.value -o tsv)
+export ${ENV}_DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
+done
 
 # add relese definition
 cat $DELIVERY_PATH/azure-pipelines-cd.json | \
@@ -171,29 +270,29 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#ACR_SERVER_VAR_VAL#$ACR_SERVER#g" | \
      sed "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" | \
      # development resources
-     sed "s#DEV_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL#$DELIVERY_PRINCIPAL_CLIENT_ID#g" | \
-     sed "s#DEV_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#DEV_DATABASE_NAME_VAR_VAL#$DATABASE_NAME#g" | \
-     sed "s#DEV_COLLECTION_NAME_VAR_VAL#$COLLECTION_NAME#g" | \
-     sed "s#DEV_DELIVERY_KEYVAULT_URI_VAR_VAL#$DELIVERY_KEYVAULT_URI#g" | \
+     sed "s#DEV_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL#$DEV_DELIVERY_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#DEV_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DEV_DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#DEV_DATABASE_NAME_VAR_VAL#$DEV_DATABASE_NAME#g" | \
+     sed "s#DEV_COLLECTION_NAME_VAR_VAL#$DEV_COLLECTION_NAME#g" | \
+     sed "s#DEV_DELIVERY_KEYVAULT_URI_VAR_VAL#$DEV_DELIVERY_KEYVAULT_URI#g" | \
      # qa resources
-     sed "s#QA_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL#$DELIVERY_PRINCIPAL_CLIENT_ID#g" | \
-     sed "s#QA_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#QA_DATABASE_NAME_VAR_VAL#$DATABASE_NAME#g" | \
-     sed "s#QA_COLLECTION_NAME_VAR_VAL#$COLLECTION_NAME#g" | \
-     sed "s#QA_DELIVERY_KEYVAULT_URI_VAR_VAL#$DELIVERY_KEYVAULT_URI#g" | \
+     sed "s#QA_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL#$QA_DELIVERY_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#QA_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL#$QA_DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#QA_DATABASE_NAME_VAR_VAL#$QA_DATABASE_NAME#g" | \
+     sed "s#QA_COLLECTION_NAME_VAR_VAL#$QA_COLLECTION_NAME#g" | \
+     sed "s#QA_DELIVERY_KEYVAULT_URI_VAR_VAL#$QA_DELIVERY_KEYVAULT_URI#g" | \
      # staging resources
-     sed "s#STAGING_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL#$DELIVERY_PRINCIPAL_CLIENT_ID#g" | \
-     sed "s#STAGING_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#STAGING_DATABASE_NAME_VAR_VAL#$DATABASE_NAME#g" | \
-     sed "s#STAGING_COLLECTION_NAME_VAR_VAL#$COLLECTION_NAME#g" | \
-     sed "s#STAGING_DELIVERY_KEYVAULT_URI_VAR_VAL#$DELIVERY_KEYVAULT_URI#g" | \
+     sed "s#STAGING_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL#$STAGING_DELIVERY_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#STAGING_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL#$STAGING_DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#STAGING_DATABASE_NAME_VAR_VAL#$STAGING_DATABASE_NAME#g" | \
+     sed "s#STAGING_COLLECTION_NAME_VAR_VAL#$STAGING_COLLECTION_NAME#g" | \
+     sed "s#STAGING_DELIVERY_KEYVAULT_URI_VAR_VAL#$STAGING_DELIVERY_KEYVAULT_URI#g" | \
      # production resources
-     sed "s#PROD_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL#$DELIVERY_PRINCIPAL_CLIENT_ID#g" | \
-     sed "s#PROD_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#PROD_DATABASE_NAME_VAR_VAL#$DATABASE_NAME#g" | \
-     sed "s#PROD_COLLECTION_NAME_VAR_VAL#$COLLECTION_NAME#g" | \
-     sed "s#PROD_DELIVERY_KEYVAULT_URI_VAR_VAL#$DELIVERY_KEYVAULT_URI#g" \
+     sed "s#PROD_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL#$PROD_DELIVERY_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#PROD_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL#$PROD_DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#PROD_DATABASE_NAME_VAR_VAL#$PROD_DATABASE_NAME#g" | \
+     sed "s#PROD_COLLECTION_NAME_VAR_VAL#$PROD_COLLECTION_NAME#g" | \
+     sed "s#PROD_DELIVERY_KEYVAULT_URI_VAR_VAL#$PROD_DELIVERY_KEYVAULT_URI#g" \
      > $DELIVERY_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
@@ -234,9 +333,12 @@ az pipelines create \
 # query build definition details and resources
 export AZURE_DEVOPS_PACKAGE_BUILD_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='package-ci'].id" -o tsv) && \
 export AZURE_DEVOPS_PACKAGE_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='package-ci'].queue.id" -o tsv) && \
-export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.packageMongoDbName.value -o tsv) && \
-export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g') && \
-export COSMOSDB_COL_NAME=packages
+for env in dev qa staging prod;do
+ENV=${env^^}
+export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.packageMongoDbName.value -o tsv)
+export ${ENV}_COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g')
+export ${ENV}_COSMOSDB_COL_NAME=packages
+done
 
 # add relese definition
 cat $PACKAGE_PATH/azure-pipelines-cd.json | \
@@ -250,19 +352,22 @@ cat $PACKAGE_PATH/azure-pipelines-cd.json | \
      sed "s#RESOURCE_GROUP_VAR_VAL#$RESOURCE_GROUP#g" | \
      sed "s#ACR_SERVER_VAR_VAL#$ACR_SERVER#g" | \
      sed "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" | \
-     sed "s#AI_IKEY_VAR_VAL#$AI_IKEY#g" | \
      # development resources
-     sed "s#DEV_COSMOSDB_COL_NAME_VAR_VAL#$COSMOSDB_COL_NAME#g" | \
-     sed "s#DEV_COSMOSDB_CONNECTION_VAR_VAL#${COSMOSDB_CONNECTION//&/\\&}#g" | \
+     sed "s#DEV_AI_IKEY_VAR_VAL#$DEV_AI_IKEY#g" | \
+     sed "s#DEV_COSMOSDB_COL_NAME_VAR_VAL#$DEV_COSMOSDB_COL_NAME#g" | \
+     sed "s#DEV_COSMOSDB_CONNECTION_VAR_VAL#${DEV_COSMOSDB_CONNECTION//&/\\&}#g" | \
      # qa resources
-     sed "s#QA_COSMOSDB_COL_NAME_VAR_VAL#$COSMOSDB_COL_NAME#g" | \
-     sed "s#QA_COSMOSDB_CONNECTION_VAR_VAL#${COSMOSDB_CONNECTION//&/\\&}#g" | \
+     sed "s#QA_AI_IKEY_VAR_VAL#$QA_AI_IKEY#g" | \
+     sed "s#QA_COSMOSDB_COL_NAME_VAR_VAL#$QA_COSMOSDB_COL_NAME#g" | \
+     sed "s#QA_COSMOSDB_CONNECTION_VAR_VAL#${QA_COSMOSDB_CONNECTION//&/\\&}#g" | \
      # staging resources
-     sed "s#STAGING_COSMOSDB_COL_NAME_VAR_VAL#$COSMOSDB_COL_NAME#g" | \
-     sed "s#STAGING_COSMOSDB_CONNECTION_VAR_VAL#${COSMOSDB_CONNECTION//&/\\&}#g" | \
+     sed "s#STAGING_AI_IKEY_VAR_VAL#$STAGING_AI_IKEY#g" | \
+     sed "s#STAGING_COSMOSDB_COL_NAME_VAR_VAL#$STAGING_COSMOSDB_COL_NAME#g" | \
+     sed "s#STAGING_COSMOSDB_CONNECTION_VAR_VAL#${STAGING_COSMOSDB_CONNECTION//&/\\&}#g" | \
      # production resources
-     sed "s#PROD_COSMOSDB_COL_NAME_VAR_VAL#$COSMOSDB_COL_NAME#g" | \
-     sed "s#PROD_COSMOSDB_CONNECTION_VAR_VAL#${COSMOSDB_CONNECTION//&/\\&}#g" \
+     sed "s#PROD_AI_IKEY_VAR_VAL#$PROD_AI_IKEY#g" | \
+     sed "s#PROD_COSMOSDB_COL_NAME_VAR_VAL#$PROD_COSMOSDB_COL_NAME#g" | \
+     sed "s#PROD_COSMOSDB_CONNECTION_VAR_VAL#${PROD_COSMOSDB_CONNECTION//&/\\&}#g" \
      > $PACKAGE_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
@@ -302,9 +407,12 @@ az pipelines create \
 # query build definition details and resources
 export AZURE_DEVOPS_WORKFLOW_BUILD_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='workflow-ci'].id" -o tsv) && \
 export AZURE_DEVOPS_WORKFLOW_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='workflow-ci'].queue.id" -o tsv) && \
-export WORKFLOW_KEYVAULT_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.workflowKeyVaultName.value -o tsv) && \
-export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalResourceId.value -o tsv) && \
-export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities --query properties.outputs.workflowPrincipalClientId.value -o tsv)
+for env in dev qa staging prod;do
+ENV=${env^^}
+export ${ENV}_WORKFLOW_KEYVAULT_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.workflowKeyVaultName.value -o tsv)
+export ${ENV}_WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.workflowPrincipalResourceId.value -o tsv)
+export ${ENV}_WORKFLOW_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.workflowPrincipalClientId.value -o tsv)
+done
 
 # add relese definition
 cat $WORKFLOW_PATH/azure-pipelines-cd.json | \
@@ -320,30 +428,30 @@ cat $WORKFLOW_PATH/azure-pipelines-cd.json | \
      sed "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" | \
      # development resources
      sed "s#DEV_WORKFLOW_KEYVAULT_RESOURCE_GROUP_VAR_VAL#$RESOURCE_GROUP#g" | \
-     sed "s#DEV_WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL#$WORKFLOW_PRINCIPAL_CLIENT_ID#g" | \
-     sed "s#DEV_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL#$WORKFLOW_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#DEV_WORKFLOW_KEYVAULT_NAME_VAR_VAL#$WORKFLOW_KEYVAULT_NAME#g" | \
+     sed "s#DEV_WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL#$DEV_WORKFLOW_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#DEV_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DEV_WORKFLOW_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#DEV_WORKFLOW_KEYVAULT_NAME_VAR_VAL#$DEV_WORKFLOW_KEYVAULT_NAME#g" | \
      sed "s#DEV_SUBSCRIPTION_ID_VAR_VAL#$SUBSCRIPTION_ID#g" | \
      sed "s#DEV_TENANT_ID_VAR_VAL#$TENANT_ID#g" | \
      # qa resources
      sed "s#QA_WORKFLOW_KEYVAULT_RESOURCE_GROUP_VAR_VAL#$RESOURCE_GROUP#g" | \
-     sed "s#QA_WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL#$WORKFLOW_PRINCIPAL_CLIENT_ID#g" | \
-     sed "s#QA_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL#$WORKFLOW_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#QA_WORKFLOW_KEYVAULT_NAME_VAR_VAL#$WORKFLOW_KEYVAULT_NAME#g" | \
+     sed "s#QA_WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL#$QA_WORKFLOW_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#QA_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL#$QA_WORKFLOW_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#QA_WORKFLOW_KEYVAULT_NAME_VAR_VAL#$QA_WORKFLOW_KEYVAULT_NAME#g" | \
      sed "s#QA_SUBSCRIPTION_ID_VAR_VAL#$SUBSCRIPTION_ID#g" | \
      sed "s#QA_TENANT_ID_VAR_VAL#$TENANT_ID#g" | \
      # staging resources
      sed "s#STAGING_WORKFLOW_KEYVAULT_RESOURCE_GROUP_VAR_VAL#$RESOURCE_GROUP#g" | \
-     sed "s#STAGING_WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL#$WORKFLOW_PRINCIPAL_CLIENT_ID#g" | \
-     sed "s#STAGING_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL#$WORKFLOW_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#STAGING_WORKFLOW_KEYVAULT_NAME_VAR_VAL#$WORKFLOW_KEYVAULT_NAME#g" | \
+     sed "s#STAGING_WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL#$STAGING_WORKFLOW_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#STAGING_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL#$STAGING_WORKFLOW_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#STAGING_WORKFLOW_KEYVAULT_NAME_VAR_VAL#$STAGING_WORKFLOW_KEYVAULT_NAME#g" | \
      sed "s#STAGING_SUBSCRIPTION_ID_VAR_VAL#$SUBSCRIPTION_ID#g" | \
      sed "s#STAGING_TENANT_ID_VAR_VAL#$TENANT_ID#g" | \
      # production resources
      sed "s#PROD_WORKFLOW_KEYVAULT_RESOURCE_GROUP_VAR_VAL#$RESOURCE_GROUP#g" | \
-     sed "s#PROD_WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL#$WORKFLOW_PRINCIPAL_CLIENT_ID#g" | \
-     sed "s#PROD_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL#$WORKFLOW_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#PROD_WORKFLOW_KEYVAULT_NAME_VAR_VAL#$WORKFLOW_KEYVAULT_NAME#g" | \
+     sed "s#PROD_WORKFLOW_PRINCIPAL_CLIENT_ID_VAR_VAL#$PROD_WORKFLOW_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#PROD_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL#$PROD_WORKFLOW_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#PROD_WORKFLOW_KEYVAULT_NAME_VAR_VAL#$PROD_WORKFLOW_KEYVAULT_NAME#g" | \
      sed "s#PROD_SUBSCRIPTION_ID_VAR_VAL#$SUBSCRIPTION_ID#g" | \
      sed "s#PROD_TENANT_ID_VAR_VAL#$TENANT_ID#g" \
     > $WORKFLOW_PATH/azure-pipelines-cd-0.json
@@ -388,10 +496,13 @@ az pipelines create \
 # query build definition details and resources
 export AZURE_DEVOPS_INGESTION_BUILD_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='ingestion-ci'].id" -o tsv) && \
 export AZURE_DEVOPS_INGESTION_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='ingestion-ci'].queue.id" -o tsv) && \
-export INGESTION_QUEUE_NAMESPACE=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionQueueNamespace.value -o tsv) && \
-export INGESTION_QUEUE_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionQueueName.value -o tsv) && \
-export INGESTION_ACCESS_KEY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.ingestionServiceAccessKeyName.value -o tsv) && \
-export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_ACCESS_KEY_NAME --query primaryKey -o tsv) && \
+for env in dev qa staging prod;do
+ENV=${env^^}
+export {${ENV}_INGESTION_QUEUE_NAMESPACE,INGESTION_QUEUE_NAMESPACE}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.ingestionQueueNamespace.value -o tsv)
+export ${ENV}_INGESTION_QUEUE_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.ingestionQueueName.value -o tsv)
+export INGESTION_ACCESS_KEY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.ingestionServiceAccessKeyName.value -o tsv)
+export ${ENV}_INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_ACCESS_KEY_NAME --query primaryKey -o tsv)
+done && \
 export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
 
 # add relese definition
@@ -406,43 +517,46 @@ cat $INGESTION_PATH/azure-pipelines-cd.json | \
      sed "s#RESOURCE_GROUP_VAR_VAL#$RESOURCE_GROUP#g" | \
      sed "s#ACR_SERVER_VAR_VAL#$ACR_SERVER#g" | \
      sed "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" | \
-     sed "s#AI_IKEY_VAR_VAL#$AI_IKEY#g" | \
      # development resources
-     sed "s#DEV_INGESTION_QUEUE_NAMESPACE_VAR_VAL#$INGESTION_QUEUE_NAMESPACE#g" | \
-     sed "s#DEV_INGESTION_QUEUE_NAME_VAR_VAL#$INGESTION_QUEUE_NAME#g" | \
-     sed "s#DEV_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$INGESTION_ACCESS_KEY_VALUE#g" | \
-     sed "s#DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL#$DEV_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#DEV_AI_IKEY_VAR_VAL#$DEV_AI_IKEY#g" | \
      sed "s#DEV_INGRESS_LOAD_BALANCER_IP_VAR_VAL#$DEV_INGRESS_LOAD_BALANCER_IP#g" | \
      sed "s#DEV_EXTERNAL_INGEST_FQDN_VAR_VAL#$DEV_EXTERNAL_INGEST_FQDN#g" | \
-     sed "s#DEV_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#DEV_INGESTION_QUEUE_NAMESPACE_VAR_VAL#$DEV_INGESTION_QUEUE_NAMESPACE#g" | \
+     sed "s#DEV_INGESTION_QUEUE_NAME_VAR_VAL#$DEV_INGESTION_QUEUE_NAME#g" | \
+     sed "s#DEV_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$DEV_INGESTION_ACCESS_KEY_VALUE#g" | \
      sed "s#DEV_INGRESS_TLS_SECRET_CERT_VAR_VAL#$DEV_INGRESS_TLS_SECRET_CERT#g" | \
+     sed "s#DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL#$DEV_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#DEV_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
      # qa resources
-     sed "s#QA_INGESTION_QUEUE_NAMESPACE_VAR_VAL#$INGESTION_QUEUE_NAMESPACE#g" | \
-     sed "s#QA_INGESTION_QUEUE_NAME_VAR_VAL#$INGESTION_QUEUE_NAME#g" | \
-     sed "s#QA_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$INGESTION_ACCESS_KEY_VALUE#g" | \
-     sed "s#QA_INGRESS_TLS_SECRET_KEY_VAR_VAL#$QA_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#QA_AI_IKEY_VAR_VAL#$QA_AI_IKEY#g" | \
      sed "s#QA_INGRESS_LOAD_BALANCER_IP_VAR_VAL#$QA_INGRESS_LOAD_BALANCER_IP#g" | \
      sed "s#QA_EXTERNAL_INGEST_FQDN_VAR_VAL#$QA_EXTERNAL_INGEST_FQDN#g" | \
-     sed "s#QA_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#QA_INGESTION_QUEUE_NAMESPACE_VAR_VAL#$QA_INGESTION_QUEUE_NAMESPACE#g" | \
+     sed "s#QA_INGESTION_QUEUE_NAME_VAR_VAL#$QA_INGESTION_QUEUE_NAME#g" | \
+     sed "s#QA_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$QA_INGESTION_ACCESS_KEY_VALUE#g" | \
      sed "s#QA_INGRESS_TLS_SECRET_CERT_VAR_VAL#$QA_INGRESS_TLS_SECRET_CERT#g" | \
+     sed "s#QA_INGRESS_TLS_SECRET_KEY_VAR_VAL#$QA_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#QA_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
      # staging resources
-     sed "s#STAGING_INGESTION_QUEUE_NAMESPACE_VAR_VAL#$INGESTION_QUEUE_NAMESPACE#g" | \
-     sed "s#STAGING_INGESTION_QUEUE_NAME_VAR_VAL#$INGESTION_QUEUE_NAME#g" | \
-     sed "s#STAGING_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$INGESTION_ACCESS_KEY_VALUE#g" | \
-     sed "s#STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#STAGING_AI_IKEY_VAR_VAL#$STAGING_AI_IKEY#g" | \
      sed "s#STAGING_INGRESS_LOAD_BALANCER_IP_VAR_VAL#$STAGING_INGRESS_LOAD_BALANCER_IP#g" | \
      sed "s#STAGING_EXTERNAL_INGEST_FQDN_VAR_VAL#$STAGING_EXTERNAL_INGEST_FQDN#g" | \
-     sed "s#STAGING_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#STAGING_INGESTION_QUEUE_NAMESPACE_VAR_VAL#$STAGING_INGESTION_QUEUE_NAMESPACE#g" | \
+     sed "s#STAGING_INGESTION_QUEUE_NAME_VAR_VAL#$STAGING_INGESTION_QUEUE_NAME#g" | \
+     sed "s#STAGING_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$STAGING_INGESTION_ACCESS_KEY_VALUE#g" | \
      sed "s#STAGING_INGRESS_TLS_SECRET_CERT_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_CERT#g" | \
+     sed "s#STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#STAGING_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
      # production resources
-     sed "s#PROD_INGESTION_QUEUE_NAMESPACE_VAR_VAL#$INGESTION_QUEUE_NAMESPACE#g" | \
-     sed "s#PROD_INGESTION_QUEUE_NAME_VAR_VAL#$INGESTION_QUEUE_NAME#g" | \
-     sed "s#PROD_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$INGESTION_ACCESS_KEY_VALUE#g" | \
-     sed "s#PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL#$PROD_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#PROD_AI_IKEY_VAR_VAL#$PROD_AI_IKEY#g" | \
      sed "s#PROD_INGRESS_LOAD_BALANCER_IP_VAR_VAL#$PROD_INGRESS_LOAD_BALANCER_IP#g" | \
      sed "s#PROD_EXTERNAL_INGEST_FQDN_VAR_VAL#$PROD_EXTERNAL_INGEST_FQDN#g" | \
-     sed "s#PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
-     sed "s#PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL#$PROD_INGRESS_TLS_SECRET_CERT#g" \
+     sed "s#PROD_INGESTION_QUEUE_NAMESPACE_VAR_VAL#$PROD_INGESTION_QUEUE_NAMESPACE#g" | \
+     sed "s#PROD_INGESTION_QUEUE_NAME_VAR_VAL#$PROD_INGESTION_QUEUE_NAME#g" | \
+     sed "s#PROD_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$PROD_INGESTION_ACCESS_KEY_VALUE#g" | \
+     sed "s#PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL#$PROD_INGRESS_TLS_SECRET_CERT#g" | \
+     sed "s#PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL#$PROD_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" \
      > $INGESTION_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
@@ -483,9 +597,12 @@ az pipelines create \
 # query build definition details and resources
 export AZURE_DEVOPS_DRONE_BUILD_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='dronescheduler-ci'].id" -o tsv) && \
 export AZURE_DEVOPS_DRONE_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='dronescheduler-ci'].queue.id" -o tsv) && \
-export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
-export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv) && \
-export DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
+for env in dev qa staging prod;do
+ENV=${env^^}
+export ${ENV}_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv)
+export ${ENV}_DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv)
+export ${ENV}_DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
+done
 
 # add relese definition
 cat $DRONE_PATH/azure-pipelines-cd.json | \
@@ -500,21 +617,21 @@ cat $DRONE_PATH/azure-pipelines-cd.json | \
      sed "s#ACR_SERVER_VAR_VAL#$ACR_SERVER#g" | \
      sed "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" | \
      # development resources
-     sed "s#DEV_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
-     sed "s#DEV_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#DEV_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$DRONESCHEDULER_KEYVAULT_URI#g" | \
+     sed "s#DEV_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$DEV_DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#DEV_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DEV_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#DEV_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$DEV_DRONESCHEDULER_KEYVAULT_URI#g" | \
      # qa resources
-     sed "s#QA_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
-     sed "s#QA_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#QA_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$DRONESCHEDULER_KEYVAULT_URI#g" | \
+     sed "s#QA_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$QA_DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#QA_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$QA_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#QA_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$QA_DRONESCHEDULER_KEYVAULT_URI#g" | \
      # staging resources
-     sed "s#STAGING_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
-     sed "s#STAGING_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#STAGING_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$DRONESCHEDULER_KEYVAULT_URI#g" | \
+     sed "s#STAGING_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$STAGING_DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#STAGING_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$STAGING_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#STAGING_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$STAGING_DRONESCHEDULER_KEYVAULT_URI#g" | \
      # production resources
-     sed "s#PROD_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
-     sed "s#PROD_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#PROD_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$DRONESCHEDULER_KEYVAULT_URI#g" \
+     sed "s#PROD_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$PROD_DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
+     sed "s#PROD_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$PROD_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
+     sed "s#PROD_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$PROD_DRONESCHEDULER_KEYVAULT_URI#g" \
      > $DRONE_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \

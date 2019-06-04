@@ -10,10 +10,6 @@
         "ACR_SERVER": {
             "value": "ACR_SERVER_VAR_VAL"
         },
-        "AI_IKEY": {
-            "value": "AI_IKEY_VAR_VAL",
-            "isSecret": true
-        },
         "REASON": {
             "value": "Azure DevOps CD Pipeline",
             "allowOverride": true
@@ -35,6 +31,10 @@
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
             "variables": {
+               "AI_IKEY": {
+                   "value": "DEV_AI_IKEY_VAR_VAL",
+                   "isSecret": true
+               },
                "INGRESS_LOAD_BALANCER_IP": {
                    "value": "DEV_INGRESS_LOAD_BALANCER_IP_VAR_VAL"
                },
@@ -411,10 +411,13 @@
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
             "variables": {
+               "AI_IKEY": {
+                   "value": "QA_AI_IKEY_VAR_VAL",
+                   "isSecret": true
+               },
                "INGRESS_LOAD_BALANCER_IP": {
                    "value": "QA_INGRESS_LOAD_BALANCER_IP_VAR_VAL"
                },
-
                "EXTERNAL_INGEST_FQDN": {
                    "value": "QA_EXTERNAL_INGEST_FQDN_VAR_VAL"
                },
@@ -788,10 +791,13 @@
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
             "variables": {
+               "AI_IKEY": {
+                   "value": "STAGING_AI_IKEY_VAR_VAL",
+                   "isSecret": true
+               },
                "INGRESS_LOAD_BALANCER_IP": {
                    "value": "STAGING_INGRESS_LOAD_BALANCER_IP_VAR_VAL"
                },
-
                "EXTERNAL_INGEST_FQDN": {
                    "value": "STAGING_EXTERNAL_INGEST_FQDN_VAR_VAL"
                },
@@ -1165,6 +1171,10 @@
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
             "variables": {
+               "AI_IKEY": {
+                   "value": "PROD_AI_IKEY_VAR_VAL",
+                   "isSecret": true
+               },
                "INGRESS_LOAD_BALANCER_IP": {
                    "value": "PROD_INGRESS_LOAD_BALANCER_IP_VAR_VAL"
                },

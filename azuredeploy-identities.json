@@ -1,78 +1,130 @@
 {
     "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
+    "parameters": {
+        "environmentName": {
+           "type": "string",
+           "defaultValue": "dev",
+           "allowedValues": [
+             "dev",
+             "qa",
+             "staging",
+             "prod"
+           ]
+        }
+    },
     "variables": {
-        "deliveryIdName": "delivery",
-        "workflowIdName": "workflow",
-        "droneSchedulerIdName": "dronescheduler"
+        "environmentSettings": {
+            "dev": {
+                "deliveryIdName": "dev-d",
+                "workflowIdName": "dev-wf",
+                "droneSchedulerIdName": "dev-ds"
+            },
+            "qa": {
+                "deliveryIdName": "qa-d",
+                "workflowIdName": "qa-wf",
+                "droneSchedulerIdName": "qa-ds"
+            },
+            "staging": {
+                "deliveryIdName": "staging-d",
+                "workflowIdName": "staging-wf",
+                "droneSchedulerIdName": "staging-ds"
+            },
+            "prod": {
+                "deliveryIdName": "prod-d",
+                "workflowIdName": "prod-wf",
+                "droneSchedulerIdName": "prod-ds"
+            }
+        }
     },
     "resources": [
         {
             "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
-            "name": "[variables('workflowIdName')]",
+            "name": "[variables('environmentSettings')[parameters('environmentName')].workflowIdName]",
             "apiVersion": "2015-08-31-preview",
-            "location": "[resourceGroup().location]"
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "workflow managed identity",
+                "what": "rbac",
+                "reason": "aad-pod-identity",
+                "app": "fabrikam-workflow",
+                "tier": "[parameters('environmentName')]"
+            }
         },
         {
             "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
-            "name": "[variables('deliveryIdName')]",
+            "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryIdName]",
             "apiVersion": "2015-08-31-preview",
-            "location": "[resourceGroup().location]"
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "delivery managed identity",
+                "what": "rbac",
+                "reason": "aad-pod-identity",
+                "app": "fabrikam-delivery",
+                "tier": "[parameters('environmentName')]"
+            }
         },
         {
             "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
-            "name": "[variables('droneSchedulerIdName')]",
+            "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerIdName]",
             "apiVersion": "2015-08-31-preview",
-            "location": "[resourceGroup().location]"
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "dronescheduler managed identity",
+                "what": "rbac",
+                "reason": "aad-pod-identity",
+                "app": "fabrikam-dronescheduler",
+                "tier": "[parameters('environmentName')]"
+            }
         }
     ],
     "outputs": {
         "deliveryIdName": {
-            "value": "[variables('deliveryIdName')]",
+            "value": "[variables('environmentSettings')[parameters('environmentName')].deliveryIdName]",
             "type": "string"
         },
         "deliveryPrincipalId": {
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('deliveryIdName'))).principalId]",
+            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('environmentSettings')[parameters('environmentName')].deliveryIdName)).principalId]",
             "type": "string"
         },
         "deliveryPrincipalResourceId": {
-            "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('deliveryIdName'))]",
+            "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('environmentSettings')[parameters('environmentName')].deliveryIdName)]",
             "type": "string"
         },
         "deliveryPrincipalClientId": {
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('deliveryIdName'))).clientId]",
+            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('environmentSettings')[parameters('environmentName')].deliveryIdName)).clientId]",
             "type": "string"
         },
         "droneSchedulerIdName": {
-            "value": "[variables('droneSchedulerIdName')]",
+            "value": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerIdName]",
             "type": "string"
         },
         "droneSchedulerPrincipalId": {
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('droneSchedulerIdName'))).principalId]",
+            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('environmentSettings')[parameters('environmentName')].droneSchedulerIdName)).principalId]",
             "type": "string"
         },
         "droneSchedulerPrincipalResourceId": {
-            "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('droneSchedulerIdName'))]",
+            "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('environmentSettings')[parameters('environmentName')].droneSchedulerIdName)]",
             "type": "string"
         },
         "droneSchedulerPrincipalClientId": {
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('droneSchedulerIdName'))).clientId]",
+            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('environmentSettings')[parameters('environmentName')].droneSchedulerIdName)).clientId]",
             "type": "string"
         },
         "workflowIdName": {
-            "value": "[variables('workflowIdName')]",
+            "value": "[variables('environmentSettings')[parameters('environmentName')].workflowIdName]",
             "type": "string"
         },
         "workflowPrincipalId": {
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('workflowIdName'))).principalId]",
+            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('environmentSettings')[parameters('environmentName')].workflowIdName)).principalId]",
             "type": "string"
         },
         "workflowPrincipalResourceId": {
-            "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('workflowIdName'))]",
+            "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('environmentSettings')[parameters('environmentName')].workflowIdName)]",
             "type": "string"
         },
         "workflowPrincipalClientId": {
-            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('workflowIdName'))).clientId]",
+            "value": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', variables('environmentSettings')[parameters('environmentName')].workflowIdName)).clientId]",
             "type": "string"
         }
     }
