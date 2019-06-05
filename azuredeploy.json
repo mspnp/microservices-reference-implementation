@@ -136,43 +136,6 @@
                 "description": "Type of the storage account that will store Redis Cache."
             }
         },
-        "deliveryRedisCacheSKU": {
-            "type": "string",
-            "allowedValues": [
-                "Basic",
-                "Standard",
-                "Premium"
-            ],
-            "defaultValue": "Basic",
-            "metadata": {
-                "description": "The pricing tier of the new Azure Redis Cache."
-            }
-        },
-        "deliveryRedisCacheFamily": {
-            "type": "string",
-            "defaultValue": "C",
-            "metadata": {
-                "description": "The family for the sku."
-            },
-            "allowedValues": [
-                "C",
-                "P"
-            ]
-        },
-        "deliveryRedisCacheCapacity": {
-            "type": "int",
-            "allowedValues": [
-                0,
-                1,
-                2,
-                3,
-                4
-            ],
-            "defaultValue": 0,
-            "metadata": {
-                "description": "The size of the new Azure Redis Cache instance. "
-            }
-        },
         "deliveryRedisDiagnosticsEnabled": {
             "type": "bool",
             "allowedValues": [
@@ -201,6 +164,9 @@
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
+                "deliveryRedisCacheSKU": "Basic",
+                "deliveryRedisCacheFamily": "C",
+                "deliveryRedisCacheCapacity": 0,
                 "deliveryCosmosDbName": "[concat(parameters('environmentName'),'-d-', uniqueString(resourceGroup().id))]",
                 "deliveryRedisName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
                 "deliveryKeyVaultName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
@@ -218,6 +184,9 @@
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
+                "deliveryRedisCacheSKU": "Basic",
+                "deliveryRedisCacheFamily": "C",
+                "deliveryRedisCacheCapacity": 0,
                 "deliveryCosmosDbName": "[concat(parameters('environmentName'),'-d-', uniqueString(resourceGroup().id))]",
                 "deliveryRedisName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
                 "deliveryKeyVaultName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
@@ -235,6 +204,9 @@
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
+                "deliveryRedisCacheSKU": "Standard",
+                "deliveryRedisCacheFamily": "C",
+                "deliveryRedisCacheCapacity": 1,
                 "deliveryCosmosDbName": "[concat(parameters('environmentName'),'-d-', uniqueString(resourceGroup().id))]",
                 "deliveryRedisName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
                 "deliveryKeyVaultName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
@@ -252,6 +224,9 @@
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
+                "deliveryRedisCacheSKU": "Standard",
+                "deliveryRedisCacheFamily": "C",
+                "deliveryRedisCacheCapacity": 1,
                 "deliveryCosmosDbName": "[concat(parameters('environmentName'),'-d-', uniqueString(resourceGroup().id))]",
                 "deliveryRedisName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
                 "deliveryKeyVaultName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
@@ -368,9 +343,9 @@
             "properties": {
                 "redisEnableNonSslPort": "false",
                 "sku": {
-                    "capacity": "[parameters('deliveryRedisCacheCapacity')]",
-                    "family": "[parameters('deliveryRedisCacheFamily')]",
-                    "name": "[parameters('deliveryRedisCacheSKU')]"
+                    "capacity": "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisCacheCapacity]",
+                    "family": "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisCacheFamily]",
+                    "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisCacheSKU]"
                 }
             },
             "resources": [
