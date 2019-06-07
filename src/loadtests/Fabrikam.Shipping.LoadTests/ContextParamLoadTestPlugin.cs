@@ -5,7 +5,7 @@
 
 using Microsoft.VisualStudio.TestTools.LoadTesting;
 
-namespace Fabrikam.Ingress.Ingestion.LoadTests
+namespace Fabrikam.Shipping.LoadTests
 {
     public class ContextParameterLoadTestPlugin : ILoadTestPlugin
     {

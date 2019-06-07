@@ -499,7 +499,7 @@ curl "https://$EXTERNAL_INGEST_FQDN/api/deliveries/mydelivery" --header 'Accept:
 
 ### Load Test the application
 
-To run load testing against the solution, follow the steps listed [here](./src/shipping/ingress/readme.md).
+To run load testing against the solution, follow the steps listed [here](./src/loadtests/readme.md).
 
 ### Fluentd and Elastic Search
 

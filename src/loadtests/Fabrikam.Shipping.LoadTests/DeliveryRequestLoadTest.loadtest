@@ -468,6 +468,6 @@
     </RunConfiguration>
   </RunConfigurations>
   <LoadTestPlugins>
-    <LoadTestPlugin Classname="Fabrikam.Ingress.Ingestion.LoadTests.ContextParameterLoadTestPlugin, Fabrikam.Ingress.Ingestion.LoadTests, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null" DisplayName="ContextParameterLoadTestPlugin" Description="" />
+    <LoadTestPlugin Classname="Fabrikam.Shipping.LoadTests.ContextParameterLoadTestPlugin, Fabrikam.Ingress.Ingestion.LoadTests, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null" DisplayName="ContextParameterLoadTestPlugin" Description="" />
   </LoadTestPlugins>
 </LoadTest>

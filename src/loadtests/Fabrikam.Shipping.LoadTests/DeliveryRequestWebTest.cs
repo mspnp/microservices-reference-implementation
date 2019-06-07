@@ -11,7 +11,7 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.VisualStudio.TestTools.WebTesting;
 using Newtonsoft.Json;
 
-namespace Fabrikam.Ingress.Ingestion.LoadTests
+namespace Fabrikam.Shipping.LoadTests
 {
     public class DeliveryRequestWebTest : WebTest
     {
@@ -29,9 +29,9 @@ namespace Fabrikam.Ingress.Ingestion.LoadTests
         }
 
         public static bool RemoteCertificateValidationCallBack(
-            object sender, 
-            X509Certificate certificate, 
-            X509Chain chain, 
+            object sender,
+            X509Certificate certificate,
+            X509Chain chain,
             SslPolicyErrors sslPolicyErrors) => true;
 
         public override IEnumerator<WebTestRequest> GetRequestEnumerator()
@@ -78,7 +78,7 @@ namespace Fabrikam.Ingress.Ingestion.LoadTests
         {
             Guid randomTag = Guid.NewGuid();
 
-            var httpBodyRequestWithRandomTag = 
+            var httpBodyRequestWithRandomTag =
                 new StringHttpBody
             {
                 ContentType = "application/json",
