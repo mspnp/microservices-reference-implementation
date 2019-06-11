@@ -1,11 +1,11 @@
 dependencies:
 - name: nginx-ingress
   repository: https://kubernetes-charts.storage.googleapis.com
-  version: ">=1.6.0"
+  version: ">=1.6.9"
   condition: nginx-ingress.enabled
 
 - name: ingestion-dev
-  repository: "file://charts/ingestion-dev"
+  repository: "file://envs/ingestion-dev"
   version: ">= 0.0.1"
   tags:
     - dev
@@ -13,7 +13,7 @@ dependencies:
     - data
 
 - name: ingestion-prod
-  repository: "file://charts/ingestion-prod"
+  repository: "file://envs/ingestion-prod"
   version: ">= 0.0.1"
   tags:
     - prod
@@ -21,7 +21,7 @@ dependencies:
     - data
 
 - name: ingestion-qa
-  repository: "file://charts/ingestion-qa"
+  repository: "file://envs/ingestion-qa"
   version: ">= 0.0.1"
   tags:
     - qa
@@ -29,7 +29,7 @@ dependencies:
     - data
 
 - name: ingestion-staging
-  repository: "file://charts/ingestion-staging"
+  repository: "file://envs/ingestion-staging"
   version: ">= 0.0.1"
   tags:
     - staging

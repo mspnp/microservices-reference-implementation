@@ -1,0 +1,11 @@
+# Staging values for dronescheduler.
+nameOverride: dronescheduler
+exports:
+  data:
+    replicaCount: 3
+    image:
+      pullPolicy: Always
+    telemetry:
+      level: "Information"
+    reason: "new staging deploy"
+    current: true

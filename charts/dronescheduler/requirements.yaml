@@ -1,6 +1,6 @@
 dependencies:
   - name: dronescheduler-dev
-    repository: "file://charts/dronescheduler-dev"
+    repository: "file://envs/dronescheduler-dev"
     version: ">= 0.0.1"
     tags:
       - dev
@@ -8,7 +8,7 @@ dependencies:
       - data
 
   - name: dronescheduler-prod
-    repository: "file://charts/dronescheduler-prod"
+    repository: "file://envs/dronescheduler-prod"
     version: ">= 0.0.1"
     tags:
       - prod
@@ -16,7 +16,7 @@ dependencies:
       - data
 
   - name: dronescheduler-qa
-    repository: "file://charts/dronescheduler-qa"
+    repository: "file://envs/dronescheduler-qa"
     version: ">= 0.0.1"
     tags:
       - qa
@@ -24,7 +24,7 @@ dependencies:
       - data
 
   - name: dronescheduler-staging
-    repository: "file://charts/dronescheduler-staging"
+    repository: "file://envs/dronescheduler-staging"
     version: ">= 0.0.1"
     tags:
       - staging

@@ -1,6 +1,6 @@
 dependencies:
   - name: package-dev
-    repository: "file://charts/package-dev"
+    repository: "file://envs/package-dev"
     version: ">= 0.0.1"
     tags:
       - dev
@@ -8,7 +8,7 @@ dependencies:
       - data
 
   - name: package-prod
-    repository: "file://charts/package-prod"
+    repository: "file://envs/package-prod"
     version: ">= 0.0.1"
     tags:
       - prod
@@ -16,7 +16,7 @@ dependencies:
       - data
 
   - name: package-qa
-    repository: "file://charts/package-qa"
+    repository: "file://envs/package-qa"
     version: ">= 0.0.1"
     tags:
       - qa
@@ -24,7 +24,7 @@ dependencies:
       - data
 
   - name: package-staging
-    repository: "file://charts/package-staging"
+    repository: "file://envs/package-staging"
     version: ">= 0.0.1"
     tags:
       - staging

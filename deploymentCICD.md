@@ -116,7 +116,7 @@ AZURE_DEVOPS_ORG_NAME=<devops-org-name>
 AZURE_DEVOPS_ORG=https://dev.azure.com/$AZURE_DEVOPS_ORG_NAME
 AZURE_DEVOPS_VSRM_ORG=https://vsrm.dev.azure.com/$AZURE_DEVOPS_ORG_NAME
 AZURE_DEVOPS_PROJECT_NAME=<new-or-existent-project-name>
-AZURE_REPOS_NAME=<new-repo-name>
+AZURE_DEVOPS_REPOS_NAME=<new-repo-name>
 AZURE_PIPELINES_SERVICE_CONN_NAME=default_cicd_service-connection
 
 # create project or skip this step if you are using an existent Azure DevOps project
@@ -126,7 +126,7 @@ az devops project create \
 
 # create repo
 az repos create \
-   --name $AZURE_REPOS_NAME \
+   --name $AZURE_DEVOPS_REPOS_NAME \
    --organization $AZURE_DEVOPS_ORG \
    --project $AZURE_DEVOPS_PROJECT_NAME
 
@@ -138,16 +138,15 @@ az devops service-endpoint create \
    --service-endpoint-type azurerm \
    --name $AZURE_PIPELINES_SERVICE_CONN_NAME \
    --authorization-scheme ServicePrincipal \
-   --azure-rm-service-principal-id $SERVICE_PRINCIPAL_ID \
-   --azure-rm-service-prinicipal-key $SERVICE_PRINCIPAL_KEY \
    --azure-rm-tenant-id $TENANT_ID \
    --azure-rm-subscription-id $SUBSCRIPTION_ID \
    --azure-rm-subscription-name "$SUBSCRIPTION_NAME" \
    --organization $AZURE_DEVOPS_ORG \
-   --project $AZURE_DEVOPS_PROJECT_NAME
+   --project $AZURE_DEVOPS_PROJECT_NAME \
+   --azure-rm-service-principal-id <sp-appId-created-for-rbac> --azure-rm-service-principal-key <sp-password-created-for-rbac>
 
 # navigate to the repo and add ssh following links below or just skip this step for https
-open $AZURE_DEVOPS_ORG/$AZURE_DEVOPS_PROJECT_NAME/_git/$AZURE_REPOS_NAME
+open $AZURE_DEVOPS_ORG/$AZURE_DEVOPS_PROJECT_NAME/_git/$AZURE_DEVOPS_REPOS_NAME
 ```
 
 > Follow instructions at [Use SSH Key authentication](https://docs.microsoft.com/en-us/azure/devops/repos/git/use-ssh-keys-to-authenticate?view=azure-devops) to add ssh.
@@ -158,7 +157,7 @@ For more information on the different authentication types, please take a look a
 ## Add new remote for the new Azure Repo
 ```
 # get the ssh url. For https just replace sshUrl with remoteUrl below
-export NEW_REMOTE=$(az repos show -r $AZURE_REPOS_NAME --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query sshUrl -o tsv)
+export NEW_REMOTE=$(az repos show -r $AZURE_DEVOPS_REPOS_NAME --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query sshUrl -o tsv)
 
 # push master from cloned repo to the new remote
 cd <github-repo> && \
@@ -215,8 +214,6 @@ export DRONE_PATH=$PROJECT_ROOT/src/shipping/dronescheduler
 # configure build YAML definitions
 for pipelinePath in $DELIVERY_PATH $PACKAGE_PATH $WORKFLOW_PATH $INGESTION_PATH $DRONE_PATH; do
 sed -i \
-    -e "s#CLUSTER_NAME_VAR_VAL#$CLUSTER_NAME#g" \
-    -e "s#RESOURCE_GROUP_VAR_VAL#$RESOURCE_GROUP#g" \
     -e "s#ACR_SERVER_VAR_VAL#$ACR_SERVER#g" \
     -e "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" \
     -e "s#AZURE_PIPELINES_SERVICE_CONN_NAME_VAR_VAL#$AZURE_PIPELINES_SERVICE_CONN_NAME#g" \
@@ -255,7 +252,8 @@ export ${ENV}_COLLECTION_NAME="deliveries-col"
 export ${ENV}_DELIVERY_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.deliveryKeyVaultUri.value -o tsv)
 export ${ENV}_DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.deliveryPrincipalResourceId.value -o tsv)
 export ${ENV}_DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
-done
+done && \
+export INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
 # add relese definition
 cat $DELIVERY_PATH/azure-pipelines-cd.json | \
@@ -275,24 +273,40 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#DEV_DATABASE_NAME_VAR_VAL#$DEV_DATABASE_NAME#g" | \
      sed "s#DEV_COLLECTION_NAME_VAR_VAL#$DEV_COLLECTION_NAME#g" | \
      sed "s#DEV_DELIVERY_KEYVAULT_URI_VAR_VAL#$DEV_DELIVERY_KEYVAULT_URI#g" | \
+     sed "s#DEV_EXTERNAL_INGEST_FQDN_VAR_VAL#$DEV_EXTERNAL_INGEST_FQDN#g" | \
+     sed "s#DEV_INGRESS_TLS_SECRET_CERT_VAR_VAL#$DEV_INGRESS_TLS_SECRET_CERT#g" | \
+     sed "s#DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL#$DEV_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#DEV_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
      # qa resources
      sed "s#QA_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL#$QA_DELIVERY_PRINCIPAL_CLIENT_ID#g" | \
      sed "s#QA_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL#$QA_DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
      sed "s#QA_DATABASE_NAME_VAR_VAL#$QA_DATABASE_NAME#g" | \
      sed "s#QA_COLLECTION_NAME_VAR_VAL#$QA_COLLECTION_NAME#g" | \
      sed "s#QA_DELIVERY_KEYVAULT_URI_VAR_VAL#$QA_DELIVERY_KEYVAULT_URI#g" | \
+     sed "s#QA_EXTERNAL_INGEST_FQDN_VAR_VAL#$QA_EXTERNAL_INGEST_FQDN#g" | \
+     sed "s#QA_INGRESS_TLS_SECRET_CERT_VAR_VAL#$QA_INGRESS_TLS_SECRET_CERT#g" | \
+     sed "s#QA_INGRESS_TLS_SECRET_KEY_VAR_VAL#$QA_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#QA_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
      # staging resources
      sed "s#STAGING_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL#$STAGING_DELIVERY_PRINCIPAL_CLIENT_ID#g" | \
      sed "s#STAGING_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL#$STAGING_DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
      sed "s#STAGING_DATABASE_NAME_VAR_VAL#$STAGING_DATABASE_NAME#g" | \
      sed "s#STAGING_COLLECTION_NAME_VAR_VAL#$STAGING_COLLECTION_NAME#g" | \
      sed "s#STAGING_DELIVERY_KEYVAULT_URI_VAR_VAL#$STAGING_DELIVERY_KEYVAULT_URI#g" | \
+     sed "s#STAGING_EXTERNAL_INGEST_FQDN_VAR_VAL#$STAGING_EXTERNAL_INGEST_FQDN#g" | \
+     sed "s#STAGING_INGRESS_TLS_SECRET_CERT_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_CERT#g" | \
+     sed "s#STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#STAGING_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
      # production resources
      sed "s#PROD_DELIVERY_PRINCIPAL_CLIENT_ID_VAR_VAL#$PROD_DELIVERY_PRINCIPAL_CLIENT_ID#g" | \
      sed "s#PROD_DELIVERY_PRINCIPAL_RESOURCE_ID_VAR_VAL#$PROD_DELIVERY_PRINCIPAL_RESOURCE_ID#g" | \
      sed "s#PROD_DATABASE_NAME_VAR_VAL#$PROD_DATABASE_NAME#g" | \
      sed "s#PROD_COLLECTION_NAME_VAR_VAL#$PROD_COLLECTION_NAME#g" | \
-     sed "s#PROD_DELIVERY_KEYVAULT_URI_VAR_VAL#$PROD_DELIVERY_KEYVAULT_URI#g" \
+     sed "s#PROD_DELIVERY_KEYVAULT_URI_VAR_VAL#$PROD_DELIVERY_KEYVAULT_URI#g" | \
+     sed "s#PROD_EXTERNAL_INGEST_FQDN_VAR_VAL#$PROD_EXTERNAL_INGEST_FQDN#g" | \
+     sed "s#PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL#$PROD_INGRESS_TLS_SECRET_CERT#g" | \
+     sed "s#PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL#$PROD_INGRESS_TLS_SECRET_KEY#g" | \
+     sed "s#PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" \
      > $DELIVERY_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \

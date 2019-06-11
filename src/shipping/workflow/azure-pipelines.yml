@@ -6,8 +6,6 @@ variables:
   azureSubscription: AZURE_PIPELINES_SERVICE_CONN_NAME_VAR_VAL
   azureContainerRegistry: ACR_SERVER_VAR_VAL
   azureContainerRegistryName: ACR_NAME_VAR_VAL
-  azureKubernetesCluster: CLUSTER_NAME_VAR_VAL
-  resourceGroup: RESOURCE_GROUP_VAR_VAL
 
 name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
 
@@ -130,22 +128,6 @@ jobs:
 
   - task: HelmDeploy@0
     condition: eq(variables['fullCI'],True)
-    displayName: 'helm init --client-only'
-    inputs:
-      azureSubscription: $(azureSubscription)
-
-      azureresourceGroup: $(resourceGroup)
-
-      kubernetesCluster: $(azureKubernetesCluster)
-
-      command: init
-
-      upgradeTiller: false
-
-      arguments: '--client-only'
-
-  - task: HelmDeploy@0
-    condition: eq(variables['fullCI'],True)
     displayName: 'helm package'
     inputs:
       command: package
@@ -154,7 +136,7 @@ jobs:
 
       chartVersion: $(Build.SourceBranchName)
 
-      arguments: '--app-version $(Build.SourceBranchName)'
+      arguments: '--app-version $(Build.SourceBranchName) --dependency-update'
 
   - task: AzureCLI@1
     condition: eq(variables['fullCI'],True)

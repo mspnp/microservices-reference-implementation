@@ -1,6 +1,6 @@
 dependencies:
   - name: delivery-dev
-    repository: "file://charts/delivery-dev"
+    repository: "file://envs/delivery-dev"
     version: ">= 0.0.1"
     tags:
       - dev
@@ -8,7 +8,7 @@ dependencies:
       - data
 
   - name: delivery-prod
-    repository: "file://charts/delivery-prod"
+    repository: "file://envs/delivery-prod"
     version: ">= 0.0.1"
     tags:
       - prod
@@ -16,7 +16,7 @@ dependencies:
       - data
 
   - name: delivery-qa
-    repository: "file://charts/delivery-qa"
+    repository: "file://envs/delivery-qa"
     version: ">= 0.0.1"
     tags:
       - qa
@@ -24,7 +24,7 @@ dependencies:
       - data
 
   - name: delivery-staging
-    repository: "file://charts/delivery-staging"
+    repository: "file://envs/delivery-staging"
     version: ">= 0.0.1"
     tags:
       - staging

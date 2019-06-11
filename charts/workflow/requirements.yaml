@@ -1,6 +1,6 @@
 dependencies:
   - name: workflow-dev
-    repository: "file://charts/workflow-dev"
+    repository: "file://envs/workflow-dev"
     version: ">= 0.0.1"
     tags:
       - dev
@@ -8,7 +8,7 @@ dependencies:
       - data
 
   - name: workflow-prod
-    repository: "file://charts/workflow-prod"
+    repository: "file://envs/workflow-prod"
     version: ">= 0.0.1"
     tags:
       - prod
@@ -16,7 +16,7 @@ dependencies:
       - data
 
   - name: workflow-qa
-    repository: "file://charts/workflow-qa"
+    repository: "file://envs/workflow-qa"
     version: ">= 0.0.1"
     tags:
       - qa
@@ -24,7 +24,7 @@ dependencies:
       - data
 
   - name: workflow-staging
-    repository: "file://charts/workflow-staging"
+    repository: "file://envs/workflow-staging"
     version: ">= 0.0.1"
     tags:
       - staging

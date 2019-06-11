@@ -37,6 +37,7 @@ export LOCATION=[YOUR_LOCATION_HERE]
 export RESOURCE_GROUP=[YOUR_RESOURCE_GROUP_HERE]
 
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+export SUBSCRIPTION_NAME=$(az account show --query name --output tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
 
 export PROJECT_ROOT=./microservices-reference-implementation
@@ -245,9 +246,9 @@ helm install $HELM_CHARTS/delivery/ \
      --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
      --set reason="Initial deployment" \
      --set tags.dev=true \
-     --set current=true \
      --namespace backend-dev \
-     --name delivery-v0.1.0-dev
+     --name delivery-v0.1.0-dev \
+     --dep-up
 
 # Verify the pod is created
 helm status delivery-v0.1.0
@@ -292,9 +293,9 @@ helm install $HELM_CHARTS/package/ \
      --set dockerregistry=$ACR_SERVER \
      --set reason="Initial deployment" \
      --set tags.dev=true \
-     --set current=true \
      --namespace backend-dev \
-     --name package-v0.1.0-dev
+     --name package-v0.1.0-dev \
+     --dep-up
 
 # Verify the pod is created
 helm status package-v0.1.0
@@ -346,7 +347,8 @@ helm install $HELM_CHARTS/workflow/ \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \
-     --name workflow-v0.1.0-dev
+     --name workflow-v0.1.0-dev \
+     --dep-up
 
 # Verify the pod is created
 helm status workflow-v0.1.0
@@ -401,9 +403,9 @@ helm install $HELM_CHARTS/ingestion/ \
      --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
      --set reason="Initial deployment" \
      --set tags.dev=true \
-     --set current=true \
      --namespace backend-dev \
-     --name ingestion-v0.1.0-dev
+     --name ingestion-v0.1.0-dev \
+     --dep-up
 
 # Verify the pod is created
 helm status ingestion-v0.1.0
@@ -454,9 +456,9 @@ helm install $HELM_CHARTS/dronescheduler/ \
      --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
      --set reason="Initial deployment" \
      --set tags.dev=true \
-     --set current=true \
      --namespace backend-dev \
-     --name dronescheduler-v0.1.0-dev
+     --name dronescheduler-v0.1.0-dev \
+     --dep-up
 
 # Verify the pod is created
 helm status dronescheduler-v0.1.0
