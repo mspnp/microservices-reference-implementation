@@ -3,7 +3,6 @@ nameOverride: workflow
 exports:
   data:
     replicaCount: 3
-    dockerregistrynamespace: "/prod"
     image:
       pullPolicy: IfNotPresent
     telemetry:

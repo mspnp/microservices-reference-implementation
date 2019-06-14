@@ -152,6 +152,7 @@
         "clusterNamePrefix": "aks",
         "acrNamePrefix": "acr",
         "aiNamePrefix": "ai",
+        "acrName": "[uniqueString(variables('acrNamePrefix'),resourceGroup().id)]",
         "readerRoleObjectId": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
         "managedIdentityOperatorRoleObjectId": "f1a07417-d97a-45cb-824c-7a7467783830",
         "readerRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('readerRoleObjectId'))]",
@@ -160,7 +161,7 @@
         "environmentSettings": {
             "dev": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
-                "acrName": "[uniqueString(variables('acrNamePrefix'),resourceGroup().id)]",
+                "acrName": "[variables('acrName')]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
@@ -180,7 +181,7 @@
             },
             "qa": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
-                "acrName": "[uniqueString(variables('acrNamePrefix'),resourceGroup().id)]",
+                "acrName": "[variables('acrName')]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
@@ -200,7 +201,7 @@
             },
             "staging": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
-                "acrName": "[uniqueString(variables('acrNamePrefix'),resourceGroup().id)]",
+                "acrName": "[variables('acrName')]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
@@ -220,7 +221,7 @@
             },
             "prod": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
-                "acrName": "[uniqueString(variables('acrNamePrefix'),resourceGroup().id)]",
+                "acrName": "[concat(parameters('environmentName'),variables('acrName'))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",

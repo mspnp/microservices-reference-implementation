@@ -4,12 +4,6 @@
     "description": null,
     "isDeleted": false,
     "variables": {
-        "ACR_NAME": {
-            "value": "ACR_NAME_VAR_VAL"
-        },
-        "ACR_SERVER": {
-            "value": "ACR_SERVER_VAR_VAL"
-        },
         "REASON": {
             "value": "Azure DevOps CD Pipeline",
             "allowOverride": true
@@ -45,6 +39,12 @@
                 },
                 "WORKFLOW_PRINCIPAL_RESOURCE_ID": {
                     "value": "DEV_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                },
+                "ACR_SERVER": {
+                    "value": "DEV_ACR_SERVER_VAR_VAL"
+                },
+                "ACR_NAME": {
+                    "value": "DEV_ACR_NAME_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -114,7 +114,7 @@
                             "environment": {},
                             "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
                             "version": "0.*",
-                            "name": "Install Helm 2.12.3",
+                            "name": "install helm 2.12.3",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -181,7 +181,7 @@
                             "environment": {},
                             "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
                             "version": "1.*",
-                            "name": "Azure CLI ",
+                            "name": "add helm repo",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -206,7 +206,7 @@
                             "environment": {},
                             "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
                             "version": "0.*",
-                            "name": "helm upgrade",
+                            "name": "helm upgrade workflow dev",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -413,6 +413,12 @@
                 },
                 "WORKFLOW_PRINCIPAL_RESOURCE_ID": {
                     "value": "QA_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                },
+                "ACR_SERVER": {
+                    "value": "QA_ACR_SERVER_VAR_VAL"
+                },
+                "ACR_NAME": {
+                    "value": "QA_ACR_NAME_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -482,7 +488,7 @@
                             "environment": {},
                             "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
                             "version": "0.*",
-                            "name": "Install Helm 2.12.3",
+                            "name": "install helm 2.12.3",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -549,7 +555,7 @@
                             "environment": {},
                             "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
                             "version": "1.*",
-                            "name": "Azure CLI ",
+                            "name": "add helm repo",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -574,7 +580,7 @@
                             "environment": {},
                             "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
                             "version": "0.*",
-                            "name": "helm upgrade",
+                            "name": "helm upgrade workflow qa",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -781,6 +787,12 @@
                 },
                 "WORKFLOW_PRINCIPAL_RESOURCE_ID": {
                     "value": "STAGING_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                },
+                "ACR_SERVER": {
+                    "value": "STAGING_ACR_SERVER_VAR_VAL"
+                },
+                "ACR_NAME": {
+                    "value": "STAGING_ACR_NAME_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -850,7 +862,7 @@
                             "environment": {},
                             "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
                             "version": "0.*",
-                            "name": "Install Helm 2.12.3",
+                            "name": "install helm 2.12.3",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -917,7 +929,7 @@
                             "environment": {},
                             "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
                             "version": "1.*",
-                            "name": "Azure CLI ",
+                            "name": "add helm repo",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -942,7 +954,7 @@
                             "environment": {},
                             "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
                             "version": "0.*",
-                            "name": "helm upgrade",
+                            "name": "helm upgrade workflow staging",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -1149,6 +1161,18 @@
                 },
                 "WORKFLOW_PRINCIPAL_RESOURCE_ID": {
                     "value": "PROD_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL"
+                },
+                "SOURCE_ACR_SERVER": {
+                    "value": "SOURCE_ACR_SERVER_VAR_VAL"
+                },
+                "SOURCE_ACR_NAME": {
+                    "value": "SOURCE_ACR_NAME_VAR_VAL"
+                },
+                "ACR_SERVER": {
+                    "value": "PROD_ACR_SERVER_VAR_VAL"
+                },
+                "ACR_NAME": {
+                    "value": "PROD_ACR_NAME_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -1227,9 +1251,9 @@
                     "workflowTasks": [
                         {
                             "environment": {},
-                            "taskId": "e28912f1-0114-4464-802a-a3a35437fd16",
+                            "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
                             "version": "1.*",
-                            "name": "Pull a docker image",
+                            "name": "promote workflow image to production",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -1239,138 +1263,22 @@
                             "overrideInputs": {},
                             "condition": "succeeded()",
                             "inputs": {
-                                "containerregistrytype": "Azure Container Registry",
-                                "dockerRegistryEndpoint": "",
-                                "azureSubscriptionEndpoint": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
-                                "azureContainerRegistry": "ACR_SERVER_VAR_VAL",
-                                "command": "pull",
-                                "dockerFile": "**/Dockerfile",
-                                "arguments": "$(ACR_SERVER)/$(REPO_NAME):$(Build.SourceBranchName)",
-                                "pushMultipleImages": "false",
-                                "tagMultipleImages": "false",
-                                "imageName": "$(Build.Repository.Name):$(Build.BuildId)",
-                                "imageNamesPath": "",
-                                "qualifyImageName": "true",
-                                "includeSourceTags": "false",
-                                "includeLatestTag": "false",
-                                "addDefaultLabels": "true",
-                                "useDefaultContext": "true",
-                                "buildContext": "",
-                                "imageDigestFile": "",
-                                "containerName": "",
-                                "ports": "",
-                                "volumes": "",
-                                "envVars": "",
-                                "workingDirectory": "",
-                                "entrypointOverride": "",
-                                "containerCommand": "",
-                                "runInBackground": "true",
-                                "restartPolicy": "no",
-                                "maxRestartRetries": "",
-                                "dockerHostEndpoint": "",
-                                "enforceDockerNamingConvention": "true",
-                                "memoryLimit": ""
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "e28912f1-0114-4464-802a-a3a35437fd16",
-                            "version": "1.*",
-                            "name": "Tag a docker image",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "containerregistrytype": "Azure Container Registry",
-                                "dockerRegistryEndpoint": "",
-                                "azureSubscriptionEndpoint": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
-                                "azureContainerRegistry": "ACR_SERVER_VAR_VAL",
-                                "command": "Tag image",
-                                "dockerFile": "**/Dockerfile",
-                                "arguments": "$(ACR_SERVER)/prod/$(REPO_NAME):$(Build.SourceBranchName)",
-                                "pushMultipleImages": "false",
-                                "tagMultipleImages": "false",
-                                "imageName": "$(ACR_SERVER)/$(REPO_NAME):$(Build.SourceBranchName)",
-                                "imageNamesPath": "",
-                                "qualifyImageName": "false",
-                                "includeSourceTags": "false",
-                                "includeLatestTag": "false",
-                                "addDefaultLabels": "true",
-                                "useDefaultContext": "true",
-                                "buildContext": "",
-                                "imageDigestFile": "",
-                                "containerName": "",
-                                "ports": "",
-                                "volumes": "",
-                                "envVars": "",
-                                "workingDirectory": "",
-                                "entrypointOverride": "",
-                                "containerCommand": "",
-                                "runInBackground": "true",
-                                "restartPolicy": "no",
-                                "maxRestartRetries": "",
-                                "dockerHostEndpoint": "",
-                                "enforceDockerNamingConvention": "true",
-                                "memoryLimit": ""
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "e28912f1-0114-4464-802a-a3a35437fd16",
-                            "version": "1.*",
-                            "name": "Push a docker image",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "containerregistrytype": "Azure Container Registry",
-                                "dockerRegistryEndpoint": "",
-                                "azureSubscriptionEndpoint": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
-                                "azureContainerRegistry": "ACR_SERVER_VAR_VAL",
-                                "command": "Push an image",
-                                "dockerFile": "**/Dockerfile",
-                                "arguments": "",
-                                "pushMultipleImages": "false",
-                                "tagMultipleImages": "false",
-                                "imageName": "prod/$(REPO_NAME):$(Build.SourceBranchName)",
-                                "imageNamesPath": "",
-                                "qualifyImageName": "true",
-                                "includeSourceTags": "false",
-                                "includeLatestTag": "false",
-                                "addDefaultLabels": "true",
-                                "useDefaultContext": "true",
-                                "buildContext": "",
-                                "imageDigestFile": "",
-                                "containerName": "",
-                                "ports": "",
-                                "volumes": "",
-                                "envVars": "",
-                                "workingDirectory": "",
-                                "entrypointOverride": "",
-                                "containerCommand": "",
-                                "runInBackground": "true",
-                                "restartPolicy": "no",
-                                "maxRestartRetries": "",
-                                "dockerHostEndpoint": "",
-                                "enforceDockerNamingConvention": "true",
-                                "memoryLimit": ""
+                                "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
+                                "scriptLocation": "inlineScript",
+                                "scriptPath": "",
+                                "inlineScript": "az acr import --name $(ACR_NAME) --source $(SOURCE_ACR_SERVER)/$(REPO_NAME):$(Build.SourceBranchName) --force",
+                                "args": "",
+                                "addSpnToEnvironment": "false",
+                                "useGlobalConfig": "false",
+                                "cwd": "",
+                                "failOnStandardError": "false"
                             }
                         },
                         {
                             "environment": {},
                             "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
                             "version": "0.*",
-                            "name": "Install Helm 2.12.3",
+                            "name": "install helm 2.12.3",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -1437,7 +1345,7 @@
                             "environment": {},
                             "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
                             "version": "1.*",
-                            "name": "Azure CLI ",
+                            "name": "add helm repo",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -1450,7 +1358,7 @@
                                 "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
                                 "scriptLocation": "inlineScript",
                                 "scriptPath": "",
-                                "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
+                                "inlineScript": "az acr helm repo add --name $(SOURCE_ACR_NAME)",
                                 "args": "",
                                 "addSpnToEnvironment": "false",
                                 "useGlobalConfig": "false",
@@ -1462,7 +1370,7 @@
                             "environment": {},
                             "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
                             "version": "0.*",
-                            "name": "helm upgrade",
+                            "name": "helm upgrade workflow prod",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -1480,7 +1388,7 @@
                                 "namespace": "backend",
                                 "command": "upgrade",
                                 "chartType": "Name",
-                                "chartName": "$(ACR_NAME)/$(REPO_NAME)",
+                                "chartName": "$(SOURCE_ACR_NAME)/$(REPO_NAME)",
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",

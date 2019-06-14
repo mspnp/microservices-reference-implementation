@@ -3,7 +3,6 @@ nameOverride: ingestion
 exports:
   data:
     replicaCount: 1
-    dockerregistrynamespace: "/prod"
     image:
       pullPolicy: IfNotPresent
     telemetry:
