@@ -15,18 +15,22 @@
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv) && \
 for env in dev qa staging prod; do
 ENV=${env^^}
-az group deployment create \
-   -g $RESOURCE_GROUP \
-   --name azuredeploy-identities-${env} \
-   --template-file ${PROJECT_ROOT}/azuredeploy-identities.json \
-   --parameters environmentName=${env}
+az deployment create \
+   --name azuredeploy-prereqs-${env} \
+   --location $LOCATION \
+   --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
+   --parameters resourceGroupName=$RESOURCE_GROUP \
+                resourceGroupLocation=$LOCATION \
+                environmentName=${env}
 
-export DELIVERY_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.deliveryIdName.value -o tsv)
-export DELIVERY_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.deliveryPrincipalId.value -o tsv)
-export DRONESCHEDULER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.droneSchedulerIdName.value -o tsv)
-export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.droneSchedulerPrincipalId.value -o tsv)
-export WORKFLOW_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.workflowIdName.value -o tsv)
-export WORKFLOW_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.workflowPrincipalId.value -o tsv)
+export {${ENV}_IDENTITIES_DEPLOYMENT_NAME,IDENTITIES_DEPLOYMENT_NAME}=$(az deployment show -n azuredeploy-prereqs-dev --query properties.outputs.identitiesDeploymentName.value -o tsv) && \
+export {${ENV}_DELIVERY_ID_NAME,DELIVERY_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.deliveryIdName.value -o tsv)
+export DELIVERY_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DELIVERY_ID_NAME --query principalId -o tsv)
+export {${ENV}_DRONESCHEDULER_ID_NAME,DRONESCHEDULER_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerIdName.value -o tsv)
+export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query principalId -o tsv)
+export {${ENV}_WORKFLOW_ID_NAME,WORKFLOW_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.workflowIdName.value -o tsv)
+export WORKFLOW_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query principalId -o tsv)
+export RESOURCE_GROUP_ACR=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
 
 # Wait for AAD propagation
 until az ad sp show --id $DELIVERY_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
@@ -45,6 +49,8 @@ az group deployment create -g $RESOURCE_GROUP --name azuredeploy-${env} --templa
                droneSchedulerPrincipalId=$DRONESCHEDULER_ID_PRINCIPAL_ID \
                workflowIdName=$WORKFLOW_ID_NAME \
                workflowPrincipalId=$WORKFLOW_ID_PRINCIPAL_ID \
+               acrResourceGroupName=${RESOURCE_GROUP_ACR} \
+               acrResourceGroupLocation=$LOCATION \
                environmentName=${env}
 
 export {${ENV}_AI_NAME,AI_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appInsightsName.value -o tsv)
@@ -249,9 +255,11 @@ for env in dev qa staging prod;do
 ENV=${env^^}
 export ${ENV}_DATABASE_NAME="deliveries-db"
 export ${ENV}_COLLECTION_NAME="deliveries-col"
+envIdentitiesDeploymentName="${ENV}_IDENTITIES_DEPLOYMENT_NAME"
 export ${ENV}_DELIVERY_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.deliveryKeyVaultUri.value -o tsv)
-export ${ENV}_DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.deliveryPrincipalResourceId.value -o tsv)
-export ${ENV}_DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
+export ${ENV}_DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n ${!envIdentitiesDeploymentName} --query properties.outputs.deliveryPrincipalResourceId.value -o tsv)
+envDeliveryIdName="${ENV}_DELIVERY_ID_NAME"
+export ${ENV}_DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n ${!envDeliveryIdName} --query clientId -o tsv)
 done && \
 export INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
@@ -439,9 +447,11 @@ export AZURE_DEVOPS_WORKFLOW_BUILD_ID=$(az pipelines build definition list --org
 export AZURE_DEVOPS_WORKFLOW_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='workflow-ci'].queue.id" -o tsv) && \
 for env in dev qa staging prod;do
 ENV=${env^^}
+envIdentitiesDeploymentName="${ENV}_IDENTITIES_DEPLOYMENT_NAME"
 export ${ENV}_WORKFLOW_KEYVAULT_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.workflowKeyVaultName.value -o tsv)
-export ${ENV}_WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.workflowPrincipalResourceId.value -o tsv)
-export ${ENV}_WORKFLOW_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.workflowPrincipalClientId.value -o tsv)
+export ${ENV}_WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n ${!envIdentitiesDeploymentName} --query properties.outputs.workflowPrincipalResourceId.value -o tsv)
+envWorkflowIdName="${ENV}_WORKFLOW_ID_NAME"
+export ${ENV}_WORKFLOW_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n ${!envWorkflowIdName} --query clientId -o tsv)
 done
 
 # add relese definition
@@ -645,8 +655,10 @@ export AZURE_DEVOPS_DRONE_BUILD_ID=$(az pipelines build definition list --organi
 export AZURE_DEVOPS_DRONE_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='dronescheduler-ci'].queue.id" -o tsv) && \
 for env in dev qa staging prod;do
 ENV=${env^^}
-export ${ENV}_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv)
-export ${ENV}_DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-${env} --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv)
+envIdentitiesDeploymentName="${ENV}_IDENTITIES_DEPLOYMENT_NAME"
+export ${ENV}_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n ${!envIdentitiesDeploymentName} --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv)
+envDroneSchedulerIdName="${ENV}_DRONESCHEDULER_ID_NAME"
+export ${ENV}_DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n ${!envDroneSchedulerIdName} --query clientId -o tsv)
 export ${ENV}_DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
 done
 

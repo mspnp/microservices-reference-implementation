@@ -51,8 +51,7 @@ Infrastructure Prerequisites
 # Log in to Azure
 az login
 
-# Create a resource group and service principal for AKS
-az group create --name $RESOURCE_GROUP --location $LOCATION && \
+# Create service principal for AKS
 export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor") && \
 export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
 export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
@@ -72,15 +71,23 @@ Add [CI/CD to Drone Delivery using Azure Pipelines with YAML](./deploymentCICD.m
 Infrastructure
 
 ```bash
-# Deploy the managed identities
+# Deploy the resource groups and managed identities
 # These are deployed first in a separate template to avoid propagation delays with AAD
-az group deployment create -g $RESOURCE_GROUP --name azuredeploy-identities-dev --template-file ${PROJECT_ROOT}/azuredeploy-identities.json
-export DELIVERY_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-dev --query properties.outputs.deliveryIdName.value -o tsv)
-export DELIVERY_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-dev --query properties.outputs.deliveryPrincipalId.value -o tsv)
-export DRONESCHEDULER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-dev --query properties.outputs.droneSchedulerIdName.value -o tsv)
-export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-dev --query properties.outputs.droneSchedulerPrincipalId.value -o tsv)
-export WORKFLOW_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-dev --query properties.outputs.workflowIdName.value -o tsv)
-export WORKFLOW_ID_PRINCIPAL_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-dev --query properties.outputs.workflowPrincipalId.value -o tsv)
+az deployment create \
+   --name azuredeploy-prereqs-dev \
+   --location $LOCATION \
+   --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
+   --parameters resourceGroupName=$RESOURCE_GROUP \
+                resourceGroupLocation=$LOCATION
+
+export IDENTITIES_DEPLOYMENT_NAME=$(az deployment show -n azuredeploy-prereqs-dev --query properties.outputs.identitiesDeploymentName.value -o tsv) && \
+export DELIVERY_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.deliveryIdName.value -o tsv) && \
+export DELIVERY_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DELIVERY_ID_NAME --query principalId -o tsv) && \
+export DRONESCHEDULER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerIdName.value -o tsv) && \
+export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query principalId -o tsv) && \
+export WORKFLOW_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.workflowIdName.value -o tsv) && \
+export WORKFLOW_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query principalId -o tsv) && \
+export RESOURCE_GROUP_ACR=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
 
 # Wait for AAD propagation
 until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
@@ -102,14 +109,16 @@ az group deployment create -g $RESOURCE_GROUP --name azuredeploy-dev --template-
             droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
             droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
             workflowIdName=${WORKFLOW_ID_NAME} \
-            workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID}
+            workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
+            acrResourceGroupName=${RESOURCE_GROUP_ACR} \
+            acrResourceGroupLocation=$LOCATION
 ```
 
 Get outputs from Azure Deploy
 ```bash
 # Shared
 export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.acrName.value -o tsv) && \
-export ACR_SERVER=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.acrLoginServer.value -o tsv) && \
+export ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv) && \
 export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksClusterName.value -o tsv)
 ```
 
@@ -223,8 +232,8 @@ Deploy the Delivery service:
 
 ```bash
 # Extract pod identity outputs from deployment
-export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-dev --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
-export DELIVERY_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-dev --query properties.outputs.deliveryPrincipalClientId.value -o tsv)
+export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
+export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DELIVERY_ID_NAME --query clientId -o tsv)
 export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
 # Deploy the service
@@ -326,8 +335,8 @@ Create and set up pod identity
 
 ```bash
 # Extract outputs from deployment
-export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-dev --query properties.outputs.workflowPrincipalResourceId.value -o tsv) && \
-export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-dev --query properties.outputs.workflowPrincipalClientId.value -o tsv)
+export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.workflowPrincipalResourceId.value -o tsv) && \
+export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query principalId -o tsv)
 ```
 
 Deploy the Workflow service:
@@ -429,8 +438,8 @@ Create and set up pod identity
 
 ```bash
 # Extract outputs from deployment
-export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-dev --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
-export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-identities-dev --query properties.outputs.droneSchedulerPrincipalClientId.value -o tsv)
+export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
+export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query principalId -o tsv)
 ```
 
 Build and publish the container image

@@ -12,6 +12,12 @@
              "prod"
            ]
         },
+        "acrResourceGroupName": {
+            "type": "string"
+        },
+        "acrResourceGroupLocation": {
+            "type": "string"
+        },
         "deliveryIdName": {
             "metadata": {
                 "description": "Name of the delivery managed identity"
@@ -158,6 +164,7 @@
         "readerRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('readerRoleObjectId'))]",
         "managedIdentityOperatorRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('managedIdentityOperatorRoleObjectId'))]",
         "deliveryRedisStorageName": "[concat(parameters('environmentName'),'rsto',uniqueString(resourceGroup().id))]",
+        "nestedACRDeploymentName": "[concat('azuredeploy-acr-',parameters('acrResourceGroupName'),parameters('environmentName'))]",
         "environmentSettings": {
             "dev": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
@@ -243,6 +250,67 @@
     },
     "resources": [
         {
+            "name": "[variables('nestedACRDeploymentName')]",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "resourceGroup": "[parameters('acrResourceGroupName')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "name": "[variables('environmentSettings')[parameters('environmentName')].acrName]",
+                            "type": "Microsoft.ContainerRegistry/registries",
+                            "apiVersion": "2017-10-01",
+                            "sku": {
+                                "name": "Basic",
+                                "tier": "Basic"
+                            },
+                            "location": "[resourceGroup().location]",
+                            "tags": {
+                                "displayName": "Container Registry",
+                                "container.registry": "[variables('environmentSettings')[parameters('environmentName')].acrName]",
+                                "clusterName": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]"
+                            },
+                            "properties": {
+                                "adminUserEnabled": false
+                            }
+                        },
+                        {
+                            "type": "Microsoft.ContainerRegistry/registries/providers/roleAssignments",
+                            "name": "[concat(variables('environmentSettings')[parameters('environmentName')].acrName,'/Microsoft.Authorization/',guid(concat('aks',variables('environmentSettings')[parameters('environmentName')].acrName), resourceGroup().id))]",
+                            "apiVersion": "2017-05-01",
+                            "comments": "Grant the AKS cluster access to the ACR instance",
+                            "tags": {
+                                "displayName": "AKS SP RBAC Access to ACR",
+                                "what": "rbac",
+                                "to": "cluster",
+                                "identity-type": "sp",
+                                "access": "acr",
+                                "reason": "pull-images"
+                            },
+                            "properties": {
+                                "roleDefinitionId": "[variables('readerRoleId')]",
+                                "principalId": "[parameters('servicePrincipalId')]",
+                                "scope": "[concat(subscription().id, '/resourceGroups/',parameters('acrResourceGroupName'),'/providers/Microsoft.ContainerRegistry/registries/',variables('environmentSettings')[parameters('environmentName')].acrName)]"
+                            },
+                            "dependsOn": [
+                                "[concat(subscription().id, '/resourceGroups/',parameters('acrResourceGroupName'),'/providers/Microsoft.ContainerRegistry/registries/',variables('environmentSettings')[parameters('environmentName')].acrName)]"
+                            ]
+                        }
+                    ],
+                    "outputs": {
+                        "acrId": {
+                            "value": "[resourceId('Microsoft.ContainerRegistry/registries', variables('environmentSettings')[parameters('environmentName')].acrName)]",
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        {
             "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
             "type": "Microsoft.ContainerService/managedClusters",
             "apiVersion": "2018-03-31",
@@ -278,24 +346,6 @@
                     "secret": "[parameters('servicePrincipalClientSecret')]"
                 },
                 "enableRBAC": true
-            }
-        },
-        {
-            "name": "[variables('environmentSettings')[parameters('environmentName')].acrName]",
-            "type": "Microsoft.ContainerRegistry/registries",
-            "apiVersion": "2017-10-01",
-            "sku": {
-                "name": "Basic",
-                "tier": "Basic"
-            },
-            "location": "[resourceGroup().location]",
-            "tags": {
-                "displayName": "Shared Container Registry for dev, qa, staging and production",
-                "container.registry": "[variables('environmentSettings')[parameters('environmentName')].acrName]",
-                "clusterName": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]"
-            },
-            "properties": {
-                "adminUserEnabled": false
             }
         },
         {
@@ -782,28 +832,6 @@
             ]
         },
         {
-            "type": "Microsoft.ContainerRegistry/registries/providers/roleAssignments",
-            "name": "[concat(variables('environmentSettings')[parameters('environmentName')].acrName,'/Microsoft.Authorization/',guid('aks', resourceGroup().id))]",
-            "apiVersion": "2017-05-01",
-            "comments": "Grant the AKS cluster access to the ACR instance",
-            "tags": {
-                "displayName": "AKS SP RBAC Access to ACR",
-                "what": "rbac",
-                "to": "cluster",
-                "identity-type": "sp",
-                "access": "acr",
-                "reason": "pull-images"
-            },
-            "properties": {
-                "roleDefinitionId": "[variables('readerRoleId')]",
-                "principalId": "[parameters('servicePrincipalId')]",
-                "scope": "[resourceId('Microsoft.ContainerRegistry/registries', variables('environmentSettings')[parameters('environmentName')].acrName)]"
-            },
-            "dependsOn": [
-                "[resourceId('Microsoft.ContainerRegistry/registries', variables('environmentSettings')[parameters('environmentName')].acrName)]"
-            ]
-        },
-        {
             "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
             "name": "[concat(parameters('deliveryIdName'), '/Microsoft.Authorization/', guid(concat('msi-delivery',parameters('environmentName')), resourceGroup().id))]",
             "apiVersion": "2017-05-01",
@@ -869,10 +897,6 @@
             "value": "[variables('environmentSettings')[parameters('environmentName')].acrName]",
             "type": "string"
         },
-        "acrLoginServer": {
-            "value": "[reference(resourceId('Microsoft.ContainerRegistry/registries',variables('environmentSettings')[parameters('environmentName')].acrName),'2016-06-27-preview').loginServer]",
-            "type": "string"
-        },
         "aksClusterName": {
             "value": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
             "type": "string"
@@ -911,6 +935,10 @@
         },
         "ingestionServiceAccessKeyName": {
             "value": "[variables('environmentSettings')[parameters('environmentName')].ingestionServiceAccessKey]",
+            "type": "string"
+        },
+        "acrDeploymentName": {
+            "value": "[variables('nestedACRDeploymentName')]",
             "type": "string"
         }
     }
