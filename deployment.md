@@ -175,12 +175,6 @@ kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/maste
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
 
-## Optional: Set up CI/CD with Azure DevOps
-
-Add [CI/CD to Drone Delivery using Azure Pipelines with YAML](./deploymentCICD.md).
-
-> Important: If you don't want to set up the CI/CD pipelines, you can manually deploy the application as follows.
-
 ## Deploy the ingress controller
 
 ```bash
@@ -260,7 +254,7 @@ helm install $HELM_CHARTS/delivery/ \
      --dep-up
 
 # Verify the pod is created
-helm status delivery-v0.1.0
+helm status delivery-v0.1.0-dev
 ```
 
 ## Deploy the Package service
@@ -307,7 +301,7 @@ helm install $HELM_CHARTS/package/ \
      --dep-up
 
 # Verify the pod is created
-helm status package-v0.1.0
+helm status package-v0.1.0-dev
 ```
 
 ## Deploy the Workflow service
@@ -336,7 +330,7 @@ Create and set up pod identity
 ```bash
 # Extract outputs from deployment
 export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.workflowPrincipalResourceId.value -o tsv) && \
-export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query principalId -o tsv)
+export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query clientId -o tsv)
 ```
 
 Deploy the Workflow service:
@@ -360,7 +354,7 @@ helm install $HELM_CHARTS/workflow/ \
      --dep-up
 
 # Verify the pod is created
-helm status workflow-v0.1.0
+helm status workflow-v0.1.0-dev
 ```
 
 ## Deploy the Ingestion service
@@ -417,7 +411,7 @@ helm install $HELM_CHARTS/ingestion/ \
      --dep-up
 
 # Verify the pod is created
-helm status ingestion-v0.1.0
+helm status ingestion-v0.1.0-dev
 ```
 
 ## Deploy DroneScheduler service
@@ -439,7 +433,7 @@ Create and set up pod identity
 ```bash
 # Extract outputs from deployment
 export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
-export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query principalId -o tsv)
+export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query clientId -o tsv)
 ```
 
 Build and publish the container image
@@ -470,7 +464,7 @@ helm install $HELM_CHARTS/dronescheduler/ \
      --dep-up
 
 # Verify the pod is created
-helm status dronescheduler-v0.1.0
+helm status dronescheduler-v0.1.0-dev
 ```
 
 ## Validate the application is running
