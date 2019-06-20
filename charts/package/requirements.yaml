@@ -1,0 +1,32 @@
+dependencies:
+  - name: package-dev
+    repository: "file://envs/package-dev"
+    version: ">= 0.0.1"
+    tags:
+      - dev
+    import-values:
+      - data
+
+  - name: package-prod
+    repository: "file://envs/package-prod"
+    version: ">= 0.0.1"
+    tags:
+      - prod
+    import-values:
+      - data
+
+  - name: package-qa
+    repository: "file://envs/package-qa"
+    version: ">= 0.0.1"
+    tags:
+      - qa
+    import-values:
+      - data
+
+  - name: package-staging
+    repository: "file://envs/package-staging"
+    version: ">= 0.0.1"
+    tags:
+      - staging
+    import-values:
+      - data

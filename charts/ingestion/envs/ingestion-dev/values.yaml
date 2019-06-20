@@ -1,0 +1,11 @@
+# Dev values for ingestion.
+nameOverride: ingestion
+exports:
+  data:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    telemetry:
+      level: "info"
+    reason: "new dev deploy"
+    current: true

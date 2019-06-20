@@ -6,10 +6,11 @@
 ###################################################################################################
 # Dronescheduler
 ###################################################################################################
+{{- $fullname := include "dronescheduler.fullname" . | replace "." "" }}
 apiVersion: apps/v1beta2
 kind: Deployment
 metadata:
-  name: {{ include "dronescheduler.fullname" . | replace "." "" }}
+  name: {{ $fullname }}
   labels:
     app.kubernetes.io/name: {{ include "dronescheduler.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -18,7 +19,7 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
     helm.sh/chart: {{ include "dronescheduler.chart" . }}
-    aadpodidbinding: dronescheduler
+    aadpodidbinding: {{ $fullname }}
   annotations:
     kubernetes.io/change-cause: {{ .Values.reason }}
 spec:
@@ -37,13 +38,13 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: dronedelivery
         helm.sh/chart: {{ include "dronescheduler.chart" . }}
-        aadpodidbinding: dronescheduler
+        aadpodidbinding: {{ $fullname }}
     spec:
       securityContext:
         fsGroup: 1
       containers:
       - name: fabrikam-dronescheduler
-        image: {{ .Values.dockerregistry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+        image: {{ .Values.dockerregistry }}{{ .Values.dockerregistrynamespace }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         env:
         - name: KEY_VAULT_URI
@@ -56,9 +57,9 @@ spec:
         - name: service
           containerPort: 8080
       resources:
-         requests:
-           cpu: 1
-           memory: 1G
-         limits:
-           cpu: 1
-           memory: 1G
+        requests:
+          cpu:   {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
+          memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
+        limits:
+          cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
+          memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}

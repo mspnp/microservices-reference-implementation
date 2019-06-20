@@ -1,0 +1,150 @@
+variables:
+  repositoryName: ingestion
+  chartPath: charts/ingestion
+  dockerFileName: src/shipping/ingestion/Dockerfile
+  imageName: $(repositoryName):$(Build.SourceBranchName)
+  azureSubscription: AZURE_PIPELINES_SERVICE_CONN_NAME_VAR_VAL
+  azureContainerRegistry: ACR_SERVER_VAR_VAL
+  azureContainerRegistryName: ACR_NAME_VAR_VAL
+
+name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
+
+pr: # only valid for GitHub. Using Azure repo it must be configure as a Branch Policy
+  paths:
+    include:
+    - /src/shipping/ingestion/
+
+  branches:
+    include:
+    - master
+    - release/ingestion/v* # for bug fixes
+
+trigger:
+  batch: true
+  branches:
+    include:
+    # for new release to production: release flow strategy
+    - release/ingestion/v*
+    - refs/relelase/ingestion/v*
+    - master
+    - feature/ingestion/*
+    - topic/ingestion/*
+  paths:
+    include:
+    - /src/shipping/ingestion/
+
+resources:
+- repo: self
+
+jobs:
+
+# CI
+- job: ingestionjobci
+  displayName: "ingestion CI"
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  timeoutInMinutes: 90
+  variables:
+    fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/ingestion/v') ]
+    buildImage: $[ eq(variables['build.sourceBranch'], 'refs/heads/master') ]
+  steps:
+  - task: Docker@1
+    displayName: 'Build testrunner image'
+    inputs:
+      azureSubscriptionEndpoint: $(azureSubscription)
+
+      azureContainerRegistry: $(azureContainerRegistry)
+
+      arguments: '--pull --target testrunner'
+
+      dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
+
+      imageName: '$(imageName)-test'
+
+  - task: Docker@1
+    displayName: 'Run tests'
+    inputs:
+      azureSubscriptionEndpoint: $(azureSubscription)
+
+      azureContainerRegistry: $(azureContainerRegistry)
+
+      command: 'run'
+
+      containerName: testrunner
+
+      volumes: '$(System.DefaultWorkingDirectory)/TestResults:/usr/src/app/target/surefire-reports/'
+
+      imageName: '$(imageName)-test'
+
+      runInBackground: false
+
+  - task: PublishTestResults@2
+    displayName: 'Publish test results'
+    inputs:
+      testResultsFormat: 'JUnit' # Options: JUnit, NUnit, VSTest, xUnit
+
+      testResultsFiles: 'TestResults/TEST*.xml'
+
+      searchFolder: '$(System.DefaultWorkingDirectory)'
+
+      publishRunAttachments: true
+
+  - task: Docker@1
+    condition: or(eq(variables['buildImage'],True),eq(variables['fullCI'],True))
+    displayName: 'Build runtime image'
+    inputs:
+
+      azureSubscriptionEndpoint: $(azureSubscription)
+
+      azureContainerRegistry: $(azureContainerRegistry)
+
+      dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
+
+      includeLatestTag: false
+
+      imageName: '$(imageName)'
+
+  - task: Docker@1
+    condition: eq(variables['fullCI'],True)
+    displayName: 'Push runtime image'
+    inputs:
+      azureSubscriptionEndpoint: $(azureSubscription)
+
+      azureContainerRegistry: $(azureContainerRegistry)
+
+      command: 'Push an image'
+
+      imageName: '$(imageName)'
+
+      includeSourceTags: false
+
+  - task: HelmInstaller@0
+    condition: eq(variables['fullCI'],True)
+    displayName: 'Install Helm 2.12.3'
+    inputs:
+      kubectlVersion: 1.12.4
+
+      checkLatestKubectl: false
+
+  - task: HelmDeploy@0
+    condition: eq(variables['fullCI'],True)
+    displayName: 'helm package'
+    inputs:
+      command: package
+
+      chartPath: $(chartPath)
+
+      chartVersion: $(Build.SourceBranchName)
+
+      arguments: '--app-version $(Build.SourceBranchName) --dependency-update'
+
+  - task: AzureCLI@1
+    condition: eq(variables['fullCI'],True)
+    displayName: 'Push a helm package'
+    inputs:
+      azureSubscription: $(azureSubscription)
+
+      scriptLocation: inlineScript
+
+      inlineScript: |
+       az acr helm push $(System.ArtifactsDirectory)/$(repositoryName)-$(Build.SourceBranchName).tgz --name $(azureContainerRegistryName) --force;

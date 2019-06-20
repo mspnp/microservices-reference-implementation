@@ -6,28 +6,50 @@
 ###################################################################################################
 # package service
 ###################################################################################################
-
-# the following object is meant ot be created first time only.
-# its configuration will be later managed by CI/CD
-{{ if (eq .Release.Name "package-v0.1.0") }}
+{{- $appname := include "package.name" . -}}
+{{- $chart := include "package.chart" . -}}
+{{- $instancename := .Release.Name }}
 apiVersion: v1
 kind: Service
 metadata:
-  name: package
+  name: {{ include "package.versionappname" . | replace "." "" }}
   labels:
-    app.kubernetes.io/name: {{ template "package.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/managed-by: azurepipelines
+    app.kubernetes.io/name: {{ $appname }}
+    app.kubernetes.io/instance: {{ $instancename }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/version: {{ .Chart.AppVersion }}
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
-    helm.sh/chart: {{ include "package.chart" . }}
+    helm.sh/chart: {{ $chart }}
 spec:
   ports:
   - name: http
     port: 80
     targetPort: 80
   selector:
-    app.kubernetes.io/name: {{ template "package.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ $appname }}
+    app.kubernetes.io/instance: {{ $instancename }}
+{{ if .Values.current }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: package
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+  labels:
+    app.kubernetes.io/name: {{ $appname }}
+    app.kubernetes.io/managed-by: azuredeveops
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: dronedelivery
+    helm.sh/chart: {{ $chart }}
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  selector:
+    app.kubernetes.io/name: {{ $appname }}
+    app.kubernetes.io/instance: {{ $instancename }}
 {{ end }}

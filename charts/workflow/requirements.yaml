@@ -1,0 +1,32 @@
+dependencies:
+  - name: workflow-dev
+    repository: "file://envs/workflow-dev"
+    version: ">= 0.0.1"
+    tags:
+      - dev
+    import-values:
+      - data
+
+  - name: workflow-prod
+    repository: "file://envs/workflow-prod"
+    version: ">= 0.0.1"
+    tags:
+      - prod
+    import-values:
+      - data
+
+  - name: workflow-qa
+    repository: "file://envs/workflow-qa"
+    version: ">= 0.0.1"
+    tags:
+      - qa
+    import-values:
+      - data
+
+  - name: workflow-staging
+    repository: "file://envs/workflow-staging"
+    version: ">= 0.0.1"
+    tags:
+      - staging
+    import-values:
+      - data

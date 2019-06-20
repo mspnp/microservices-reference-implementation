@@ -1,0 +1,32 @@
+dependencies:
+  - name: delivery-dev
+    repository: "file://envs/delivery-dev"
+    version: ">= 0.0.1"
+    tags:
+      - dev
+    import-values:
+      - data
+
+  - name: delivery-prod
+    repository: "file://envs/delivery-prod"
+    version: ">= 0.0.1"
+    tags:
+      - prod
+    import-values:
+      - data
+
+  - name: delivery-qa
+    repository: "file://envs/delivery-qa"
+    version: ">= 0.0.1"
+    tags:
+      - qa
+    import-values:
+      - data
+
+  - name: delivery-staging
+    repository: "file://envs/delivery-staging"
+    version: ">= 0.0.1"
+    tags:
+      - staging
+    import-values:
+      - data

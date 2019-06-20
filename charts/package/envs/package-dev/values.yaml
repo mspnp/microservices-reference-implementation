@@ -1,0 +1,11 @@
+# Dev values for package.
+nameOverride: package
+exports:
+  data:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    log:
+      level: "info"
+    reason: "new dev deploy"
+    current: true

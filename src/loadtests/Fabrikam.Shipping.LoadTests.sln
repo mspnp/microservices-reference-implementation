@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28714.193
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fabrikam.Shipping.LoadTests", "Fabrikam.Shipping.LoadTests\Fabrikam.Shipping.LoadTests.csproj", "{4BD986A7-3F52-46FA-AA35-CD5D8AC532E0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{AD4DC75F-D0D4-4ACA-B852-508F78588C4B}"
+	ProjectSection(SolutionItems) = preProject
+		FabrikamIngestion-CreateDynamicDeliveryRequests.testsettings = FabrikamIngestion-CreateDynamicDeliveryRequests.testsettings
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4BD986A7-3F52-46FA-AA35-CD5D8AC532E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4BD986A7-3F52-46FA-AA35-CD5D8AC532E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4BD986A7-3F52-46FA-AA35-CD5D8AC532E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4BD986A7-3F52-46FA-AA35-CD5D8AC532E0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BE782D95-E9EF-4B0E-9C6E-99A3288DB6EA}
+	EndGlobalSection
+EndGlobal

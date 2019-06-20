@@ -1,0 +1,13 @@
+# Production values for ingestion.
+nameOverride: ingestion
+exports:
+  data:
+    replicaCount: 1
+    image:
+      pullPolicy: IfNotPresent
+    telemetry:
+      level: "error"
+    reason: "new prod deploy"
+    nginx-ingress:
+      controller:
+        replicaCount: 2

@@ -1,0 +1,32 @@
+dependencies:
+  - name: dronescheduler-dev
+    repository: "file://envs/dronescheduler-dev"
+    version: ">= 0.0.1"
+    tags:
+      - dev
+    import-values:
+      - data
+
+  - name: dronescheduler-prod
+    repository: "file://envs/dronescheduler-prod"
+    version: ">= 0.0.1"
+    tags:
+      - prod
+    import-values:
+      - data
+
+  - name: dronescheduler-qa
+    repository: "file://envs/dronescheduler-qa"
+    version: ">= 0.0.1"
+    tags:
+      - qa
+    import-values:
+      - data
+
+  - name: dronescheduler-staging
+    repository: "file://envs/dronescheduler-staging"
+    version: ">= 0.0.1"
+    tags:
+      - staging
+    import-values:
+      - data

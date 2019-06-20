@@ -3,6 +3,7 @@ replicaCount: 3
 identity:
   clientid:
   resourceid:
+dockerregistrynamespace:
 dockerregistry:
 image:
   repository:
@@ -13,3 +14,16 @@ keyvault:
 reason: unknown
 telemetry:
   level: "Error"
+resources:
+  requests:
+    cpu: 450m
+    memory: 350Mi
+  limits:
+    cpu: 600m
+    memory: 500Mi
+tags:
+  dev: false
+  prod: false
+  qa: false
+  staging: false
+current: false

@@ -1,0 +1,166 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2018-05-01/subscriptionDeploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "environmentName": {
+           "type": "string",
+           "defaultValue": "dev",
+           "allowedValues": [
+             "dev",
+             "qa",
+             "staging",
+             "prod"
+           ]
+        },
+        "resourceGroupName": {
+            "type": "string"
+        },
+        "resourceGroupLocation": {
+            "type": "string",
+            "defaultValue": "eastus"
+        }
+    },
+    "variables": {
+        "acrResourceGroupNamePrefix": "[concat(parameters('resourceGroupName'),'-acr')]",
+        "nestedIdDeploymentName": "[concat(deployment().name,'-identities')]",
+        "environmentSettings": {
+            "dev": {
+                "deliveryIdName": "dev-d",
+                "workflowIdName": "dev-wf",
+                "droneSchedulerIdName": "dev-ds",
+                "acrResourceGroupName": "[variables('acrResourceGroupNamePrefix')]"
+            },
+            "qa": {
+                "deliveryIdName": "qa-d",
+                "workflowIdName": "qa-wf",
+                "droneSchedulerIdName": "qa-ds",
+                "acrResourceGroupName": "[variables('acrResourceGroupNamePrefix')]"
+            },
+            "staging": {
+                "deliveryIdName": "staging-d",
+                "workflowIdName": "staging-wf",
+                "droneSchedulerIdName": "staging-ds",
+                "acrResourceGroupName": "[variables('acrResourceGroupNamePrefix')]"
+            },
+            "prod": {
+                "deliveryIdName": "prod-d",
+                "workflowIdName": "prod-wf",
+                "droneSchedulerIdName": "prod-ds",
+                "acrResourceGroupName": "[concat(variables('acrResourceGroupNamePrefix'),'-',parameters('environmentName'))]"
+            }
+        }
+    },
+    "resources": [
+        {
+            "name": "[parameters('resourceGroupName')]",
+            "location": "[parameters('resourceGroupLocation')]",
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2018-05-01",
+            "tags": {
+                "displayName": "Resource Group for general purpose"
+            }
+        },
+        {
+            "name": "[variables('environmentSettings')[parameters('environmentName')].acrResourceGroupName]",
+            "type": "Microsoft.Resources/resourceGroups",
+            "apiVersion": "2018-05-01",
+            "location": "[parameters('resourceGroupLocation')]",
+            "tags": {
+                "displayName": "Container Registry Resource Group"
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2018-05-01",
+            "name": "[variables('nestedIdDeploymentName')]",
+            "resourceGroup": "[parameters('resourceGroupName')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Resources/resourceGroups/', parameters('resourceGroupName'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "resources": [
+                        {
+                            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+                            "name": "[variables('environmentSettings')[parameters('environmentName')].workflowIdName]",
+                            "apiVersion": "2015-08-31-preview",
+                            "location": "[parameters('resourceGroupLocation')]",
+                            "tags": {
+                                "displayName": "workflow managed identity",
+                                "what": "rbac",
+                                "reason": "aad-pod-identity",
+                                "app": "fabrikam-workflow",
+                                "[parameters('environmentName')]": true
+                            }
+                        },
+                        {
+                            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+                            "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryIdName]",
+                            "apiVersion": "2015-08-31-preview",
+                            "location": "[parameters('resourceGroupLocation')]",
+                            "tags": {
+                                "displayName": "delivery managed identity",
+                                "what": "rbac",
+                                "reason": "aad-pod-identity",
+                                "app": "fabrikam-delivery",
+                                "[parameters('environmentName')]": true
+                            }
+                        },
+                        {
+                            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+                            "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerIdName]",
+                            "apiVersion": "2015-08-31-preview",
+                            "location": "[parameters('resourceGroupLocation')]",
+                            "tags": {
+                                "displayName": "dronescheduler managed identity",
+                                "what": "rbac",
+                                "reason": "aad-pod-identity",
+                                "app": "fabrikam-dronescheduler",
+                                "[parameters('environmentName')]": true
+                            }
+                        }
+                    ],
+                    "outputs": {
+                        "deliveryIdName": {
+                            "value": "[variables('environmentSettings')[parameters('environmentName')].deliveryIdName]",
+                            "type": "string"
+                        },
+                        "deliveryPrincipalResourceId": {
+                            "value": "[concat(subscription().id, '/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',variables('environmentSettings')[parameters('environmentName')].deliveryIdName)]",
+                            "type": "string"
+                        },
+                        "droneSchedulerIdName": {
+                            "value": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerIdName]",
+                            "type": "string"
+                        },
+                        "droneSchedulerPrincipalResourceId": {
+                            "value": "[concat(subscription().id, '/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',variables('environmentSettings')[parameters('environmentName')].droneSchedulerIdName)]",
+                            "type": "string"
+                        },
+                        "workflowIdName": {
+                            "value": "[variables('environmentSettings')[parameters('environmentName')].workflowIdName]",
+                            "type": "string"
+                        },
+                        "workflowPrincipalResourceId": {
+                            "value": "[concat(subscription().id, '/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',variables('environmentSettings')[parameters('environmentName')].workflowIdName)]",
+                            "type": "string"
+                        },
+                        "acrResourceGroupName": {
+                            "value": "[variables('environmentSettings')[parameters('environmentName')].acrResourceGroupName]",
+                            "type": "string"
+                        }
+                   }
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "identitiesDeploymentName": {
+            "value": "[variables('nestedIdDeploymentName')]",
+            "type": "string"
+        }
+    }
+}

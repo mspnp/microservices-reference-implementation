@@ -1,0 +1,11 @@
+# QA values for dronescheduler.
+nameOverride: dronescheduler
+exports:
+  data:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    telemetry:
+      level: "Information"
+    reason: "new qa deploy"
+    current: true

@@ -6,12 +6,14 @@
 ###################################################################################################
 # Workflow service identity
 ###################################################################################################
+{{- $fullname := include "workflow.fullname" . | replace "." "" }}
 apiVersion: "aadpodidentity.k8s.io/v1"
 kind: AzureIdentity
 metadata:
- name: workflow-identity
+ name: {{ $fullname }}-identity
  annotations:
-  "helm.sh/hook": "pre-install"
+  "helm.sh/hook": pre-install,pre-upgrade
+  "helm.sh/hook-delete-policy": hook-failed,before-hook-creation
   "helm.sh/hook-weight": "0"
 spec:
  type: 0
@@ -21,10 +23,11 @@ spec:
 apiVersion: "aadpodidentity.k8s.io/v1"
 kind: AzureIdentityBinding
 metadata:
- name: workflow-identity-binding
+ name: {{ $fullname }}-identity-binding
  annotations:
-  "helm.sh/hook": "pre-install"
+  "helm.sh/hook": pre-install,pre-upgrade
+  "helm.sh/hook-delete-policy": hook-failed,before-hook-creation
   "helm.sh/hook-weight": "1"
 spec:
- AzureIdentity: workflow-identity
- Selector: workflow
+ AzureIdentity: {{ $fullname }}-identity
+ Selector: {{ $fullname }}

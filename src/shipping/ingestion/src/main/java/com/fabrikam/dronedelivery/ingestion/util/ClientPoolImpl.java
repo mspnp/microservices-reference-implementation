@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 public class ClientPoolImpl implements ClientPool {
 
 	private static final String SCHEME = "https";
-	
+
 	private final InstrumentedQueueClient[] queueClients;
 	private final String[] queueNames;
 	private final ApplicationProperties appProperties;
@@ -28,14 +28,14 @@ public class ClientPoolImpl implements ClientPool {
 	private final ServiceBusTracing tracing;
 
 	@Autowired
-	public ClientPoolImpl(ApplicationProperties appProps, ServiceBusTracing tracing) {
+	public ClientPoolImpl(ApplicationProperties appProps, ServiceBusTracing tracing, Environment environment) {
 		this.appProperties = appProps;
 		this.tracing = tracing;
 
-		this.queueNames = System.getenv(appProperties.getEnvQueueName()).split(",");
-		nameSpace = System.getenv(appProperties.getEnvNameSpace());
-		sasKeyName = System.getenv(appProperties.getEnvsasKeyName());
-		sasKey = System.getenv(appProperties.getEnvsasKey());
+		this.queueNames = environment.getenv(appProperties.getEnvQueueName()).split(",");
+		nameSpace = environment.getenv(appProperties.getEnvNameSpace());
+		sasKeyName = environment.getenv(appProperties.getEnvsasKeyName());
+		sasKey = environment.getenv(appProperties.getEnvsasKey());
 
 		this.queueClients = new InstrumentedQueueClient[this.appProperties.getMessageAmqpClientPoolSize()];
 	}

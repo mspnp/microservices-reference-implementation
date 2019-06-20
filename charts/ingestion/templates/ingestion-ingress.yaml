@@ -4,13 +4,18 @@
 #  ------------------------------------------------------------
 
 ###################################################################################################
-# ingestion ingress
+# ingress
 ###################################################################################################
-
+{{- $svcversion := .Chart.AppVersion | replace "." "" }}
+{{- $appversion := .Chart.AppVersion }}
+{{- $defaultversionedpath := printf "/%s/" $appversion }}
+{{- $relname := .Release.Name }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
-  name: ingestion-ingress
+  name: {{ $relname }}-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /api/deliveryrequests$1
 spec:
   {{- if .Values.ingress.tls }}
   tls:
@@ -18,7 +23,7 @@ spec:
   {{- if .tls }}
   - hosts:
     - {{ .name }}
-    secretName: {{ .tlsSecretName }}
+    secretName: {{ $relname }}-{{ .tlsSecretName }}
   {{- end }}
   {{- end }}
   {{- end }}
@@ -27,8 +32,18 @@ spec:
   - host: {{ .name }}
     http:
       paths:
-      - path: {{ default "/" .path }}
+      {{ if .path }}
+      - path: {{ printf "%s/%s/" .path $appversion }}api/deliveryrequests(.*)
+      {{ else }}
+      - path: {{ $defaultversionedpath }}api/deliveryrequests(.*)
+      {{ end }}
+        backend:
+          serviceName: "{{ .serviceName }}-{{ $svcversion }}"
+          servicePort: http
+      {{ if (eq $appversion "v0.1.0") }}
+      - path: {{ default "/" .path }}api/deliveryrequests(.*)
         backend:
           serviceName: "{{ .serviceName }}"
           servicePort: http
+      {{ end }}
   {{ end }}

@@ -24,7 +24,6 @@
 		<lombok.version>1.16.10</lombok.version>
         <okhttp.version>2.7.5</okhttp.version>
         <spring.boot.version>2.1.2.RELEASE</spring.boot.version>
-        <start-class>com.fabrikam.dronedelivery.ingestion.IngestionApplication</start-class>
 	</properties>
 
 	<dependencies>
@@ -91,6 +90,12 @@
 			<artifactId>applicationinsights-logging-logback</artifactId>
 			<version>2.3.0</version>
 		</dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>1.61</version>
+        </dependency>
     </dependencies>
 
 	<build>

@@ -1,0 +1,36 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+###################################################################################################
+# package service experimental
+###################################################################################################
+{{ if .Values.experimental }}
+{{- $appname := include "package.name" . -}}
+{{- $chart := include "package.chart" . -}}
+{{- $instancename := .Release.Name }}
+# the following object is meant ot be created first time only.
+# its configuration will be later managed by CI/CD
+apiVersion: v1
+kind: Service
+metadata:
+  name: package-experimental
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+  labels:
+    app.kubernetes.io/name: {{ $appname }}
+    app.kubernetes.io/managed-by: azuredeveops
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: dronedelivery
+    helm.sh/chart: {{ $chart }}
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+  selector:
+    app.kubernetes.io/name: {{ $appname }}
+    app.kubernetes.io/instance: {{ $instancename }}
+{{ end }}

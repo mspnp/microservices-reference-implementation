@@ -1,5 +1,7 @@
 # Default values for workflow.
-replicaCount: 3
+nameOverride: workflow
+replicaCount: 1
+dockerregistrynamespace:
 dockerregistry:
 identity:
   clientid:
@@ -28,3 +30,15 @@ keyvault:
   tenantid:
 telemetry:
   level: "Error"
+resources:
+  requests:
+    cpu: 1700m
+    memory: 100Mi
+  limits:
+    cpu: 2300m
+    memory: 140Mi
+tags:
+  dev: false
+  prod: false
+  qa: false
+  staging: false
