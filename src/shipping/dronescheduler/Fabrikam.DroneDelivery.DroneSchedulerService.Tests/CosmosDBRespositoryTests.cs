@@ -8,9 +8,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
@@ -38,7 +38,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                 ILogger<
                     CosmosRepository<
                         InternalDroneUtilization>>>();
-            
+
             _fakeResults = new List<InternalDroneUtilization> {
                 new InternalDroneUtilization {
                     Id = "d0001",
@@ -93,7 +93,8 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
             var repo = new CosmosRepository<InternalDroneUtilization>(
                 _clientMockObject,
                 _optionsMockObject,
-                _loggerDebug);
+                _loggerDebug,
+                Mock.Of<ICosmosDBRepositoryMetricsTracker<InternalDroneUtilization>>());
 
             // Act
             var res = await repo.GetItemsAsync(
@@ -103,8 +104,13 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
             // Assert
             Assert.NotNull(res);
             Assert.Equal(_fakeResults.Count(), res.Count());
-            Assert.True(res.All(r => r.PartitionKey == ownerId));
-            Assert.True(res.All(r => r.DocumentType == typeof(InternalDroneUtilization).Name));
+            Assert.All(
+                res,
+                r =>
+                {
+                    Assert.Equal(ownerId, r.PartitionKey);
+                    Assert.Equal(typeof(InternalDroneUtilization).Name, r.DocumentType);
+                });
         }
     }
 }

@@ -4,12 +4,12 @@
 // ------------------------------------------------------------
 
 using System;
+using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Services;
-using Microsoft.Azure.Documents;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService
 {
@@ -27,6 +27,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
             services.ConfigureOptions<ConfigureCosmosDBRepositoryOptions<T>>();
 
             services.AddSingleton<ICosmosRepository<T>, CosmosRepository<T>>();
+            services.AddSingleton<ICosmosDBRepositoryMetricsTracker<T>, CosmosDBRepositoryMetricsTracker<T>>();
 
             return services;
         }

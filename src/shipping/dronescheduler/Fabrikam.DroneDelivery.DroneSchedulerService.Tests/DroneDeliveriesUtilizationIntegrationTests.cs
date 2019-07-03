@@ -67,6 +67,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                                 DocumentType = typeof(InternalDroneUtilization).Name
                             }
                         }.AsQueryable()));
+                    s.AddSingleton(Mock.Of<ICosmosDBRepositoryMetricsTracker<InternalDroneUtilization>>());
                 }))
                 .CreateClient();
         }
@@ -118,6 +119,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                         .CreateDocumentClientMockObject(
                             new List<InternalDroneUtilization>()
                             .AsQueryable()));
+                    s.AddSingleton(Mock.Of<ICosmosDBRepositoryMetricsTracker<InternalDroneUtilization>>());
                 }))
                 .CreateClient();
 
