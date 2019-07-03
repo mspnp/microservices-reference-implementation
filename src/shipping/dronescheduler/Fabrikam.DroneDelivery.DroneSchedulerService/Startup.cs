@@ -13,8 +13,10 @@ using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Swagger;
 using Serilog;
 using Serilog.Formatting.Compact;
+using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
+using Fabrikam.DroneDelivery.DroneSchedulerService.Services;
 
-namespace MockDroneScheduler
+namespace Fabrikam.DroneDelivery.DroneSchedulerService
 {
     public class Startup
     {
@@ -55,6 +57,11 @@ namespace MockDroneScheduler
             {
                 c.SwaggerDoc("v1", new Info { Title = "Mock DroneScheduler API", Version = "v1" });
             });
+
+            services.AddSingleton<IInvoicingRepository, InvoicingRepository>();
+            services
+                .AddCosmosRepository<
+                InternalDroneUtilization>(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

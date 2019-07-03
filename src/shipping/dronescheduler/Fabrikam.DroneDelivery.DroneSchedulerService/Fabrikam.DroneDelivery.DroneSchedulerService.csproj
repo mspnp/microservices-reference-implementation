@@ -3,6 +3,8 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <DockerComposeProjectPath>..\docker-compose.dcproj</DockerComposeProjectPath>
+    <RootNamespace>Fabrikam.DroneDelivery.DroneSchedulerService</RootNamespace>
+    <AssemblyName>Fabrikam.DroneDelivery.DroneSchedulerService</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +15,7 @@
     <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.6.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.ApplicationInsights" Version="2.9.1" />
     <PackageReference Include="Microsoft.ApplicationInsights.Kubernetes" Version="1.0.2" />
+    <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="2.4.0" />
     <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.0.3" />
     <PackageReference Include="Microsoft.Extensions.Configuration.AzureKeyVault" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
@@ -23,7 +26,8 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="1.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Fabrikam.DroneDelivery.Common\Fabrikam.DroneDelivery.Common.csproj" />
+      <ProjectReference Include="..\..\delivery\Fabrikam.DroneDelivery.Common\Fabrikam.DroneDelivery.Common.csproj" />
+      
   </ItemGroup>
 
 </Project>

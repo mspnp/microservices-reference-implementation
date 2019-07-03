@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace MockDroneScheduler.Models
+namespace Fabrikam.DroneDelivery.DroneSchedulerService.Models
 {
     public class PackageDetail
     {

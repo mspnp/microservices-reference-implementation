@@ -49,6 +49,10 @@ spec:
         env:
         - name: KEY_VAULT_URI
           value: {{ .Values.keyvault.uri }}
+        - name: COSMOSDB_DATABASEID
+          value: {{ required .Values.cosmosdb.id }}
+         - name: COSMOSDB_COLLECTIONID
+          value: {{ required .Values.cosmosdb.collectionid }}
         - name: LOGGING__ApplicationInsights__LOGLEVEL__DEFAULT
           value: {{ default "Error" .Values.telemetry.level | quote }}
         - name: no_proxy

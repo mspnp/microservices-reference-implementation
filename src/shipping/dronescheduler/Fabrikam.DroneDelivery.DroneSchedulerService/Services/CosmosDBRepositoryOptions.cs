@@ -4,12 +4,13 @@
 // ------------------------------------------------------------
 
 using System;
+using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 
-namespace MockDroneScheduler.Models
+namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
 {
-    public class DroneUtilization
+    public class CosmosDBRepositoryOptions <T>
+        where T : BaseDocument
     {
-        public double TraveledMiles { get; internal set; }
-        public double AssignedHours { get; internal set; }
+        public Uri CollectionUri { get; set; }
     }
 }

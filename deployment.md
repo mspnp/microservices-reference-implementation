@@ -420,6 +420,10 @@ Extract resource details from deployment
 
 ```bash
 export DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
+export DRONESCHEDULER_COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.droneSchedulerCosmosDbName.value -o tsv) && \
+export ENDPOINT_URL=$(az cosmosdb show -n $DRONESCHEDULER_COSMOSDB_NAME -g $RESOURCE_GROUP --query documentEndpoint -o tsv) && \
+export AUTH_KEY=$(az cosmosdb list-keys -n $DRONESCHEDULER_COSMOSDB_NAME -g $RESOURCE_GROUP --query primaryMasterKey -o tsv) && \
+export DATABASE_NAME="invoicing"
 ```
 
 Build the dronescheduler services
@@ -457,6 +461,8 @@ helm install $HELM_CHARTS/dronescheduler/ \
      --set identity.clientid=$DRONESCHEDULER_PRINCIPAL_CLIENT_ID \
      --set identity.resourceid=$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID \
      --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
+     --set cosmosdb.id=$DATABASE_NAME \
+     --set cosmosdb.collectionid=$COLLECTION_NAME \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \

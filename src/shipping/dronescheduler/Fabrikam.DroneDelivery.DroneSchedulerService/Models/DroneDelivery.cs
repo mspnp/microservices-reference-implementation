@@ -6,7 +6,7 @@
 using System.Collections.Generic;
 using Fabrikam.DroneDelivery.Common;
 
-namespace MockDroneScheduler.Models
+namespace Fabrikam.DroneDelivery.DroneSchedulerService.Models
 {
     public class DroneDelivery
     {
