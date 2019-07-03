@@ -3,17 +3,18 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
 using Fabrikam.DroneDelivery.Common;
 using Fabrikam.DroneDelivery.DeliveryService.Controllers;
-using Fabrikam.DroneDelivery.DeliveryService.Services;
 using Fabrikam.DroneDelivery.DeliveryService.Models;
+using Fabrikam.DroneDelivery.DeliveryService.Services;
+using Moq;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Tests
 {
@@ -42,7 +43,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
-            
+
             // Act
             var result = await target.Get("invaliddeliveryid") as NotFoundResult;
 
@@ -88,7 +89,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   new Mock<INotificationService>().Object,
                                                   new Mock<IDeliveryTrackingEventRepository>().Object,
                                                   loggerFactory.Object);
-            
+
             // Act
             var result = await target.GetOwner("deliveryid") as OkObjectResult;
 
@@ -400,7 +401,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                                                   loggerFactory.Object);
 
             var notifyMeRequest = new NotifyMeRequest("email@test.com", "1234567");
-            
+
             // Act
             var result = await target.NotifyMe("deliveryid", notifyMeRequest) as NoContentResult;
 
@@ -566,5 +567,34 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             Assert.AreEqual(DeliveryStage.Completed, completedDelivery.Stage);
         }
 
+        [TestMethod]
+        public async Task GetSummry_ReturnsSummary()
+        {
+            const int TestDeliveryCount = 5000;
+
+            // Arrange
+            var deliveryRepository = new Mock<IDeliveryRepository>();
+            deliveryRepository.Setup(r => r.GetDeliveryCountAsync("owner", 2019, 01))
+                                .ReturnsAsync(TestDeliveryCount)
+                                .Verifiable();
+
+            var loggerFactory = new Mock<ILoggerFactory>();
+            loggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
+
+            var target = new DeliveriesController(deliveryRepository.Object,
+                                                  new Mock<INotifyMeRequestRepository>().Object,
+                                                  new Mock<INotificationService>().Object,
+                                                  new Mock<IDeliveryTrackingEventRepository>().Object,
+                                                  loggerFactory.Object);
+
+            // Act
+            var result = await target.GetSummary("owner", 2019, 01) as OkObjectResult;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsInstanceOfType(result.Value, typeof(DeliveriesSummary));
+            Assert.AreEqual(TestDeliveryCount, ((DeliveriesSummary)result.Value).Count);
+            deliveryRepository.VerifyAll();
+        }
     }
 }

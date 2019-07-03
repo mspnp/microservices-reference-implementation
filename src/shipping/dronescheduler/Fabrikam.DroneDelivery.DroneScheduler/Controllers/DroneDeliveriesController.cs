@@ -36,5 +36,23 @@ namespace MockDroneScheduler.Controllers
         {
             logger.LogInformation("In Delete action with DeliveryId: {DeliveryId}", id);
         }
+
+        // GET api/dronedeliveries/utilization
+        [HttpGet("utilization")]
+        public DroneUtilization GetDroneUtilization([FromQuery] string ownerId, [FromQuery] int year, [FromQuery] int month)
+        {
+            const double MinMiles = 300d;
+            const double MaxMiles = 5000d;
+            const double MinHours = 10d;
+            const double MaxHours = 300d;
+
+            var random = new Random();
+
+            return new DroneUtilization
+            {
+                TraveledMiles = MinMiles + random.NextDouble() * (MaxMiles - MinMiles),
+                AssignedHours = MinHours + random.NextDouble() * (MaxHours - MinHours)
+            };
+        }
     }
 }

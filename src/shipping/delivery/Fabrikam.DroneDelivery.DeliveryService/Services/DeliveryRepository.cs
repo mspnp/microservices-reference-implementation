@@ -3,6 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using System;
 using System.Threading.Tasks;
 using Fabrikam.DroneDelivery.DeliveryService.Models;
 
@@ -28,6 +29,16 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
         public async Task DeleteAsync(string id, InternalDelivery delivery)
         {
             await RedisCache<InternalDelivery>.DeleteItemAsync(id, delivery).ConfigureAwait(continueOnCapturedContext: false);
+        }
+
+        public Task<int> GetDeliveryCountAsync(string ownerId, int year, int month)
+        {
+            const int MinDeliveries = 1000;
+            const int MaxDeliveries = 10000;
+
+            var deliveryCount = new Random().Next(MinDeliveries, MaxDeliveries);
+
+            return Task.FromResult(deliveryCount);
         }
     }
 }
