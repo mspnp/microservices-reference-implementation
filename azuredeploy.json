@@ -689,7 +689,7 @@
                 },
                 {
                     "type": "secrets",
-                    "name": "CosmosDB-Endpoint",
+                    "name": "CosmosDBEndpoint",
                     "apiVersion": "2015-06-01",
                     "properties": {
                         "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName)).documentEndpoint]"
@@ -701,7 +701,7 @@
                 },
                 {
                     "type": "secrets",
-                    "name": "CosmosDB-Key",
+                    "name": "CosmosDBKey",
                     "apiVersion": "2015-06-01",
                     "properties": {
                         "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName), '2016-03-31').primaryMasterKey]"
@@ -709,6 +709,28 @@
                     "dependsOn": [
                         "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]",
                         "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "CosmosDBConnectionMode",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "Direct"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "COSMOSDB_MAXPARALLELISM",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "-1"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
                     ]
                 }
             ]

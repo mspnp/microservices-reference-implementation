@@ -4,6 +4,7 @@
 // ------------------------------------------------------------
 
 using System;
+using System.Globalization;
 using System.Linq;
 using Microsoft.Azure.Documents;
 using Microsoft.Extensions.Configuration;
@@ -46,6 +47,11 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                 {
                     options.CollectionUri = uri;
                 }
+            }
+
+            if (string.IsNullOrEmpty(_config["COSMOSDB_MAXPARALLELISM"]) == false)
+            {
+                options.MaxParallelism = int.Parse(_config["COSMOSDB_MAXPARALLELISM"], CultureInfo.InvariantCulture);
             }
         }
     }

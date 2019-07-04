@@ -4,10 +4,12 @@
 // ------------------------------------------------------------
 
 using System;
+using System.Linq;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Services;
 
@@ -20,11 +22,21 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
                  IConfiguration config)
             where T : BaseDocument
         {
-            var endpoint = config["CosmosDB-Endpoint"];
-            var key = config["CosmosDB-Key"];
+            services.AddSingleton<IDocumentClient>(s =>
+                {
+                    var options = s.GetRequiredService<IOptions<CosmosDBConnectionOptions>>();
 
-            services.AddSingleton<IDocumentClient>(s => new DocumentClient(new Uri(endpoint), key));
+                    return new DocumentClient(
+                        new Uri(options.Value.CosmosDBEndpoint),
+                        options.Value.CosmosDBKey,
+                        connectionPolicy: new ConnectionPolicy { ConnectionMode = options.Value.CosmosDBConnectionMode });
+                });
             services.ConfigureOptions<ConfigureCosmosDBRepositoryOptions<T>>();
+
+            if (services.Any(sr => sr.ServiceType == typeof(CosmosDBConnectionOptions)) == false)
+            {
+                services.Configure<CosmosDBConnectionOptions>(config);
+            }
 
             services.AddSingleton<ICosmosRepository<T>, CosmosRepository<T>>();
             services.AddSingleton<ICosmosDBRepositoryMetricsTracker<T>, CosmosDBRepositoryMetricsTracker<T>>();

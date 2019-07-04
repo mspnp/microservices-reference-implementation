@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.FeatureManagement;
 using Swashbuckle.AspNetCore.Swagger;
 using Serilog;
 using Serilog.Formatting.Compact;
@@ -44,6 +45,8 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            services.AddFeatureManagement();
 
             // Configure AppInsights
             services.AddApplicationInsightsKubernetesEnricher();

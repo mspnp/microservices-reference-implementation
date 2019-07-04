@@ -39,7 +39,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                 response.RequestCharge,
                 collection,
                 typeof(T).Name,
-                partitionKey,
+                partitionKey ?? "<none>",
                 response.Count.ToString(CultureInfo.InvariantCulture));
         }
     }

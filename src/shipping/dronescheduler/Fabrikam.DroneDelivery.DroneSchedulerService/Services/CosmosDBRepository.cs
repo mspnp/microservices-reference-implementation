@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Microsoft.ApplicationInsights;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.Documents.Linq;
@@ -53,8 +52,9 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                         this._options.CollectionUri,
                         new FeedOptions
                         {
-                            MaxItemCount = -1,
-                            PartitionKey = new PartitionKey(partitionKey)
+                            MaxItemCount = this._options.MaxParallelism,
+                            PartitionKey = partitionKey != null ? new PartitionKey(partitionKey) : null,
+                            EnableCrossPartitionQuery = partitionKey == null
                         })
                     .Where(predicate)
                     .Where(d => d.DocumentType == typeof(T).Name)

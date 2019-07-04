@@ -8,10 +8,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Moq;
-using Xunit;
+using Microsoft.FeatureManagement;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Services;
+using Moq;
+using Xunit;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
 {
@@ -24,8 +25,13 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
             string ownerId = "o00042";
             int year = 2019;
             int month = 6;
+
             var cosmosDbMock = new Mock<ICosmosRepository<InternalDroneUtilization>>();
-            var repo = new InvoicingRepository(cosmosDbMock.Object);
+
+            var featureToggleMock = new Mock<IFeatureManager>();
+            featureToggleMock.Setup(fm => fm.IsEnabled(It.IsAny<string>())).Returns(true);
+
+            var repo = new InvoicingRepository(cosmosDbMock.Object, featureToggleMock.Object);
 
             // Act
             var result = await repo.GetAggreatedInvoincingDataAsync(ownerId, year, month);
@@ -43,12 +49,43 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
         }
 
         [Fact]
+        public async Task WhenGetAggregatedInvoincingDataAndFeatureForPartitionKeyIsDisabled_ThenInvokesDroneUtilizationRepositoryWithoutPartitionKey()
+        {
+            // Arrange
+            string ownerId = "o00042";
+            int year = 2019;
+            int month = 6;
+
+            var cosmosDbMock = new Mock<ICosmosRepository<InternalDroneUtilization>>();
+
+            var featureToggleMock = new Mock<IFeatureManager>();
+            featureToggleMock.Setup(fm => fm.IsEnabled(It.IsAny<string>())).Returns(false);
+
+            var repo = new InvoicingRepository(cosmosDbMock.Object, featureToggleMock.Object);
+
+            // Act
+            var result = await repo.GetAggreatedInvoincingDataAsync(ownerId, year, month);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(0d, result.Item1);
+            Assert.Equal(0d, result.Item2);
+            cosmosDbMock
+                .Verify(p =>
+                    p.GetItemsAsync(
+                        It.IsAny<Expression<Func<InternalDroneUtilization, bool>>>(),
+                        null),
+                    Times.Once);
+        }
+
+        [Fact]
         public async Task WhenGetAggregatedInvoincingDataForAValidPeriod_ThenRepoReturnsData()
         {
             // Arrange
             string ownerId = "o00042";
             int year = 2019;
             int month = 6;
+
             var invoicingData = new List<InternalDroneUtilization> {
                 new InternalDroneUtilization{
                     TraveledMiles=10d,
@@ -65,10 +102,14 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                         It.IsAny<Expression<Func<InternalDroneUtilization, bool>>>(),
                         ownerId))
                     .ReturnsAsync(invoicingData.AsEnumerable());
-            var repo = new InvoicingRepository(cosmosDbMock.Object);
+
+            var featureToggleMock = new Mock<IFeatureManager>();
+            featureToggleMock.Setup(fm => fm.IsEnabled(It.IsAny<string>())).Returns(true);
+
+            var repo = new InvoicingRepository(cosmosDbMock.Object, featureToggleMock.Object);
 
             // Act
-            var (traveledMiles, assignedHours)  =
+            var (traveledMiles, assignedHours) =
                 await repo.GetAggreatedInvoincingDataAsync(
                         ownerId,
                         year,

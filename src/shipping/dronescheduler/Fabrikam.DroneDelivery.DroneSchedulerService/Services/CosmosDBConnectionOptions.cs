@@ -3,16 +3,16 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using System;
-using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
+using Microsoft.Azure.Documents.Client;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
 {
-    public class CosmosDBRepositoryOptions <T>
-        where T : BaseDocument
+    public class CosmosDBConnectionOptions
     {
-        public Uri CollectionUri { get; set; }
+        public string CosmosDBEndpoint { get; set; }
 
-        public int MaxParallelism { get; set; } = -1;
+        public string CosmosDBKey { get; set; }
+
+        public ConnectionMode CosmosDBConnectionMode { get; set; }
     }
 }
