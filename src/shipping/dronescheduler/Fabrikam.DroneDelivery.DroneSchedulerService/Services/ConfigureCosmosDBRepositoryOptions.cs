@@ -29,9 +29,12 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
 
         public void Configure(CosmosDBRepositoryOptions<T> options)
         {
+            options.DatabaseId = _config["COSMOSDB_DATABASEID"];
+            options.CollectionId = _config["COSMOSDB_COLLECTIONID"];
+
             Database db = _client
                 .CreateDatabaseQuery()
-                .Where(d => d.Id == _config["COSMOSDB_DATABASEID"])
+                .Where(d => d.Id == options.DatabaseId)
                 .AsEnumerable()
                 .FirstOrDefault();
 
@@ -39,7 +42,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
             {
                 DocumentCollection col = _client
                     .CreateDocumentCollectionQuery(db.SelfLink)
-                    .Where(d => d.Id == _config["COSMOSDB_COLLECTIONID"])
+                    .Where(d => d.Id == options.CollectionId)
                     .AsEnumerable()
                     .FirstOrDefault();
 

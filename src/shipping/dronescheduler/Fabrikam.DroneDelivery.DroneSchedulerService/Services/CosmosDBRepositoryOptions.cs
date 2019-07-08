@@ -11,6 +11,10 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
     public class CosmosDBRepositoryOptions <T>
         where T : BaseDocument
     {
+        public string DatabaseId { get; set; }
+
+        public string CollectionId { get; set; }
+
         public Uri CollectionUri { get; set; }
 
         public int MaxParallelism { get; set; } = -1;

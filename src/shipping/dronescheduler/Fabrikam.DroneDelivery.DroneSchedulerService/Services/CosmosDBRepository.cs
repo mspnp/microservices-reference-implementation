@@ -24,6 +24,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
         private readonly CosmosDBRepositoryOptions<T> _options;
         private readonly ILogger<CosmosRepository<T>> _logger;
         private readonly ICosmosDBRepositoryMetricsTracker<T> _metricsTracker;
+        private readonly string _collectionIdentifier;
 
         public CosmosRepository(
                 IDocumentClient client,
@@ -35,6 +36,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
             this._options = options.Value;
             this._logger = logger;
             this._metricsTracker = metricsTracker;
+            this._collectionIdentifier = $"{options.Value.DatabaseId}.{options.Value.CollectionId}";
         }
 
         public async Task<IEnumerable<T>> GetItemsAsync(
@@ -66,7 +68,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                 while (query.HasMoreResults)
                 {
                     var feed = await query.ExecuteNextAsync<T>();
-                    this._metricsTracker.TrackResponseMetrics(feed, this._options.CollectionUri.ToString(), partitionKey);
+                    this._metricsTracker.TrackResponseMetrics(feed, this._collectionIdentifier, partitionKey);
                     results.AddRange(feed);
                 }
 
