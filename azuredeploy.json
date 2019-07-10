@@ -724,10 +724,21 @@
                 },
                 {
                     "type": "secrets",
-                    "name": "COSMOSDB_MAXPARALLELISM",
+                    "name": "CosmosDBMaxParallelism",
                     "apiVersion": "2015-06-01",
                     "properties": {
                         "value": "-1"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "FeatureManagement--UsePartitionKey",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "false"
                     },
                     "dependsOn": [
                         "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
@@ -977,6 +988,10 @@
         },
         "deliveryCosmosDbName": {
             "value": "[variables('environmentSettings')[parameters('environmentName')].deliveryCosmosDbName]",
+            "type": "string"
+        },
+        "droneSchedulerKeyVaultName": {
+            "value": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName]",
             "type": "string"
         },
         "droneSchedulerKeyVaultUri": {

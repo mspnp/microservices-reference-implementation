@@ -5,6 +5,7 @@
 
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -25,6 +26,15 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()
+                .ConfigureAppConfiguration(configurationBuilder =>
+                {
+                    var buildConfig = configurationBuilder.Build();
+
+                    if (buildConfig["KEY_VAULT_URI"] is var keyVaultUri && !string.IsNullOrEmpty(keyVaultUri))
+                    {
+                        configurationBuilder.AddAzureKeyVault(keyVaultUri);
+                    }
+                })
                 .ConfigureLogging((hostingContext, loggingBuilder) =>
                 {
                     loggingBuilder.AddApplicationInsights();

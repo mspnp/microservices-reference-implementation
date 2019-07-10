@@ -26,6 +26,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
 
         private readonly IDocumentClient _clientMockObject;
         private readonly IOptions<CosmosDBRepositoryOptions<InternalDroneUtilization>> _optionsMockObject;
+        private readonly ICosmosDBRepositoryMetricsTracker<InternalDroneUtilization> _metricsTrackerMockObject;
 
         private readonly IQueryable<InternalDroneUtilization> _fakeResults;
 
@@ -83,6 +84,11 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                 .Returns(fakeOptionsValue);
 
             _optionsMockObject = optionsMock.Object;
+
+            _metricsTrackerMockObject =
+                Mock.Of<ICosmosDBRepositoryMetricsTracker<InternalDroneUtilization>>(
+                    t => t.GetQueryMetricsTracker(It.IsAny<string>(), It.IsAny<string>())
+                            == Mock.Of<ICosmosDBRepositoryQueryMetricsTracker<InternalDroneUtilization>>());
         }
 
         [Fact]
@@ -95,7 +101,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                 _clientMockObject,
                 _optionsMockObject,
                 _loggerDebug,
-                Mock.Of<ICosmosDBRepositoryMetricsTracker<InternalDroneUtilization>>());
+                _metricsTrackerMockObject);
 
             // Act
             var res = await repo.GetItemsAsync(
@@ -132,7 +138,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                 _clientMockObject,
                 _optionsMockObject,
                 _loggerDebug,
-                Mock.Of<ICosmosDBRepositoryMetricsTracker<InternalDroneUtilization>>());
+                _metricsTrackerMockObject);
 
             // Act
             var res = await repo.GetItemsAsync(

@@ -43,33 +43,36 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                 Expression<Func<T, bool>> predicate,
                 string partitionKey)
         {
+            var results = new List<T>();
+
             using (_logger.BeginScope(nameof(GetItemsAsync)))
             {
                 _logger.LogInformation(
                         "partitionKey: {PartitionKey}",
                         partitionKey);
 
-                IDocumentQuery<T> query =
-                    _client.CreateDocumentQuery<T>(
-                        this._options.CollectionUri,
-                        new FeedOptions
-                        {
-                            MaxItemCount = this._options.MaxParallelism,
-                            PartitionKey = partitionKey != null ? new PartitionKey(partitionKey) : null,
-                            EnableCrossPartitionQuery = partitionKey == null
-                        })
-                    .Where(predicate)
-                    .Where(d => d.DocumentType == typeof(T).Name)
-                .AsDocumentQuery();
-
-                var results = new List<T>();
-
-                _logger.LogInformation("Start: reading results from query");
-                while (query.HasMoreResults)
+                using (var queryMetricsTracker = this._metricsTracker.GetQueryMetricsTracker(this._collectionIdentifier, partitionKey))
                 {
-                    var feed = await query.ExecuteNextAsync<T>();
-                    this._metricsTracker.TrackResponseMetrics(feed, this._collectionIdentifier, partitionKey);
-                    results.AddRange(feed);
+                    IDocumentQuery<T> query =
+                        _client.CreateDocumentQuery<T>(
+                            this._options.CollectionUri,
+                            new FeedOptions
+                            {
+                                MaxItemCount = this._options.MaxParallelism,
+                                PartitionKey = partitionKey != null ? new PartitionKey(partitionKey) : null,
+                                EnableCrossPartitionQuery = partitionKey == null
+                            })
+                        .Where(predicate)
+                        .Where(d => d.DocumentType == typeof(T).Name)
+                    .AsDocumentQuery();
+
+                    _logger.LogInformation("Start: reading results from query");
+                    while (query.HasMoreResults)
+                    {
+                        var feed = await query.ExecuteNextAsync<T>();
+                        queryMetricsTracker.TrackResponseMetrics(feed);
+                        results.AddRange(feed);
+                    }
                 }
 
                 _logger.LogInformation("End: reading results from query");

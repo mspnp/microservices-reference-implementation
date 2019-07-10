@@ -52,9 +52,9 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                 }
             }
 
-            if (string.IsNullOrEmpty(_config["COSMOSDB_MAXPARALLELISM"]) == false)
+            if (string.IsNullOrEmpty(_config["CosmosDBMaxParallelism"]) == false)
             {
-                options.MaxParallelism = int.Parse(_config["COSMOSDB_MAXPARALLELISM"], CultureInfo.InvariantCulture);
+                options.MaxParallelism = int.Parse(_config["CosmosDBMaxParallelism"], CultureInfo.InvariantCulture);
             }
         }
     }

@@ -3,13 +3,15 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+using System;
+using Microsoft.Azure.Documents.Client;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
 {
-    public interface ICosmosDBRepositoryMetricsTracker<T>
+    public interface ICosmosDBRepositoryQueryMetricsTracker<T> : IDisposable
          where T : BaseDocument
     {
-        ICosmosDBRepositoryQueryMetricsTracker<T> GetQueryMetricsTracker(string collection, string partitionKey);
+        void TrackResponseMetrics(FeedResponse<T> response);
     }
 }
