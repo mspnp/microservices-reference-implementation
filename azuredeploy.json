@@ -716,7 +716,7 @@
                     "name": "CosmosDBConnectionMode",
                     "apiVersion": "2015-06-01",
                     "properties": {
-                        "value": "Direct"
+                        "value": "Gateway"
                     },
                     "dependsOn": [
                         "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
