@@ -8,7 +8,7 @@ using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
 {
-    public class CosmosDBRepositoryOptions <T>
+    public class CosmosDBRepositoryOptions<T>
         where T : BaseDocument
     {
         public string DatabaseId { get; set; }
@@ -18,5 +18,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
         public Uri CollectionUri { get; set; }
 
         public int MaxParallelism { get; set; } = -1;
+
+        public int MaxBufferedItemCount { get; set; }
     }
 }

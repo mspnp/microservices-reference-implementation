@@ -14,5 +14,9 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
         public string CosmosDBKey { get; set; }
 
         public ConnectionMode CosmosDBConnectionMode { get; set; }
+
+        public Protocol CosmosDBConnectionProtocol { get; set; }
+
+        public int CosmosDBMaxConnectionsLimit { get; set; }
     }
 }

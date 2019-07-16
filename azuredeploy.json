@@ -724,10 +724,43 @@
                 },
                 {
                     "type": "secrets",
+                    "name": "CosmosDBConnectionProtocol",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "Https"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "CosmosDBMaxConnectionsLimit",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "50"
+                    },
+                    "dependsOn": [
+                       "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
                     "name": "CosmosDBMaxParallelism",
                     "apiVersion": "2015-06-01",
                     "properties": {
                         "value": "-1"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "CosmosDBMaxBufferedItemCount",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "0"
                     },
                     "dependsOn": [
                         "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"

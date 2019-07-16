@@ -21,7 +21,17 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
         private const string DocumentDimensionName = "Document";
         private const string PartitionKeyDimensionName = "PartitionKey";
         private const string DocumentCountDimensionName = "DocumentCount";
-        private const string RequestChargeKey = "RequestCharge";
+        private const string CosmosDbPropertyPrefix = "CosmosDb.";
+        private const string CollectionPropertyKey = CosmosDbPropertyPrefix + CollectionDimensionName;
+        private const string DocumentPropertyKey = CosmosDbPropertyPrefix + DocumentDimensionName;
+        private const string PartitionKeyPropertyKey = CosmosDbPropertyPrefix + PartitionKeyDimensionName;
+        private const string DocumentCountPropertyKey = CosmosDbPropertyPrefix + DocumentCountDimensionName;
+        private const string RequestChargePropertyKey = CosmosDbPropertyPrefix + "RequestCharge";
+        private const string MaxParallelismPropertyKey = CosmosDbPropertyPrefix + "MaxParallelism";
+        private const string MaxConnectionsPropertyKey = CosmosDbPropertyPrefix + "MaxConnections";
+        private const string ConnectionModePropertyKey = CosmosDbPropertyPrefix + "ConnectionMode";
+        private const string ConnectionProtocolPropertyKey = CosmosDbPropertyPrefix + "ConnectionProtocol";
+        private const string MaxBufferedItemCountPropertyKey = CosmosDbPropertyPrefix + "MaxBufferedItemCount";
 
         private readonly TelemetryClient _telemetryClient;
         private readonly Metric _metric;
@@ -38,13 +48,25 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                     DocumentCountDimensionName);
         }
 
-        public ICosmosDBRepositoryQueryMetricsTracker<T> GetQueryMetricsTracker(string collection, string partitionKey)
+        public ICosmosDBRepositoryQueryMetricsTracker<T> GetQueryMetricsTracker(
+            string collection,
+            string partitionKey,
+            int maxParallelism,
+            int maxConnections,
+            ConnectionMode connectionMode,
+            Protocol connectionProtocol,
+            int maxBufferedItemCount)
         {
-            return new QueryMetricsTracker(this._telemetryClient, this._metric, collection, partitionKey);
-        }
-
-        public void TrackResponseMetrics(FeedResponse<T> response, string collection, string partitionKey)
-        {
+            return new QueryMetricsTracker(
+                this._telemetryClient,
+                this._metric,
+                collection,
+                partitionKey,
+                maxParallelism,
+                maxConnections,
+                connectionMode,
+                connectionProtocol,
+                maxBufferedItemCount);
         }
 
         private sealed class QueryMetricsTracker : ICosmosDBRepositoryQueryMetricsTracker<T>
@@ -53,32 +75,43 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
             private readonly Metric _metric;
             private readonly string _collection;
             private readonly string _partitionKey;
-
+            private readonly string _maxParallelism;
+            private readonly string _maxConnections;
+            private readonly string _connectionMode;
+            private readonly string _connectionProtocol;
+            private readonly string _maxBufferedItemCount;
             private double _totalCharge;
             private long _totalDocumentCount;
 
 
-            public QueryMetricsTracker(TelemetryClient telemetryClient, Metric metric, string collection, string partitionKey)
+            public QueryMetricsTracker(
+                TelemetryClient telemetryClient,
+                Metric metric,
+                string collection,
+                string partitionKey,
+                int maxParallelism,
+                int maxConnections,
+                ConnectionMode connectionMode,
+                Protocol connectionProtocol,
+                int maxBufferedItemCount)
             {
                 this._telemetryClient = telemetryClient;
                 this._metric = metric;
                 this._collection = collection;
                 this._partitionKey = partitionKey;
+                this._maxParallelism = maxParallelism.ToString(CultureInfo.InvariantCulture);
+                this._maxConnections = maxConnections.ToString(CultureInfo.InvariantCulture);
+                this._connectionMode = connectionMode.ToString();
+                this._connectionProtocol = connectionProtocol.ToString();
+                this._maxBufferedItemCount = maxBufferedItemCount.ToString(CultureInfo.InvariantCulture);
             }
 
             public void Dispose()
             {
-                this._telemetryClient.TrackTrace(
+                TraceMetrics(
                     "Completed document query",
-                    SeverityLevel.Information,
-                    new Dictionary<string, string>
-                    {
-                        [RequestChargeKey] = this._totalCharge.ToString(CultureInfo.InvariantCulture),
-                        [CollectionDimensionName] = this._collection,
-                        [DocumentDimensionName] = typeof(T).Name,
-                        [PartitionKeyDimensionName] = this._partitionKey,
-                        [DocumentCountDimensionName] = this._totalDocumentCount.ToString(CultureInfo.InvariantCulture)
-                    });
+                    this._totalCharge.ToString(CultureInfo.InvariantCulture),
+                    this._totalDocumentCount.ToString(CultureInfo.InvariantCulture));
             }
 
             public void TrackResponseMetrics(FeedResponse<T> response)
@@ -92,20 +125,33 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                     this._partitionKey ?? "<none>",
                     responseCount);
 
-                this._telemetryClient.TrackTrace(
+                TraceMetrics(
                     "Partial document query",
-                    SeverityLevel.Information,
-                    new Dictionary<string, string>
-                    {
-                        [RequestChargeKey] = response.RequestCharge.ToString(CultureInfo.InvariantCulture),
-                        [CollectionDimensionName] = this._collection,
-                        [DocumentDimensionName] = typeof(T).Name,
-                        [PartitionKeyDimensionName] = this._partitionKey,
-                        [DocumentCountDimensionName] = responseCount
-                    });
+                    response.RequestCharge.ToString(CultureInfo.InvariantCulture),
+                    responseCount);
 
                 this._totalCharge += response.RequestCharge;
                 this._totalDocumentCount += response.Count;
+            }
+
+            private void TraceMetrics(string message, string requestCharge, string documentCount)
+            {
+                this._telemetryClient.TrackTrace(
+                    message,
+                    SeverityLevel.Information,
+                    new Dictionary<string, string>
+                    {
+                        [RequestChargePropertyKey] = requestCharge,
+                        [CollectionPropertyKey] = this._collection,
+                        [DocumentPropertyKey] = typeof(T).Name,
+                        [PartitionKeyPropertyKey] = this._partitionKey,
+                        [DocumentCountPropertyKey] = documentCount,
+                        [MaxParallelismPropertyKey] = this._maxParallelism,
+                        [MaxConnectionsPropertyKey] = this._maxConnections,
+                        [ConnectionModePropertyKey] = this._connectionMode,
+                        [ConnectionProtocolPropertyKey] = this._connectionProtocol,
+                        [MaxBufferedItemCountPropertyKey] = this._maxBufferedItemCount,
+                    });
             }
         }
     }

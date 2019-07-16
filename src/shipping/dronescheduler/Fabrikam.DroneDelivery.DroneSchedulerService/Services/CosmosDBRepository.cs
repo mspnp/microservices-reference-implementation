@@ -51,16 +51,25 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                         "partitionKey: {PartitionKey}",
                         partitionKey);
 
-                using (var queryMetricsTracker = this._metricsTracker.GetQueryMetricsTracker(this._collectionIdentifier, partitionKey))
+                using (var queryMetricsTracker =
+                    this._metricsTracker.GetQueryMetricsTracker(
+                        this._collectionIdentifier,
+                        partitionKey,
+                        this._options.MaxParallelism,
+                        this._client.ConnectionPolicy.MaxConnectionLimit,
+                        this._client.ConnectionPolicy.ConnectionMode,
+                        this._client.ConnectionPolicy.ConnectionProtocol,
+                        this._options.MaxBufferedItemCount))
                 {
                     IDocumentQuery<T> query =
                         _client.CreateDocumentQuery<T>(
                             this._options.CollectionUri,
                             new FeedOptions
                             {
-                                MaxItemCount = this._options.MaxParallelism,
+                                MaxDegreeOfParallelism = this._options.MaxParallelism,
                                 PartitionKey = partitionKey != null ? new PartitionKey(partitionKey) : null,
-                                EnableCrossPartitionQuery = partitionKey == null
+                                EnableCrossPartitionQuery = partitionKey == null,
+                                MaxBufferedItemCount = _client.ConnectionPolicy.ConnectionMode == ConnectionMode.Direct ? this._options.MaxBufferedItemCount : 0
                             })
                         .Where(predicate)
                         .Where(d => d.DocumentType == typeof(T).Name)

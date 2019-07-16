@@ -69,8 +69,15 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                         }.AsQueryable()));
                     s.AddSingleton(
                         Mock.Of<ICosmosDBRepositoryMetricsTracker<InternalDroneUtilization>>(
-                            t => t.GetQueryMetricsTracker(It.IsAny<string>(), It.IsAny<string>())
-                                    == Mock.Of<ICosmosDBRepositoryQueryMetricsTracker<InternalDroneUtilization>>()));
+                            t => t.GetQueryMetricsTracker(
+                                    It.IsAny<string>(),
+                                    It.IsAny<string>(),
+                                    It.IsAny<int>(),
+                                    It.IsAny<int>(),
+                                    It.IsAny<ConnectionMode>(),
+                                    It.IsAny<Protocol>(),
+                                    It.IsAny<int>())
+                                == Mock.Of<ICosmosDBRepositoryQueryMetricsTracker<InternalDroneUtilization>>()));
                 }))
                 .CreateClient();
         }
@@ -124,8 +131,15 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                             .AsQueryable()));
                     s.AddSingleton(
                         Mock.Of<ICosmosDBRepositoryMetricsTracker<InternalDroneUtilization>>(
-                            t => t.GetQueryMetricsTracker(It.IsAny<string>(), It.IsAny<string>())
-                                    == Mock.Of<ICosmosDBRepositoryQueryMetricsTracker<InternalDroneUtilization>>()));
+                            t => t.GetQueryMetricsTracker(
+                                    It.IsAny<string>(),
+                                    It.IsAny<string>(),
+                                    It.IsAny<int>(),
+                                    It.IsAny<int>(),
+                                    It.IsAny<ConnectionMode>(),
+                                    It.IsAny<Protocol>(),
+                                    It.IsAny<int>())
+                                == Mock.Of<ICosmosDBRepositoryQueryMetricsTracker<InternalDroneUtilization>>()));
                 }))
                 .CreateClient();
 

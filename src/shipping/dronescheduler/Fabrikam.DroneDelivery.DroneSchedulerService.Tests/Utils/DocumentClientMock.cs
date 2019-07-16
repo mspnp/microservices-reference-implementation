@@ -123,6 +123,10 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests.Utils
                 .Setup(q => q.CreateDocumentCollectionQuery(It.IsAny<string>(), null))
                 .Returns(mockCollectionQuery.Object);
 
+            clientMock
+                .Setup(q => q.ConnectionPolicy)
+                .Returns(new ConnectionPolicy { ConnectionMode = ConnectionMode.Gateway });
+
             return clientMock.Object;
         }
     }

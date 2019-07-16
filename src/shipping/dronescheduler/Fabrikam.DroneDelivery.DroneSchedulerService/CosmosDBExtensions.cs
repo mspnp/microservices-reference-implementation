@@ -26,10 +26,20 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
                 {
                     var options = s.GetRequiredService<IOptions<CosmosDBConnectionOptions>>();
 
+                    var connectionPolicy = new ConnectionPolicy { ConnectionMode = options.Value.CosmosDBConnectionMode };
+                    if (connectionPolicy.ConnectionMode == ConnectionMode.Gateway)
+                    {
+                        connectionPolicy.MaxConnectionLimit = options.Value.CosmosDBMaxConnectionsLimit;
+                    }
+                    else
+                    {
+                        connectionPolicy.ConnectionProtocol = options.Value.CosmosDBConnectionProtocol;
+                    }
+
                     return new DocumentClient(
                         new Uri(options.Value.CosmosDBEndpoint),
                         options.Value.CosmosDBKey,
-                        connectionPolicy: new ConnectionPolicy { ConnectionMode = options.Value.CosmosDBConnectionMode });
+                        connectionPolicy: connectionPolicy);
                 });
             services.ConfigureOptions<ConfigureCosmosDBRepositoryOptions<T>>();
 
