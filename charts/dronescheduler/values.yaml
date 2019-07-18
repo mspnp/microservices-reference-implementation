@@ -11,6 +11,9 @@ image:
   pullPolicy: IfNotPresent
 keyvault:
   uri:
+cosmosdb:
+  id:
+  collectionid:
 reason: unknown
 telemetry:
   level: "Error"

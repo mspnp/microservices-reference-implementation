@@ -10,38 +10,30 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Swashbuckle.AspNetCore.Swagger;
+using Microsoft.FeatureManagement;
+using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
+using Fabrikam.DroneDelivery.DroneSchedulerService.Services;
 using Serilog;
 using Serilog.Formatting.Compact;
+using Swashbuckle.AspNetCore.Swagger;
 
-namespace MockDroneScheduler
+namespace Fabrikam.DroneDelivery.DroneSchedulerService
 {
     public class Startup
     {
-        public Startup(IHostingEnvironment env)
+        public Startup(IConfiguration configuration)
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
-                .AddEnvironmentVariables();
-
-            var buildConfig = builder.Build();
-
-            if (buildConfig["KEY_VAULT_URI"] is var keyVaultUri && !string.IsNullOrEmpty(keyVaultUri))
-            {
-                builder.AddAzureKeyVault(keyVaultUri);
-            }
-
-            Configuration = builder.Build();
+            Configuration = configuration;
         }
 
-        public IConfigurationRoot Configuration { get; }
+        public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            services.AddFeatureManagement();
 
             // Configure AppInsights
             services.AddApplicationInsightsKubernetesEnricher();
@@ -55,6 +47,11 @@ namespace MockDroneScheduler
             {
                 c.SwaggerDoc("v1", new Info { Title = "Mock DroneScheduler API", Version = "v1" });
             });
+
+            services.AddSingleton<IInvoicingRepository, InvoicingRepository>();
+            services
+                .AddCosmosRepository<
+                InternalDroneUtilization>(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

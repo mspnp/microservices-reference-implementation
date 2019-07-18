@@ -99,6 +99,47 @@
             }
           }
         }
+      },
+      "/packages/summary": {
+        "get": {
+          "summary": "Get summary information about packages from a user",
+          "description": "",
+          "operationId": "getSummary",
+          "parameters": [
+            {
+              "name": "ownerId",
+              "in": "query",
+              "description": "ID of the owner of the packages",
+              "required": true,
+              "type": "string"
+            },
+            {
+              "name": "year",
+              "in": "query",
+              "description": "Year of the summary requested",
+              "required": true,
+              "type": "integer"
+            },
+            {
+              "name": "month",
+              "in": "query",
+              "description": "Month of the summary requested",
+              "required": true,
+              "type": "integer"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "successful operation",
+              "schema": {
+                "$ref": "#/definitions/PackageUtilization"
+              }
+            },
+            "400": {
+              "description": "Invalid ID, year, or month supplied"
+            }
+          }
+        }
       }
     },
     "definitions": {
@@ -121,6 +162,14 @@
           },
           "tag": {
             "type": "string"
+          }
+        }
+      },
+      "PackageUtilization": {
+        "type": "object",
+        "properties": {
+          "totalWeight": {
+            "type": "number"
           }
         }
       },

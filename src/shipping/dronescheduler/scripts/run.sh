@@ -1,2 +1,2 @@
 #!/bin/bash
-dotnet Fabrikam.DroneDelivery.DroneScheduler.dll
+dotnet Fabrikam.DroneDelivery.DroneSchedulerService.dll

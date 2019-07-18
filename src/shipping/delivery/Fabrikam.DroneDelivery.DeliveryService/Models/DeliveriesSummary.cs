@@ -4,15 +4,11 @@
 // ------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace MockDroneScheduler.Models
+namespace Fabrikam.DroneDelivery.DeliveryService.Models
 {
-    public class PackageDetail
+    public class DeliveriesSummary
     {
-        public string Id { get; set; }
-        public PackageSize Size { get; set; }
+        public int Count { get; internal set; }
     }
 }

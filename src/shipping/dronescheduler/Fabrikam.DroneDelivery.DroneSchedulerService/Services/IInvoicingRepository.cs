@@ -3,12 +3,16 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-namespace MockDroneScheduler.Models
+using System;
+using System.Threading.Tasks;
+
+namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
 {
-    public enum PackageSize
+    public interface IInvoicingRepository
     {
-        Small,
-        Medium,
-        Large
+        Task<Tuple<double, double>> GetAggreatedInvoincingDataAsync(
+                string ownerId,
+                int year,
+                int month);
     }
 }
