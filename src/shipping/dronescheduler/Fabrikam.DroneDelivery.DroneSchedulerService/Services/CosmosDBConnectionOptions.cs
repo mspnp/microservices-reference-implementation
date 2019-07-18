@@ -3,7 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Cosmos;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
 {
@@ -14,8 +14,6 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
         public string CosmosDBKey { get; set; }
 
         public ConnectionMode CosmosDBConnectionMode { get; set; }
-
-        public Protocol CosmosDBConnectionProtocol { get; set; }
 
         public int CosmosDBMaxConnectionsLimit { get; set; }
     }

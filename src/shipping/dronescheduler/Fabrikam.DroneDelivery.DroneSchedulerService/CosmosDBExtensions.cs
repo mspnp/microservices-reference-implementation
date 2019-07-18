@@ -5,8 +5,7 @@
 
 using System;
 using System.Linq;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -22,24 +21,20 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
                  IConfiguration config)
             where T : BaseDocument
         {
-            services.AddSingleton<IDocumentClient>(s =>
+            services.AddSingleton(s =>
                 {
                     var options = s.GetRequiredService<IOptions<CosmosDBConnectionOptions>>();
 
-                    var connectionPolicy = new ConnectionPolicy { ConnectionMode = options.Value.CosmosDBConnectionMode };
-                    if (connectionPolicy.ConnectionMode == ConnectionMode.Gateway)
+                    var clientOptions = new CosmosClientOptions { ConnectionMode = options.Value.CosmosDBConnectionMode };
+                    if (clientOptions.ConnectionMode == ConnectionMode.Gateway)
                     {
-                        connectionPolicy.MaxConnectionLimit = options.Value.CosmosDBMaxConnectionsLimit;
-                    }
-                    else
-                    {
-                        connectionPolicy.ConnectionProtocol = options.Value.CosmosDBConnectionProtocol;
+                        clientOptions.GatewayModeMaxConnectionLimit = options.Value.CosmosDBMaxConnectionsLimit;
                     }
 
-                    return new DocumentClient(
-                        new Uri(options.Value.CosmosDBEndpoint),
+                    return new CosmosClient(
+                        options.Value.CosmosDBEndpoint,
                         options.Value.CosmosDBKey,
-                        connectionPolicy: connectionPolicy);
+                        clientOptions: clientOptions);
                 });
             services.ConfigureOptions<ConfigureCosmosDBRepositoryOptions<T>>();
 

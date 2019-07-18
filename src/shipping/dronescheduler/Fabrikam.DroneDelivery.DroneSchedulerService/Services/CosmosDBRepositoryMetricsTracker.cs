@@ -7,7 +7,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DataContracts;
-using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Cosmos;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
@@ -30,7 +30,6 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
         private const string MaxParallelismPropertyKey = CosmosDbPropertyPrefix + "MaxParallelism";
         private const string MaxConnectionsPropertyKey = CosmosDbPropertyPrefix + "MaxConnections";
         private const string ConnectionModePropertyKey = CosmosDbPropertyPrefix + "ConnectionMode";
-        private const string ConnectionProtocolPropertyKey = CosmosDbPropertyPrefix + "ConnectionProtocol";
         private const string MaxBufferedItemCountPropertyKey = CosmosDbPropertyPrefix + "MaxBufferedItemCount";
 
         private readonly TelemetryClient _telemetryClient;
@@ -54,7 +53,6 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
             int maxParallelism,
             int maxConnections,
             ConnectionMode connectionMode,
-            Protocol connectionProtocol,
             int maxBufferedItemCount)
         {
             return new QueryMetricsTracker(
@@ -65,7 +63,6 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                 maxParallelism,
                 maxConnections,
                 connectionMode,
-                connectionProtocol,
                 maxBufferedItemCount);
         }
 
@@ -78,7 +75,6 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
             private readonly string _maxParallelism;
             private readonly string _maxConnections;
             private readonly string _connectionMode;
-            private readonly string _connectionProtocol;
             private readonly string _maxBufferedItemCount;
             private double _totalCharge;
             private long _totalDocumentCount;
@@ -92,7 +88,6 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                 int maxParallelism,
                 int maxConnections,
                 ConnectionMode connectionMode,
-                Protocol connectionProtocol,
                 int maxBufferedItemCount)
             {
                 this._telemetryClient = telemetryClient;
@@ -102,7 +97,6 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                 this._maxParallelism = maxParallelism.ToString(CultureInfo.InvariantCulture);
                 this._maxConnections = maxConnections.ToString(CultureInfo.InvariantCulture);
                 this._connectionMode = connectionMode.ToString();
-                this._connectionProtocol = connectionProtocol.ToString();
                 this._maxBufferedItemCount = maxBufferedItemCount.ToString(CultureInfo.InvariantCulture);
             }
 
@@ -149,7 +143,6 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                         [MaxParallelismPropertyKey] = this._maxParallelism,
                         [MaxConnectionsPropertyKey] = this._maxConnections,
                         [ConnectionModePropertyKey] = this._connectionMode,
-                        [ConnectionProtocolPropertyKey] = this._connectionProtocol,
                         [MaxBufferedItemCountPropertyKey] = this._maxBufferedItemCount,
                     });
             }

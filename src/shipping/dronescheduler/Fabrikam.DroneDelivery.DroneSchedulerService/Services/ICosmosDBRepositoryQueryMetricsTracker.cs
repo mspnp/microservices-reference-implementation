@@ -4,7 +4,7 @@
 // ------------------------------------------------------------
 
 using System;
-using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Cosmos;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services

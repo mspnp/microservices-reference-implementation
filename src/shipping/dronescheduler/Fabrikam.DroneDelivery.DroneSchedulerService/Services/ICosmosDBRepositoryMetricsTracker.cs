@@ -3,7 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Cosmos;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
@@ -17,7 +17,6 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
             int maxParallelism,
             int maxConnections,
             ConnectionMode connectionMode,
-            Protocol connectionProtocol,
             int maxBufferedItemCount);
     }
 }

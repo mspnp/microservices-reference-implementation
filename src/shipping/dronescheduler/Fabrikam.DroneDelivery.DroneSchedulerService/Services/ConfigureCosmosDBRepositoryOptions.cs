@@ -3,10 +3,8 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using System;
 using System.Globalization;
-using System.Linq;
-using Microsoft.Azure.Documents;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
@@ -17,11 +15,11 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
         where T : BaseDocument
     {
         private readonly IConfiguration _config;
-        private readonly IDocumentClient _client;
+        private readonly CosmosClient _client;
 
         public ConfigureCosmosDBRepositoryOptions(
             IConfiguration config,
-            IDocumentClient client)
+            CosmosClient client)
         {
             _config = config;
             _client = client;
@@ -32,26 +30,9 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
             options.DatabaseId = _config["COSMOSDB_DATABASEID"];
             options.CollectionId = _config["COSMOSDB_COLLECTIONID"];
 
-            Database db = _client
-                .CreateDatabaseQuery()
-                .Where(d => d.Id == options.DatabaseId)
-                .AsEnumerable()
-                .FirstOrDefault();
-
-            if (db != null)
-            {
-                DocumentCollection col = _client
-                    .CreateDocumentCollectionQuery(db.SelfLink)
-                    .Where(d => d.Id == options.CollectionId)
-                    .AsEnumerable()
-                    .FirstOrDefault();
-
-                if (Uri.TryCreate(col?.SelfLink, UriKind.Relative, out Uri uri))
-                {
-                    options.CollectionUri = uri;
-                }
-            }
-
+            options.Container = _client
+                .GetContainer(options.DatabaseId, options.CollectionId);
+            
             if (string.IsNullOrEmpty(_config["CosmosDBMaxParallelism"]) == false)
             {
                 options.MaxParallelism = int.Parse(_config["CosmosDBMaxParallelism"], CultureInfo.InvariantCulture);

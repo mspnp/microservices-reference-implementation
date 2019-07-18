@@ -3,12 +3,11 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,7 +15,6 @@ using Moq;
 using Xunit;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Services;
-using Fabrikam.DroneDelivery.DroneSchedulerService.Tests.Utils;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
 {
@@ -24,11 +22,12 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
     {
         private readonly ILogger<CosmosRepository<InternalDroneUtilization>> _loggerDebug;
 
-        private readonly IDocumentClient _clientMockObject;
         private readonly IOptions<CosmosDBRepositoryOptions<InternalDroneUtilization>> _optionsMockObject;
+        private readonly Container _containerMockObject;
+        private readonly CosmosClient _clientMockObject;
         private readonly ICosmosDBRepositoryMetricsTracker<InternalDroneUtilization> _metricsTrackerMockObject;
 
-        private readonly IQueryable<InternalDroneUtilization> _fakeResults;
+        private readonly List<InternalDroneUtilization> _fakeResults;
 
         public CosmosDBRespositoryTests()
         {
@@ -62,17 +61,27 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                     AssignedHours=2d,
                     DocumentType = typeof(InternalDroneUtilization).Name
                 }
-            }.AsQueryable();
+            };
 
-            _clientMockObject = DocumentClientMock.
-                CreateDocumentClientMockObject(_fakeResults);
+            _clientMockObject = Mock.Of<CosmosClient>(c => c.ClientOptions == new CosmosClientOptions());
+
+            var responseMock = new Mock<FeedResponse<InternalDroneUtilization>>();
+            responseMock.Setup(r => r.Count).Returns(() => _fakeResults.Count);
+            responseMock.Setup(r => r.GetEnumerator()).Returns(() => _fakeResults.GetEnumerator());
+
+            var mockFeedIterator = new Mock<FeedIterator<InternalDroneUtilization>>();
+            mockFeedIterator.Setup(i => i.HasMoreResults).Returns(new Queue<bool>(new[] { true, false }).Dequeue);
+            mockFeedIterator.Setup(i => i.ReadNextAsync(It.IsAny<CancellationToken>())).ReturnsAsync(responseMock.Object);
+
+            _containerMockObject =
+                Mock.Of<Container>(c =>
+                    c.GetItemQueryIterator<InternalDroneUtilization>(It.IsAny<QueryDefinition>(), It.IsAny<string>(), It.IsAny<QueryRequestOptions>())
+                        == mockFeedIterator.Object);
 
             var fakeOptionsValue =
                 new CosmosDBRepositoryOptions<InternalDroneUtilization>
                 {
-                    CollectionUri = UriFactory.CreateDocumentCollectionUri(
-                        "fakeDb",
-                        "fakeCol")
+                    Container = _containerMockObject
                 };
 
             var optionsMock = new Mock<
@@ -93,7 +102,6 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                             It.IsAny<int>(),
                             It.IsAny<int>(),
                             It.IsAny<ConnectionMode>(),
-                            It.IsAny<Protocol>(), 
                             It.IsAny<int>())
                         == Mock.Of<ICosmosDBRepositoryQueryMetricsTracker<InternalDroneUtilization>>());
         }
@@ -112,7 +120,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
 
             // Act
             var res = await repo.GetItemsAsync(
-                p => true,
+                new QueryDefinition("SELECT *"),
                 ownerId);
 
             // Assert
@@ -125,14 +133,15 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                     Assert.Equal(ownerId, r.PartitionKey);
                     Assert.Equal(typeof(InternalDroneUtilization).Name, r.DocumentType);
                 });
-            Mock.Get(_clientMockObject)
-                .Verify(dc =>
-                    dc.CreateDocumentQuery<InternalDroneUtilization>(
-                        It.IsAny<Uri>(),
-                        It.Is<FeedOptions>(fo =>
-                            fo.PartitionKey != null
-                            && fo.PartitionKey.ToString().Contains(ownerId)
-                            && fo.EnableCrossPartitionQuery == false)));
+
+            Mock.Get(_containerMockObject)
+                .Verify(c =>
+                c.GetItemQueryIterator<InternalDroneUtilization>(
+                    It.IsAny<QueryDefinition>(), 
+                    null, 
+                    It.Is<QueryRequestOptions>(ro => 
+                        ro.PartitionKey != null
+                        && ro.PartitionKey.ToString().Contains(ownerId))));
         }
 
         [Fact]
@@ -149,7 +158,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
 
             // Act
             var res = await repo.GetItemsAsync(
-                p => true,
+                new QueryDefinition("SELECT *"),
                 null);
 
             // Assert
@@ -162,13 +171,12 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
                     Assert.Equal(ownerId, r.PartitionKey);
                     Assert.Equal(typeof(InternalDroneUtilization).Name, r.DocumentType);
                 });
-            Mock.Get(_clientMockObject)
-                .Verify(dc =>
-                    dc.CreateDocumentQuery<InternalDroneUtilization>(
-                        It.IsAny<Uri>(),
-                        It.Is<FeedOptions>(fo =>
-                            fo.PartitionKey == null
-                            && fo.EnableCrossPartitionQuery == true)));
+            Mock.Get(_containerMockObject)
+                .Verify(c =>
+                c.GetItemQueryIterator<InternalDroneUtilization>(
+                    It.IsAny<QueryDefinition>(),
+                    null,
+                    It.Is<QueryRequestOptions>(ro => ro.PartitionKey == null)));
         }
     }
 }

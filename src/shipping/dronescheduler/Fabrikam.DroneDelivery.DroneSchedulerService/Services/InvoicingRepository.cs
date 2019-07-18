@@ -6,8 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Microsoft.Azure.Cosmos;
 using Microsoft.FeatureManagement;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 
@@ -27,25 +27,24 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
             this._featureManager = featureManager;
         }
 
-        public async Task<IEnumerable<InternalDroneUtilization>> GetItemsAsync(
-                Expression<Func<InternalDroneUtilization, bool>> predicate,
-                string partitionKey)
-        {
-            return await _repository
-                .GetItemsAsync(
-                        predicate,
-                        partitionKey);
-        }
-
         public async Task<Tuple<double, double>> GetAggreatedInvoincingDataAsync(
                 string ownerId,
                 int year,
                 int month)
         {
-            var results = await
-                (this._featureManager.IsEnabled(UsePartitionKeyFeatureName)
-                    ? this.GetItemsAsync(d => d.Year == year && d.Month == month, ownerId)
-                    : this.GetItemsAsync(d => d.Year == year && d.Month == month && d.OwnerId == ownerId, null));
+            (QueryDefinition query, string partitionKey) =
+                this._featureManager.IsEnabled(UsePartitionKeyFeatureName)
+                    ? (new QueryDefinition("SELECT VALUE root FROM root WHERE root.year = @year AND root.month = @month")
+                            .WithParameter("@year", year)
+                            .WithParameter("@month", month), 
+                        ownerId)
+                    : (new QueryDefinition("SELECT VALUE root FROM root WHERE root.year = @year AND root.month = @month AND root.ownerId = @ownerId")
+                            .WithParameter("@year", year)
+                            .WithParameter("@month", month)
+                            .WithParameter("@ownerId", ownerId), 
+                        default(string));
+
+            var results = await _repository.GetItemsAsync(query, partitionKey);
 
             var result = results
                 .Aggregate(

@@ -3,7 +3,7 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using System;
+using Microsoft.Azure.Cosmos;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
@@ -15,7 +15,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
 
         public string CollectionId { get; set; }
 
-        public Uri CollectionUri { get; set; }
+        public Container Container { get; set; }
 
         public int MaxParallelism { get; set; } = -1;
 

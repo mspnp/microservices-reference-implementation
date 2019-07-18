@@ -6,13 +6,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Microsoft.Azure.Cosmos;
 using Microsoft.FeatureManagement;
-using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
-using Fabrikam.DroneDelivery.DroneSchedulerService.Services;
 using Moq;
 using Xunit;
+using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
+using Fabrikam.DroneDelivery.DroneSchedulerService.Services;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
 {
@@ -43,7 +43,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
             cosmosDbMock
                 .Verify(p =>
                     p.GetItemsAsync(
-                        It.IsAny<Expression<Func<InternalDroneUtilization, bool>>>(),
+                        It.IsAny<QueryDefinition>(),
                         ownerId),
                     Times.Once);
         }
@@ -73,7 +73,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
             cosmosDbMock
                 .Verify(p =>
                     p.GetItemsAsync(
-                        It.IsAny<Expression<Func<InternalDroneUtilization, bool>>>(),
+                        It.IsAny<QueryDefinition>(),
                         null),
                     Times.Once);
         }
@@ -99,7 +99,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
             var cosmosDbMock = new Mock<ICosmosRepository<InternalDroneUtilization>>();
             cosmosDbMock.Setup(r =>
                     r.GetItemsAsync(
-                        It.IsAny<Expression<Func<InternalDroneUtilization, bool>>>(),
+                        It.IsAny<QueryDefinition>(),
                         ownerId))
                     .ReturnsAsync(invoicingData.AsEnumerable());
 
@@ -125,7 +125,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
             cosmosDbMock
                 .Verify(p =>
                     p.GetItemsAsync(
-                        It.IsAny<Expression<Func<InternalDroneUtilization, bool>>>(),
+                        It.IsAny<QueryDefinition>(),
                         ownerId),
                     Times.Once);
         }

@@ -3,14 +3,9 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
-using Microsoft.Azure.Documents.Linq;
+using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
@@ -20,14 +15,14 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
     public class CosmosRepository<T> : ICosmosRepository<T>
         where T : BaseDocument
     {
-        private readonly IDocumentClient _client;
+        private readonly CosmosClient _client;
         private readonly CosmosDBRepositoryOptions<T> _options;
         private readonly ILogger<CosmosRepository<T>> _logger;
         private readonly ICosmosDBRepositoryMetricsTracker<T> _metricsTracker;
         private readonly string _collectionIdentifier;
 
         public CosmosRepository(
-                IDocumentClient client,
+                CosmosClient client,
                 IOptions<CosmosDBRepositoryOptions<T>> options,
                 ILogger<CosmosRepository<T>> logger,
                 ICosmosDBRepositoryMetricsTracker<T> metricsTracker)
@@ -40,7 +35,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
         }
 
         public async Task<IEnumerable<T>> GetItemsAsync(
-                Expression<Func<T, bool>> predicate,
+                QueryDefinition query,
                 string partitionKey)
         {
             var results = new List<T>();
@@ -56,29 +51,24 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
                         this._collectionIdentifier,
                         partitionKey,
                         this._options.MaxParallelism,
-                        this._client.ConnectionPolicy.MaxConnectionLimit,
-                        this._client.ConnectionPolicy.ConnectionMode,
-                        this._client.ConnectionPolicy.ConnectionProtocol,
+                        this._client.ClientOptions.GatewayModeMaxConnectionLimit,
+                        this._client.ClientOptions.ConnectionMode,
                         this._options.MaxBufferedItemCount))
                 {
-                    IDocumentQuery<T> query =
-                        _client.CreateDocumentQuery<T>(
-                            this._options.CollectionUri,
-                            new FeedOptions
+                    FeedIterator<T> iterator =
+                        this._options.Container.GetItemQueryIterator<T>(
+                            query,
+                            requestOptions: new QueryRequestOptions
                             {
-                                MaxDegreeOfParallelism = this._options.MaxParallelism,
-                                PartitionKey = partitionKey != null ? new PartitionKey(partitionKey) : null,
-                                EnableCrossPartitionQuery = partitionKey == null,
-                                MaxBufferedItemCount = _client.ConnectionPolicy.ConnectionMode == ConnectionMode.Direct ? this._options.MaxBufferedItemCount : 0
-                            })
-                        .Where(predicate)
-                        .Where(d => d.DocumentType == typeof(T).Name)
-                    .AsDocumentQuery();
+                                MaxConcurrency = this._options.MaxParallelism,
+                                PartitionKey = partitionKey != null ? new PartitionKey(partitionKey) : new PartitionKey?(),
+                                MaxBufferedItemCount = this._options.MaxBufferedItemCount
+                            });
 
                     _logger.LogInformation("Start: reading results from query");
-                    while (query.HasMoreResults)
+                    while (iterator.HasMoreResults)
                     {
-                        var feed = await query.ExecuteNextAsync<T>();
+                        var feed = await iterator.ReadNextAsync();
                         queryMetricsTracker.TrackResponseMetrics(feed);
                         results.AddRange(feed);
                     }

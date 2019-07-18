@@ -4,20 +4,13 @@
 // ------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Services
 {
     public interface IInvoicingRepository
     {
-        Task<IEnumerable<InternalDroneUtilization>> GetItemsAsync(
-                Expression<Func<InternalDroneUtilization, bool>> predicate,
-                string partitionKey);
-
-        Task<Tuple<double,double>> GetAggreatedInvoincingDataAsync(
+        Task<Tuple<double, double>> GetAggreatedInvoincingDataAsync(
                 string ownerId,
                 int year,
                 int month);
