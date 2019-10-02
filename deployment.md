@@ -52,7 +52,7 @@ Infrastructure Prerequisites
 az login
 
 # Create service principal for AKS
-export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor") && \
+export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor" -o json) && \
 export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
 export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
 export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
