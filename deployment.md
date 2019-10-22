@@ -290,6 +290,9 @@ export COSMOSDB_COL_NAME=packages
 helm install $HELM_CHARTS/package/ \
      --set image.tag=0.1.0 \
      --set image.repository=package \
+     --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
+     --set ingress.hosts[0].serviceName=package \
+     --set ingress.hosts[0].tls=false \
      --set secrets.appinsights.ikey=$AI_IKEY \
      --set secrets.mongo.pwd=$COSMOSDB_CONNECTION \
      --set cosmosDb.collectionName=$COSMOSDB_COL_NAME \
@@ -420,6 +423,11 @@ Extract resource details from deployment
 
 ```bash
 export DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
+export DRONESCHEDULER_COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.droneSchedulerCosmosDbName.value -o tsv) && \
+export ENDPOINT_URL=$(az cosmosdb show -n $DRONESCHEDULER_COSMOSDB_NAME -g $RESOURCE_GROUP --query documentEndpoint -o tsv) && \
+export AUTH_KEY=$(az cosmosdb list-keys -n $DRONESCHEDULER_COSMOSDB_NAME -g $RESOURCE_GROUP --query primaryMasterKey -o tsv) && \
+export DATABASE_NAME="invoicing" && \
+export COLLECTION_NAME="utilization"
 ```
 
 Build the dronescheduler services
@@ -454,9 +462,14 @@ helm install $HELM_CHARTS/dronescheduler/ \
      --set image.tag=0.1.0 \
      --set image.repository=dronescheduler \
      --set dockerregistry=$ACR_SERVER \
+     --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
+     --set ingress.hosts[0].serviceName=dronescheduler \
+     --set ingress.hosts[0].tls=false \
      --set identity.clientid=$DRONESCHEDULER_PRINCIPAL_CLIENT_ID \
      --set identity.resourceid=$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID \
      --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
+     --set cosmosdb.id=$DATABASE_NAME \
+     --set cosmosdb.collectionid=$COLLECTION_NAME \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \

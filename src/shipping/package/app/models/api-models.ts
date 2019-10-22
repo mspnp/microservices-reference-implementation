@@ -8,3 +8,14 @@ export class Package
   tag:string
 }
 
+export class PackageUtilization
+{
+  totalWeight:number
+}
+
+export class Error
+{
+  code:number
+  message:string
+}
+

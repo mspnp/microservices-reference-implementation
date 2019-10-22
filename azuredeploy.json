@@ -183,6 +183,7 @@
                 "ingestionSBName": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
                 "ingestionServiceAccessKey": "IngestionServiceAccessKey",
                 "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
+                "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
                 "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
                 "workflowServiceAccessKey": "WorkflowServiceAccessKey"
             },
@@ -203,6 +204,7 @@
                 "ingestionSBName": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
                 "ingestionServiceAccessKey": "IngestionServiceAccessKey",
                 "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
+                "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
                 "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
                 "workflowServiceAccessKey": "WorkflowServiceAccessKey"
             },
@@ -223,6 +225,7 @@
                 "ingestionSBName": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
                 "ingestionServiceAccessKey": "IngestionServiceAccessKey",
                 "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
+                "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
                 "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
                 "workflowServiceAccessKey": "WorkflowServiceAccessKey"
             },
@@ -243,6 +246,7 @@
                 "ingestionSBName": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
                 "ingestionServiceAccessKey": "IngestionServiceAccessKey",
                 "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
+                "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
                 "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
                 "workflowServiceAccessKey": "WorkflowServiceAccessKey"
             }
@@ -463,6 +467,22 @@
             }
         },
         {
+            "type": "Microsoft.DocumentDB/databaseAccounts",
+            "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName]",
+            "apiVersion": "2015-04-08",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName]",
+                "databaseAccountOfferType": "Standard",
+                "locations": [
+                    {
+                        "locationName": "[resourceGroup().location]",
+                        "failoverPriority": 0
+                    }
+                ]
+            }
+        },
+        {
             "type": "Microsoft.ServiceBus/namespaces",
             "name": "[variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespace]",
             "apiVersion": "2017-04-01",
@@ -665,6 +685,96 @@
                     "dependsOn": [
                         "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]",
                         "[resourceId('Microsoft.Insights/components', variables('environmentSettings')[parameters('environmentName')].appInsightsName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "CosmosDBEndpoint",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName)).documentEndpoint]"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]",
+                        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "CosmosDBKey",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName), '2016-03-31').primaryMasterKey]"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]",
+                        "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "CosmosDBConnectionMode",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "Gateway"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "CosmosDBConnectionProtocol",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "Https"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "CosmosDBMaxConnectionsLimit",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "50"
+                    },
+                    "dependsOn": [
+                       "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "CosmosDBMaxParallelism",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "-1"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "CosmosDBMaxBufferedItemCount",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "0"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
+                    ]
+                },
+                {
+                    "type": "secrets",
+                    "name": "FeatureManagement--UsePartitionKey",
+                    "apiVersion": "2015-06-01",
+                    "properties": {
+                        "value": "false"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
                     ]
                 }
             ]
@@ -913,8 +1023,16 @@
             "value": "[variables('environmentSettings')[parameters('environmentName')].deliveryCosmosDbName]",
             "type": "string"
         },
+        "droneSchedulerKeyVaultName": {
+            "value": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName]",
+            "type": "string"
+        },
         "droneSchedulerKeyVaultUri": {
             "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)).vaultUri]",
+            "type": "string"
+        },
+        "droneSchedulerCosmosDbName": {
+            "value": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName]",
             "type": "string"
         },
         "packageMongoDbName": {

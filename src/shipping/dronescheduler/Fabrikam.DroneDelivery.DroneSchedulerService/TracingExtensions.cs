@@ -6,7 +6,7 @@
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace MockDroneScheduler
+namespace Fabrikam.DroneDelivery.DroneSchedulerService
 {
     public static class TracingExtensions
     {

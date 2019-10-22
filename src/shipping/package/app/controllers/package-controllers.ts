@@ -126,4 +126,24 @@ export class PackageControllers {
       }
     }
   }
+
+  // Get summary information about packages from a user
+  async getSummary(ctx: any, next: any) {
+
+    var logger : ILogger = ctx.state.logger;
+    var ownerId = ctx.params.ownerId;
+    var year = ctx.params.year;
+    var month = ctx.params.month;
+    logger.info('retrieve summary %s %d/%d', ownerId)
+
+    await next();
+
+    let utilization = new apiModels.PackageUtilization();
+    utilization.totalWeight = 400;
+
+    ctx.body = utilization;
+    ctx.response.status = 200;
+
+    return;
+  }
 }
