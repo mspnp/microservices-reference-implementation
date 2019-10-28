@@ -46,6 +46,13 @@ spec:
       - name: fabrikam-dronescheduler
         image: {{ .Values.dockerregistry }}{{ .Values.dockerregistrynamespace }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        resources:
+          requests:
+            cpu: {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
+            memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
+          limits:
+            cpu: {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
+            memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}
         env:
         - name: KEY_VAULT_URI
           value: {{ .Values.keyvault.uri }}
@@ -60,10 +67,3 @@ spec:
       ports:
         - name: service
           containerPort: 8080
-      resources:
-        requests:
-          cpu:   {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
-          memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
-        limits:
-          cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
-          memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}

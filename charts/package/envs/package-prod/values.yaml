@@ -8,3 +8,10 @@ exports:
     log:
       level: "error"
     reason: "new prod deploy"
+    resources:
+      requests:
+        cpu: 90m
+        memory: 100Mi
+      limits:
+        cpu: 180m
+        memory: 140Mi

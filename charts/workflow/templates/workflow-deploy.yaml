@@ -46,6 +46,13 @@ spec:
       - name: fabrikam-workflow
         image: {{ .Values.dockerregistry }}{{ .Values.dockerregistrynamespace }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        resources:
+          requests:
+            cpu:   {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
+            memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
+          limits:
+            cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
+            memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}
         volumeMounts:
         - name: workflow
           mountPath: /kvmnt
@@ -90,10 +97,3 @@ spec:
             resourcegroup: {{ .Values.keyvault.resourcegroup }}
             subscriptionid: {{ .Values.keyvault.subscriptionid }}
             tenantid: {{ .Values.keyvault.tenantid }}
-      resources:
-        requests:
-          cpu:   {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
-          memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
-        limits:
-          cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
-          memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}

@@ -9,3 +9,10 @@ exports:
       level: "info"
     reason: "new qa deploy"
     current: true
+    resources:
+      requests:
+        cpu: 150m
+        memory: 600Mi
+      limits:
+        cpu: 220m
+        memory: 800Mi

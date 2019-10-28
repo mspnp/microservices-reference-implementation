@@ -2,10 +2,17 @@
 nameOverride: delivery
 exports:
   data:
-    replicaCount: 3
+    replicaCount: 2
     image:
       pullPolicy: Always
     telemetry:
       level: "Information"
     reason: "new staging deploy"
     current: true
+    resources:
+      requests:
+        cpu: 100m
+        memory: 350Mi
+      limits:
+        cpu: 200m
+        memory: 500Mi

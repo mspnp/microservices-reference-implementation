@@ -45,14 +45,25 @@ spec:
           httpGet:
             path: /actuator/health
             port: 80
-          initialDelaySeconds: 30
-          periodSeconds: 20
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          successThreshold: 1
+          failureThreshold: 5
         readinessProbe:
           httpGet:
             path: /api/probe
             port: 80
-          initialDelaySeconds: 30
-          periodSeconds: 20
+          initialDelaySeconds: 120
+          periodSeconds: 30
+          successThreshold: 1
+          failureThreshold: 5
+        resources:
+          requests:
+            cpu:   {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
+            memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
+          limits:
+            cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
+            memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}
         env:
         - name: QUEUE_NAMESPACE
           valueFrom:
@@ -83,10 +94,3 @@ spec:
           value: {{ default "error" .Values.telemetry.level | quote }}
         - name: CONTAINER_NAME
           value: *ingestion-container_name
-      resources:
-        requests:
-          cpu:   {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
-          memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
-        limits:
-          cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
-          memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}

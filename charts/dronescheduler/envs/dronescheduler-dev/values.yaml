@@ -9,3 +9,10 @@ exports:
       level: "Information"
     reason: "new dev deploy"
     current: true
+    resources:
+      requests:
+        cpu: 115m
+        memory: 350Mi
+      limits:
+        cpu: 175m
+        memory: 500Mi

@@ -136,7 +136,7 @@ sudo az aks install-cli
 az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 
 # Create namespaces
-kubectl create namespace backend
+kubectl create namespace backend-dev
 ```
 
 Setup Helm in the container
@@ -192,6 +192,12 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -out ingestion-ingress-tls.crt \
     -keyout ingestion-ingress-tls.key \
     -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
+```
+
+## Setup cluster resource quota
+
+```bash
+kubectl apply -f $K8S/k8s-resource-quotas-dev.yaml
 ```
 
 ## Deploy the Delivery service

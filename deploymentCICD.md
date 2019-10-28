@@ -51,7 +51,8 @@ az group deployment create -g $RESOURCE_GROUP --name azuredeploy-${env} --templa
                workflowPrincipalId=$WORKFLOW_ID_PRINCIPAL_ID \
                acrResourceGroupName=${RESOURCE_GROUP_ACR} \
                acrResourceGroupLocation=$LOCATION \
-               environmentName=${env}
+               environmentName=${env} \
+               agentCount=3
 
 export {${ENV}_AI_NAME,AI_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appInsightsName.value -o tsv)
 export ${ENV}_AI_IKEY=$(az resource show -g $RESOURCE_GROUP -n $AI_NAME --resource-type "Microsoft.Insights/components" --query properties.InstrumentationKey -o tsv)
@@ -109,6 +110,12 @@ Note: the tested nmi version was 1.4. It enables namespaced pod identity.
 kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/deployment-rbac.yaml
 
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
+```
+
+## Setup cluster resource quota
+
+```bash
+kubectl apply -f $K8S/k8s-resource-quotas-dev.yaml -f $K8S/k8s-resource-quotas-qa-stg-prod.yaml
 ```
 
 ## Setup Azure DevOps

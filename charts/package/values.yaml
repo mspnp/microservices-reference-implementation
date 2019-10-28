@@ -12,13 +12,6 @@ log:
   level: error
 cosmosDb:
   collectionName:
-resources:
-  requests:
-    cpu: 300m
-    memory: 100Mi
-  limits:
-    cpu: 410m
-    memory: 140Mi
 tags:
   dev: false
   prod: false

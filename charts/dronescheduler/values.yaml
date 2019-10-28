@@ -1,5 +1,5 @@
 # Default values for dronescheduler.
-replicaCount: 3
+replicaCount: 1
 identity:
   clientid:
   resourceid:
@@ -17,13 +17,6 @@ cosmosdb:
 reason: unknown
 telemetry:
   level: "Error"
-resources:
-  requests:
-    cpu: 450m
-    memory: 350Mi
-  limits:
-    cpu: 600m
-    memory: 500Mi
 tags:
   dev: false
   prod: false

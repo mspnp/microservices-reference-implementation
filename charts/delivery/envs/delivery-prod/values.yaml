@@ -2,9 +2,16 @@
 nameOverride: delivery
 exports:
   data:
-    replicaCount: 3
+    replicaCount: 2
     image:
       pullPolicy: IfNotPresent
     telemetry:
       level: "Error"
     reason: "new prod deploy"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 350Mi
+      limits:
+        cpu: 200m
+        memory: 500Mi

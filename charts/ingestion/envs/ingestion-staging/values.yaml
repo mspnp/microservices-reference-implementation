@@ -12,3 +12,10 @@ exports:
       controller:
         replicaCount: 2
     current: true
+    resources:
+      requests:
+        cpu: 150m
+        memory: 600Mi
+      limits:
+        cpu: 300m
+        memory: 800Mi
