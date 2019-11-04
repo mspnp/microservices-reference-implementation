@@ -15,6 +15,20 @@ cosmosdb:
   collectionid:
 keyvault:
   uri:
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 40
+  periodSeconds: 15
+  timeoutSeconds: 2
+  failureThreshold: 5
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 50
+  periodSeconds: 15
 telemetry:
   level: "Error"
 reason: unknown
