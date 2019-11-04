@@ -9,14 +9,6 @@ image:
 reason: unknown
 telemetry:
   level: "error"
-nginx-ingress:
-  fullnameOverride: nginx-ingress
-  rbac:
-    create: true
-  controller:
-    scope:
-      enabled: true
-  enabled: false
 tags:
   dev: false
   prod: false

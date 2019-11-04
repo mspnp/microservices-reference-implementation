@@ -1,0 +1,15 @@
+dependencies:
+- name: package-dev
+  repository: file://envs/package-dev
+  version: v0.1.0
+- name: package-prod
+  repository: file://envs/package-prod
+  version: v0.1.0
+- name: package-qa
+  repository: file://envs/package-qa
+  version: v0.1.0
+- name: package-staging
+  repository: file://envs/package-staging
+  version: v0.1.0
+digest: sha256:058409196b33c962ddb1c1a554013e7840c7ccfc1ddf3a98e12559aeeef05b91
+generated: "2019-10-22T08:05:25.923366271-06:00"

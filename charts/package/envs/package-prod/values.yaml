@@ -2,12 +2,14 @@
 nameOverride: package
 exports:
   data:
-    replicaCount: 3
+    replicaCount: 1
     image:
       pullPolicy: IfNotPresent
     log:
       level: "error"
     reason: "new prod deploy"
+    ingress:
+      class: "nginx-prod"
     resources:
       requests:
         cpu: 90m

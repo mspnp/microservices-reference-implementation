@@ -78,26 +78,6 @@
             },
             "type": "string"
         },
-        "agentCount": {
-            "type": "int",
-            "defaultValue": 1,
-            "metadata": {
-                "description": "The number of agents for the cluster.  This value can be from 1 to 100 (note, for Kubernetes clusters you will also get 1 or 2 public agents in addition to these seleted masters)"
-            },
-            "minValue": 1,
-            "maxValue": 100
-        },
-        "agentVMSize": {
-            "type": "string",
-            "defaultValue": "Standard_D2_v2",
-            "allowedValues": [
-                "Standard_D2_v2",
-                "Standard_F8s_v2"
-            ],
-            "metadata": {
-                "description": "The size of the Virtual Machine."
-            }
-        },
         "osType": {
             "type": "string",
             "defaultValue": "Linux",
@@ -185,7 +165,9 @@
                 "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
                 "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
                 "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
-                "workflowServiceAccessKey": "WorkflowServiceAccessKey"
+                "workflowServiceAccessKey": "WorkflowServiceAccessKey",
+                "agentCount": 1,
+                "agentVMSize": "Standard_D2_v2"
             },
             "qa": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
@@ -206,7 +188,9 @@
                 "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
                 "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
                 "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
-                "workflowServiceAccessKey": "WorkflowServiceAccessKey"
+                "workflowServiceAccessKey": "WorkflowServiceAccessKey",
+                "agentCount": 3,
+                "agentVMSize": "Standard_D2_v2"
             },
             "staging": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
@@ -227,7 +211,9 @@
                 "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
                 "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
                 "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
-                "workflowServiceAccessKey": "WorkflowServiceAccessKey"
+                "workflowServiceAccessKey": "WorkflowServiceAccessKey",
+                "agentCount": 3,
+                "agentVMSize": "Standard_D2_v2"
             },
             "prod": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
@@ -248,7 +234,9 @@
                 "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
                 "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
                 "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
-                "workflowServiceAccessKey": "WorkflowServiceAccessKey"
+                "workflowServiceAccessKey": "WorkflowServiceAccessKey",
+                "agentCount": 3,
+                "agentVMSize": "Standard_D2_v2"
             }
         }
     },
@@ -329,8 +317,8 @@
                     {
                         "name": "agentpool",
                         "osDiskSizeGB": "[parameters('osDiskSizeGB')]",
-                        "count": "[parameters('agentCount')]",
-                        "vmSize": "[parameters('agentVMSize')]",
+                        "count": "[variables('environmentSettings')[parameters('environmentName')].agentCount]",
+                        "vmSize": "[variables('environmentSettings')[parameters('environmentName')].agentVMSize]",
                         "osType": "[parameters('osType')]",
                         "storageProfile": "ManagedDisks"
                     }
