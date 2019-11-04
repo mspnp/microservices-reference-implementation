@@ -159,16 +159,24 @@
         "acrNamePrefix": "acr",
         "aiNamePrefix": "ai",
         "acrName": "[uniqueString(variables('acrNamePrefix'),resourceGroup().id)]",
+        "aksVnetAddressPrefix": "10.10.0.0/16",
+        "aksClusterSubnetPrefix": "10.10.0.0/21",
+        "aksVnetNamePrefix": "vnet",
+        "aksClusterSubnetNamePrefix": "subnet",
         "readerRoleObjectId": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
         "managedIdentityOperatorRoleObjectId": "f1a07417-d97a-45cb-824c-7a7467783830",
+        "networkContributorRoleObjectId": "4d97b98b-1d4f-4787-a291-c67834d212e7",
         "readerRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('readerRoleObjectId'))]",
         "managedIdentityOperatorRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('managedIdentityOperatorRoleObjectId'))]",
+        "networkContributorRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('networkContributorRoleObjectId'))]",
         "deliveryRedisStorageName": "[concat(parameters('environmentName'),'rsto',uniqueString(resourceGroup().id))]",
         "nestedACRDeploymentName": "[concat('azuredeploy-acr-',parameters('acrResourceGroupName'),parameters('environmentName'))]",
         "environmentSettings": {
             "dev": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
                 "acrName": "[variables('acrName')]",
+                "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
+                "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
@@ -190,6 +198,8 @@
             "qa": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
                 "acrName": "[variables('acrName')]",
+                "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
+                "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
@@ -211,6 +221,8 @@
             "staging": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
                 "acrName": "[variables('acrName')]",
+                "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
+                "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
@@ -232,6 +244,8 @@
             "prod": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
                 "acrName": "[concat(parameters('environmentName'),variables('acrName'))]",
+                "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
+                "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
@@ -315,6 +329,33 @@
             }
         },
         {
+            "name": "[variables('environmentSettings')[parameters('environmentName')].aksVnetName]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2018-06-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[variables('aksVnetAddressPrefix')]"
+                    ]
+                }
+            },
+            "resources": [
+                {
+                    "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName]",
+                    "type": "subnets",
+                    "apiVersion": "2018-06-01",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[variables('environmentSettings')[parameters('environmentName')].aksVnetName]"
+                    ],
+                    "properties": {
+                        "addressPrefix": "[variables('aksClusterSubnetPrefix')]"
+                    }
+                }
+            ]
+        },
+        {
             "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
             "type": "Microsoft.ContainerService/managedClusters",
             "apiVersion": "2018-03-31",
@@ -322,6 +363,9 @@
             "tags": {
                 "environment": "shared cluster"
             },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+            ],
             "properties": {
                 "kubernetesVersion": "[parameters('kubernetesVersion')]",
                 "dnsPrefix": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
@@ -332,7 +376,8 @@
                         "count": "[parameters('agentCount')]",
                         "vmSize": "[parameters('agentVMSize')]",
                         "osType": "[parameters('osType')]",
-                        "storageProfile": "ManagedDisks"
+                        "storageProfile": "ManagedDisks",
+                        "vnetSubnetID": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
                     }
                 ],
                 "linuxProfile": {
@@ -349,7 +394,13 @@
                     "clientId": "[parameters('servicePrincipalClientId')]",
                     "secret": "[parameters('servicePrincipalClientSecret')]"
                 },
-                "enableRBAC": true
+                "enableRBAC": true,
+                "networkProfile": {
+                    "networkPlugin": "azure",
+                    "serviceCidr": "10.2.0.0/24",
+                    "dnsServiceIP": "10.2.0.10",
+                    "dockerBridgeCidr": "172.17.0.1/16"
+                }
             }
         },
         {
