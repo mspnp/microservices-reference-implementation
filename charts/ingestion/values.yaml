@@ -7,6 +7,22 @@ image:
   tag:
   pullPolicy: IfNotPresent
 reason: unknown
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: 80
+  initialDelaySeconds: 120
+  periodSeconds: 30
+  successThreshold: 1
+  failureThreshold: 5
+readinessProbe:
+  httpGet:
+    path: /api/probe
+    port: 80
+  initialDelaySeconds: 120
+  periodSeconds: 30
+  successThreshold: 1
+  failureThreshold: 5
 telemetry:
   level: "error"
 tags:
