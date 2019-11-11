@@ -55,3 +55,8 @@ tags:
   prod: false
   qa: false
   staging: false
+autoscaling:
+  enabled: false
+  maxReplicas:
+  minReplicas:
+  targetCPUUtilizationPercentage:
