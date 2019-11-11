@@ -4,11 +4,13 @@
 // ------------------------------------------------------------
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Swashbuckle.AspNetCore.Swagger;
 using Fabrikam.DroneDelivery.DeliveryService.Models;
@@ -21,6 +23,8 @@ namespace Fabrikam.DroneDelivery.DeliveryService
 {
     public class Startup
     {
+        private const string HealCheckName = "ReadinessLiveness";
+
         public Startup(IHostingEnvironment env)
         {
             var builder = new ConfigurationBuilder()
@@ -53,6 +57,11 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             // Add framework services.
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
+            // Add health check
+            services.AddHealthChecks().AddCheck(
+                    HealCheckName,
+                    () => HealthCheckResult.Healthy("OK"));
+
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
             {
@@ -78,6 +87,9 @@ namespace Fabrikam.DroneDelivery.DeliveryService
 
             // Important: it has to be second: Enable global exception, error handling
             app.UseGlobalExceptionHandler();
+
+            // Map health checks
+            app.UseHealthChecks("/healthz");
 
             // TODO: Add middleware AuthZ here
 

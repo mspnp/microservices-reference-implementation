@@ -7,16 +7,24 @@ image:
   tag:
   pullPolicy: IfNotPresent
 reason: unknown
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: 80
+  initialDelaySeconds: 120
+  periodSeconds: 30
+  successThreshold: 1
+  failureThreshold: 5
+readinessProbe:
+  httpGet:
+    path: /api/probe
+    port: 80
+  initialDelaySeconds: 120
+  periodSeconds: 30
+  successThreshold: 1
+  failureThreshold: 5
 telemetry:
   level: "error"
-nginx-ingress:
-  fullnameOverride: nginx-ingress
-  rbac:
-    create: true
-  controller:
-    scope:
-      enabled: true
-  enabled: false
 tags:
   dev: false
   prod: false

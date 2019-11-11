@@ -2,13 +2,15 @@
 nameOverride: delivery
 exports:
   data:
-    replicaCount: 2
+    replicaCount: 1
     image:
       pullPolicy: Always
     telemetry:
       level: "Information"
     reason: "new staging deploy"
     current: true
+    ingress:
+      class: "nginx-staging"
     resources:
       requests:
         cpu: 100m

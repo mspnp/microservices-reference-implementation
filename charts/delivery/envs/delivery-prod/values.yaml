@@ -2,12 +2,14 @@
 nameOverride: delivery
 exports:
   data:
-    replicaCount: 2
+    replicaCount: 1
     image:
       pullPolicy: IfNotPresent
     telemetry:
       level: "Error"
     reason: "new prod deploy"
+    ingress:
+      class: "nginx-prod"
     resources:
       requests:
         cpu: 100m

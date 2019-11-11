@@ -3,6 +3,7 @@
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
+const _ = require('koa-route');
 import * as Koa from 'koa';
 import * as bodyParser from "koa-bodyparser";
 
@@ -39,6 +40,15 @@ export class PackageService {
 
     // Configure logging
     app.use(logger(Settings.logLevel()));
+
+    // Add simple health check endpoint
+    app.use(_.get('/healthz', (ctx) => {
+        var logger : ILogger = ctx.state.logger;
+        logger.info('Readiness/Liveness Probe Status: %s', "OK");
+
+        ctx.status = 200;
+        ctx.body = {status: 'OK'};
+    }));
 
     // Configure global exception handling
     // Use: ctx.throw('Error Message', 500);

@@ -15,6 +15,7 @@ kind: Ingress
 metadata:
   name: {{ $relname }}-ingress
   annotations:
+    kubernetes.io/ingress.class: {{ required "ingress.class is required" .Values.ingress.class | quote }}
     nginx.ingress.kubernetes.io/rewrite-target: /api/deliveryrequests$1
 spec:
   {{- if .Values.ingress.tls }}

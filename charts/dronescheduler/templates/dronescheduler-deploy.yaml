@@ -46,6 +46,38 @@ spec:
       - name: fabrikam-dronescheduler
         image: {{ .Values.dockerregistry }}{{ .Values.dockerregistrynamespace }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        readinessProbe:
+          httpGet:
+            path: {{ required "readinessProbe.httpGet.path is required" .Values.readinessProbe.httpGet.path }}
+            port: {{ required "readinessProbe.httpGet.port is required" .Values.readinessProbe.httpGet.port }}
+{{- if .Values.readinessProbe.initialDelaySeconds }}
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+{{- end }}
+{{- if .Values.readinessProbe.periodSeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+{{- end }}
+{{- if .Values.readinessProbe.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+{{- end }}
+{{- if .Values.readinessProbe.failureThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+{{- end }}
+        livenessProbe:
+          httpGet:
+            path: {{ required "livenessProbe.httpGet.path is required" .Values.livenessProbe.httpGet.path }}
+            port: {{ required "livenessProbe.httpGet.port is required" .Values.livenessProbe.httpGet.port }}
+{{- if .Values.livenessProbe.initialDelaySeconds }}
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+{{- end }}
+{{- if .Values.livenessProbe.periodSeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+{{- end }}
+{{- if .Values.livenessProbe.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+{{- end }}
+{{- if .Values.livenessProbe.failureThreshold }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+{{- end }}
         resources:
           requests:
             cpu: {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
