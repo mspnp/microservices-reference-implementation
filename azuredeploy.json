@@ -338,8 +338,30 @@
                         "[variables('environmentSettings')[parameters('environmentName')].aksVnetName]"
                     ],
                     "properties": {
-                        "addressPrefix": "[variables('aksClusterSubnetPrefix')]"
-                    }
+                        "addressPrefix": "[variables('aksClusterSubnetPrefix')]",
+                        "serviceEndpoints": [
+                            {
+                                "service": "Microsoft.KeyVault",
+                                "locations": [
+                                    "[resourceGroup().location]"
+                                ]
+                            },
+                            {
+                                "service": "Microsoft.AzureCosmosDB",
+                                "locations": [
+                                    "[resourceGroup().location]"
+                                ]
+                            },
+                            {
+                                "service": "Microsoft.Storage",
+                                "locations": [
+                                    "[resourceGroup().location]"
+                                ]
+                            }
+                        ],
+                        "privateEndpointNetworkPolicies": "Enabled",
+                        "privateLinkServiceNetworkPolicies": "Enabled"
+                }
                 }
             ]
         },
@@ -473,6 +495,9 @@
             "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryCosmosDbName]",
             "apiVersion": "2016-03-31",
             "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+            ],
             "tags": {
                 "displayName": "Delivery Cosmos Db",
                 "app": "fabrikam-delivery",
@@ -481,6 +506,12 @@
             "properties": {
                 "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryCosmosDbName]",
                 "databaseAccountOfferType": "Standard",
+                "isVirtualNetworkFilterEnabled": true,
+                "virtualNetworkRules": [
+                    {
+                        "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                    }
+                ],
                 "locations": [
                     {
                         "locationName": "[resourceGroup().location]",
@@ -495,6 +526,9 @@
             "kind": "MongoDB",
             "name": "[variables('environmentSettings')[parameters('environmentName')].packageMongoDbName]",
             "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+            ],
             "tags": {
                 "displayName": "Package Cosmos Db",
                 "app": "fabrikam-package",
@@ -502,7 +536,13 @@
             },
             "properties": {
                 "databaseAccountOfferType": "Standard",
-                "name": "[variables('environmentSettings')[parameters('environmentName')].packageMongoDbName]"
+                "name": "[variables('environmentSettings')[parameters('environmentName')].packageMongoDbName]",
+                "isVirtualNetworkFilterEnabled": true,
+                "virtualNetworkRules": [
+                    {
+                        "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                    }
+                ]
             }
         },
         {
@@ -510,9 +550,18 @@
             "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName]",
             "apiVersion": "2015-04-08",
             "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+            ],
             "properties": {
                 "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName]",
                 "databaseAccountOfferType": "Standard",
+                "isVirtualNetworkFilterEnabled": true,
+                "virtualNetworkRules": [
+                    {
+                        "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                    }
+                ],
                 "locations": [
                     {
                         "locationName": "[resourceGroup().location]",
@@ -585,7 +634,8 @@
             "apiVersion": "2016-10-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisStorageId]"
+                "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisStorageId]",
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
             ],
             "tags": {
                 "displayName": "Delivery Key Vault",
@@ -598,6 +648,15 @@
                     "name": "standard"
                 },
                 "tenantId": "[subscription().tenantId]",
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "defaultAction": "Deny",
+                    "virtualNetworkRules": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                        }
+                    ]
+                },
                 "accessPolicies": [
                     {
                         "tenantId": "[subscription().tenantId]",
@@ -689,6 +748,9 @@
             "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName]",
             "apiVersion": "2016-10-01",
             "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+            ],
             "tags": {
                 "displayName": "DroneScheduler Key Vault",
                 "app": "fabrikam-dronescheduler",
@@ -700,6 +762,15 @@
                     "name": "standard"
                 },
                 "tenantId": "[subscription().tenantId]",
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "defaultAction": "Deny",
+                    "virtualNetworkRules": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                        }
+                    ]
+                },
                 "accessPolicies": [
                     {
                         "tenantId": "[subscription().tenantId]",
@@ -823,6 +894,9 @@
             "name": "[variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName]",
             "apiVersion": "2016-10-01",
             "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+            ],
             "tags": {
                 "displayName": "Workflow Key Vault",
                 "app": "fabrikam-workflow",
@@ -834,6 +908,15 @@
                     "name": "standard"
                 },
                 "tenantId": "[subscription().tenantId]",
+                "networkAcls": {
+                    "bypass": "AzureServices",
+                    "defaultAction": "Deny",
+                    "virtualNetworkRules": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                        }
+                    ]
+                },
                 "accessPolicies": [
                     {
                         "tenantId": "[subscription().tenantId]",
