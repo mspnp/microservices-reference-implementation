@@ -154,6 +154,9 @@
         "environmentSettings": {
             "dev": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
+                "aksMinCount": null,
+                "aksMaxCount": null,
+                "aksEnableAutoScaling": false,
                 "acrName": "[variables('acrName')]",
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
@@ -179,6 +182,9 @@
             },
             "qa": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
+                "aksMinCount": null,
+                "aksMaxCount": null,
+                "aksEnableAutoScaling": false,
                 "acrName": "[variables('acrName')]",
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
@@ -204,6 +210,9 @@
             },
             "staging": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
+                "aksMinCount": 3,
+                "aksMaxCount": 50,
+                "aksEnableAutoScaling": true,
                 "acrName": "[variables('acrName')]",
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
@@ -229,6 +238,9 @@
             },
             "prod": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
+                "aksMinCount": 3,
+                "aksMaxCount": 50,
+                "aksEnableAutoScaling": true,
                 "acrName": "[concat(parameters('environmentName'),variables('acrName'))]",
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
@@ -368,7 +380,7 @@
         {
             "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
             "type": "Microsoft.ContainerService/managedClusters",
-            "apiVersion": "2018-03-31",
+            "apiVersion": "2019-02-01",
             "location": "[resourceGroup().location]",
             "tags": {
                 "environment": "shared cluster"
@@ -383,6 +395,10 @@
                     {
                         "name": "agentpool",
                         "osDiskSizeGB": "[parameters('osDiskSizeGB')]",
+                        "minCount": "[variables('environmentSettings')[parameters('environmentName')].aksMinCount]",
+                        "maxCount": "[variables('environmentSettings')[parameters('environmentName')].aksMaxCount]",
+                        "enableAutoScaling": "[variables('environmentSettings')[parameters('environmentName')].aksEnableAutoScaling]",
+                        "type": "VirtualMachineScaleSets",
                         "count": "[variables('environmentSettings')[parameters('environmentName')].agentCount]",
                         "vmSize": "[variables('environmentSettings')[parameters('environmentName')].agentVMSize]",
                         "osType": "[parameters('osType')]",
