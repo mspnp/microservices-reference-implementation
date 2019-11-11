@@ -8,6 +8,20 @@ image:
   tag:
   pullPolicy: IfNotPresent
 reason: unknown
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 80
+  initialDelaySeconds: 40
+  periodSeconds: 15
+  timeoutSeconds: 2
+  failureThreshold: 5
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 80
+  initialDelaySeconds: 50
+  periodSeconds: 15
 log:
   level: error
 cosmosDb:
