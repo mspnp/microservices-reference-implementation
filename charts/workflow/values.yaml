@@ -23,6 +23,26 @@ servicerequest:
   circuitbreakerbreakduration: 30
   maxbulkheadsize: 100
   maxbulkheadqueuesize: 25
+healthcheck:
+  delay:
+readinessProbe:
+  exec:
+    command:
+    - cat
+    - /app/healthz
+  initialDelaySeconds: 40
+  periodSeconds: 15
+  timeoutSeconds: 2
+  failureThreshold: 5
+livenessProbe:
+  exec:
+    command:
+    - find
+    - /app/healthz
+    - -mmin
+    - -1
+  initialDelaySeconds: 50
+  periodSeconds: 30
 keyvault:
   name:
   resourcegroup:
