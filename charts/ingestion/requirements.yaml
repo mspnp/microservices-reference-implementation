@@ -1,9 +1,4 @@
 dependencies:
-- name: nginx-ingress
-  repository: https://kubernetes-charts.storage.googleapis.com
-  version: ">=1.6.9"
-  condition: nginx-ingress.enabled
-
 - name: ingestion-dev
   repository: "file://envs/ingestion-dev"
   version: ">= 0.0.1"

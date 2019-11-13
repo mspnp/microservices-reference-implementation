@@ -2,9 +2,16 @@
 nameOverride: workflow
 exports:
   data:
-    replicaCount: 3
+    replicaCount: 1
     image:
       pullPolicy: Always
     telemetry:
       level: "Information"
     reason: "new staging deploy"
+    resources:
+      requests:
+        cpu: 515m
+        memory: 100Mi
+      limits:
+        cpu: 1000m
+        memory: 140Mi

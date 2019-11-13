@@ -1,4 +1,4 @@
-# Default values for dronedelivery.
+# Default values for delivery.
 nameOverride: delivery
 replicaCount: 1
 identity:
@@ -15,16 +15,23 @@ cosmosdb:
   collectionid:
 keyvault:
   uri:
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 40
+  periodSeconds: 15
+  timeoutSeconds: 2
+  failureThreshold: 5
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 50
+  periodSeconds: 15
 telemetry:
   level: "Error"
 reason: unknown
-resources:
-  requests:
-    cpu: 350m
-    memory: 350Mi
-  limits:
-    cpu: 500m
-    memory: 500Mi
 tags:
   dev: false
   prod: false

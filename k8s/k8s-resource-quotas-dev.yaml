@@ -1,0 +1,17 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: dev
+  namespace: backend-dev
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: 2Gi
+    limits.cpu: "2"
+    limits.memory: 5Gi
+    pods: "5"

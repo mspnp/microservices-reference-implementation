@@ -1,5 +1,5 @@
 # Default values for dronescheduler.
-replicaCount: 3
+replicaCount: 1
 identity:
   clientid:
   resourceid:
@@ -14,16 +14,23 @@ keyvault:
 cosmosdb:
   id:
   collectionid:
+readinessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 40
+  periodSeconds: 15
+  timeoutSeconds: 2
+  failureThreshold: 5
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 50
+  periodSeconds: 15
 reason: unknown
 telemetry:
   level: "Error"
-resources:
-  requests:
-    cpu: 450m
-    memory: 350Mi
-  limits:
-    cpu: 600m
-    memory: 500Mi
 tags:
   dev: false
   prod: false

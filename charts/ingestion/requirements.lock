@@ -1,7 +1,4 @@
 dependencies:
-- name: nginx-ingress
-  repository: https://kubernetes-charts.storage.googleapis.com
-  version: 1.6.15
 - name: ingestion-dev
   repository: file://envs/ingestion-dev
   version: v0.1.0
@@ -14,5 +11,5 @@ dependencies:
 - name: ingestion-staging
   repository: file://envs/ingestion-staging
   version: v0.1.0
-digest: sha256:c2cdc67015f90e1ff33c49603a6ece3f2a99dd8e28e88e8756ef99041820b47a
-generated: 2019-05-29T10:41:19.509573491-03:00
+digest: sha256:feee2c2842b5de8b8e7fda4a388b62ff5e85438633a480b40518c1c3371adcc5
+generated: "2019-10-25T14:37:00.76647856-06:00"

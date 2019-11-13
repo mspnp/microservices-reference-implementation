@@ -2,9 +2,18 @@
 nameOverride: dronescheduler
 exports:
   data:
-    replicaCount: 3
+    replicaCount: 1
     image:
       pullPolicy: IfNotPresent
     telemetry:
       level: "Error"
     reason: "new prod deploy"
+    ingress:
+      class: "nginx-prod"
+    resources:
+      requests:
+        cpu: 130m
+        memory: 350Mi
+      limits:
+        cpu: 270m
+        memory: 500Mi

@@ -4,11 +4,13 @@
 // ------------------------------------------------------------
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.FeatureManagement;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
@@ -21,6 +23,8 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
 {
     public class Startup
     {
+        private const string HealCheckName = "ReadinessLiveness";
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -42,6 +46,11 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
             // Add framework services.
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
+            // Add health check
+            services.AddHealthChecks().AddCheck(
+                    HealCheckName,
+                    () => HealthCheckResult.Healthy("OK"));
+
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
             {
@@ -61,6 +70,9 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
               .WriteTo.Console(new CompactJsonFormatter())
               .ReadFrom.Configuration(Configuration)
               .CreateLogger();
+
+            // Map health checks
+            app.UseHealthChecks("/healthz");
 
             app.UseMvc();
 

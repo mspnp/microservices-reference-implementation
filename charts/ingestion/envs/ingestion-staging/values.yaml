@@ -8,7 +8,13 @@ exports:
     telemetry:
       level: "info"
     reason: "new staging deploy"
-    nginx-ingress:
-      controller:
-        replicaCount: 2
+    ingress:
+      class: "nginx-staging"
     current: true
+    resources:
+      requests:
+        cpu: 150m
+        memory: 600Mi
+      limits:
+        cpu: 300m
+        memory: 800Mi

@@ -46,6 +46,49 @@ spec:
       - name: fabrikam-workflow
         image: {{ .Values.dockerregistry }}{{ .Values.dockerregistrynamespace }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        readinessProbe:
+          exec:
+            command:
+{{- range .Values.readinessProbe.exec.command }}
+            - {{ . | quote }}
+{{- end }}
+{{- if .Values.readinessProbe.initialDelaySeconds }}
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+{{- end }}
+{{- if .Values.readinessProbe.periodSeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+{{- end }}
+{{- if .Values.readinessProbe.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+{{- end }}
+{{- if .Values.readinessProbe.failureThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+{{- end }}
+        livenessProbe:
+          exec:
+            command:
+{{- range .Values.livenessProbe.exec.command }}
+            - {{ . | quote }}
+{{- end }}
+{{- if .Values.livenessProbe.initialDelaySeconds }}
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+{{- end }}
+{{- if .Values.livenessProbe.periodSeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+{{- end }}
+{{- if .Values.livenessProbe.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+{{- end }}
+{{- if .Values.livenessProbe.failureThreshold }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+{{- end }}
+        resources:
+          requests:
+            cpu:   {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
+            memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
+          limits:
+            cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
+            memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}
         volumeMounts:
         - name: workflow
           mountPath: /kvmnt
@@ -53,6 +96,8 @@ spec:
         env:
         - name: CONFIGURATION_FOLDER
           value: /kvmnt
+        - name: HEALTHCHECK_INITIAL_DELAY
+          value: {{ default "30000" .Values.healthcheck.delay | quote }}
         - name: SERVICE_URI_DELIVERY
           value: {{ .Values.serviceuri.delivery }}
         - name: SERVICE_URI_DRONE
@@ -90,10 +135,3 @@ spec:
             resourcegroup: {{ .Values.keyvault.resourcegroup }}
             subscriptionid: {{ .Values.keyvault.subscriptionid }}
             tenantid: {{ .Values.keyvault.tenantid }}
-      resources:
-        requests:
-          cpu:   {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
-          memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
-        limits:
-          cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
-          memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}

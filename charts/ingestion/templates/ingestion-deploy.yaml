@@ -41,18 +41,45 @@ spec:
       - name: &ingestion-container_name fabrikam-ingestion
         image: {{ .Values.dockerregistry }}{{ .Values.dockerregistrynamespace }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-        livenessProbe:
-          httpGet:
-            path: /actuator/health
-            port: 80
-          initialDelaySeconds: 30
-          periodSeconds: 20
         readinessProbe:
           httpGet:
-            path: /api/probe
-            port: 80
-          initialDelaySeconds: 30
-          periodSeconds: 20
+            path: {{ required "readinessProbe.httpGet.path is required" .Values.readinessProbe.httpGet.path }}
+            port: {{ required "readinessProbe.httpGet.port is required" .Values.readinessProbe.httpGet.port }}
+{{- if .Values.readinessProbe.initialDelaySeconds }}
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+{{- end }}
+{{- if .Values.readinessProbe.periodSeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+{{- end }}
+{{- if .Values.readinessProbe.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+{{- end }}
+{{- if .Values.readinessProbe.failureThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+{{- end }}
+        livenessProbe:
+          httpGet:
+            path: {{ required "livenessProbe.httpGet.path is required" .Values.livenessProbe.httpGet.path }}
+            port: {{ required "livenessProbe.httpGet.port is required" .Values.livenessProbe.httpGet.port }}
+{{- if .Values.livenessProbe.initialDelaySeconds }}
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+{{- end }}
+{{- if .Values.livenessProbe.periodSeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+{{- end }}
+{{- if .Values.livenessProbe.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+{{- end }}
+{{- if .Values.livenessProbe.failureThreshold }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+{{- end }}
+        resources:
+          requests:
+            cpu:   {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
+            memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
+          limits:
+            cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
+            memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}
         env:
         - name: QUEUE_NAMESPACE
           valueFrom:
@@ -83,10 +110,3 @@ spec:
           value: {{ default "error" .Values.telemetry.level | quote }}
         - name: CONTAINER_NAME
           value: *ingestion-container_name
-      resources:
-        requests:
-          cpu:   {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
-          memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
-        limits:
-          cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
-          memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}

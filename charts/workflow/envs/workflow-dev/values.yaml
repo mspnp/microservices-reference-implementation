@@ -8,3 +8,10 @@ exports:
     telemetry:
       level: "Information"
     reason: "new dev deploy"
+    resources:
+      requests:
+        cpu: 442m
+        memory: 100Mi
+      limits:
+        cpu: 664m
+        memory: 140Mi

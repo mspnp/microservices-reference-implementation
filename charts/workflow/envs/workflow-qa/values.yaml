@@ -8,3 +8,10 @@ exports:
     telemetry:
       level: "Information"
     reason: "new qa deploy"
+    resources:
+      requests:
+        cpu: 515m
+        memory: 100Mi
+      limits:
+        cpu: 770m
+        memory: 140Mi
