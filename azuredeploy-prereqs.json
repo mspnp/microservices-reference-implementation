@@ -28,24 +28,28 @@
                 "deliveryIdName": "dev-d",
                 "workflowIdName": "dev-wf",
                 "droneSchedulerIdName": "dev-ds",
+                "appGatewayControllerIdName": "dev-ag",
                 "acrResourceGroupName": "[variables('acrResourceGroupNamePrefix')]"
             },
             "qa": {
                 "deliveryIdName": "qa-d",
                 "workflowIdName": "qa-wf",
                 "droneSchedulerIdName": "qa-ds",
+                "appGatewayControllerIdName": "qa-ag",
                 "acrResourceGroupName": "[variables('acrResourceGroupNamePrefix')]"
             },
             "staging": {
                 "deliveryIdName": "staging-d",
                 "workflowIdName": "staging-wf",
                 "droneSchedulerIdName": "staging-ds",
+                "appGatewayControllerIdName": "staging-ag",
                 "acrResourceGroupName": "[variables('acrResourceGroupNamePrefix')]"
             },
             "prod": {
                 "deliveryIdName": "prod-d",
                 "workflowIdName": "prod-wf",
                 "droneSchedulerIdName": "prod-ds",
+                "appGatewayControllerIdName": "prod-ag",
                 "acrResourceGroupName": "[concat(variables('acrResourceGroupNamePrefix'),'-',parameters('environmentName'))]"
             }
         }
@@ -121,6 +125,18 @@
                                 "app": "fabrikam-dronescheduler",
                                 "[parameters('environmentName')]": true
                             }
+                        },
+                        {
+                            "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+                            "name": "[variables('environmentSettings')[parameters('environmentName')].appGatewayControllerIdName]",
+                            "apiVersion": "2015-08-31-preview",
+                            "location": "[parameters('resourceGroupLocation')]",
+                            "tags": {
+                                "displayName": "app gateway controller managed identity",
+                                "what": "rbac",
+                                "reason": "aad-pod-identity",
+                                "[parameters('environmentName')]": true
+                            }
                         }
                     ],
                     "outputs": {
@@ -146,6 +162,14 @@
                         },
                         "workflowPrincipalResourceId": {
                             "value": "[concat(subscription().id, '/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',variables('environmentSettings')[parameters('environmentName')].workflowIdName)]",
+                            "type": "string"
+                        },
+                        "appGatewayControllerIdName": {
+                            "value": "[variables('environmentSettings')[parameters('environmentName')].appGatewayControllerIdName]",
+                            "type": "string"
+                        },
+                        "appGatewayControllerPrincipalResourceId": {
+                            "value": "[concat(subscription().id, '/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',variables('environmentSettings')[parameters('environmentName')].appGatewayControllerIdName)]",
                             "type": "string"
                         },
                         "acrResourceGroupName": {

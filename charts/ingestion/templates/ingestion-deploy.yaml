@@ -110,3 +110,6 @@ spec:
           value: {{ default "error" .Values.telemetry.level | quote }}
         - name: CONTAINER_NAME
           value: *ingestion-container_name
+        ports:
+          - name: service
+            containerPort: 80

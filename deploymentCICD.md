@@ -23,19 +23,22 @@ az deployment create \
                 resourceGroupLocation=$LOCATION \
                 environmentName=${env}
 
-export {${ENV}_IDENTITIES_DEPLOYMENT_NAME,IDENTITIES_DEPLOYMENT_NAME}=$(az deployment show -n azuredeploy-adv-prereqs-adv-${env} --query properties.outputs.identitiesDeploymentName.value -o tsv) && \
+export {${ENV}_IDENTITIES_DEPLOYMENT_NAME,IDENTITIES_DEPLOYMENT_NAME}=$(az deployment show -n azuredeploy-prereqs-${env} --query properties.outputs.identitiesDeploymentName.value -o tsv) && \
 export {${ENV}_DELIVERY_ID_NAME,DELIVERY_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.deliveryIdName.value -o tsv)
 export DELIVERY_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DELIVERY_ID_NAME --query principalId -o tsv)
 export {${ENV}_DRONESCHEDULER_ID_NAME,DRONESCHEDULER_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerIdName.value -o tsv)
 export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query principalId -o tsv)
 export {${ENV}_WORKFLOW_ID_NAME,WORKFLOW_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.workflowIdName.value -o tsv)
 export WORKFLOW_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query principalId -o tsv)
+export {${ENV}_GATEWAY_CONTROLLER_ID_NAME,GATEWAY_CONTROLLER_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.appGatewayControllerIdName.value -o tsv) && \
+export GATEWAY_CONTROLLER_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $GATEWAY_CONTROLLER_ID_NAME --query principalId -o tsv) && \
 export RESOURCE_GROUP_ACR=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
 
 # Wait for AAD propagation
 until az ad sp show --id $DELIVERY_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id $DRONESCHEDULER_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id $WORKFLOW_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id $GATEWAY_CONTROLLER_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 
 az group deployment create -g $RESOURCE_GROUP --name azuredeploy-${env} --template-file ${PROJECT_ROOT}/azuredeploy.json \
    --parameters servicePrincipalClientId=${SP_APP_ID} \
@@ -48,6 +51,8 @@ az group deployment create -g $RESOURCE_GROUP --name azuredeploy-${env} --templa
                droneSchedulerIdName=$DRONESCHEDULER_ID_NAME \
                droneSchedulerPrincipalId=$DRONESCHEDULER_ID_PRINCIPAL_ID \
                workflowIdName=$WORKFLOW_ID_NAME \
+               appGatewayControllerIdName=${GATEWAY_CONTROLLER_ID_NAME} \
+               appGatewayControllerPrincipalId=${GATEWAY_CONTROLLER_ID_PRINCIPAL_ID} \
                workflowPrincipalId=$WORKFLOW_ID_PRINCIPAL_ID \
                acrResourceGroupName=${RESOURCE_GROUP_ACR} \
                acrResourceGroupLocation=$LOCATION \
@@ -65,6 +70,7 @@ Get outputs from Azure Deploy
 ```bash
 # Shared
 export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksClusterName.value -o tsv) && \
+export CLUSTER_SERVER=$(az aks show -n $CLUSTER_NAME -g $RESOURCE_GROUP --query fqdn -o tsv)
 ```
 
 Enable Azure Monitoring for Containers in the AKS cluster
@@ -81,6 +87,7 @@ sudo az aks install-cli
 az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 
 # Create namespaces
+kubectl create namespace backend-dev && \
 kubectl create namespace backend-qa && \
 kubectl create namespace backend-staging && \
 kubectl create namespace backend
@@ -200,27 +207,49 @@ export AZURE_DEVOPS_USER_ID=$(az devops user show --user ${AZURE_DEVEOPS_USER} -
 ### Build pipelines pre-requisites
 
 ```bash
-# Create a self-signed certificate for TLS and public ip addresses
-export RESOURCE_GROUP_NODE=$(az aks show -g $RESOURCE_GROUP -n $CLUSTER_NAME --query "nodeResourceGroup" -o tsv) && \
-export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest"
+# Deploy the AppGateway ingress controller
+helm repo add application-gateway-kubernetes-ingress https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
+helm repo update
 
 for env in dev qa staging prod;do
 ENV=${env^^}
 
-az network public-ip create --name ${EXTERNAL_INGEST_DNS_NAME}-${env}-pip --dns-name ${EXTERNAL_INGEST_DNS_NAME}-${env} --allocation-method static -g $RESOURCE_GROUP_NODE
-EXTERNAL_INGEST_FQDN=$(az network public-ip show --name ${EXTERNAL_INGEST_DNS_NAME}-${env}-pip --query "dnsSettings.fqdn" -g $RESOURCE_GROUP_NODE --output tsv)
-export ${ENV}_EXTERNAL_INGEST_FQDN=${EXTERNAL_INGEST_FQDN}
-export ${ENV}_INGRESS_LOAD_BALANCER_IP=$(az network public-ip show --name ${EXTERNAL_INGEST_DNS_NAME}-${env}-pip --query "ipAddress" -g $RESOURCE_GROUP_NODE --output tsv)
+export IDENTITIES_DEPLOYMENT_NAME_VARIABLE=${ENV}_IDENTITIES_DEPLOYMENT_NAME
+export GATEWAY_CONTROLLER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n ${!IDENTITIES_DEPLOYMENT_NAME_VARIABLE} --query properties.outputs.appGatewayControllerPrincipalResourceId.value -o tsv) && \
+export GATEWAY_CONTROLLER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n ${!IDENTITIES_DEPLOYMENT_NAME_VARIABLE} --query properties.outputs.appGatewayControllerIdName.value -o tsv) && \
+export GATEWAY_CONTROLLER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $GATEWAY_CONTROLLER_ID_NAME --query clientId -o tsv)
 
-# Deploy the ngnix ingress controller
-helm install stable/nginx-ingress --name nginx-ingress-${env} --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-${env} --set controller.service.loadBalancerIP=${ENV}_INGRESS_LOAD_BALANCER_IP
+# Deploy the App Gateway ingress controller
+export APP_GATEWAY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appGatewayName.value -o tsv)
+export {${ENV}_APP_GATEWAY_PUBLIC_IP_FQDN,APP_GATEWAY_PUBLIC_IP_FQDN}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appGatewayPublicIpFqdn.value -o tsv)
+export ENV_NAMESPACE=$([ $env == 'prod' ] && echo 'backend' || echo "backend-$env")
 
+helm install application-gateway-kubernetes-ingress/ingress-azure \
+     --name ingress-azure-${env} \
+     --namespace ingress-controllers \
+     --set appgw.name=$APP_GATEWAY_NAME \
+     --set appgw.resourceGroup=$RESOURCE_GROUP \
+     --set appgw.subscriptionId=$SUBSCRIPTION_ID \
+     --set appgw.shared=false \
+     --set kubernetes.watchNamespace=$ENV_NAMESPACE \
+     --set armAuth.type=aadPodIdentity \
+     --set armAuth.identityResourceID=$GATEWAY_CONTROLLER_PRINCIPAL_RESOURCE_ID \
+     --set armAuth.identityClientID=$GATEWAY_CONTROLLER_PRINCIPAL_CLIENT_ID \
+     --set rbac.enabled=true \
+     --set verbosityLevel=3 \
+     --set aksClusterConfiguration.apiServerAddress=$CLUSTER_SERVER
+
+# Create a self-signed certificate for TLS for the environment
+export {${ENV}_EXTERNAL_INGEST_FQDN,EXTERNAL_INGEST_FQDN}=$APP_GATEWAY_PUBLIC_IP_FQDN
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -out ingestion-ingress-tls-${env}.crt \
     -keyout ingestion-ingress-tls-${env}.key \
     -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
 export "${ENV}_INGRESS_TLS_SECRET_CERT=$(echo $(cat ingestion-ingress-tls-${env}.crt) | tr '\n' "\\n")"
 export "${ENV}_INGRESS_TLS_SECRET_KEY=$(echo $(cat ingestion-ingress-tls-${env}.key) | tr '\n' "\\n")"
+
+# Deploy the ngnix ingress controllers
+helm install stable/nginx-ingress --name nginx-ingress-${env} --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-${env} --set controller.service.type=ClusterIP
 done
 
 # export app paths

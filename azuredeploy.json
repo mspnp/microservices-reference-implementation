@@ -54,6 +54,18 @@
             },
             "type": "string"
         },
+        "appGatewayControllerIdName": {
+            "metadata": {
+                "description": "Name of the app gateway controller managed identity"
+            },
+            "type": "string"
+        },
+        "appGatewayControllerPrincipalId": {
+            "metadata": {
+                "description": "Principal id for the app gateway controller managed identity"
+            },
+            "type": "string"
+        },
         "sshRSAPublicKey": {
             "type": "string",
             "metadata": {
@@ -139,16 +151,18 @@
         "acrNamePrefix": "acr",
         "aiNamePrefix": "ai",
         "acrName": "[uniqueString(variables('acrNamePrefix'),resourceGroup().id)]",
+        "appGatewayNamePrefix": "appg",
         "aksVnetAddressPrefix": "10.10.0.0/16",
         "aksClusterSubnetPrefix": "10.10.0.0/21",
+        "appGatewaySubnetPrefix": "10.10.8.0/24",
         "aksVnetNamePrefix": "vnet",
         "aksClusterSubnetNamePrefix": "subnet",
         "readerRoleObjectId": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
         "managedIdentityOperatorRoleObjectId": "f1a07417-d97a-45cb-824c-7a7467783830",
-        "networkContributorRoleObjectId": "4d97b98b-1d4f-4787-a291-c67834d212e7",
+        "contributorRoleObjectId": "b24988ac-6180-42a0-ab88-20f7382dd24c",
         "readerRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('readerRoleObjectId'))]",
         "managedIdentityOperatorRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('managedIdentityOperatorRoleObjectId'))]",
-        "networkContributorRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('networkContributorRoleObjectId'))]",
+        "contributorRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('contributorRoleObjectId'))]",
         "deliveryRedisStorageName": "[concat(parameters('environmentName'),'rsto',uniqueString(resourceGroup().id))]",
         "nestedACRDeploymentName": "[concat('azuredeploy-acr-',parameters('acrResourceGroupName'),parameters('environmentName'))]",
         "environmentSettings": {
@@ -158,8 +172,12 @@
                 "aksMaxCount": null,
                 "aksEnableAutoScaling": false,
                 "acrName": "[variables('acrName')]",
+                "appGatewayName": "[concat(parameters('environmentName'),'-ag-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
+                "appGatewaySubnetName": "[uniqueString(variables('appGatewaySubnetPrefix'), resourceGroup().id)]",
+                "appGatewayPublicIpName": "[concat(parameters('environmentName'),'-agip-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
+                "appGatewayPublicDnsName": "[concat(parameters('environmentName'),'-ingest-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
@@ -186,8 +204,12 @@
                 "aksMaxCount": null,
                 "aksEnableAutoScaling": false,
                 "acrName": "[variables('acrName')]",
+                "appGatewayName": "[concat(parameters('environmentName'),'-ag-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
+                "appGatewaySubnetName": "[uniqueString(variables('appGatewaySubnetPrefix'), resourceGroup().id)]",
+                "appGatewayPublicIpName": "[concat(parameters('environmentName'),'-agip-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
+                "appGatewayPublicDnsName": "[concat(parameters('environmentName'),'-ingest-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
@@ -214,8 +236,12 @@
                 "aksMaxCount": 50,
                 "aksEnableAutoScaling": true,
                 "acrName": "[variables('acrName')]",
+                "appGatewayName": "[concat(parameters('environmentName'),'-ag-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
+                "appGatewaySubnetName": "[uniqueString(variables('appGatewaySubnetPrefix'), resourceGroup().id)]",
+                "appGatewayPublicIpName": "[concat(parameters('environmentName'),'-agip-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
+                "appGatewayPublicDnsName": "[concat(parameters('environmentName'),'-ingest-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
@@ -242,8 +268,12 @@
                 "aksMaxCount": 50,
                 "aksEnableAutoScaling": true,
                 "acrName": "[concat(parameters('environmentName'),variables('acrName'))]",
+                "appGatewayName": "[concat(parameters('environmentName'),'-ag-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
+                "appGatewaySubnetName": "[uniqueString(variables('appGatewaySubnetPrefix'), resourceGroup().id)]",
+                "appGatewayPublicIpName": "[concat(parameters('environmentName'),'-agip-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
+                "appGatewayPublicDnsName": "[concat(parameters('environmentName'),'-ingest-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
                 "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
                 "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
@@ -333,49 +363,176 @@
             "type": "Microsoft.Network/virtualNetworks",
             "apiVersion": "2018-06-01",
             "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "Vnet for the aks cluster and the app gateways",
+                "environment": "shared network"
+            },
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
                         "[variables('aksVnetAddressPrefix')]"
                     ]
-                }
+                },
+                "subnets": [
+                    {
+                        "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName]",
+                        "tags": {
+                            "displayName": "Subnet for the aks cluster",
+                            "environment": "shared network"
+                        },
+                        "properties": {
+                            "addressPrefix": "[variables('aksClusterSubnetPrefix')]",
+                            "serviceEndpoints": [
+                                {
+                                    "service": "Microsoft.KeyVault",
+                                    "locations": [
+                                        "[resourceGroup().location]"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.AzureCosmosDB",
+                                    "locations": [
+                                        "[resourceGroup().location]"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.Storage",
+                                    "locations": [
+                                        "[resourceGroup().location]"
+                                    ]
+                                }
+                            ],
+                            "privateEndpointNetworkPolicies": "Enabled",
+                            "privateLinkServiceNetworkPolicies": "Enabled"
+                        }
+                    },
+                    {
+                        "name": "[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetName]",
+                        "tags": {
+                            "displayName": "Subnet for the app gateways",
+                            "environment": "shared network"
+                        },
+                        "properties": {
+                            "addressPrefix": "[variables('appGatewaySubnetPrefix')]"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion":"2018-08-01",
+            "type":"Microsoft.Network/publicIPAddresses",
+            "name": "[variables('environmentSettings')[parameters('environmentName')].appGatewayPublicIpName]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "Public IP address for the application gateway",
+                "environment": "[parameters('environmentName')]"
             },
-            "resources": [
-                {
-                    "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName]",
-                    "type": "subnets",
-                    "apiVersion": "2018-06-01",
-                    "location": "[resourceGroup().location]",
-                    "dependsOn": [
-                        "[variables('environmentSettings')[parameters('environmentName')].aksVnetName]"
-                    ],
-                    "properties": {
-                        "addressPrefix": "[variables('aksClusterSubnetPrefix')]",
-                        "serviceEndpoints": [
-                            {
-                                "service": "Microsoft.KeyVault",
-                                "locations": [
-                                    "[resourceGroup().location]"
-                                ]
-                            },
-                            {
-                                "service": "Microsoft.AzureCosmosDB",
-                                "locations": [
-                                    "[resourceGroup().location]"
-                                ]
-                            },
-                            {
-                                "service": "Microsoft.Storage",
-                                "locations": [
-                                    "[resourceGroup().location]"
-                                ]
+            "sku": {
+               "name": "Standard"
+            },
+            "properties": {
+               "publicIPAllocationMethod": "Static",
+               "dnsSettings": {
+                "domainNameLabel": "[variables('environmentSettings')[parameters('environmentName')].appGatewayPublicDnsName]"
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-08-01",
+            "name": "[variables('environmentSettings')[parameters('environmentName')].appGatewayName]",
+            "type": "Microsoft.Network/applicationGateways",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "Application gateway for the app gateway ingress",
+                "environment": "[parameters('environmentName')]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('environmentSettings')[parameters('environmentName')].appGatewayPublicIpName)]"
+            ],
+            "properties": {
+                "sku": {
+                    "name": "Standard_v2",
+                    "tier": "Standard_v2"
+                },
+                "autoscaleConfiguration": {
+                    "minCapacity": 2
+                },
+                "gatewayIPConfigurations": [
+                    {
+                        "name": "appGatewayIpConfig",
+                        "properties": {
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetName)]"
                             }
-                        ],
-                        "privateEndpointNetworkPolicies": "Enabled",
-                        "privateLinkServiceNetworkPolicies": "Enabled"
-                }
-                }
-            ]
+                        }
+                    }
+                ],
+                "frontendIPConfigurations": [
+                    {
+                        "name": "appGatewayFrontendIP",
+                        "properties": {
+                            "PublicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('environmentSettings')[parameters('environmentName')].appGatewayPublicIpName)]"
+                            }
+                        }
+                    }
+                ],
+                "backendAddressPools": [
+                    {
+                        "name": "defaultAddressPool"
+                    }
+                ],
+                "backendHttpSettingsCollection": [
+                    {
+                        "name": "defaultBackendHttpSettings",
+                        "properties": {
+                            "Port": "80",
+                            "Protocol": "Http"
+                        }
+                    }
+                ],
+                "httpListeners": [
+                    {
+                        "name": "defaultHttpListener",
+                        "properties": {
+                            "FrontendIpConfiguration": {
+                                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', variables('environmentSettings')[parameters('environmentName')].appGatewayName, 'appGatewayFrontendIP')]"
+                            },
+                            "FrontendPort": {
+                                "Id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', variables('environmentSettings')[parameters('environmentName')].appGatewayName, 'http')]"
+                            },
+                            "Protocol": "Http"
+                        }
+                    }
+                ],
+                "requestRoutingRules": [
+                    {
+                        "Name": "default",
+                        "properties": {
+                            "RuleType": "Basic",
+                            "httpListener": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', variables('environmentSettings')[parameters('environmentName')].appGatewayName, 'defaultHttpListener')]"
+                            },
+                            "backendAddressPool": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', variables('environmentSettings')[parameters('environmentName')].appGatewayName, 'defaultAddressPool')]"
+                            },
+                            "backendHttpSettings": {
+                                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', variables('environmentSettings')[parameters('environmentName')].appGatewayName, 'defaultBackendHttpSettings')]"
+                            }
+                        }
+                    }
+                ],
+                "frontendPorts": [
+                    {
+                        "name": "http",
+                        "properties": {
+                            "Port": "80"
+                        }
+                    }
+                ]
+            }
         },
         {
             "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
@@ -386,7 +543,7 @@
                 "environment": "shared cluster"
             },
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
             ],
             "properties": {
                 "kubernetesVersion": "[parameters('kubernetesVersion')]",
@@ -512,7 +669,7 @@
             "apiVersion": "2016-03-31",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
             ],
             "tags": {
                 "displayName": "Delivery Cosmos Db",
@@ -543,7 +700,7 @@
             "name": "[variables('environmentSettings')[parameters('environmentName')].packageMongoDbName]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
             ],
             "tags": {
                 "displayName": "Package Cosmos Db",
@@ -567,7 +724,7 @@
             "apiVersion": "2015-04-08",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
             ],
             "properties": {
                 "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName]",
@@ -651,7 +808,7 @@
             "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisStorageId]",
-                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
             ],
             "tags": {
                 "displayName": "Delivery Key Vault",
@@ -765,7 +922,7 @@
             "apiVersion": "2016-10-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
             ],
             "tags": {
                 "displayName": "DroneScheduler Key Vault",
@@ -911,7 +1068,7 @@
             "apiVersion": "2016-10-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
             ],
             "tags": {
                 "displayName": "Workflow Key Vault",
@@ -1138,6 +1295,49 @@
                 "roleDefinitionId": "[variables('managedIdentityOperatorRoleId')]",
                 "principalId": "[parameters('servicePrincipalId')]"
             }
+        },
+        {
+            "type": "Microsoft.Network/applicationGateways/providers/roleAssignments",
+            "name": "[concat(variables('environmentSettings')[parameters('environmentName')].appGatewayName, '/Microsoft.Authorization/', guid(concat('msi-appgatewaycontroller', 'appgateway'), resourceGroup().id, parameters('environmentName')))]",
+            "apiVersion": "2017-05-01",
+            "comments": "Grant the App gateway controller access to the app gateway",
+            "tags": {
+                "displayName": "App gateway controller RBAC Contributor",
+                "what": "rbac",
+                "to": "pod",
+                "identity-type": "msi",
+                "access": "appgateway",
+                "reason": "aad-pod-identity",
+                "flex-vol": "no"
+            },
+            "properties": {
+                "roleDefinitionId": "[variables('contributorRoleId')]",
+                "principalId": "[parameters('appGatewayControllerPrincipalId')]",
+                "scope": "[resourceId('Microsoft.Network/applicationGateways', variables('environmentSettings')[parameters('environmentName')].appGatewayName)]"
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/applicationGateways', variables('environmentSettings')[parameters('environmentName')].appGatewayName)]"
+            ]
+        },
+        {
+            "type": "Microsoft.Authorization/roleAssignments",
+            "name": "[guid(concat('msi-appgatewaycontroller', 'resourcegroup', parameters('environmentName')), resourceGroup().id)]",
+            "apiVersion": "2017-05-01",
+            "comments": "Grant the App gateway controller access to the AKS cluster",
+            "tags": {
+                "displayName": "App gateway controller RBAC Reader",
+                "what": "rbac",
+                "to": "pod",
+                "identity-type": "msi",
+                "access": "appgateway",
+                "reason": "aad-pod-identity",
+                "flex-vol": "no"
+            },
+            "properties": {
+                "roleDefinitionId": "[variables('readerRoleId')]",
+                "principalId": "[parameters('appGatewayControllerPrincipalId')]",
+                "scope": "[resourceGroup().id]"
+            }
         }
     ],
     "outputs": {
@@ -1195,6 +1395,14 @@
         },
         "acrDeploymentName": {
             "value": "[variables('nestedACRDeploymentName')]",
+            "type": "string"
+        },
+        "appGatewayName": {
+            "value": "[variables('environmentSettings')[parameters('environmentName')].appGatewayName]",
+            "type": "string"
+        },
+        "appGatewayPublicIpFqdn": {
+            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('environmentSettings')[parameters('environmentName')].appGatewayPublicIpName)).dnsSettings.fqdn]",
             "type": "string"
         }
     }

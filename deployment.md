@@ -87,12 +87,15 @@ export DRONESCHEDULER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $
 export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query principalId -o tsv) && \
 export WORKFLOW_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.workflowIdName.value -o tsv) && \
 export WORKFLOW_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query principalId -o tsv) && \
+export GATEWAY_CONTROLLER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.appGatewayControllerIdName.value -o tsv) && \
+export GATEWAY_CONTROLLER_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $GATEWAY_CONTROLLER_ID_NAME --query principalId -o tsv) && \
 export RESOURCE_GROUP_ACR=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
 
 # Wait for AAD propagation
 until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id ${GATEWAY_CONTROLLER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 
 # Export the kubernetes cluster version
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv)
@@ -110,6 +113,8 @@ az group deployment create -g $RESOURCE_GROUP --name azuredeploy-dev --template-
             droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
             workflowIdName=${WORKFLOW_ID_NAME} \
             workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
+            appGatewayControllerIdName=${GATEWAY_CONTROLLER_ID_NAME} \
+            appGatewayControllerPrincipalId=${GATEWAY_CONTROLLER_ID_PRINCIPAL_ID} \
             acrResourceGroupName=${RESOURCE_GROUP_ACR} \
             acrResourceGroupLocation=$LOCATION
 ```
@@ -120,6 +125,7 @@ Get outputs from Azure Deploy
 export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.acrName.value -o tsv) && \
 export ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv) && \
 export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksClusterName.value -o tsv)
+export CLUSTER_SERVER=$(az aks show -n $CLUSTER_NAME -g $RESOURCE_GROUP --query fqdn -o tsv)
 ```
 
 Enable Azure Monitoring for the AKS cluster
@@ -175,23 +181,42 @@ kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/maste
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
 
-## Deploy the ingress controller
+## Deploy the ingress controllers
 
 ```bash
-# Deploy the ngnix ingress controller
-helm install stable/nginx-ingress --name nginx-ingress-dev --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-dev
+# Deploy the AppGateway ingress controller
+helm repo add application-gateway-kubernetes-ingress https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
+helm repo update
 
-# Obtain the load balancer ip address and assign a domain name
-until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-dev-controller -n ingress-controllers -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
-export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv)
-export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest-dev"
-export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
+export GATEWAY_CONTROLLER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.appGatewayControllerPrincipalResourceId.value -o tsv) && \
+export GATEWAY_CONTROLLER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $GATEWAY_CONTROLLER_ID_NAME --query clientId -o tsv)
+export APP_GATEWAY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.appGatewayName.value -o tsv)
+export APP_GATEWAY_PUBLIC_IP_FQDN=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.appGatewayPublicIpFqdn.value -o tsv)
+
+helm install application-gateway-kubernetes-ingress/ingress-azure \
+     --name ingress-azure-dev \
+     --namespace ingress-controllers \
+     --set appgw.name=$APP_GATEWAY_NAME \
+     --set appgw.resourceGroup=$RESOURCE_GROUP \
+     --set appgw.subscriptionId=$SUBSCRIPTION_ID \
+     --set appgw.shared=false \
+     --set kubernetes.watchNamespace=backend-dev \
+     --set armAuth.type=aadPodIdentity \
+     --set armAuth.identityResourceID=$GATEWAY_CONTROLLER_PRINCIPAL_RESOURCE_ID \
+     --set armAuth.identityClientID=$GATEWAY_CONTROLLER_PRINCIPAL_CLIENT_ID \
+     --set rbac.enabled=true \
+     --set verbosityLevel=3 \
+     --set aksClusterConfiguration.apiServerAddress=$CLUSTER_SERVER
+
+# Deploy the ngnix ingress controller
+helm install stable/nginx-ingress --name nginx-ingress-dev --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-dev --set controller.service.type=ClusterIP
 
 # Create a self-signed certificate for TLS
+export EXTERNAL_INGEST_FQDN=$APP_GATEWAY_PUBLIC_IP_FQDN
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -out ingestion-ingress-tls.crt \
     -keyout ingestion-ingress-tls.key \
-    -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
+    -subj "/CN=${APP_GATEWAY_PUBLIC_IP_FQDN}/O=fabrikam"
 ```
 
 ## Setup cluster resource quota
