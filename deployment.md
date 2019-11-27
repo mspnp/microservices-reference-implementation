@@ -122,11 +122,6 @@ export ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv) && \
 export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksClusterName.value -o tsv)
 ```
 
-Enable Azure Monitoring for the AKS cluster
-```bash
-az aks enable-addons -a monitoring --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
-```
-
 Download kubectl and create a k8s namespace
 ```bash
 #  Install kubectl
