@@ -376,10 +376,6 @@
                 "subnets": [
                     {
                         "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName]",
-                        "tags": {
-                            "displayName": "Subnet for the aks cluster",
-                            "environment": "shared network"
-                        },
                         "properties": {
                             "addressPrefix": "[variables('aksClusterSubnetPrefix')]",
                             "serviceEndpoints": [
@@ -408,10 +404,6 @@
                     },
                     {
                         "name": "[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetName]",
-                        "tags": {
-                            "displayName": "Subnet for the app gateways",
-                            "environment": "shared network"
-                        },
                         "properties": {
                             "addressPrefix": "[variables('appGatewaySubnetPrefix')]"
                         }
