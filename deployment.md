@@ -5,7 +5,6 @@
 - Azure subscription
 - [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
-- [Helm 2.12.3 or later](https://docs.helm.sh/using_helm/#installing-helm)
 - [JQ](https://stedolan.github.io/jq/download/)
 
 > Note: in linux systems, it is possible to run the docker command without prefacing
@@ -134,9 +133,13 @@ az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 kubectl create namespace backend-dev
 ```
 
-Setup Helm in the container
+Setup Helm
 
 ```bash
+# install helm client side
+DESIRED_VERSION=v2.14.2;curl -L https://git.io/get_helm.sh | bash
+
+# setup tiller in your cluster
 kubectl apply -f $K8S/tiller-rbac.yaml
 helm init --service-account tiller
 ```

@@ -5,7 +5,6 @@
 - Azure subscription
 - [Azure CLI 2.0.49 or later](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Azure DevOps account](https://azure.microsoft.com/services/devops)
-- [Helm 2.12.3 or later](https://docs.helm.sh/using_helm/#installing-helm)
 - [Values from deployment instructions](./deployment.md)
 
 ## Infrastructure for dev, test, staging and production
@@ -81,9 +80,13 @@ kubectl create namespace backend-staging && \
 kubectl create namespace backend
 ```
 
-Setup Helm in the container
+Setup Helm
 
 ```bash
+# install helm client side
+DESIRED_VERSION=v2.14.2;curl -L https://git.io/get_helm.sh | bash
+
+# setup tiller in your cluster
 kubectl apply -f $K8S/tiller-rbac.yaml
 helm init --service-account tiller
 ```
