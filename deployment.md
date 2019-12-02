@@ -223,6 +223,12 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 kubectl apply -f $K8S/k8s-resource-quotas-dev.yaml
 ```
 
+## Deny all ingress and egress traffic
+
+```bash
+kubectl apply -f $K8S/k8s-deny-all-non-whitelisted-traffic-dev.yaml
+```
+
 ## Deploy the Delivery service
 
 Extract resource details from deployment

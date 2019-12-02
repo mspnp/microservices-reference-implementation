@@ -144,6 +144,17 @@
             "metadata": {
                 "description": "A value that indicates whether diagnostics should be saved to the specified storage account."
             }
+        },
+        "networkPolicy": {
+            "type": "string",
+            "defaultValue": "azure",
+            "allowedValues": [
+                "azure",
+                "calico"
+            ],
+            "metadata": {
+                "description": "Network policy used for configuring Kubernetes network profile."
+            }
         }
     },
     "variables": {
@@ -608,6 +619,7 @@
                 },
                 "enableRBAC": true,
                 "networkProfile": {
+                    "networkPolicy": "[parameters('networkPolicy')]",
                     "networkPlugin": "azure",
                     "serviceCidr": "10.2.0.0/24",
                     "dnsServiceIP": "10.2.0.10",

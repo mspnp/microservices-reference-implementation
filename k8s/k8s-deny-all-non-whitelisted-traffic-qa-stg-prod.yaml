@@ -1,0 +1,37 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: qa-deny-all
+  namespace: backend-qa
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: staging-deny-all
+  namespace: backend-staging
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: prod-deny-all
+  namespace: backend
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress

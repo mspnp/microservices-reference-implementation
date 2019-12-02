@@ -124,6 +124,12 @@ kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-fl
 kubectl apply -f $K8S/k8s-resource-quotas-dev.yaml -f $K8S/k8s-resource-quotas-qa-stg-prod.yaml
 ```
 
+## Deny all ingress and egress traffic
+
+```bash
+kubectl apply -f $K8S/k8s-deny-all-non-whitelisted-traffic-dev.yaml -f $K8S/k8s-deny-all-non-whitelisted-traffic-qa-stg-prod.yaml
+```
+
 ## Setup Azure DevOps
 
 ```
