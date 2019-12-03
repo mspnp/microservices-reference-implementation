@@ -8,8 +8,6 @@ exports:
     log:
       level: "error"
     reason: "new prod deploy"
-    ingress:
-      class: "nginx-prod"
     resources:
       requests:
         cpu: 90m

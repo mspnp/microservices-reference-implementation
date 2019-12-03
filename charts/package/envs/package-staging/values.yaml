@@ -9,8 +9,6 @@ exports:
       level: "info"
     reason: "new staging deploy"
     current: true
-    ingress:
-      class: "nginx-staging"
     resources:
       requests:
         cpu: 90m

@@ -8,8 +8,6 @@ exports:
     telemetry:
       level: "Error"
     reason: "new prod deploy"
-    ingress:
-      class: "nginx-prod"
     resources:
       requests:
         cpu: 100m

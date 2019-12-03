@@ -252,8 +252,6 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 export "${ENV}_INGRESS_TLS_SECRET_CERT=$(echo $(cat ingestion-ingress-tls-${env}.crt) | tr '\n' "\\n")"
 export "${ENV}_INGRESS_TLS_SECRET_KEY=$(echo $(cat ingestion-ingress-tls-${env}.key) | tr '\n' "\\n")"
 
-# Deploy the ngnix ingress controllers
-helm install stable/nginx-ingress --name nginx-ingress-${env} --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-${env} --set controller.service.type=ClusterIP
 done
 
 # export app paths

@@ -8,8 +8,6 @@ exports:
     telemetry:
       level: "info"
     reason: "new staging deploy"
-    ingress:
-      class: "nginx-staging"
     current: true
     resources:
       requests:

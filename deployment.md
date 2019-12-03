@@ -206,9 +206,6 @@ helm install application-gateway-kubernetes-ingress/ingress-azure \
      --set verbosityLevel=3 \
      --set aksClusterConfiguration.apiServerAddress=$CLUSTER_SERVER
 
-# Deploy the ngnix ingress controller
-helm install stable/nginx-ingress --name nginx-ingress-dev --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-dev --set controller.service.type=ClusterIP
-
 # Create a self-signed certificate for TLS
 export EXTERNAL_INGEST_FQDN=$APP_GATEWAY_PUBLIC_IP_FQDN
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
