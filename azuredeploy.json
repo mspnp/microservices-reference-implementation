@@ -3,14 +3,14 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "environmentName": {
-           "type": "string",
-           "defaultValue": "dev",
-           "allowedValues": [
-             "dev",
-             "qa",
-             "staging",
-             "prod"
-           ]
+            "type": "string",
+            "defaultValue": "dev",
+            "allowedValues": [
+                "dev",
+                "qa",
+                "staging",
+                "prod"
+            ]
         },
         "acrResourceGroupName": {
             "type": "string"
@@ -155,6 +155,67 @@
             "metadata": {
                 "description": "Network policy used for configuring Kubernetes network profile."
             }
+        },
+        "applicationGatewaySize": {
+            "type": "string",
+            "allowedValues": [
+                "WAF_v2",
+                "Standard_v2"
+            ],
+            "defaultValue": "WAF_v2",
+            "metadata": {
+                "description": "Application gateway size"
+            }
+        },
+        "applicationGatewayTier": {
+            "type": "string",
+            "allowedValues": [
+                "WAF_v2",
+                "Standard_v2"
+            ],
+            "defaultValue": "WAF_v2",
+            "metadata": {
+                "description": "Application gateway tier"
+            }
+        },
+        "applicationGatewayWafEnabled": {
+            "type": "bool",
+            "defaultValue": true,
+            "metadata": {
+                "description": "WAF Enabled"
+            }
+        },
+        "applicationGatewayWafMode": {
+            "type": "string",
+            "allowedValues": [
+                "Detection",
+                "Prevention"
+            ],
+            "defaultValue": "Detection",
+            "metadata": {
+                "description": "WAF Mode"
+            }
+        },
+        "applicationGatewayWafRuleSetType": {
+            "type": "string",
+            "allowedValues": [
+                "OWASP"
+            ],
+            "defaultValue": "OWASP",
+            "metadata": {
+                "description": "WAF Rule Set Type"
+            }
+        },
+        "applicationGatewayWafRuleSetVersion": {
+            "type": "string",
+            "allowedValues": [
+                "2.2.9",
+                "3.0"
+            ],
+            "defaultValue": "3.0",
+            "metadata": {
+                "description": "WAF Rule Set Version"
+            }
         }
     },
     "variables": {
@@ -165,7 +226,6 @@
         "appGatewayNamePrefix": "appg",
         "aksVnetAddressPrefix": "10.10.0.0/16",
         "aksClusterSubnetPrefix": "10.10.0.0/21",
-        "appGatewaySubnetPrefix": "10.10.8.0/24",
         "aksVnetNamePrefix": "vnet",
         "aksClusterSubnetNamePrefix": "subnet",
         "readerRoleObjectId": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
@@ -185,9 +245,11 @@
                 "aksEnableAutoScaling": false,
                 "acrName": "[variables('acrName')]",
                 "appGatewayName": "[concat(parameters('environmentName'),'-ag-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
+                "applicationGatewayMinCapacity": 1,
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
-                "appGatewaySubnetName": "[uniqueString(variables('appGatewaySubnetPrefix'), resourceGroup().id)]",
+                "appGatewaySubnetName": "[concat(parameters('environmentName'),'-agsn-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
+                "appGatewaySubnetPrefix": "10.10.8.0/24",
                 "appGatewayPublicIpName": "[concat(parameters('environmentName'),'-agip-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appGatewayPublicDnsName": "[concat(parameters('environmentName'),'-ingest-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
@@ -220,9 +282,11 @@
                 "aksEnableAutoScaling": false,
                 "acrName": "[variables('acrName')]",
                 "appGatewayName": "[concat(parameters('environmentName'),'-ag-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
+                "applicationGatewayMinCapacity": 1,
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
-                "appGatewaySubnetName": "[uniqueString(variables('appGatewaySubnetPrefix'), resourceGroup().id)]",
+                "appGatewaySubnetName": "[concat(parameters('environmentName'),'-agsn-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
+                "appGatewaySubnetPrefix": "10.10.9.0/24",
                 "appGatewayPublicIpName": "[concat(parameters('environmentName'),'-agip-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appGatewayPublicDnsName": "[concat(parameters('environmentName'),'-ingest-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
@@ -255,9 +319,11 @@
                 "aksEnableAutoScaling": true,
                 "acrName": "[variables('acrName')]",
                 "appGatewayName": "[concat(parameters('environmentName'),'-ag-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
+                "applicationGatewayMinCapacity": 2,
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
-                "appGatewaySubnetName": "[uniqueString(variables('appGatewaySubnetPrefix'), resourceGroup().id)]",
+                "appGatewaySubnetName": "[concat(parameters('environmentName'),'-agsn-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
+                "appGatewaySubnetPrefix": "10.10.10.0/24",
                 "appGatewayPublicIpName": "[concat(parameters('environmentName'),'-agip-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appGatewayPublicDnsName": "[concat(parameters('environmentName'),'-ingest-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
@@ -290,9 +356,11 @@
                 "aksEnableAutoScaling": true,
                 "acrName": "[concat(parameters('environmentName'),variables('acrName'))]",
                 "appGatewayName": "[concat(parameters('environmentName'),'-ag-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
+                "applicationGatewayMinCapacity": 2,
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
-                "appGatewaySubnetName": "[uniqueString(variables('appGatewaySubnetPrefix'), resourceGroup().id)]",
+                "appGatewaySubnetName": "[concat(parameters('environmentName'),'-agsn-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
+                "appGatewaySubnetPrefix": "10.10.11.0/24",
                 "appGatewayPublicIpName": "[concat(parameters('environmentName'),'-agip-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appGatewayPublicDnsName": "[concat(parameters('environmentName'),'-ingest-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
@@ -429,15 +497,15 @@
                     {
                         "name": "[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetName]",
                         "properties": {
-                            "addressPrefix": "[variables('appGatewaySubnetPrefix')]"
+                            "addressPrefix": "[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetPrefix]"
                         }
                     }
                 ]
             }
         },
         {
-            "apiVersion":"2018-08-01",
-            "type":"Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2018-08-01",
+            "type": "Microsoft.Network/publicIPAddresses",
             "name": "[variables('environmentSettings')[parameters('environmentName')].appGatewayPublicIpName]",
             "location": "[resourceGroup().location]",
             "tags": {
@@ -445,12 +513,12 @@
                 "environment": "[parameters('environmentName')]"
             },
             "sku": {
-               "name": "Standard"
+                "name": "Standard"
             },
             "properties": {
-               "publicIPAllocationMethod": "Static",
-               "dnsSettings": {
-                "domainNameLabel": "[variables('environmentSettings')[parameters('environmentName')].appGatewayPublicDnsName]"
+                "publicIPAllocationMethod": "Static",
+                "dnsSettings": {
+                    "domainNameLabel": "[variables('environmentSettings')[parameters('environmentName')].appGatewayPublicDnsName]"
                 }
             }
         },
@@ -469,11 +537,11 @@
             ],
             "properties": {
                 "sku": {
-                    "name": "Standard_v2",
-                    "tier": "Standard_v2"
+                    "name": "[parameters('applicationGatewaySize')]",
+                    "tier": "[parameters('applicationGatewayTier')]"
                 },
                 "autoscaleConfiguration": {
-                    "minCapacity": 2
+                    "minCapacity": "[variables('environmentSettings')[parameters('environmentName')].applicationGatewayMinCapacity]"
                 },
                 "gatewayIPConfigurations": [
                     {
@@ -547,7 +615,14 @@
                             "Port": "80"
                         }
                     }
-                ]
+                ],
+                "webApplicationFirewallConfiguration": {
+                    "enabled": "[parameters('applicationGatewayWafEnabled')]",
+                    "firewallMode": "[parameters('applicationGatewayWafMode')]",
+                    "ruleSetType": "[parameters('applicationGatewayWafRuleSetType')]",
+                    "ruleSetVersion": "[parameters('applicationGatewayWafRuleSetVersion')]",
+                    "disabledRuleGroups": []
+                }
             }
         },
         {
@@ -1065,7 +1140,7 @@
                         "value": "50"
                     },
                     "dependsOn": [
-                       "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
+                        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
                     ]
                 },
                 {
