@@ -81,3 +81,4 @@ networkPolicy:
 workflow:
   customPodLabels:
     dd.fabrikam.com/egress-delivery: true
+    dd.fabrikam.com/egress-dronescheduler: true

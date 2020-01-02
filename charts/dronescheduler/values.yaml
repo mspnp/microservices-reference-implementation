@@ -42,3 +42,36 @@ autoscaling:
   maxReplicas:
   minReplicas:
   targetCPUUtilizationPercentage:
+networkPolicy:
+  egress:
+    enabled: true
+    # allowAll will be ingnored if customSelectons are provided. Comment out
+    # customSelectors if allowAll is required
+    allowAll: false
+    customSelectors:
+      # allow egress traffic to kubedns
+      - to:
+        - podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+        ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+  ingress:
+    enabled: true
+    # allowAll will be ingnored if customSelectons are provided. Comment out
+    # customSelectors if allowAll is required
+    allowAll: false
+    customSelectors:
+      # allow ingress traffic from workflow
+      templateSelector:
+        - podSelector:
+            matchLabels:
+              dd.fabrikam.com/egress-dronescheduler: true
+              app.kubernetes.io/component: backend
+              app.kubernetes.io/part-of: dronedelivery
+service:
+  targetPort: 8080
+  targetProtocol: TCP
