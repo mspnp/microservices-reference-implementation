@@ -1520,6 +1520,10 @@
         "appGatewayPublicIpFqdn": {
             "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('environmentSettings')[parameters('environmentName')].appGatewayPublicIpName)).dnsSettings.fqdn]",
             "type": "string"
+        },
+        "appGatewaySubnetPrefix": {
+            "value": "[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetPrefix]",
+            "type": "string"
         }
     }
 }

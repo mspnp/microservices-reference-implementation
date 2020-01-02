@@ -60,3 +60,7 @@ autoscaling:
   maxReplicas:
   minReplicas:
   targetCPUUtilizationPercentage:
+
+workflow:
+  customPodLabels:
+    dd.fabrikam.com/egress-delivery: true

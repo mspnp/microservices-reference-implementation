@@ -61,7 +61,7 @@ export {${ENV}_AI_NAME,AI_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n
 export ${ENV}_AI_IKEY=$(az resource show -g $RESOURCE_GROUP -n $AI_NAME --resource-type "Microsoft.Insights/components" --query properties.InstrumentationKey -o tsv)
 export {${ENV}_ACR_NAME,ACR_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.acrName.value -o tsv)
 export ${ENV}_ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
-
+export ${ENV}_GATEWAY_SUBNET_PREFIX=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appGatewaySubnetPrefix.value -o tsv)
 done
 ```
 
@@ -329,6 +329,7 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#DEV_INGRESS_TLS_SECRET_CERT_VAR_VAL#$DEV_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL#$DEV_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#DEV_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#DEV_GATEWAY_SUBNET_PREFIX_VAR_VAL#$DEV_GATEWAY_SUBNET_PREFIX#g" | \
      # qa resources
      sed "s#QA_ACR_SERVER_VAR_VAL#$QA_ACR_SERVER#g" | \
      sed "s#QA_ACR_NAME_VAR_VAL#$QA_ACR_NAME#g" | \
@@ -341,6 +342,7 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#QA_INGRESS_TLS_SECRET_CERT_VAR_VAL#$QA_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#QA_INGRESS_TLS_SECRET_KEY_VAR_VAL#$QA_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#QA_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#QA_GATEWAY_SUBNET_PREFIX_VAR_VAL#$QA_GATEWAY_SUBNET_PREFIX#g" | \
      # staging resources
      sed "s#STAGING_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
      sed "s#STAGING_ACR_NAME_VAR_VAL#$STAGING_ACR_NAME#g" | \
@@ -353,6 +355,7 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#STAGING_INGRESS_TLS_SECRET_CERT_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#STAGING_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#STAGING_GATEWAY_SUBNET_PREFIX_VAR_VAL#$STAGING_GATEWAY_SUBNET_PREFIX#g" | \
      # production resources
      sed "s#SOURCE_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
      sed "s#SOURCE_ACR_NAME_VAR_VAL#$STAGING_ACR_NAME#g" | \
@@ -366,7 +369,8 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#PROD_EXTERNAL_INGEST_FQDN_VAR_VAL#$PROD_EXTERNAL_INGEST_FQDN#g" | \
      sed "s#PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL#$PROD_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL#$PROD_INGRESS_TLS_SECRET_KEY#g" | \
-     sed "s#PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" \
+     sed "s#PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#PROD_GATEWAY_SUBNET_PREFIX_VAR_VAL#$PROD_GATEWAY_SUBNET_PREFIX#g" \
      > $DELIVERY_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \

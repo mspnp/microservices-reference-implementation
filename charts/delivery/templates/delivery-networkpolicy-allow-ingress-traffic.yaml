@@ -1,0 +1,44 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+###################################################################################################
+# Delivery allow ingress traffic
+###################################################################################################
+
+{{- if .Values.networkPolicy.ingress.enabled }}
+{{- $fullname := include "delivery.fullname" . | replace "." "" }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $fullname  }}-np-whitelist-ingress-traffic
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "delivery.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: backend
+      app.kubernetes.io/part-of: dronedelivery
+      app.kubernetes.io/version: {{ .Chart.AppVersion }}
+  policyTypes:
+  - Ingress
+  ingress:
+  - ports:
+    - protocol: {{ .Values.service.targetProtocol }}
+      port: {{ .Values.service.targetPort }}
+{{- if .Values.networkPolicy.ingress.customSelectors }}
+    from:
+{{- if .Values.networkPolicy.ingress.customSelectors.templateSelector }}
+{{ toYaml .Values.networkPolicy.ingress.customSelectors.templateSelector | indent 6 }}
+{{- end }}
+{{- if .Values.networkPolicy.ingress.customSelectors.argSelector }}
+{{ toYaml .Values.networkPolicy.ingress.customSelectors.argSelector | indent 6 }}
+{{- end }}
+{{- else if .Values.networkPolicy.ingress.allowAll }}
+    from:
+    - podSelector: {}
+    - namespaceSelector: {}
+    - ipBlock: {}
+{{- end -}}
+{{ end }}
