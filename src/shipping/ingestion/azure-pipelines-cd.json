@@ -57,6 +57,9 @@
                },
                "ACR_NAME": {
                    "value": "DEV_ACR_NAME_VAR_VAL"
+               },
+               "GATEWAY_SUBNET_PREFIX": {
+                   "value": "DEV_GATEWAY_SUBNET_PREFIX_VAR_VAL"
                }
             },
             "variableGroups": [],
@@ -240,7 +243,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-dev",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",secrets.appinsights.ikey=$(AI_IKEY),secrets.queue.keyname=IngestionServiceAccessKey,secrets.queue.keyvalue=$(INGESTION_ACCESS_KEY_VALUE),secrets.queue.name=$(INGESTION_QUEUE_NAME),secrets.queue.namespace=$(INGESTION_QUEUE_NAMESPACE),reason=\"$(REASON)\",tags.dev=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.ingress.customSelectors.argSelector={ipBlock},networkPolicy.ingress.customSelectors.argSelector[0].ipBlock.cidr=\"$(GATEWAY_SUBNET_PREFIX)\",secrets.appinsights.ikey=$(AI_IKEY),secrets.queue.keyname=IngestionServiceAccessKey,secrets.queue.keyvalue=$(INGESTION_ACCESS_KEY_VALUE),secrets.queue.name=$(INGESTION_QUEUE_NAME),secrets.queue.namespace=$(INGESTION_QUEUE_NAMESPACE),reason=\"$(REASON)\",tags.dev=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -440,6 +443,9 @@
                },
                "ACR_NAME": {
                    "value": "QA_ACR_NAME_VAR_VAL"
+               },
+               "GATEWAY_SUBNET_PREFIX": {
+                   "value": "QA_GATEWAY_SUBNET_PREFIX_VAR_VAL"
                }
             },
             "variableGroups": [],
@@ -623,7 +629,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-qa",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",secrets.appinsights.ikey=$(AI_IKEY),secrets.queue.keyname=IngestionServiceAccessKey,secrets.queue.keyvalue=$(INGESTION_ACCESS_KEY_VALUE),secrets.queue.name=$(INGESTION_QUEUE_NAME),secrets.queue.namespace=$(INGESTION_QUEUE_NAMESPACE),reason=\"$(REASON)\",tags.qa=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.ingress.customSelectors.argSelector={ipBlock},networkPolicy.ingress.customSelectors.argSelector[0].ipBlock.cidr=\"$(GATEWAY_SUBNET_PREFIX)\",secrets.appinsights.ikey=$(AI_IKEY),secrets.queue.keyname=IngestionServiceAccessKey,secrets.queue.keyvalue=$(INGESTION_ACCESS_KEY_VALUE),secrets.queue.name=$(INGESTION_QUEUE_NAME),secrets.queue.namespace=$(INGESTION_QUEUE_NAMESPACE),reason=\"$(REASON)\",tags.qa=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -823,6 +829,9 @@
                },
                "ACR_NAME": {
                    "value": "STAGING_ACR_NAME_VAR_VAL"
+               },
+               "GATEWAY_SUBNET_PREFIX": {
+                   "value": "STAGING_GATEWAY_SUBNET_PREFIX_VAR_VAL"
                }
             },
             "variableGroups": [],
@@ -1006,7 +1015,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-staging",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",secrets.appinsights.ikey=$(AI_IKEY),secrets.queue.keyname=IngestionServiceAccessKey,secrets.queue.keyvalue=$(INGESTION_ACCESS_KEY_VALUE),secrets.queue.name=$(INGESTION_QUEUE_NAME),secrets.queue.namespace=$(INGESTION_QUEUE_NAMESPACE),reason=\"$(REASON)\",tags.staging=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.ingress.customSelectors.argSelector={ipBlock},networkPolicy.ingress.customSelectors.argSelector[0].ipBlock.cidr=\"$(GATEWAY_SUBNET_PREFIX)\",secrets.appinsights.ikey=$(AI_IKEY),secrets.queue.keyname=IngestionServiceAccessKey,secrets.queue.keyvalue=$(INGESTION_ACCESS_KEY_VALUE),secrets.queue.name=$(INGESTION_QUEUE_NAME),secrets.queue.namespace=$(INGESTION_QUEUE_NAMESPACE),reason=\"$(REASON)\",tags.staging=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -1212,6 +1221,9 @@
                },
                "ACR_NAME": {
                    "value": "PROD_ACR_NAME_VAR_VAL"
+               },
+               "GATEWAY_SUBNET_PREFIX": {
+                   "value": "PROD_GATEWAY_SUBNET_PREFIX_VAR_VAL"
                }
             },
             "variableGroups": [],
@@ -1423,7 +1435,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",secrets.appinsights.ikey=$(AI_IKEY),secrets.queue.keyname=IngestionServiceAccessKey,secrets.queue.keyvalue=$(INGESTION_ACCESS_KEY_VALUE),secrets.queue.name=$(INGESTION_QUEUE_NAME),secrets.queue.namespace=$(INGESTION_QUEUE_NAMESPACE),reason=\"$(REASON)\",tags.prod=true,ingestion-prod.experimental=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.ingress.customSelectors.argSelector={ipBlock},networkPolicy.ingress.customSelectors.argSelector[0].ipBlock.cidr=\"$(GATEWAY_SUBNET_PREFIX)\",secrets.appinsights.ikey=$(AI_IKEY),secrets.queue.keyname=IngestionServiceAccessKey,secrets.queue.keyvalue=$(INGESTION_ACCESS_KEY_VALUE),secrets.queue.name=$(INGESTION_QUEUE_NAME),secrets.queue.namespace=$(INGESTION_QUEUE_NAMESPACE),reason=\"$(REASON)\",tags.prod=true,ingestion-prod.experimental=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -1717,7 +1729,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",secrets.appinsights.ikey=$(AI_IKEY),secrets.queue.keyname=IngestionServiceAccessKey,secrets.queue.keyvalue=$(INGESTION_ACCESS_KEY_VALUE),secrets.queue.name=$(INGESTION_QUEUE_NAME),secrets.queue.namespace=$(INGESTION_QUEUE_NAMESPACE),reason=\"$(REASON)\",tags.prod=true,current=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.ingress.customSelectors.argSelector={ipBlock},networkPolicy.ingress.customSelectors.argSelector[0].ipBlock.cidr=\"$(GATEWAY_SUBNET_PREFIX)\",secrets.appinsights.ikey=$(AI_IKEY),secrets.queue.keyname=IngestionServiceAccessKey,secrets.queue.keyvalue=$(INGESTION_ACCESS_KEY_VALUE),secrets.queue.name=$(INGESTION_QUEUE_NAME),secrets.queue.namespace=$(INGESTION_QUEUE_NAMESPACE),reason=\"$(REASON)\",tags.prod=true,current=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
