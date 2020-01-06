@@ -64,7 +64,7 @@ networkPolicy:
       templateSelector:
         - podSelector:
             matchLabels:
-              dd.fabrikam.com/egress-package: true
+              dd.fabrikam.com/egress-package: "true"
               app.kubernetes.io/component: backend
               app.kubernetes.io/part-of: dronedelivery
 service:
