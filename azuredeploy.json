@@ -226,6 +226,8 @@
         "appGatewayNamePrefix": "appg",
         "aksVnetAddressPrefix": "10.10.0.0/16",
         "aksClusterSubnetPrefix": "10.10.0.0/21",
+        "firewallSubnetPrefix": "10.10.12.0/24",
+        "firewallSubnetName": "AzureFirewallSubnet",
         "aksVnetNamePrefix": "vnet",
         "aksClusterSubnetNamePrefix": "subnet",
         "readerRoleObjectId": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
@@ -237,6 +239,8 @@
         "deliveryRedisStorageName": "[concat(parameters('environmentName'),'rsto',uniqueString(resourceGroup().id))]",
         "nestedACRDeploymentName": "[concat('azuredeploy-acr-',parameters('acrResourceGroupName'),parameters('environmentName'))]",
         "aksLogAnalyticsNamePrefix": "logsAnalytics",
+        "egressFirewallPrefix": "egressFw",
+        "firewallPublicIpName": "[concat('firewallPip-',uniqueString(variables('egressFirewallPrefix'), resourceGroup().id))]",
         "environmentSettings": {
             "dev": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
@@ -495,6 +499,12 @@
                         }
                     },
                     {
+                        "name": "[variables('firewallSubnetName')]",
+                        "properties": {
+                            "addressPrefix": "[variables('firewallSubnetPrefix')]"
+                        }
+                    },
+                    {
                         "name": "[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetName]",
                         "properties": {
                             "addressPrefix": "[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetPrefix]"
@@ -643,7 +653,7 @@
         {
             "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
             "type": "Microsoft.ContainerService/managedClusters",
-            "apiVersion": "2019-02-01",
+            "apiVersion": "2019-08-01",
             "location": "[resourceGroup().location]",
             "tags": {
                 "environment": "shared cluster"
@@ -785,7 +795,8 @@
             "apiVersion": "2016-03-31",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))]"
             ],
             "tags": {
                 "displayName": "Delivery Cosmos Db",
@@ -806,7 +817,8 @@
                         "locationName": "[resourceGroup().location]",
                         "failoverPriority": 0
                     }
-                ]
+                ],
+                "ipRangeFilter": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))).ipAddress]"
             }
         },
         {
@@ -816,7 +828,8 @@
             "name": "[variables('environmentSettings')[parameters('environmentName')].packageMongoDbName]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))]"
             ],
             "tags": {
                 "displayName": "Package Cosmos Db",
@@ -831,7 +844,8 @@
                     {
                         "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
                     }
-                ]
+                ],
+                "ipRangeFilter": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))).ipAddress]"
             }
         },
         {
@@ -840,7 +854,8 @@
             "apiVersion": "2015-04-08",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))]"
             ],
             "properties": {
                 "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName]",
@@ -856,7 +871,8 @@
                         "locationName": "[resourceGroup().location]",
                         "failoverPriority": 0
                     }
-                ]
+                ],
+                "ipRangeFilter": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))).ipAddress]"
             }
         },
         {
@@ -924,7 +940,8 @@
             "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisStorageId]",
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))]"
             ],
             "tags": {
                 "displayName": "Delivery Key Vault",
@@ -943,6 +960,11 @@
                     "virtualNetworkRules": [
                         {
                             "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                        }
+                    ],
+                    "ipRules": [
+                        {
+                            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))).ipAddress]"
                         }
                     ]
                 },
@@ -1038,7 +1060,8 @@
             "apiVersion": "2016-10-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))]"
             ],
             "tags": {
                 "displayName": "DroneScheduler Key Vault",
@@ -1057,6 +1080,11 @@
                     "virtualNetworkRules": [
                         {
                             "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                        }
+                    ],
+                    "ipRules": [
+                        {
+                            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))).ipAddress]"
                         }
                     ]
                 },
@@ -1184,7 +1212,8 @@
             "apiVersion": "2016-10-01",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
+                "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]",
+                "[resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))]"
             ],
             "tags": {
                 "displayName": "Workflow Key Vault",
@@ -1203,6 +1232,11 @@
                     "virtualNetworkRules": [
                         {
                             "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName)]"
+                        }
+                    ],
+                    "ipRules": [
+                        {
+                            "value": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))).ipAddress]"
                         }
                     ]
                 },
@@ -1454,6 +1488,20 @@
                 "principalId": "[parameters('appGatewayControllerPrincipalId')]",
                 "scope": "[resourceGroup().id]"
             }
+        },
+        {
+            "type": "Microsoft.Network/publicIPAddresses",
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "name": "[variables('firewallPublicIpName')]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAddressVersion": "IPv4",
+                "publicIPAllocationMethod": "Static",
+                "idleTimeoutInMinutes": 4
+            }
         }
     ],
     "outputs": {
@@ -1523,6 +1571,30 @@
         },
         "appGatewaySubnetPrefix": {
             "value": "[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetPrefix]",
+            "type": "string"
+        },
+        "aksVNetName": {
+            "type": "string",
+            "value": "[variables('environmentSettings')[parameters('environmentName')].aksVnetName]"
+        },
+        "aksClusterSubnetName": {
+            "type": "string",
+            "value": "[variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName]"
+        },
+        "aksClusterSubnetPrefix": {
+            "type": "string",
+            "value": "[variables('aksClusterSubnetPrefix')]"
+        },
+        "firewallSubnetName": {
+            "type": "string",
+            "value": "[variables('firewallSubnetName')]"
+        },
+        "firewallPublicIpName": {
+            "type": "string",
+            "value": "[variables('firewallPublicIpName')]"
+        },
+        "deliveryRedisHostName": {
+            "value": "[reference(resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)).hostName]",
             "type": "string"
         }
     }

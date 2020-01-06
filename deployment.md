@@ -98,8 +98,9 @@ until az ad sp show --id ${GATEWAY_CONTROLLER_ID_PRINCIPAL_ID} &> /dev/null ; do
 
 # Export the kubernetes cluster version
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv)
+export SERVICETAGS_LOCATION=$(az account list-locations --query "[?name=='${LOCATION}'].displayName" -o tsv | sed 's/[[:space:]]//g')
 
-# Deploy all other resources
+# Deploy cluster and microservices Azure services
 az group deployment create -g $RESOURCE_GROUP --name azuredeploy-dev --template-file ${PROJECT_ROOT}/azuredeploy.json \
 --parameters servicePrincipalClientId=${SP_APP_ID} \
             servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
@@ -116,15 +117,32 @@ az group deployment create -g $RESOURCE_GROUP --name azuredeploy-dev --template-
             appGatewayControllerPrincipalId=${GATEWAY_CONTROLLER_ID_PRINCIPAL_ID} \
             acrResourceGroupName=${RESOURCE_GROUP_ACR} \
             acrResourceGroupLocation=$LOCATION
+
+export VNET_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksVNetName.value -o tsv) && \
+export CLUSTER_SUBNET_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksClusterSubnetName.value -o tsv) && \
+export CLUSTER_SUBNET_PREFIX=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksClusterSubnetPrefix.value -o tsv) && \
+export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksClusterName.value -o tsv) && \
+export CLUSTER_SERVER=$(az aks show -n $CLUSTER_NAME -g $RESOURCE_GROUP --query fqdn -o tsv) && \
+export FIREWALL_PIP_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.firewallPublicIpName.value -o tsv) && \
+export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.acrName.value -o tsv) && \
+export ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv) && \
+export DELIVERY_REDIS_HOSTNAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.deliveryRedisHostName.value -o tsv)
+
+# Restrict cluster egress traffic
+az group deployment create -g $RESOURCE_GROUP --name azuredeploy-firewall --template-file ${PROJECT_ROOT}/azuredeploy-firewall.json \
+--parameters aksVnetName=${VNET_NAME} \
+            aksClusterSubnetName=${CLUSTER_SUBNET_NAME} \
+            aksClusterSubnetPrefix=${CLUSTER_SUBNET_PREFIX} \
+            firewallPublicIpName=${FIREWALL_PIP_NAME} \
+            serviceTagsLocation=${SERVICETAGS_LOCATION} \
+            aksFqdns="['${CLUSTER_SERVER}']" \
+            acrServers="['${ACR_SERVER}']" \
+            deliveryRedisHostNames="['${DELIVERY_REDIS_HOSTNAME}']"
 ```
 
 Get outputs from Azure Deploy
 ```bash
 # Shared
-export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.acrName.value -o tsv) && \
-export ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv) && \
-export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksClusterName.value -o tsv)
-export CLUSTER_SERVER=$(az aks show -n $CLUSTER_NAME -g $RESOURCE_GROUP --query fqdn -o tsv) && \
 export GATEWAY_SUBNET_PREFIX=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.appGatewaySubnetPrefix.value -o tsv)
 ```
 

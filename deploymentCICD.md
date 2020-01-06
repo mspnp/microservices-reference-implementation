@@ -12,6 +12,7 @@
 ```bash
 # Export the kubernetes cluster version and deploy
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv) && \
+export SERVICETAGS_LOCATION=$(az account list-locations --query "[?name=='${LOCATION}'].displayName" -o tsv | sed 's/[[:space:]]//g')
 for env in dev qa staging prod; do
 ENV=${env^^}
 az deployment create \
@@ -60,16 +61,33 @@ az group deployment create -g $RESOURCE_GROUP --name azuredeploy-${env} --templa
 export {${ENV}_AI_NAME,AI_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appInsightsName.value -o tsv)
 export ${ENV}_AI_IKEY=$(az resource show -g $RESOURCE_GROUP -n $AI_NAME --resource-type "Microsoft.Insights/components" --query properties.InstrumentationKey -o tsv)
 export {${ENV}_ACR_NAME,ACR_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.acrName.value -o tsv)
-export ${ENV}_ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
 export ${ENV}_GATEWAY_SUBNET_PREFIX=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appGatewaySubnetPrefix.value -o tsv)
+export {${ENV}_VNET_NAME,VNET_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.aksVNetName.value -o tsv)
+export {${ENV}_CLUSTER_SUBNET_NAME,CLUSTER_SUBNET_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.aksClusterSubnetName.value -o tsv)
+export {${ENV}_CLUSTER_SUBNET_PREFIX,CLUSTER_SUBNET_PREFIX}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.aksClusterSubnetPrefix.value -o tsv)
+export {${ENV}_CLUSTER_FQDN,CLUSTER_FQDN}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.aksFqdn.value -o tsv)
+export {${ENV}_CLUSTER_NAME,CLUSTER_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.aksClusterName.value -o tsv) && \
+export {${ENV}_CLUSTER_SERVER,CLUSTER_SERVER}=$(az aks show -n $CLUSTER_NAME -g $RESOURCE_GROUP --query fqdn -o tsv)
+export CLUSTER_SERVERS=${CLUSTER_SERVERS}\'${CLUSTER_SERVER}\',
+export {${ENV}_ACR_SERVER,ACR_SERVER}=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
+export ACR_SERVERS=${ACR_SERVERS}\'${ACR_SERVER}\',
+export DELIVERY_REDIS_HOSTNAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.deliveryRedisHostName.value -o tsv)
+export DELIVERY_REDIS_HOSTNAMES=${DELIVERY_REDIS_HOSTNAMES}\'${DELIVERY_REDIS_HOSTNAME}\',
 done
-```
 
-Get outputs from Azure Deploy
-```bash
-# Shared
-export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksClusterName.value -o tsv) && \
-export CLUSTER_SERVER=$(az aks show -n $CLUSTER_NAME -g $RESOURCE_GROUP --query fqdn -o tsv)
+# Restrict cluster egress traffic
+export FIREWALL_PIP_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-prod --query properties.outputs.firewallPublicIpName.value -o tsv) && \
+
+export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.acrName.value -o tsv) && \
+az group deployment create -g $RESOURCE_GROUP --name azuredeploy-firewall --template-file ${PROJECT_ROOT}/azuredeploy-firewall.json \
+--parameters aksVnetName=${VNET_NAME} \
+            aksClusterSubnetName=${CLUSTER_SUBNET_NAME} \
+            aksClusterSubnetPrefix=${CLUSTER_SUBNET_PREFIX} \
+            firewallPublicIpName=${FIREWALL_PIP_NAME} \
+            serviceTagsLocation=${SERVICETAGS_LOCATION} \
+            aksFqdns="[${CLUSTER_SERVERS%?}]" \
+            acrServers="[${ACR_SERVERS%?}]" \
+            deliveryRedisHostNames="[${DELIVERY_REDIS_HOSTNAMES%?}]"
 ```
 
 Download kubectl and create a k8s namespace
