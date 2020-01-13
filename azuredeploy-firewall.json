@@ -349,7 +349,7 @@
                                     ],
                                     "targetFqdns": [
                                         "gcr.io",
-                                        "google.storageapis.com",
+                                        "storage.googleapis.com",
                                         "aksrepos.azurecr.io",
                                         "*mcr.microsoft.com",
                                         "*.cdn.mscr.io",
