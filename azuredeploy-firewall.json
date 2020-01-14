@@ -377,6 +377,10 @@
                                         {
                                             "protocolType": "http",
                                             "port": "80"
+                                        },
+                                        {
+                                            "protocolType": "https",
+                                            "port": "443"
                                         }
                                     ],
                                     "sourceAddresses": [
