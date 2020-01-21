@@ -3,7 +3,7 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
         "aksVnetName": {
-            "type": "string"
+           "type": "string"
         },
         "aksClusterSubnetName": {
             "type": "string"
@@ -286,52 +286,42 @@
                                 }
                             ]
                         }
-                    }
-                ],
-                "applicationRuleCollections": [
+                    },
                     {
-                        "name": "egressAppRegionalAks",
+                        "name": "egressNetRegionalTCP443AzureCloud",
                         "properties": {
-                            "priority": 100,
+                            "priority": 65000,
                             "action": {
                                 "type": "Allow"
                             },
                             "rules": [
                                 {
-                                    "name": "[concat(variables('regionalRulePrefix'),'K8sApiServerHcp')]",
+                                    "name": "[concat(variables('regionalRulePrefix'),'AADPodIdentityWorkaround')]",
                                     "protocols": [
-                                        {
-                                            "protocolType": "https",
-                                            "port": "443"
-                                        }
+                                        "TCP"
                                     ],
                                     "sourceAddresses": [
                                         "[parameters('aksClusterSubnetPrefix')]"
                                     ],
-                                    "targetFqdns": "[parameters('aksFqdns')]"
-                                },
-                                {
-                                    "name": "[concat(variables('regionalRulePrefix'),'K8sApiServerTun')]",
-                                    "protocols": [
-                                        {
-                                            "protocolType": "https",
-                                            "port": "443"
-                                        }
+                                    "destinationAddresses": [
+                                        "[concat('AzureCloud.',parameters('serviceTagsLocation'))]"
                                     ],
-                                    "sourceAddresses": [
-                                        "[parameters('aksClusterSubnetPrefix')]"
-                                    ],
-                                    "targetFqdns": [
-                                        "[concat('*.tun.',resourceGroup().location,'.azmk8s.io')]"
+                                    "sourceIpGroups": [],
+                                    "destinationIpGroups": [],
+                                    "destinationFqdns": [],
+                                    "destinationPorts": [
+                                        "443"
                                     ]
                                 }
                             ]
                         }
-                    },
+                    }
+                ],
+                "applicationRuleCollections": [
                     {
                         "name": "egressAppAks",
                         "properties": {
-                            "priority": 200,
+                            "priority": 100,
                             "action": {
                                 "type": "Allow"
                             },
@@ -419,21 +409,6 @@
                                     "targetFqdns": [
                                         "login.microsoftonline.com"
                                     ]
-                                },
-                                {
-                                    "name": "[concat(variables('rulePrefix'),'AzureMonitorAppInsightsQuickPulse')]",
-                                    "protocols": [
-                                        {
-                                            "protocolType": "https",
-                                            "port": "443"
-                                        }
-                                    ],
-                                    "sourceAddresses": [
-                                        "[parameters('aksClusterSubnetPrefix')]"
-                                    ],
-                                    "targetFqdns": [
-                                        "rt.services.visualstudio.com"
-                                    ]
                                 }
                             ]
                         }
@@ -441,7 +416,7 @@
                     {
                         "name": "egressAppFabrikamDroneDelivery",
                         "properties": {
-                            "priority": 400,
+                            "priority": 200,
                             "action": {
                                 "type": "Allow"
                             },
