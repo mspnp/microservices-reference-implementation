@@ -3,13 +3,14 @@
 //  Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-using System.Collections.ObjectModel;
 using Fabrikam.DroneDelivery.Common;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Models
 {
     public class Delivery
     {
+        public Delivery() {}
+
         public Delivery(string id, 
                         UserAccount owner, 
                         Location pickup, 
@@ -29,13 +30,13 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Models
             DroneId = droneid;
         }
 
-        public string Id { get; }
-        public UserAccount Owner { get; }
-        public Location Pickup { get; }
-        public Location Dropoff { get; }
-        public string Deadline { get; }
-        public bool Expedited { get; }
-        public ConfirmationType ConfirmationRequired { get; }
-        public string DroneId { get; }
+        public string Id { get; set;}
+        public UserAccount Owner { get; set;}
+        public Location Pickup { get; set;}
+        public Location Dropoff { get; set;}
+        public string Deadline { get; set;}
+        public bool Expedited { get; set;}
+        public ConfirmationType ConfirmationRequired { get; set;}
+        public string DroneId { get; set;}
     }
 }

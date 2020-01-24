@@ -7,12 +7,14 @@ namespace Fabrikam.DroneDelivery.Common
 {
     public class UserAccount
     {
+        public UserAccount() {}
+        
         public UserAccount(string userid, string accountid)
         {
             UserId = userid;
             AccountId = accountid;
         }
-        public string UserId { get; }
-        public string AccountId { get; }
+        public string UserId { get; set;}
+        public string AccountId { get; set;}
     }
 }
