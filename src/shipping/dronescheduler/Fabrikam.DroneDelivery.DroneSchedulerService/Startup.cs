@@ -4,20 +4,17 @@
 // ------------------------------------------------------------
 
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using Microsoft.FeatureManagement;
+using Microsoft.OpenApi.Models;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Models;
 using Fabrikam.DroneDelivery.DroneSchedulerService.Services;
 using Serilog;
 using Serilog.Formatting.Compact;
-using Swashbuckle.AspNetCore.Swagger;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService
 {
@@ -44,7 +41,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
             services.AddApplicationInsightsTelemetry(Configuration);
 
             // Add framework services.
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddControllers();
 
             // Add health check
             services.AddHealthChecks().AddCheck(
@@ -54,7 +51,7 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info { Title = "Mock DroneScheduler API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Mock DroneScheduler API", Version = "v1" });
             });
 
             services.AddSingleton<IInvoicingRepository, InvoicingRepository>();
@@ -64,17 +61,19 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IHttpContextAccessor httpContextAccessor)
+        public void Configure(IApplicationBuilder app, ILoggerFactory loggerFactory, IHttpContextAccessor httpContextAccessor)
         {
             Log.Logger = new LoggerConfiguration()
               .WriteTo.Console(new CompactJsonFormatter())
               .ReadFrom.Configuration(Configuration)
               .CreateLogger();
 
-            // Map health checks
-            app.UseHealthChecks("/healthz");
-
-            app.UseMvc();
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapHealthChecks("/healthz");
+                endpoints.MapControllers();
+            });
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();

@@ -7,16 +7,17 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Tests
 {
     public class CustomWebApplicationFactory
-        : WebApplicationFactory<Startup> 
+        : WebApplicationFactory<Startup>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
-        { 
-            builder
+        {
+            builder 
                 .UseContentRoot(".")
                 .UseEnvironment("Test")
                 .ConfigureTestServices(s =>
