@@ -1,14 +1,14 @@
-FROM microsoft/dotnet:2.2-runtime AS base
+FROM mcr.microsoft.com/dotnet/core/runtime:3.1 AS base
 WORKDIR /app
 
-FROM microsoft/dotnet:2.2-sdk AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 WORKDIR /src/Fabrikam.Workflow.Service
 
 COPY Fabrikam.Workflow.Service/Fabrikam.Workflow.Service.csproj .
 RUN dotnet restore Fabrikam.Workflow.Service.csproj
 
 COPY Fabrikam.Workflow.Service/. .
-RUN dotnet build Fabrikam.Workflow.Service.csproj -c Release -o /app
+RUN dotnet build Fabrikam.Workflow.Service.csproj -c release -o /app --no-restore
 
 FROM build AS testrunner
 WORKDIR /src/tests
