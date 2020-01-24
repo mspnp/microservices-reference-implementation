@@ -3,6 +3,21 @@ Microsoft patterns & practices
 
 This reference implementation shows a set of best practices for building and running a microservices architecture on Microsoft Azure, using Kubernetes.
 
+|                                     | [Basic](https://github.com/mspnp/microservices-reference-implementation/tree/basic) | [Advanced](https://github.com/mspnp/microservices-reference-implementation/) |
+|-------------------------------------|-------|----------|
+| Distributed Monitoring              |  ✅   |    ✅    |
+| Ingress Controller                  |  ✅   |    ✅    |
+| Azure Active Directory Pod Identity |  ✅   |    ✅    |
+| CI/CD                               |  ✅   |    ✅    |
+| Helm charts                         |  ✅   |    ✅    |
+| Resource Limits                     |  ✅   |    ✅    |
+| Readiness/Liveness Probes           |  ✅   |    ✅    |
+| Horizontal Pod Autoscaling          |  ❌   |    ✅    |
+| Cluster Autoscaling                 |  ❌   |    ✅    |
+| Advanced Networking                 |  ❌   |    ✅    |
+| Network Policies                    |  ❌   |    ✅    |
+| Egress Lockdown                     |  ❌   |    ✅    |
+
 ## Guidance
 
 This project has a companion set of articles that describe challenges, design patterns, and best practices for building microservices architecture. You can find these articles on the Azure Architecture Center:
@@ -49,7 +64,7 @@ The Drone Delivery application has been tested up to 2000 messages/sec:
 1. Serve: Visual Studio Load Test Throughout Request/Sec
 2. Ingest: Azure Service Bus metrics Incoming Messages/Sec
 3. Egress: Azure Service Bus metrics Outgoing Messages/Sec
-4. Complete: AI Service Bus Complete dependencies  
+4. Complete: AI Service Bus Complete dependencies
 5. Avg/50<sup>th</sup>/95<sup>th</sup>/99<sup>th</sup>: AI dependencies
 6. CPU/Mem: Azure Monitor for Containers
 
