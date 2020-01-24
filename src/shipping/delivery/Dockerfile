@@ -1,8 +1,8 @@
-FROM microsoft/dotnet:2.2-aspnetcore-runtime as base
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 as base
 WORKDIR /app
 EXPOSE 8080
 
-FROM microsoft/dotnet:2.2-sdk AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 
 WORKDIR /app
 COPY Fabrikam.DroneDelivery.Common/*.csproj ./Fabrikam.DroneDelivery.Common/
@@ -31,7 +31,7 @@ FROM build AS publish
 MAINTAINER Fernando Antivero (https://github.com/ferantivero)
 
 WORKDIR /app
-RUN dotnet publish /app/Fabrikam.DroneDelivery.DeliveryService/ -c Release -o ../out
+RUN dotnet publish /app/Fabrikam.DroneDelivery.DeliveryService/ -c release -o ./out --no-restore
 
 FROM base AS runtime
 
