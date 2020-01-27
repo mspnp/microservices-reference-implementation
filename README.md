@@ -3,20 +3,21 @@ Microsoft patterns & practices
 
 This reference implementation shows a set of best practices for building and running a microservices architecture on Microsoft Azure, using Kubernetes.
 
-|                                     | [Basic](https://github.com/mspnp/microservices-reference-implementation/tree/basic) | [Advanced](https://github.com/mspnp/microservices-reference-implementation/) |
-|-------------------------------------|-------|----------|
-| Distributed Monitoring              |  ✅   |    ✅    |
-| Ingress Controller                  |  ✅   |    ✅    |
-| Azure Active Directory Pod Identity |  ✅   |    ✅    |
-| CI/CD                               |  ✅   |    ✅    |
-| Helm charts                         |  ✅   |    ✅    |
-| Resource Limits                     |  ✅   |    ✅    |
-| Readiness/Liveness Probes           |  ✅   |    ✅    |
-| Horizontal Pod Autoscaling          |  ❌   |    ✅    |
-| Cluster Autoscaling                 |  ❌   |    ✅    |
-| Advanced Networking                 |  ❌   |    ✅    |
-| Network Policies                    |  ❌   |    ✅    |
-| Egress Lockdown                     |  ❌   |    ✅    |
+|                                         | [Basic](https://github.com/mspnp/microservices-reference-implementation/tree/basic) | [Advanced](https://github.com/mspnp/microservices-reference-implementation/) |
+|-----------------------------------------|-------|----------|
+| Distributed Monitoring                  |  ✅   |    ✅    |
+| Ingress Controller                      |  ✅   |    ✅    |
+| Azure Active Directory Pod Identity     |  ✅   |    ✅    |
+| CI/CD using Azure Pipelines             |  ✅   |    ✅    |
+| Helm charts                             |  ✅   |    ✅    |
+| Resource Limits                         |  ✅   |    ✅    |
+| Readiness/Liveness Probes               |  ✅   |    ✅    |
+| Horizontal Pod Autoscaling              |  ❌   |    ✅    |
+| Cluster Autoscaling                     |  ❌   |    ✅    |
+| Advanced Networking                     |  ❌   |    ✅    |
+| Service Endpoints                       |  ❌   |    ✅    |
+| Network Policies                        |  ❌   |    ✅    |
+| Egress restriction using Azure Firewall |  ❌   |    ✅    |
 
 ## Guidance
 
