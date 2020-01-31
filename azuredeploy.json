@@ -267,6 +267,8 @@
                 "deliveryKeyVaultName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
                 "packageMongoDbName": "[concat(parameters('environmentName'),'-p-',uniqueString(resourceGroup().id))]",
                 "ingestionSBNamespace": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
+                "ingestionSBNamespaceSKU": "Premium",
+                "ingestionSBNamespaceTier": "Premium",
                 "ingestionSBName": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
                 "ingestionServiceAccessKey": "IngestionServiceAccessKey",
                 "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
@@ -304,6 +306,8 @@
                 "deliveryKeyVaultName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
                 "packageMongoDbName": "[concat(parameters('environmentName'),'-p-',uniqueString(resourceGroup().id))]",
                 "ingestionSBNamespace": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
+                "ingestionSBNamespaceSKU": "Premium",
+                "ingestionSBNamespaceTier": "Premium",
                 "ingestionSBName": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
                 "ingestionServiceAccessKey": "IngestionServiceAccessKey",
                 "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
@@ -341,6 +345,8 @@
                 "deliveryKeyVaultName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
                 "packageMongoDbName": "[concat(parameters('environmentName'),'-p-',uniqueString(resourceGroup().id))]",
                 "ingestionSBNamespace": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
+                "ingestionSBNamespaceSKU": "Premium",
+                "ingestionSBNamespaceTier": "Premium",
                 "ingestionSBName": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
                 "ingestionServiceAccessKey": "IngestionServiceAccessKey",
                 "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
@@ -378,6 +384,8 @@
                 "deliveryKeyVaultName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
                 "packageMongoDbName": "[concat(parameters('environmentName'),'-p-',uniqueString(resourceGroup().id))]",
                 "ingestionSBNamespace": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
+                "ingestionSBNamespaceSKU": "Premium",
+                "ingestionSBNamespaceTier": "Premium",
                 "ingestionSBName": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
                 "ingestionServiceAccessKey": "IngestionServiceAccessKey",
                 "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
@@ -497,6 +505,12 @@
                                 },
                                 {
                                     "service": "Microsoft.Storage",
+                                    "locations": [
+                                        "[resourceGroup().location]"
+                                    ]
+                                },
+                                {
+                                    "service": "Microsoft.ServiceBus",
                                     "locations": [
                                         "[resourceGroup().location]"
                                     ]
@@ -765,6 +779,19 @@
             },
             "resources": [
                 {
+                    "name": "firewallAccess",
+                    "type": "firewallRules",
+                    "apiVersion": "2018-03-01",
+                    "dependsOn": [
+                        "[resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)]",
+                        "[resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))]"
+                    ],
+                    "properties": {
+                        "startIP": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))).ipAddress]",
+                        "endIP": "[reference(resourceId('Microsoft.Network/publicIPAddresses', variables('firewallPublicIpName'))).ipAddress]"
+                    }
+                },
+                {
                     "apiVersion": "2017-05-01-preview",
                     "type": "Microsoft.Cache/redis/providers/diagnosticsettings",
                     "name": "[concat(variables('environmentSettings')[parameters('environmentName')].deliveryRedisName, '/Microsoft.Insights/', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)]",
@@ -875,8 +902,8 @@
             "apiVersion": "2017-04-01",
             "location": "[resourceGroup().location]",
             "sku": {
-                "name": "Standard",
-                "tier": "Standard"
+                "name": "[variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespaceSKU]",
+                "tier": "[variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespaceTier]"
             },
             "tags": {
                 "displayName": "Ingestion and Workflow Service Bus",
@@ -895,8 +922,7 @@
                     ],
                     "properties": {
                         "lockDuration": "PT5M",
-                        "maxSizeInMegabytes": "1024",
-                        "enablePartitioning": "true"
+                        "maxSizeInMegabytes": "1024"
                     }
                 },
                 {
@@ -923,6 +949,18 @@
                     },
                     "dependsOn": [
                         "[resourceId('Microsoft.ServiceBus/namespaces', variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespace)]"
+                    ]
+                },
+                {
+                    "name": "firewall",
+                    "type": "VirtualNetworkRules",
+                    "apiVersion": "2018-01-01-preview",
+                    "properties": {
+                        "virtualNetworkSubnetId": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('firewallSubnetName'))]"
+                    },
+                    "dependsOn": [
+                        "[resourceId('Microsoft.ServiceBus/namespaces', variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespace)]",
+                        "[resourceId('Microsoft.Network/virtualNetworks', variables('environmentSettings')[parameters('environmentName')].aksVnetName)]"
                     ]
                 }
             ]

@@ -192,7 +192,7 @@
                                         "[parameters('aksClusterSubnetPrefix')]"
                                     ],
                                     "destinationAddresses": [
-                                        "[concat('AzureCloud.',parameters('serviceTagsLocation'))]"
+                                        "[concat('ServiceBus.',parameters('serviceTagsLocation'))]"
                                     ],
                                     "sourceIpGroups": [],
                                     "destinationIpGroups": [],
