@@ -145,6 +145,7 @@
         "managedIdentityOperatorRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('managedIdentityOperatorRoleObjectId'))]",
         "deliveryRedisStorageName": "[concat(parameters('environmentName'),'rsto',uniqueString(resourceGroup().id))]",
         "nestedACRDeploymentName": "[concat('azuredeploy-acr-',parameters('acrResourceGroupName'),parameters('environmentName'))]",
+        "aksLogAnalyticsNamePrefix": "logsAnalytics",
         "environmentSettings": {
             "dev": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
@@ -167,7 +168,10 @@
                 "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
                 "workflowServiceAccessKey": "WorkflowServiceAccessKey",
                 "agentCount": 1,
-                "agentVMSize": "Standard_D2_v2"
+                "agentVMSize": "Standard_D2_v2",
+                "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
+                "workspaceSku": "Free",
+                "workspaceRetentionInDays": null
             },
             "qa": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
@@ -190,7 +194,10 @@
                 "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
                 "workflowServiceAccessKey": "WorkflowServiceAccessKey",
                 "agentCount": 3,
-                "agentVMSize": "Standard_D2_v2"
+                "agentVMSize": "Standard_D2_v2",
+                "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
+                "workspaceSku": "Free",
+                "workspaceRetentionInDays": null
             },
             "staging": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
@@ -213,7 +220,10 @@
                 "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
                 "workflowServiceAccessKey": "WorkflowServiceAccessKey",
                 "agentCount": 3,
-                "agentVMSize": "Standard_D2_v2"
+                "agentVMSize": "Standard_D2_v2",
+                "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
+                "workspaceSku": "PerGB2018",
+                "workspaceRetentionInDays": 730
             },
             "prod": {
                 "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
@@ -236,7 +246,10 @@
                 "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
                 "workflowServiceAccessKey": "WorkflowServiceAccessKey",
                 "agentCount": 3,
-                "agentVMSize": "Standard_D2_v2"
+                "agentVMSize": "Standard_D2_v2",
+                "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
+                "workspaceSku": "PerGB2018",
+                "workspaceRetentionInDays": 730
             }
         }
     },
@@ -303,6 +316,21 @@
             }
         },
         {
+            "type": "Microsoft.OperationalInsights/workspaces",
+            "name": "[variables('environmentSettings')[parameters('environmentName')].workspaceName]",
+            "apiVersion": "2015-11-01-preview",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "retentionInDays": "[variables('environmentSettings')[parameters('environmentName')].workspaceRetentionInDays]",
+                "sku": {
+                    "Name": "[variables('environmentSettings')[parameters('environmentName')].workspaceSku]"
+                },
+                "features": {
+                    "searchVersion": 1
+                }
+            }
+        },
+        {
             "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
             "type": "Microsoft.ContainerService/managedClusters",
             "apiVersion": "2018-03-31",
@@ -310,6 +338,9 @@
             "tags": {
                 "environment": "shared cluster"
             },
+            "dependsOn": [
+                "[resourceId('Microsoft.OperationalInsights/workspaces', variables('environmentSettings')[parameters('environmentName')].workspaceName)]"
+            ],
             "properties": {
                 "kubernetesVersion": "[parameters('kubernetesVersion')]",
                 "dnsPrefix": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
@@ -336,6 +367,14 @@
                 "servicePrincipalProfile": {
                     "clientId": "[parameters('servicePrincipalClientId')]",
                     "secret": "[parameters('servicePrincipalClientSecret')]"
+                },
+                "addonProfiles": {
+                    "omsagent": {
+                        "config": {
+                            "logAnalyticsWorkspaceResourceID": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('environmentSettings')[parameters('environmentName')].workspaceName)]"
+                        },
+                        "enabled": true
+                    }
                 },
                 "enableRBAC": true
             }

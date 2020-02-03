@@ -49,7 +49,7 @@ namespace Fabrikam.Workflow.Service.Tests
                     .AddEnvironmentVariables()
                     .Build();
             context.HostingEnvironment =
-                Mock.Of<Microsoft.Extensions.Hosting.IHostingEnvironment>(e => e.EnvironmentName == "Test");
+                Mock.Of<Microsoft.Extensions.Hosting.IHostEnvironment>(e => e.EnvironmentName == "Test");
 
             var serviceCollection = new ServiceCollection();
             ServiceStartup.ConfigureServices(context, serviceCollection);
@@ -58,15 +58,16 @@ namespace Fabrikam.Workflow.Service.Tests
             _testServer =
                 new TestServer(
                     new WebHostBuilder()
+                        .UseTestServer()
                         .Configure(builder =>
                         {
-                            builder.UseMvc();
                             builder.Run(ctx => _handleHttpRequest(ctx));
                         })
                         .ConfigureServices(builder =>
                         {
-                            builder.AddMvc();
+                            builder.AddControllers();
                         }));
+            _testServer.AllowSynchronousIO = true;
 
             serviceCollection.Replace(
                 ServiceDescriptor.Transient<HttpMessageHandlerBuilder, TestServerMessageHandlerBuilder>(
@@ -121,26 +122,25 @@ namespace Fabrikam.Workflow.Service.Tests
             // Arrange
             string actualPackageId = null;
             PackageGen actualPackage = null;
-            Stream body = null;
             _handleHttpRequest = ctx =>
             {
                 if (ctx.Request.Host.Host == PackageHost &&
                     ctx.Request.Method.Equals("PUT"))
                 {
                     ctx.Response.StatusCode = StatusCodes.Status204NoContent;
-                    body = ctx.Request.Body;
-                }
-                else if (ctx.Request.Host.Host == PackageHost &&
-                    ctx.Request.Method.Equals("GET"))
-                {
-                    actualPackageId = ctx.Request.Path;
                     actualPackage =
                         new JsonSerializer()
                                .Deserialize<PackageGen>(
                                        new JsonTextReader(
                                            new StreamReader(
-                                               body,
+                                               ctx.Request.Body,
                                                Encoding.UTF8)));
+
+                }
+                else if (ctx.Request.Host.Host == PackageHost &&
+                    ctx.Request.Method.Equals("GET"))
+                {
+                    actualPackageId = ctx.Request.Path;
                 }
                 else
                 {

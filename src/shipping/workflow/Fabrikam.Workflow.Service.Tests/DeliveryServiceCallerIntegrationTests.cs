@@ -47,7 +47,7 @@ namespace Fabrikam.Workflow.Service.Tests
                     .AddEnvironmentVariables()
                     .Build();
             context.HostingEnvironment =
-                Mock.Of<Microsoft.Extensions.Hosting.IHostingEnvironment>(e => e.EnvironmentName == "Test");
+                Mock.Of<Microsoft.Extensions.Hosting.IHostEnvironment>(e => e.EnvironmentName == "Test");
 
             var serviceCollection = new ServiceCollection();
             ServiceStartup.ConfigureServices(context, serviceCollection);
@@ -55,16 +55,17 @@ namespace Fabrikam.Workflow.Service.Tests
 
             _testServer =
                 new TestServer(
-                    new WebHostBuilder()
+                     new WebHostBuilder()
+                        .UseTestServer()
                         .Configure(builder =>
                         {
-                            builder.UseMvc();
                             builder.Run(ctx => _handleHttpRequest(ctx));
                         })
                         .ConfigureServices(builder =>
                         {
-                            builder.AddMvc();
+                            builder.AddControllers();
                         }));
+            _testServer.AllowSynchronousIO = true;
 
             serviceCollection.Replace(
                 ServiceDescriptor.Transient<HttpMessageHandlerBuilder, TestServerMessageHandlerBuilder>(

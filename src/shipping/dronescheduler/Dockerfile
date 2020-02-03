@@ -1,8 +1,8 @@
-FROM microsoft/dotnet:2.2-aspnetcore-runtime as base
+FROM mcr.microsoft.com/dotnet/core/aspnet:3.1 as base
 WORKDIR /app
 EXPOSE 80
 
-FROM microsoft/dotnet:2.2-sdk AS build
+FROM mcr.microsoft.com/dotnet/core/sdk:3.1 AS build
 
 MAINTAINER Fernando Antivero (https://github.com/ferantivero)
 
@@ -22,7 +22,7 @@ FROM build AS publish
 MAINTAINER Fernando Antivero (https://github.com/ferantivero)
 
 WORKDIR /app
-RUN dotnet publish /app/dronescheduler/Fabrikam.DroneDelivery.DroneSchedulerService/ -c Release -o ../../out
+RUN dotnet publish /app/dronescheduler/Fabrikam.DroneDelivery.DroneSchedulerService/ -c release -o ./out --no-restore
 
 FROM base AS runtime
 
