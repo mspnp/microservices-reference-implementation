@@ -15,8 +15,7 @@ kind: Ingress
 metadata:
   name: {{ $relname }}-ingress
   annotations:
-    kubernetes.io/ingress.class: {{ required "ingress.class is required" .Values.ingress.class | quote }}
-    nginx.ingress.kubernetes.io/rewrite-target: /api/deliveries/public$1
+    kubernetes.io/ingress.class: azure/application-gateway
 spec:
   {{- if .Values.ingress.tls }}
   tls:
@@ -34,15 +33,15 @@ spec:
     http:
       paths:
       {{- if .path }}
-      - path: {{ printf "%s/%s/" .path $appversion }}api/deliveries(.*)
+      - path: {{ printf "%s/%s/" .path $appversion }}api/deliveries*
       {{- else }}
-      - path: {{ $defaultversionedpath }}api/deliveries(.*)
+      - path: {{ $defaultversionedpath }}api/deliveries*
       {{- end }}
         backend:
           serviceName: "{{ .serviceName }}-{{ $svcversion }}"
           servicePort: http
       {{- if (eq $appversion "v0.1.0") }}
-      - path: {{ default "/" .path }}api/deliveries(.*)
+      - path: {{ default "/" .path }}api/deliveries*
         backend:
           serviceName: "{{ .serviceName }}"
           servicePort: http

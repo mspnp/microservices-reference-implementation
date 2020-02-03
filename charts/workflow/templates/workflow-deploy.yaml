@@ -39,6 +39,7 @@ spec:
         app.kubernetes.io/part-of: dronedelivery
         helm.sh/chart: {{ include "workflow.chart" . }}
         aadpodidbinding: {{ $fullname  }}
+{{ toYaml .Values.workflow.customPodLabels | indent 8 }}
     spec:
       securityContext:
         fsGroup: 1

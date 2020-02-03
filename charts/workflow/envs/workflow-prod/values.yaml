@@ -15,3 +15,8 @@ exports:
       limits:
         cpu: 1000m
         memory: 140Mi
+    autoscaling:
+      enabled: true
+      maxReplicas: 50
+      minReplicas: 1
+      targetCPUUtilizationPercentage: 50

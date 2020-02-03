@@ -9,11 +9,9 @@ exports:
       level: "info"
     reason: "new dev deploy"
     current: true
-    ingress:
-      class: "nginx-dev"
     resources:
       requests:
-        cpu: 129m
+        cpu: 110m
         memory: 600Mi
       limits:
         cpu: 194m

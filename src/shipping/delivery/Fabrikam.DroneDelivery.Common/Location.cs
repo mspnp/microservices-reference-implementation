@@ -7,14 +7,16 @@ namespace Fabrikam.DroneDelivery.Common
 {
     public class Location
     {
+        public Location() {}
+
         public Location(double altitude, double latitude, double longitude)
         {
             Altitude = altitude;
             Latitude = latitude;
             Longitude = longitude;
         }
-        public double Altitude { get; }
-        public double Latitude { get; }
-        public double Longitude { get; }
+        public double Altitude { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 }

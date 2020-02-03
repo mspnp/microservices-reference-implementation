@@ -13,8 +13,9 @@ using Microsoft.AspNetCore.Http;
 
 namespace Fabrikam.DroneDelivery.DroneSchedulerService.Controllers
 {
+    [ApiController]
     [Route("api/[controller]")]
-    public class DroneDeliveriesController : Controller
+    public class DroneDeliveriesController : ControllerBase
     {
         private readonly ILogger logger;
         private readonly IInvoicingRepository _invoicingRepository;

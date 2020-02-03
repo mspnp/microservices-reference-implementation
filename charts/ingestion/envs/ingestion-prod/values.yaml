@@ -8,8 +8,6 @@ exports:
     telemetry:
       level: "error"
     reason: "new prod deploy"
-    ingress:
-      class: "nginx-prod"
     resources:
       requests:
         cpu: 150m
@@ -17,3 +15,8 @@ exports:
       limits:
         cpu: 300m
         memory: 800Mi
+    autoscaling:
+      enabled: true
+      maxReplicas: 10
+      minReplicas: 1
+      targetCPUUtilizationPercentage: 50

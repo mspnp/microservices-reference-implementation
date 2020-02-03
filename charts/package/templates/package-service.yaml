@@ -25,7 +25,7 @@ spec:
   ports:
   - name: http
     port: 80
-    targetPort: 80
+    targetPort: {{ .Values.service.targetPort }}
   selector:
     app.kubernetes.io/name: {{ $appname }}
     app.kubernetes.io/instance: {{ $instancename }}
@@ -48,7 +48,7 @@ spec:
   ports:
   - name: http
     port: 80
-    targetPort: 80
+    targetPort: {{ .Values.service.targetPort }}
   selector:
     app.kubernetes.io/name: {{ $appname }}
     app.kubernetes.io/instance: {{ $instancename }}

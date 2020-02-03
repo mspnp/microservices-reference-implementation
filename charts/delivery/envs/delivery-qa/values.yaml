@@ -9,8 +9,6 @@ exports:
       level: "Information"
     reason: "new qa deploy"
     current: true
-    ingress:
-      class: "nginx-qa"
     resources:
       requests:
         cpu: 100m

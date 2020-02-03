@@ -1,0 +1,464 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "aksVnetName": {
+           "type": "string"
+        },
+        "aksClusterSubnetName": {
+            "type": "string"
+        },
+        "aksClusterSubnetPrefix": {
+            "type": "string"
+        },
+        "firewallPublicIpName": {
+            "type": "string"
+        },
+        "firewallSubnetName": {
+            "type": "string",
+            "defaultValue": "AzureFirewallSubnet"
+        },
+        "serviceTagsLocation": {
+            "type": "string"
+        },
+        "aksFqdns": {
+            "type": "array"
+        },
+        "acrServers": {
+            "type": "array"
+        },
+        "deliveryRedisHostNames": {
+            "type": "array"
+        }
+    },
+    "variables": {
+        "rulePrefix": "[concat(parameters('aksVnetName'),'-',parameters('aksClusterSubnetName'),'.')]",
+        "regionalRulePrefix": "[concat(variables('rulePrefix'),parameters('serviceTagsLocation'),'.')]",
+        "egressFirewallPrefix": "egressFw",
+        "egressFirewallName": "[concat(variables('egressFirewallPrefix'),'-',uniqueString(resourceGroup().id))]",
+        "clusterEgressRouteTableName": "[concat('egressRouteTable-',uniqueString(resourceGroup().id))]",
+        "clusterEgressRouteName": "[concat('egressRoute-',uniqueString(resourceGroup().id))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Network/routeTables",
+            "apiVersion": "2019-09-01",
+            "name": "[variables('clusterEgressRouteTableName')]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/azureFirewalls', variables('egressFirewallName'))]"
+            ],
+            "properties": {
+                "routes": [
+                    {
+                        "properties": {
+                            "addressPrefix": "0.0.0.0/0",
+                            "nextHopType": "VirtualAppliance",
+                            "nextHopIpAddress": "[reference(concat('Microsoft.Network/azureFirewalls/', variables('egressFirewallName')),'2019-09-01','Full').properties.ipConfigurations[0].properties.privateIPAddress]"
+                        },
+                        "name": "[variables('clusterEgressRouteName')]"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Network/virtualNetworks/subnets",
+            "apiVersion": "2019-09-01",
+            "name": "[concat(parameters('aksVnetName'),'/',parameters('aksClusterSubnetName'))]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Network/routeTables', variables('clusterEgressRouteTableName'))]"
+            ],
+            "properties": {
+                "addressPrefix": "[parameters('aksClusterSubnetPrefix')]",
+                "routeTable": {
+                    "id": "[resourceId('Microsoft.Network/routeTables', variables('clusterEgressRouteTableName'))]"
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Network/azureFirewalls",
+            "name": "[variables('egressFirewallName')]",
+            "dependsOn": [],
+            "apiVersion": "2019-09-01",
+            "location": "[resourceGroup().location]",
+            "properties": {
+                "threatIntelMode": "Alert",
+                "ipConfigurations": [
+                    {
+                        "name": "clusterIpConfig",
+                        "properties": {
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('firewallPublicIpName'))]"
+                            },
+                            "subnet": {
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('aksVnetName'),parameters('firewallSubnetName'))]"
+                            }
+                        }
+                    }
+                ],
+                "networkRuleCollections": [
+                    {
+                        "name": "egressNetRegionalAks",
+                        "properties": {
+                            "priority": 100,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "[concat(variables('regionalRulePrefix'),'TunnelFrontCommToK8sApiServer')]",
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "destinationAddresses": [
+                                        "[concat('AzureCloud.',parameters('serviceTagsLocation'))]"
+                                    ],
+                                    "sourceIpGroups": [],
+                                    "destinationIpGroups": [],
+                                    "destinationFqdns": [],
+                                    "destinationPorts": [
+                                        "9000",
+                                        "22"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "egressNetAks",
+                        "properties": {
+                            "priority": 200,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "[concat(variables('rulePrefix'),'DnsResolution')]",
+                                    "protocols": [
+                                        "TCP",
+                                        "UDP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "destinationAddresses": [
+                                        "*"
+                                    ],
+                                    "sourceIpGroups": [],
+                                    "destinationIpGroups": [],
+                                    "destinationFqdns": [],
+                                    "destinationPorts": [
+                                        "53"
+                                    ]
+                                },
+                                {
+                                    "name": "[concat(variables('rulePrefix'),'LinuxNodesTimeSync')]",
+                                    "protocols": [
+                                        "UDP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "destinationAddresses": [
+                                        "*"
+                                    ],
+                                    "sourceIpGroups": [],
+                                    "destinationIpGroups": [],
+                                    "destinationFqdns": [],
+                                    "destinationPorts": [
+                                        "123"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "egressNetRegionalFabrikamDroneDelivery",
+                        "properties": {
+                            "priority": 300,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "[concat(variables('regionalRulePrefix'),'ServiceBus')]",
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "destinationAddresses": [
+                                        "[concat('ServiceBus.',parameters('serviceTagsLocation'))]"
+                                    ],
+                                    "sourceIpGroups": [],
+                                    "destinationIpGroups": [],
+                                    "destinationFqdns": [],
+                                    "destinationPorts": [
+                                        "5671"
+                                    ]
+                                },
+                                {
+                                    "name": "[concat(variables('regionalRulePrefix'),'AzureCosmosDb')]",
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "destinationAddresses": [
+                                        "[concat('AzureCosmosDB.',parameters('serviceTagsLocation'))]"
+                                    ],
+                                    "sourceIpGroups": [],
+                                    "destinationIpGroups": [],
+                                    "destinationFqdns": [],
+                                    "destinationPorts": [
+                                        "443"
+                                    ]
+                                },
+                                {
+                                    "name": "[concat(variables('regionalRulePrefix'),'AzureMongoDb')]",
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "destinationAddresses": [
+                                        "[concat('AzureCosmosDB.',parameters('serviceTagsLocation'))]"
+                                    ],
+                                    "sourceIpGroups": [],
+                                    "destinationIpGroups": [],
+                                    "destinationFqdns": [],
+                                    "destinationPorts": [
+                                        "10255"
+                                    ]
+                                },
+                                {
+                                    "name": "[concat(variables('regionalRulePrefix'),'AzureKeyVault')]",
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "destinationAddresses": [
+                                        "[concat('AzureKeyVault.',parameters('serviceTagsLocation'))]"
+                                    ],
+                                    "sourceIpGroups": [],
+                                    "destinationIpGroups": [],
+                                    "destinationFqdns": [],
+                                    "destinationPorts": [
+                                        "443"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "egressNetFabrikamDroneDelivery",
+                        "properties": {
+                            "priority": 400,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "[concat(variables('rulePrefix'),'AzureMonitor')]",
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "destinationAddresses": [
+                                        "AzureMonitor"
+                                    ],
+                                    "sourceIpGroups": [],
+                                    "destinationIpGroups": [],
+                                    "destinationFqdns": [],
+                                    "destinationPorts": [
+                                        "443"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "egressNetRegionalTCP443AzureCloud",
+                        "properties": {
+                            "priority": 65000,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "[concat(variables('regionalRulePrefix'),'AADPodIdentityWorkaround')]",
+                                    "protocols": [
+                                        "TCP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "destinationAddresses": [
+                                        "[concat('AzureCloud.',parameters('serviceTagsLocation'))]"
+                                    ],
+                                    "sourceIpGroups": [],
+                                    "destinationIpGroups": [],
+                                    "destinationFqdns": [],
+                                    "destinationPorts": [
+                                        "443"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "applicationRuleCollections": [
+                    {
+                        "name": "egressAppAks",
+                        "properties": {
+                            "priority": 100,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "[concat(variables('rulePrefix'),'ContainerRegistries')]",
+                                    "protocols": [
+                                        {
+                                            "protocolType": "https",
+                                            "port": "443"
+                                        }
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "targetFqdns": [
+                                        "gcr.io",
+                                        "storage.googleapis.com",
+                                        "aksrepos.azurecr.io",
+                                        "*mcr.microsoft.com",
+                                        "*.cdn.mscr.io",
+                                        "*.blob.core.windows.net"
+                                    ]
+                                },
+                                {
+                                    "name": "[concat(variables('rulePrefix'),'K8sGETPUTOperations')]",
+                                    "protocols": [
+                                        {
+                                            "protocolType": "https",
+                                            "port": "443"
+                                        }
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "targetFqdns": [
+                                        "management.azure.com"
+                                    ]
+                                },
+                                {
+                                    "name": "[concat(variables('rulePrefix'),'Ubuntu')]",
+                                    "protocols": [
+                                        {
+                                            "protocolType": "http",
+                                            "port": "80"
+                                        },
+                                        {
+                                            "protocolType": "https",
+                                            "port": "443"
+                                        }
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "targetFqdns": [
+                                        "*.ubuntu.com"
+                                    ]
+                                },
+                                {
+                                    "name": "[concat(variables('rulePrefix'),'AzureCNIBinaries')]",
+                                    "protocols": [
+                                        {
+                                            "protocolType": "https",
+                                            "port": "443"
+                                        }
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "targetFqdns": [
+                                        "acs-mirror.azureedge.net"
+                                    ]
+                                },
+                                {
+                                    "name": "[concat(variables('rulePrefix'),'AzureActiveDirectoryAuthN')]",
+                                    "protocols": [
+                                        {
+                                            "protocolType": "https",
+                                            "port": "443"
+                                        }
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "targetFqdns": [
+                                        "login.microsoftonline.com"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "name": "egressAppFabrikamDroneDelivery",
+                        "properties": {
+                            "priority": 200,
+                            "action": {
+                                "type": "Allow"
+                            },
+                            "rules": [
+                                {
+                                    "name": "[concat(variables('rulePrefix'),'AzureContainerRegistries')]",
+                                    "protocols": [
+                                        {
+                                            "protocolType": "https",
+                                            "port": "443"
+                                        }
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "targetFqdns": "[parameters('acrServers')]"
+                                },
+                                {
+                                    "name": "[concat(variables('rulePrefix'),'AzureCacheRedis')]",
+                                    "protocols": [
+                                        {
+                                            "protocolType": "https",
+                                            "port": "6380"
+                                        }
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "targetFqdns": "[parameters('deliveryRedisHostNames')]"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "natRuleCollections": []
+            }
+        }
+    ],
+    "outputs": {
+        "azureFirewallName": {
+            "type": "string",
+            "value": "[variables('egressFirewallName')]"
+        }
+    }
+}

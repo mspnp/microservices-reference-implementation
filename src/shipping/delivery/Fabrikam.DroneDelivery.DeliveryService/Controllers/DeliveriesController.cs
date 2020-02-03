@@ -16,8 +16,9 @@ using Fabrikam.DroneDelivery.DeliveryService.Services;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
 {
+    [ApiController]
     [Route("api/[controller]")]
-    public class DeliveriesController : Controller
+    public class DeliveriesController : ControllerBase
     {
         private readonly IDeliveryRepository deliveryRepository;
         private readonly INotifyMeRequestRepository notifyMeRequestRepository;

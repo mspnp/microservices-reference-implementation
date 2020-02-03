@@ -4,15 +4,14 @@
 // ------------------------------------------------------------
 
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
-using Swashbuckle.AspNetCore.Swagger;
+using Microsoft.OpenApi.Models;
 using Fabrikam.DroneDelivery.DeliveryService.Models;
 using Fabrikam.DroneDelivery.DeliveryService.Services;
 using Fabrikam.DroneDelivery.DeliveryService.Middlewares.Builder;
@@ -25,7 +24,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService
     {
         private const string HealCheckName = "ReadinessLiveness";
 
-        public Startup(IHostingEnvironment env)
+        public Startup(IWebHostEnvironment env)
         {
             var builder = new ConfigurationBuilder()
                 .SetBasePath(env.ContentRootPath)
@@ -54,18 +53,17 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             services.AddApplicationInsightsKubernetesEnricher();
             services.AddApplicationInsightsTelemetry(Configuration);
 
-            // Add framework services.
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-
             // Add health check
             services.AddHealthChecks().AddCheck(
                     HealCheckName,
                     () => HealthCheckResult.Healthy("OK"));
 
+            services.AddControllers();
+
             // Register the Swagger generator, defining one or more Swagger documents
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Info { Title = "Fabrikam DroneDelivery DeliveryService API", Version = "v1" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Fabrikam DroneDelivery DeliveryService API", Version = "v1" });
             });
 
             services.AddSingleton<IDeliveryRepository, DeliveryRepository>();
@@ -75,7 +73,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory, IHttpContextAccessor httpContextAccessor)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, IHttpContextAccessor httpContextAccessor)
         {
             Log.Logger = new LoggerConfiguration()
               .WriteTo.Console(new CompactJsonFormatter())
@@ -88,12 +86,14 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             // Important: it has to be second: Enable global exception, error handling
             app.UseGlobalExceptionHandler();
 
-            // Map health checks
-            app.UseHealthChecks("/healthz");
-
             // TODO: Add middleware AuthZ here
 
-            app.UseMvc();
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapHealthChecks("/healthz");
+                endpoints.MapControllers();
+            });
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();

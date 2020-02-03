@@ -5,7 +5,6 @@
 - Azure subscription
 - [Azure CLI 2.0.49 or later](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Azure DevOps account](https://azure.microsoft.com/services/devops)
-- [Helm 2.12.3 or later](https://docs.helm.sh/using_helm/#installing-helm)
 - [Values from deployment instructions](./deployment.md)
 
 ## Infrastructure for dev, test, staging and production
@@ -13,6 +12,7 @@
 ```bash
 # Export the kubernetes cluster version and deploy
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv) && \
+export SERVICETAGS_LOCATION=$(az account list-locations --query "[?name=='${LOCATION}'].displayName" -o tsv | sed 's/[[:space:]]//g')
 for env in dev qa staging prod; do
 ENV=${env^^}
 az deployment create \
@@ -23,19 +23,22 @@ az deployment create \
                 resourceGroupLocation=$LOCATION \
                 environmentName=${env}
 
-export {${ENV}_IDENTITIES_DEPLOYMENT_NAME,IDENTITIES_DEPLOYMENT_NAME}=$(az deployment show -n azuredeploy-adv-prereqs-adv-${env} --query properties.outputs.identitiesDeploymentName.value -o tsv) && \
+export {${ENV}_IDENTITIES_DEPLOYMENT_NAME,IDENTITIES_DEPLOYMENT_NAME}=$(az deployment show -n azuredeploy-prereqs-${env} --query properties.outputs.identitiesDeploymentName.value -o tsv) && \
 export {${ENV}_DELIVERY_ID_NAME,DELIVERY_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.deliveryIdName.value -o tsv)
 export DELIVERY_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DELIVERY_ID_NAME --query principalId -o tsv)
 export {${ENV}_DRONESCHEDULER_ID_NAME,DRONESCHEDULER_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerIdName.value -o tsv)
 export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query principalId -o tsv)
 export {${ENV}_WORKFLOW_ID_NAME,WORKFLOW_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.workflowIdName.value -o tsv)
 export WORKFLOW_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query principalId -o tsv)
+export {${ENV}_GATEWAY_CONTROLLER_ID_NAME,GATEWAY_CONTROLLER_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.appGatewayControllerIdName.value -o tsv) && \
+export GATEWAY_CONTROLLER_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $GATEWAY_CONTROLLER_ID_NAME --query principalId -o tsv) && \
 export RESOURCE_GROUP_ACR=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
 
 # Wait for AAD propagation
 until az ad sp show --id $DELIVERY_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id $DRONESCHEDULER_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id $WORKFLOW_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id $GATEWAY_CONTROLLER_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 
 az group deployment create -g $RESOURCE_GROUP --name azuredeploy-${env} --template-file ${PROJECT_ROOT}/azuredeploy.json \
    --parameters servicePrincipalClientId=${SP_APP_ID} \
@@ -48,6 +51,8 @@ az group deployment create -g $RESOURCE_GROUP --name azuredeploy-${env} --templa
                droneSchedulerIdName=$DRONESCHEDULER_ID_NAME \
                droneSchedulerPrincipalId=$DRONESCHEDULER_ID_PRINCIPAL_ID \
                workflowIdName=$WORKFLOW_ID_NAME \
+               appGatewayControllerIdName=${GATEWAY_CONTROLLER_ID_NAME} \
+               appGatewayControllerPrincipalId=${GATEWAY_CONTROLLER_ID_PRINCIPAL_ID} \
                workflowPrincipalId=$WORKFLOW_ID_PRINCIPAL_ID \
                acrResourceGroupName=${RESOURCE_GROUP_ACR} \
                acrResourceGroupLocation=$LOCATION \
@@ -56,20 +61,33 @@ az group deployment create -g $RESOURCE_GROUP --name azuredeploy-${env} --templa
 export {${ENV}_AI_NAME,AI_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appInsightsName.value -o tsv)
 export ${ENV}_AI_IKEY=$(az resource show -g $RESOURCE_GROUP -n $AI_NAME --resource-type "Microsoft.Insights/components" --query properties.InstrumentationKey -o tsv)
 export {${ENV}_ACR_NAME,ACR_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.acrName.value -o tsv)
-export ${ENV}_ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
-
+export ${ENV}_GATEWAY_SUBNET_PREFIX=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appGatewaySubnetPrefix.value -o tsv)
+export {${ENV}_VNET_NAME,VNET_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.aksVNetName.value -o tsv)
+export {${ENV}_CLUSTER_SUBNET_NAME,CLUSTER_SUBNET_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.aksClusterSubnetName.value -o tsv)
+export {${ENV}_CLUSTER_SUBNET_PREFIX,CLUSTER_SUBNET_PREFIX}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.aksClusterSubnetPrefix.value -o tsv)
+export {${ENV}_CLUSTER_FQDN,CLUSTER_FQDN}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.aksFqdn.value -o tsv)
+export {${ENV}_CLUSTER_NAME,CLUSTER_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.aksClusterName.value -o tsv) && \
+export {${ENV}_CLUSTER_SERVER,CLUSTER_SERVER}=$(az aks show -n $CLUSTER_NAME -g $RESOURCE_GROUP --query fqdn -o tsv)
+export CLUSTER_SERVERS=${CLUSTER_SERVERS}\'${CLUSTER_SERVER}\',
+export {${ENV}_ACR_SERVER,ACR_SERVER}=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
+export ACR_SERVERS=${ACR_SERVERS}\'${ACR_SERVER}\',
+export DELIVERY_REDIS_HOSTNAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.deliveryRedisHostName.value -o tsv)
+export DELIVERY_REDIS_HOSTNAMES=${DELIVERY_REDIS_HOSTNAMES}\'${DELIVERY_REDIS_HOSTNAME}\',
 done
-```
 
-Get outputs from Azure Deploy
-```bash
-# Shared
-export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksClusterName.value -o tsv) && \
-```
+# Restrict cluster egress traffic
+export FIREWALL_PIP_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-prod --query properties.outputs.firewallPublicIpName.value -o tsv) && \
 
-Enable Azure Monitoring for Containers in the AKS cluster
-```bash
-az aks enable-addons -a monitoring --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
+export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.acrName.value -o tsv) && \
+az group deployment create -g $RESOURCE_GROUP --name azuredeploy-firewall --template-file ${PROJECT_ROOT}/azuredeploy-firewall.json \
+--parameters aksVnetName=${VNET_NAME} \
+            aksClusterSubnetName=${CLUSTER_SUBNET_NAME} \
+            aksClusterSubnetPrefix=${CLUSTER_SUBNET_PREFIX} \
+            firewallPublicIpName=${FIREWALL_PIP_NAME} \
+            serviceTagsLocation=${SERVICETAGS_LOCATION} \
+            aksFqdns="[${CLUSTER_SERVERS%?}]" \
+            acrServers="[${ACR_SERVERS%?}]" \
+            deliveryRedisHostNames="[${DELIVERY_REDIS_HOSTNAMES%?}]"
 ```
 
 Download kubectl and create a k8s namespace
@@ -81,14 +99,19 @@ sudo az aks install-cli
 az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 
 # Create namespaces
+kubectl create namespace backend-dev && \
 kubectl create namespace backend-qa && \
 kubectl create namespace backend-staging && \
 kubectl create namespace backend
 ```
 
-Setup Helm in the container
+Setup Helm
 
 ```bash
+# install helm client side
+DESIRED_VERSION=v2.14.2;curl -L https://git.io/get_helm.sh | bash
+
+# setup tiller in your cluster
 kubectl apply -f $K8S/tiller-rbac.yaml
 helm init --service-account tiller
 ```
@@ -117,6 +140,12 @@ kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-fl
 
 ```bash
 kubectl apply -f $K8S/k8s-resource-quotas-dev.yaml -f $K8S/k8s-resource-quotas-qa-stg-prod.yaml
+```
+
+## Deny all ingress and egress traffic
+
+```bash
+kubectl apply -f $K8S/k8s-deny-all-non-whitelisted-traffic-dev.yaml -f $K8S/k8s-deny-all-non-whitelisted-traffic-qa-stg-prod.yaml
 ```
 
 ## Setup Azure DevOps
@@ -200,27 +229,47 @@ export AZURE_DEVOPS_USER_ID=$(az devops user show --user ${AZURE_DEVEOPS_USER} -
 ### Build pipelines pre-requisites
 
 ```bash
-# Create a self-signed certificate for TLS and public ip addresses
-export RESOURCE_GROUP_NODE=$(az aks show -g $RESOURCE_GROUP -n $CLUSTER_NAME --query "nodeResourceGroup" -o tsv) && \
-export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest"
+# Deploy the AppGateway ingress controller
+helm repo add application-gateway-kubernetes-ingress https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
+helm repo update
 
 for env in dev qa staging prod;do
 ENV=${env^^}
 
-az network public-ip create --name ${EXTERNAL_INGEST_DNS_NAME}-${env}-pip --dns-name ${EXTERNAL_INGEST_DNS_NAME}-${env} --allocation-method static -g $RESOURCE_GROUP_NODE
-EXTERNAL_INGEST_FQDN=$(az network public-ip show --name ${EXTERNAL_INGEST_DNS_NAME}-${env}-pip --query "dnsSettings.fqdn" -g $RESOURCE_GROUP_NODE --output tsv)
-export ${ENV}_EXTERNAL_INGEST_FQDN=${EXTERNAL_INGEST_FQDN}
-export ${ENV}_INGRESS_LOAD_BALANCER_IP=$(az network public-ip show --name ${EXTERNAL_INGEST_DNS_NAME}-${env}-pip --query "ipAddress" -g $RESOURCE_GROUP_NODE --output tsv)
+export IDENTITIES_DEPLOYMENT_NAME_VARIABLE=${ENV}_IDENTITIES_DEPLOYMENT_NAME
+export GATEWAY_CONTROLLER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n ${!IDENTITIES_DEPLOYMENT_NAME_VARIABLE} --query properties.outputs.appGatewayControllerPrincipalResourceId.value -o tsv) && \
+export GATEWAY_CONTROLLER_ID_NAME=$(az group deployment show -g $RESOURCE_GROUP -n ${!IDENTITIES_DEPLOYMENT_NAME_VARIABLE} --query properties.outputs.appGatewayControllerIdName.value -o tsv) && \
+export GATEWAY_CONTROLLER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $GATEWAY_CONTROLLER_ID_NAME --query clientId -o tsv)
 
-# Deploy the ngnix ingress controller
-helm install stable/nginx-ingress --name nginx-ingress-${env} --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-${env} --set controller.service.loadBalancerIP=${ENV}_INGRESS_LOAD_BALANCER_IP
+# Deploy the App Gateway ingress controller
+export APP_GATEWAY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appGatewayName.value -o tsv)
+export {${ENV}_APP_GATEWAY_PUBLIC_IP_FQDN,APP_GATEWAY_PUBLIC_IP_FQDN}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appGatewayPublicIpFqdn.value -o tsv)
+export ENV_NAMESPACE=$([ $env == 'prod' ] && echo 'backend' || echo "backend-$env")
 
+helm install application-gateway-kubernetes-ingress/ingress-azure \
+     --name ingress-azure-${env} \
+     --namespace ingress-controllers \
+     --set appgw.name=$APP_GATEWAY_NAME \
+     --set appgw.resourceGroup=$RESOURCE_GROUP \
+     --set appgw.subscriptionId=$SUBSCRIPTION_ID \
+     --set appgw.shared=false \
+     --set kubernetes.watchNamespace=$ENV_NAMESPACE \
+     --set armAuth.type=aadPodIdentity \
+     --set armAuth.identityResourceID=$GATEWAY_CONTROLLER_PRINCIPAL_RESOURCE_ID \
+     --set armAuth.identityClientID=$GATEWAY_CONTROLLER_PRINCIPAL_CLIENT_ID \
+     --set rbac.enabled=true \
+     --set verbosityLevel=3 \
+     --set aksClusterConfiguration.apiServerAddress=$CLUSTER_SERVER
+
+# Create a self-signed certificate for TLS for the environment
+export {${ENV}_EXTERNAL_INGEST_FQDN,EXTERNAL_INGEST_FQDN}=$APP_GATEWAY_PUBLIC_IP_FQDN
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -out ingestion-ingress-tls-${env}.crt \
     -keyout ingestion-ingress-tls-${env}.key \
     -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
 export "${ENV}_INGRESS_TLS_SECRET_CERT=$(echo $(cat ingestion-ingress-tls-${env}.crt) | tr '\n' "\\n")"
 export "${ENV}_INGRESS_TLS_SECRET_KEY=$(echo $(cat ingestion-ingress-tls-${env}.key) | tr '\n' "\\n")"
+
 done
 
 # export app paths
@@ -298,6 +347,7 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#DEV_INGRESS_TLS_SECRET_CERT_VAR_VAL#$DEV_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL#$DEV_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#DEV_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#DEV_GATEWAY_SUBNET_PREFIX_VAR_VAL#$DEV_GATEWAY_SUBNET_PREFIX#g" | \
      # qa resources
      sed "s#QA_ACR_SERVER_VAR_VAL#$QA_ACR_SERVER#g" | \
      sed "s#QA_ACR_NAME_VAR_VAL#$QA_ACR_NAME#g" | \
@@ -310,6 +360,7 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#QA_INGRESS_TLS_SECRET_CERT_VAR_VAL#$QA_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#QA_INGRESS_TLS_SECRET_KEY_VAR_VAL#$QA_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#QA_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#QA_GATEWAY_SUBNET_PREFIX_VAR_VAL#$QA_GATEWAY_SUBNET_PREFIX#g" | \
      # staging resources
      sed "s#STAGING_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
      sed "s#STAGING_ACR_NAME_VAR_VAL#$STAGING_ACR_NAME#g" | \
@@ -322,6 +373,7 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#STAGING_INGRESS_TLS_SECRET_CERT_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#STAGING_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#STAGING_GATEWAY_SUBNET_PREFIX_VAR_VAL#$STAGING_GATEWAY_SUBNET_PREFIX#g" | \
      # production resources
      sed "s#SOURCE_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
      sed "s#SOURCE_ACR_NAME_VAR_VAL#$STAGING_ACR_NAME#g" | \
@@ -335,7 +387,8 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#PROD_EXTERNAL_INGEST_FQDN_VAR_VAL#$PROD_EXTERNAL_INGEST_FQDN#g" | \
      sed "s#PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL#$PROD_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL#$PROD_INGRESS_TLS_SECRET_KEY#g" | \
-     sed "s#PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" \
+     sed "s#PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#PROD_GATEWAY_SUBNET_PREFIX_VAR_VAL#$PROD_GATEWAY_SUBNET_PREFIX#g" \
      > $DELIVERY_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
@@ -587,6 +640,7 @@ cat $INGESTION_PATH/azure-pipelines-cd.json | \
      sed "s#DEV_INGRESS_TLS_SECRET_CERT_VAR_VAL#$DEV_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL#$DEV_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#DEV_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#DEV_GATEWAY_SUBNET_PREFIX_VAR_VAL#$DEV_GATEWAY_SUBNET_PREFIX#g" | \
      # qa resources
      sed "s#QA_AI_IKEY_VAR_VAL#$QA_AI_IKEY#g" | \
      sed "s#QA_ACR_SERVER_VAR_VAL#$QA_ACR_SERVER#g" | \
@@ -598,6 +652,7 @@ cat $INGESTION_PATH/azure-pipelines-cd.json | \
      sed "s#QA_INGRESS_TLS_SECRET_CERT_VAR_VAL#$QA_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#QA_INGRESS_TLS_SECRET_KEY_VAR_VAL#$QA_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#QA_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#QA_GATEWAY_SUBNET_PREFIX_VAR_VAL#$QA_GATEWAY_SUBNET_PREFIX#g" | \
      # staging resources
      sed "s#STAGING_AI_IKEY_VAR_VAL#$STAGING_AI_IKEY#g" | \
      sed "s#STAGING_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
@@ -609,6 +664,7 @@ cat $INGESTION_PATH/azure-pipelines-cd.json | \
      sed "s#STAGING_INGRESS_TLS_SECRET_CERT_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#STAGING_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#STAGING_GATEWAY_SUBNET_PREFIX_VAR_VAL#$STAGING_GATEWAY_SUBNET_PREFIX#g" | \
      # production resources
      sed "s#PROD_AI_IKEY_VAR_VAL#$PROD_AI_IKEY#g" | \
      sed "s#SOURCE_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
@@ -621,7 +677,8 @@ cat $INGESTION_PATH/azure-pipelines-cd.json | \
      sed "s#PROD_INGESTION_ACCESS_KEY_VALUE_VAR_VAL#$PROD_INGESTION_ACCESS_KEY_VALUE#g" | \
      sed "s#PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL#$PROD_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL#$PROD_INGRESS_TLS_SECRET_KEY#g" | \
-     sed "s#PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" \
+     sed "s#PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
+     sed "s#PROD_GATEWAY_SUBNET_PREFIX_VAR_VAL#$PROD_GATEWAY_SUBNET_PREFIX#g" \
      > $INGESTION_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \

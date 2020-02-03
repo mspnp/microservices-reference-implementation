@@ -3,6 +3,22 @@ Microsoft patterns & practices
 
 This reference implementation shows a set of best practices for building and running a microservices architecture on Microsoft Azure, using Kubernetes.
 
+|                                         | [Basic](https://github.com/mspnp/microservices-reference-implementation/tree/basic) | [Advanced](https://github.com/mspnp/microservices-reference-implementation/) |
+|-----------------------------------------|-------|----------|
+| Distributed Monitoring                  |  ✅   |    ✅    |
+| Ingress Controller                      |  ✅   |    ✅    |
+| Azure Active Directory Pod Identity     |  ✅   |    ✅    |
+| CI/CD using Azure Pipelines             |  ✅   |    ✅    |
+| Helm charts                             |  ✅   |    ✅    |
+| Resource Limits                         |  ✅   |    ✅    |
+| Readiness/Liveness Probes               |  ✅   |    ✅    |
+| Horizontal Pod Autoscaling              |  ❌   |    ✅    |
+| Cluster Autoscaling                     |  ❌   |    ✅    |
+| Advanced Networking                     |  ❌   |    ✅    |
+| Service Endpoints                       |  ❌   |    ✅    |
+| Network Policies                        |  ❌   |    ✅    |
+| Egress restriction using Azure Firewall |  ❌   |    ✅    |
+
 ## Guidance
 
 This project has a companion set of articles that describe challenges, design patterns, and best practices for building microservices architecture. You can find these articles on the Azure Architecture Center:
@@ -28,31 +44,6 @@ The Drone Delivery application is a sample application that consists of several 
 - Delivery History service. Stores the history of completed deliveries.
 
 ![](./architecture.png)
-
-## Test results and metrics
-The Drone Delivery application has been tested up to 2000 messages/sec:
-
-
-|                                          | Replicas | ~Max CPU (mc) | ~Max Mem (MB) | Avg. Throughput*        | Max. Throughput*        | Avg (ms) | 50<sup>th</sup> (ms) | 95<sup>th</sup> (ms) | 99<sup>th</sup> (ms) |
-|------------------------------------------|----------|---------------|---------------|-------------------------|-------------------------|----------|-----------|-----------|-----------|
-| Nginx                                    | 1        | N/A           | N/A           | serve: 1595 reqs/sec    | serve: 1923 reqs/sec    | N/A      | N/A       | N/A       | N/A       |
-| Ingestion                                | 10       | 474           | 488           | ingest: 1275 msgs/sec   | ingest: 1710 msgs/sec   | 251      | 50.1      | 1560      | 2540      |
-| Workflow (receive messages)              | 35       | 1445          | 79            | egress: 1275 msgs/sec   | egress: 1710 msgs/sec   | 81.5     | 0         | 25.7      | 121       |
-| Workflow (call backend services + mark message as complete) | 35       | 1445          | 79            | complete: 1100 msgs/sec | complete: 1322 msgs/sec | 561.8    | 447       | 1350      | 2540      |
-| Package                                  | 50       | 213           | 78            | N/A                     | N/A                     | 67.5     | 53.9      | 165       | 306       |
-| Delivery                                 | 50       | 328           | 334           | N/A                     | N/A                     | 93.8     | 82.4      | 200       | 304       |
-| Dronescheduler                           | 50       | 402           | 301           | N/A                     | N/A                     | 85.9     | 72.6      | 203       | 308       |
-
-
-
-*sources:
-1. Serve: Visual Studio Load Test Throughout Request/Sec
-2. Ingest: Azure Service Bus metrics Incoming Messages/Sec
-3. Egress: Azure Service Bus metrics Outgoing Messages/Sec
-4. Complete: AI Service Bus Complete dependencies  
-5. Avg/50<sup>th</sup>/95<sup>th</sup>/99<sup>th</sup>: AI dependencies
-6. CPU/Mem: Azure Monitor for Containers
-
 
 ## Deployment
 

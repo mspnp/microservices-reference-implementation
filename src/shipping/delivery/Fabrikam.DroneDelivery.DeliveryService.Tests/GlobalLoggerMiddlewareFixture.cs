@@ -70,12 +70,12 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             await logRequestMiddleware.Invoke(contextMock.Object);
 
             // Assert
-            loggerMock.Verify(l => l.Log<object>(
+            loggerMock.Verify(l => l.Log(
                                     LogLevel.Error,
                                     It.IsAny<EventId>(),
-                                    It.Is<object>(fV => fV.ToString().Equals(($"An internal handled exception has occurred: {exMessage}"))),
+                                    It.Is<It.IsAnyType>((object fV, Type _) => fV.ToString().Equals(($"An internal handled exception has occurred: {exMessage}"))),
                                     It.IsAny<Exception>(),
-                                    It.IsAny<Func<object, Exception, string>>()));
+                                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
         }
 
         [TestMethod]
@@ -117,12 +117,12 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             await logRequestMiddleware.Invoke(contextMock.Object);
 
             // Assert
-            loggerMock.Verify(l => l.Log<object>(
+            loggerMock.Verify(l => l.Log(
                                     LogLevel.Error,
                                     It.IsAny<EventId>(),
-                                    It.Is<object>(fV => fV.ToString().Equals(($"An error has occurred: 499"))),
+                                    It.Is<It.IsAnyType>((object fV, Type _) => fV.ToString().Equals(($"An error has occurred: 499"))),
                                     null,
-                                    It.IsAny<Func<object, Exception, string>>()));
+                                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
         }
 
         [TestMethod]
@@ -164,12 +164,12 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             await logRequestMiddleware.Invoke(contextMock.Object);
 
             // Assert
-            loggerMock.Verify(l => l.Log<object>(
+            loggerMock.Verify(l => l.Log(
                                     LogLevel.Error,
                                     It.IsAny<EventId>(),
-                                    It.Is<object>(fV => fV.ToString().Equals(($"An error has occurred: 429"))),
+                                    It.Is<It.IsAnyType>((object fV, Type _) => fV.ToString().Equals(($"An error has occurred: 429"))),
                                     null,
-                                    It.IsAny<Func<object, Exception, string>>()));
+                                    (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
         }
 
         [TestMethod]
@@ -213,24 +213,23 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             try
             {
                 await logRequestMiddleware.Invoke(contextMock.Object);
-
             }
             // Assert
             catch (Exception)
             {
-                loggerMock.Verify(l => l.Log<object>(
+                loggerMock.Verify(l => l.Log(
                                         LogLevel.Error,
                                         It.IsAny<EventId>(),
-                                        It.Is<object>(fV => fV.ToString().Equals(($"An exception was thrown attempting to execute the global internal server error handler: {exMessage}"))),
+                                        It.Is<It.IsAnyType>((object fV, Type _) => fV.ToString().Equals(($"An exception was thrown attempting to execute the global internal server error handler: {exMessage}"))),
                                         It.IsAny<Exception>(),
-                                        It.IsAny<Func<object, Exception, string>>()));
+                                        (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
 
-                loggerMock.Verify(l => l.Log<object>(
+                loggerMock.Verify(l => l.Log(
                         LogLevel.Warning,
                         It.IsAny<EventId>(),
-                        It.Is<object>(fV => fV.ToString().Equals(("The response has already started, the error handler will not be executed."))),
+                        It.Is<It.IsAnyType>((object fV, Type _) => fV.ToString().Equals(("The response has already started, the error handler will not be executed."))),
                         null,
-                        It.IsAny<Func<object, Exception, string>>()));
+                        (Func<It.IsAnyType, Exception, string>)It.IsAny<object>()));
                 // re-throw the actual re-throw 
                 throw;
             }

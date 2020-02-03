@@ -39,14 +39,20 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             _testServer =
                 new TestServer(
                     new WebHostBuilder()
+                        .UseTestServer()
                         .Configure(builder =>
                         {
                             builder.UseGlobalExceptionHandler();
-                            builder.UseMvc();
+
+                            builder.UseRouting();
+                            builder.UseEndpoints(endpoints =>
+                            {
+                                endpoints.MapControllers();
+                            });
                         })
                         .ConfigureServices(builder =>
                         {
-                            builder.AddMvc();
+                            builder.AddControllers();
 
                             builder.AddSingleton(_deliveryRepositoryMock.Object);
                             builder.AddSingleton(_notifyMeRequestRepository.Object);
@@ -136,7 +142,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
         }
 
         [TestMethod]
-        public async Task PutDeliveryThroughPublicRoute_GetsNotFoundResponse()
+        public async Task PutDeliveryThroughPublicRoute_GetsMethodNotAllowedResponse()
         {
             var deliveryId = Guid.NewGuid().ToString();
             var delivery = new Delivery(deliveryId, new UserAccount("user", "accound"), null, null, null, false, ConfirmationType.None, null);
@@ -144,7 +150,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
             using (var client = _testServer.CreateClient())
             {
                 var response = await client.PutAsJsonAsync($"http://localhost/api/deliveries/public/{deliveryId}", delivery);
-                Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
+                Assert.AreEqual(HttpStatusCode.MethodNotAllowed, response.StatusCode);
             }
 
             _deliveryRepositoryMock.VerifyAll();
