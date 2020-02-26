@@ -155,18 +155,15 @@ sudo az aks install-cli
 az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 
 # Create namespaces
-kubectl create namespace backend-dev
+kubectl create namespace backend-dev && \
+kubectl create namespace ingress-controllers
 ```
 
 Setup Helm
 
 ```bash
-# install helm client side
-DESIRED_VERSION=v2.14.2;curl -L https://git.io/get_helm.sh | bash
-
-# setup tiller in your cluster
-kubectl apply -f $K8S/tiller-rbac.yaml
-helm init --service-account tiller
+# install helm CLI
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 ```
 
 Integrate Application Insights instance
@@ -210,8 +207,7 @@ export GATEWAY_CONTROLLER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GR
 export APP_GATEWAY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.appGatewayName.value -o tsv)
 export APP_GATEWAY_PUBLIC_IP_FQDN=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.appGatewayPublicIpFqdn.value -o tsv)
 
-helm install application-gateway-kubernetes-ingress/ingress-azure \
-     --name ingress-azure-dev \
+helm install ingress-azure-dev application-gateway-kubernetes-ingress/ingress-azure \
      --namespace ingress-controllers \
      --set appgw.name=$APP_GATEWAY_NAME \
      --set appgw.resourceGroup=$RESOURCE_GROUP \
@@ -223,7 +219,8 @@ helm install application-gateway-kubernetes-ingress/ingress-azure \
      --set armAuth.identityClientID=$GATEWAY_CONTROLLER_PRINCIPAL_CLIENT_ID \
      --set rbac.enabled=true \
      --set verbosityLevel=3 \
-     --set aksClusterConfiguration.apiServerAddress=$CLUSTER_SERVER
+     --set aksClusterConfiguration.apiServerAddress=$CLUSTER_SERVER \
+     --set appgw.usePrivateIP=false
 
 # Create a self-signed certificate for TLS
 export EXTERNAL_INGEST_FQDN=$APP_GATEWAY_PUBLIC_IP_FQDN
@@ -282,7 +279,8 @@ export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DE
 export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
 # Deploy the service
-helm install $HELM_CHARTS/delivery/ \
+helm package $HELM_CHARTS/delivery/ -u && \
+helm install delivery-v0.1.0-dev delivery-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=delivery \
      --set dockerregistry=$ACR_SERVER \
@@ -301,13 +299,11 @@ helm install $HELM_CHARTS/delivery/ \
      --set cosmosdb.collectionid=$COLLECTION_NAME \
      --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
      --set reason="Initial deployment" \
-     --set tags.dev=true \
-     --namespace backend-dev \
-     --name delivery-v0.1.0-dev \
-     --dep-up
+     --set envs.dev=true \
+     --namespace backend-dev
 
 # Verify the pod is created
-helm status delivery-v0.1.0-dev
+helm status delivery-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Deploy the Package service
@@ -340,7 +336,8 @@ export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSD
 export COSMOSDB_COL_NAME=packages
 
 # Deploy service
-helm install $HELM_CHARTS/package/ \
+helm package $HELM_CHARTS/package/ -u && \
+helm install package-v0.1.0-dev package-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=package \
      --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
@@ -351,13 +348,11 @@ helm install $HELM_CHARTS/package/ \
      --set cosmosDb.collectionName=$COSMOSDB_COL_NAME \
      --set dockerregistry=$ACR_SERVER \
      --set reason="Initial deployment" \
-     --set tags.dev=true \
-     --namespace backend-dev \
-     --name package-v0.1.0-dev \
-     --dep-up
+     --set envs.dev=true \
+     --namespace backend-dev
 
 # Verify the pod is created
-helm status package-v0.1.0-dev
+helm status package-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Deploy the Workflow service
@@ -393,7 +388,8 @@ Deploy the Workflow service:
 
 ```bash
 # Deploy the service
-helm install $HELM_CHARTS/workflow/ \
+helm package $HELM_CHARTS/workflow/ -u && \
+helm install workflow-v0.1.0-dev workflow-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=workflow \
      --set dockerregistry=$ACR_SERVER \
@@ -404,13 +400,11 @@ helm install $HELM_CHARTS/workflow/ \
      --set keyvault.subscriptionid=$SUBSCRIPTION_ID \
      --set keyvault.tenantid=$TENANT_ID \
      --set reason="Initial deployment" \
-     --set tags.dev=true \
-     --namespace backend-dev \
-     --name workflow-v0.1.0-dev \
-     --dep-up
+     --set envs.dev=true \
+     --namespace backend-dev
 
 # Verify the pod is created
-helm status workflow-v0.1.0-dev
+helm status workflow-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Deploy the Ingestion service
@@ -444,7 +438,8 @@ Deploy the Ingestion service
 export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
 
 # Deploy service
-helm install $HELM_CHARTS/ingestion/ \
+helm package $HELM_CHARTS/ingestion/ -u && \
+helm install ingestion-v0.1.0-dev ingestion-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=ingestion \
      --set dockerregistry=$ACR_SERVER \
@@ -463,13 +458,11 @@ helm install $HELM_CHARTS/ingestion/ \
      --set secrets.queue.name=${INGESTION_QUEUE_NAME} \
      --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
      --set reason="Initial deployment" \
-     --set tags.dev=true \
-     --namespace backend-dev \
-     --name ingestion-v0.1.0-dev \
-     --dep-up
+     --set envs.dev=true \
+     --namespace backend-dev
 
 # Verify the pod is created
-helm status ingestion-v0.1.0-dev
+helm status ingestion-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Deploy DroneScheduler service
@@ -513,7 +506,8 @@ docker push $ACR_SERVER/dronescheduler:0.1.0
 Deploy the dronescheduler service:
 ```bash
 # Deploy the service
-helm install $HELM_CHARTS/dronescheduler/ \
+helm package $HELM_CHARTS/dronescheduler/ -u && \
+helm install dronescheduler-v0.1.0-dev dronescheduler-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=dronescheduler \
      --set dockerregistry=$ACR_SERVER \
@@ -526,13 +520,11 @@ helm install $HELM_CHARTS/dronescheduler/ \
      --set cosmosdb.id=$DATABASE_NAME \
      --set cosmosdb.collectionid=$COLLECTION_NAME \
      --set reason="Initial deployment" \
-     --set tags.dev=true \
-     --namespace backend-dev \
-     --name dronescheduler-v0.1.0-dev \
-     --dep-up
+     --set envs.dev=true \
+     --namespace backend-dev
 
 # Verify the pod is created
-helm status dronescheduler-v0.1.0-dev
+helm status dronescheduler-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Validate the application is running
@@ -600,4 +592,18 @@ sed -i 's/  value: "elastic"/#  value: "elastic"/' fluentd-daemonset-elasticsear
 sed -i "s/- name: FLUENT_ELASTICSEARCH_PASSWORD/#- name: FLUENT_ELASTICSEARCH_PASSWORD/" fluentd-daemonset-elasticsearch.yaml && \
 sed -i 's/  value: "changeme"/#  value: "changeme"/' fluentd-daemonset-elasticsearch.yaml && \
 kubectl --namespace kube-system apply -f fluentd-daemonset-elasticsearch.yaml
+```
+
+## Clean up
+
+Follow the steps below to remove the Fabrikam Drone Delivery app from your cluster
+
+```bash
+helm uninstall $(helm ls --all --short -n ingress-controllers)  -n ingress-controllers && \
+helm uninstall $(helm ls --all --short -n backend-dev)  -n backend-dev
+
+# if you've choosen the CI/CD path
+helm uninstall $(helm ls --all --short -n backend-qa)  -n backend-qa && \
+helm uninstall $(helm ls --all --short -n backend-staging)  -n backend-staging && \
+helm uninstall $(helm ls --all --short -n backend-prod)  -n backend-prod
 ```

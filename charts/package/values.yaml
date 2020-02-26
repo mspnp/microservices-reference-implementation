@@ -1,13 +1,25 @@
 # Default values for package service.
 nameOverride: package
+
+
 replicaCount: 1
+
+
 dockerregistrynamespace:
 dockerregistry:
+
+
 image:
   repository:
   tag:
   pullPolicy: IfNotPresent
+
+
+# specify an installation/upgrade reason
 reason: unknown
+
+
+# probes
 readinessProbe:
   httpGet:
     path: /healthz
@@ -16,27 +28,43 @@ readinessProbe:
   periodSeconds: 15
   timeoutSeconds: 2
   failureThreshold: 5
+
 livenessProbe:
   httpGet:
     path: /healthz
     port: 80
   initialDelaySeconds: 50
   periodSeconds: 15
+
+
 log:
   level: error
+
+
 cosmosDb:
   collectionName:
-tags:
+
+
+# indicate what environment is meant to be installed/upgraded
+envs:
   dev: false
   prod: false
   qa: false
   staging: false
+
+
 current: false
+
+
+# Horizontal Pod Autoscaling
 autoscaling:
   enabled: false
   maxReplicas:
   minReplicas:
   targetCPUUtilizationPercentage:
+
+
+# Pod-to-pod traffic: east-west
 networkPolicy:
   egress:
     enabled: true
@@ -67,6 +95,8 @@ networkPolicy:
               dd.fabrikam.com/egress-package: "true"
               app.kubernetes.io/component: backend
               app.kubernetes.io/part-of: dronedelivery
+
+
 service:
   targetPort: 80
   targetProtocol: TCP

@@ -102,18 +102,15 @@ az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 kubectl create namespace backend-dev && \
 kubectl create namespace backend-qa && \
 kubectl create namespace backend-staging && \
-kubectl create namespace backend
+kubectl create namespace backend && \
+kubectl create namespace ingress-controllers
 ```
 
 Setup Helm
 
 ```bash
-# install helm client side
-DESIRED_VERSION=v2.14.2;curl -L https://git.io/get_helm.sh | bash
-
-# setup tiller in your cluster
-kubectl apply -f $K8S/tiller-rbac.yaml
-helm init --service-account tiller
+# install helm CLI
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 ```
 
 ## Integrate Application Insights instance
@@ -246,8 +243,7 @@ export APP_GATEWAY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azurede
 export {${ENV}_APP_GATEWAY_PUBLIC_IP_FQDN,APP_GATEWAY_PUBLIC_IP_FQDN}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appGatewayPublicIpFqdn.value -o tsv)
 export ENV_NAMESPACE=$([ $env == 'prod' ] && echo 'backend' || echo "backend-$env")
 
-helm install application-gateway-kubernetes-ingress/ingress-azure \
-     --name ingress-azure-${env} \
+helm install ingress-azure-${env} application-gateway-kubernetes-ingress/ingress-azure \
      --namespace ingress-controllers \
      --set appgw.name=$APP_GATEWAY_NAME \
      --set appgw.resourceGroup=$RESOURCE_GROUP \
@@ -259,7 +255,8 @@ helm install application-gateway-kubernetes-ingress/ingress-azure \
      --set armAuth.identityClientID=$GATEWAY_CONTROLLER_PRINCIPAL_CLIENT_ID \
      --set rbac.enabled=true \
      --set verbosityLevel=3 \
-     --set aksClusterConfiguration.apiServerAddress=$CLUSTER_SERVER
+     --set aksClusterConfiguration.apiServerAddress=$CLUSTER_SERVER \
+     --set appgw.usePrivateIP=false
 
 # Create a self-signed certificate for TLS for the environment
 export {${ENV}_EXTERNAL_INGEST_FQDN,EXTERNAL_INGEST_FQDN}=$APP_GATEWAY_PUBLIC_IP_FQDN
@@ -408,7 +405,7 @@ git push newremote release/delivery/v0.1.0
 Verify delivery was deployed
 
 ```bash
-helm status delivery-v0.1.0
+helm status delivery-v0.1.0 --namespace backend-dev
 ```
 
 ## Add Package CI/CD
@@ -491,7 +488,7 @@ git push newremote release/package/v0.1.0
 Verify package was deployed
 
 ```bash
-helm status package-v0.1.0
+helm status package-v0.1.0 --namespace backend-dev
 ```
 
 ## Add Workflow CI/CD
@@ -587,7 +584,7 @@ git push newremote release/workflow/v0.1.0
 Verify workflow was deployed
 
 ```bash
-helm status workflow-v0.1.0
+helm status workflow-v0.1.0 --namespace backend-dev
 ```
 
 ## Add Ingestion CI/CD
@@ -698,7 +695,7 @@ git push newremote release/ingestion/v0.1.0
 Verify ingestion was deployed
 
 ```bash
-helm status ingestion-v0.1.0
+helm status ingestion-v0.1.0 --namespace backend-dev
 ```
 
 ## Add DroneScheduler CI/CD
@@ -783,7 +780,7 @@ git push newremote release/dronescheduler/v0.1.0
 Verify dronescheduler was deployed
 
 ```bash
-helm status dronescheduler-v0.1.0
+helm status dronescheduler-v0.1.0 --namespace backend-dev
 ```
 
 ## Validate the application is running

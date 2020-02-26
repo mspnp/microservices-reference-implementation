@@ -1,4 +1,40 @@
+apiVersion: v2
 name: package
 version: v0.1.0
 appVersion: v0.1.0
 description: Fabrikam Drone Delivery Package Service
+type: application
+home: https://docs.microsoft.com/en-us/azure/architecture/reference-architectures/microservices/aks
+sources:
+  - https://github.com/mspnp/microservices-reference-implementation
+dependencies:
+  - name: package-dev
+    repository: "file://envs/package-dev"
+    version: v0.1.0
+    condition: envs.dev
+    import-values:
+      - data
+
+  - name: package-prod
+    repository: "file://envs/package-prod"
+    version: v0.1.0
+    condition: envs.prod
+    import-values:
+      - data
+
+  - name: package-qa
+    repository: "file://envs/package-qa"
+    version: v0.1.0
+    condition: envs.qa
+    import-values:
+      - data
+
+  - name: package-staging
+    repository: "file://envs/package-staging"
+    version: v0.1.0
+    condition: envs.staging
+    import-values:
+      - data
+maintainers:
+  - email: v-fean@microsoft.com
+    name: ferantivero

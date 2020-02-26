@@ -7,4 +7,4 @@ All the objects were created in the namespace {{ .Values.namespace }}
 To learn more about the release, try:
 
   $ helm status {{ .Release.Name }}
-  $ helm get {{ .Release.Name }}
+  $ helm get all {{ .Release.Name }} --namespace {{ .Release.Namespace }}

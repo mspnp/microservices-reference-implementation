@@ -1,20 +1,34 @@
 # Default values for workflow.
 nameOverride: workflow
+
+
 replicaCount: 1
+
+
 dockerregistrynamespace:
 dockerregistry:
+
+
 identity:
   clientid:
   resourceid:
+
+
 image:
   repository:
   tag:
   pullPolicy: IfNotPresent
+
+
+# specify an installation/upgrade reason
 reason: unknown
+
+
 serviceuri:
   delivery: http://delivery/api/Deliveries/
   drone: http://dronescheduler/api/DroneDeliveries/
   package: http://package/api/packages/
+
 servicerequest:
   maxretries: 3
   circuitbreakerthreshold: 0.5
@@ -23,6 +37,9 @@ servicerequest:
   circuitbreakerbreakduration: 30
   maxbulkheadsize: 100
   maxbulkheadqueuesize: 25
+
+
+# probes
 healthcheck:
   delay:
 readinessProbe:
@@ -34,6 +51,7 @@ readinessProbe:
   periodSeconds: 15
   timeoutSeconds: 2
   failureThreshold: 5
+
 livenessProbe:
   exec:
     command:
@@ -43,23 +61,36 @@ livenessProbe:
     - -1
   initialDelaySeconds: 50
   periodSeconds: 30
+
+
 keyvault:
   name:
   resourcegroup:
   subscriptionid:
   tenantid:
+
+
 telemetry:
   level: "Error"
-tags:
+
+
+# indicate what environment is meant to be installed/upgraded
+envs:
   dev: false
   prod: false
   qa: false
   staging: false
+
+
+# Horizontal Pod Autoscaling
 autoscaling:
   enabled: false
   maxReplicas:
   minReplicas:
   targetCPUUtilizationPercentage:
+
+
+# Pod-to-pod traffic: east-west
 networkPolicy:
   egress:
     enabled: true
@@ -78,6 +109,7 @@ networkPolicy:
         - port: 53
           protocol: TCP
 
+# indicate pods this app will attemp to establish a connection with
 workflow:
   customPodLabels:
     dd.fabrikam.com/egress-delivery: "true"
