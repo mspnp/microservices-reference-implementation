@@ -226,6 +226,12 @@
         "appGatewayNamePrefix": "appg",
         "aksVnetAddressPrefix": "10.10.0.0/16",
         "aksClusterSubnetPrefix": "10.10.0.0/21",
+        "appGatewaySubnetPrefixes": [
+              "10.10.8.0/24",
+              "10.10.9.0/24",
+              "10.10.10.0/24",
+              "10.10.11.0/24"
+        ],
         "firewallSubnetPrefix": "10.10.12.0/24",
         "firewallSubnetName": "AzureFirewallSubnet",
         "aksVnetNamePrefix": "vnet",
@@ -252,8 +258,7 @@
                 "applicationGatewayMinCapacity": 1,
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
-                "appGatewaySubnetName": "[concat(parameters('environmentName'),'-agsn-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
-                "appGatewaySubnetPrefix": "10.10.8.0/24",
+                "appGatewaySubnetIndex": 0,
                 "appGatewayPublicIpName": "[concat(parameters('environmentName'),'-agip-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appGatewayPublicDnsName": "[concat(parameters('environmentName'),'-ingest-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
@@ -291,8 +296,7 @@
                 "applicationGatewayMinCapacity": 1,
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
-                "appGatewaySubnetName": "[concat(parameters('environmentName'),'-agsn-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
-                "appGatewaySubnetPrefix": "10.10.9.0/24",
+                "appGatewaySubnetIndex": 1,
                 "appGatewayPublicIpName": "[concat(parameters('environmentName'),'-agip-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appGatewayPublicDnsName": "[concat(parameters('environmentName'),'-ingest-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
@@ -330,8 +334,7 @@
                 "applicationGatewayMinCapacity": 2,
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
-                "appGatewaySubnetName": "[concat(parameters('environmentName'),'-agsn-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
-                "appGatewaySubnetPrefix": "10.10.10.0/24",
+                "appGatewaySubnetIndex": 2,
                 "appGatewayPublicIpName": "[concat(parameters('environmentName'),'-agip-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appGatewayPublicDnsName": "[concat(parameters('environmentName'),'-ingest-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
@@ -369,8 +372,7 @@
                 "applicationGatewayMinCapacity": 2,
                 "aksVnetName": "[uniqueString(variables('aksVnetNamePrefix'), resourceGroup().id)]",
                 "aksClusterSubnetName": "[uniqueString(variables('aksClusterSubnetNamePrefix'), resourceGroup().id)]",
-                "appGatewaySubnetName": "[concat(parameters('environmentName'),'-agsn-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
-                "appGatewaySubnetPrefix": "10.10.11.0/24",
+                "appGatewaySubnetIndex": 3,
                 "appGatewayPublicIpName": "[concat(parameters('environmentName'),'-agip-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appGatewayPublicDnsName": "[concat(parameters('environmentName'),'-ingest-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id))]",
                 "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
@@ -398,7 +400,59 @@
                 "workspaceSku": "PerGB2018",
                 "workspaceRetentionInDays": 730
             }
-        }
+        },
+        "aksClusterSubnet": {
+            "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName]",
+            "properties": {
+                "addressPrefix": "[variables('aksClusterSubnetPrefix')]",
+                "privateEndpointNetworkPolicies": "Enabled",
+                "privateLinkServiceNetworkPolicies": "Enabled"
+            }
+        },
+        "firewallSubnet": {
+            "name": "[variables('firewallSubnetName')]",
+            "properties": {
+                "addressPrefix": "[variables('firewallSubnetPrefix')]",
+                "serviceEndpoints": [
+                    {
+                        "service": "Microsoft.KeyVault",
+                        "locations": [
+                            "[resourceGroup().location]"
+                        ]
+                    },
+                    {
+                        "service": "Microsoft.AzureCosmosDB",
+                        "locations": [
+                            "[resourceGroup().location]"
+                        ]
+                    },
+                    {
+                        "service": "Microsoft.Storage",
+                        "locations": [
+                            "[resourceGroup().location]"
+                        ]
+                    },
+                    {
+                        "service": "Microsoft.ServiceBus",
+                        "locations": [
+                            "[resourceGroup().location]"
+                        ]
+                    }
+                ]
+            }
+        },
+        "copy": [
+          {
+            "name": "appGatewaySubnetsLoop",
+            "count": "[length(variables('appGatewaySubnetPrefixes'))]",
+            "input": {
+              "name": "[concat('agsn-', uniqueString(variables('appGatewayNamePrefix'), resourceGroup().id), copyIndex('appGatewaySubnetsLoop'))]",
+              "properties": {
+                "addressPrefix": "[variables('appGatewaySubnetPrefixes')[copyIndex('appGatewaySubnetsLoop')]]"
+              }
+            }
+          }
+        ]
     },
     "resources": [
         {
@@ -477,54 +531,7 @@
                         "[variables('aksVnetAddressPrefix')]"
                     ]
                 },
-                "subnets": [
-                    {
-                        "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterSubnetName]",
-                        "properties": {
-                            "addressPrefix": "[variables('aksClusterSubnetPrefix')]",
-                            "privateEndpointNetworkPolicies": "Enabled",
-                            "privateLinkServiceNetworkPolicies": "Enabled"
-                        }
-                    },
-                    {
-                        "name": "[variables('firewallSubnetName')]",
-                        "properties": {
-                            "addressPrefix": "[variables('firewallSubnetPrefix')]",
-                            "serviceEndpoints": [
-                                {
-                                    "service": "Microsoft.KeyVault",
-                                    "locations": [
-                                        "[resourceGroup().location]"
-                                    ]
-                                },
-                                {
-                                    "service": "Microsoft.AzureCosmosDB",
-                                    "locations": [
-                                        "[resourceGroup().location]"
-                                    ]
-                                },
-                                {
-                                    "service": "Microsoft.Storage",
-                                    "locations": [
-                                        "[resourceGroup().location]"
-                                    ]
-                                },
-                                {
-                                    "service": "Microsoft.ServiceBus",
-                                    "locations": [
-                                        "[resourceGroup().location]"
-                                    ]
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "name": "[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetName]",
-                        "properties": {
-                            "addressPrefix": "[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetPrefix]"
-                        }
-                    }
-                ]
+                "subnets": "[concat(createArray(variables('aksClusterSubnet'), variables('firewallSubnet')), variables('appGatewaySubnetsLoop'))]"
             }
         },
         {
@@ -572,7 +579,7 @@
                         "name": "appGatewayIpConfig",
                         "properties": {
                             "subnet": {
-                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetName)]"
+                                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('environmentSettings')[parameters('environmentName')].aksVnetName, variables('appGatewaySubnetsLoop')[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetIndex].name)]"
                             }
                         }
                     }
@@ -1584,7 +1591,7 @@
             "type": "string"
         },
         "appGatewaySubnetPrefix": {
-            "value": "[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetPrefix]",
+            "value": "[variables('appGatewaySubnetsLoop')[variables('environmentSettings')[parameters('environmentName')].appGatewaySubnetIndex].properties.addressPrefix]",
             "type": "string"
         },
         "aksVNetName": {

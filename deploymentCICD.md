@@ -76,9 +76,7 @@ export DELIVERY_REDIS_HOSTNAMES=${DELIVERY_REDIS_HOSTNAMES}\'${DELIVERY_REDIS_HO
 done
 
 # Restrict cluster egress traffic
-export FIREWALL_PIP_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-prod --query properties.outputs.firewallPublicIpName.value -o tsv) && \
-
-export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.acrName.value -o tsv) && \
+export FIREWALL_PIP_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-{env} --query properties.outputs.firewallPublicIpName.value -o tsv) && \
 az group deployment create -g $RESOURCE_GROUP --name azuredeploy-firewall --template-file ${PROJECT_ROOT}/azuredeploy-firewall.json \
 --parameters aksVnetName=${VNET_NAME} \
             aksClusterSubnetName=${CLUSTER_SUBNET_NAME} \
