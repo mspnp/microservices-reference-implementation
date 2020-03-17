@@ -277,8 +277,8 @@ export DRONE_PATH=$PROJECT_ROOT/src/shipping/dronescheduler
 # configure build YAML definitions
 for pipelinePath in $DELIVERY_PATH $PACKAGE_PATH $WORKFLOW_PATH $INGESTION_PATH $DRONE_PATH; do
 sed -i \
-    -e "s#ACR_SERVER_VAR_VAL#$ACR_SERVER#g" \
-    -e "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" \
+    -e "s#ACR_SERVER_VAR_VAL#$DEV_ACR_SERVER#g" \
+    -e "s#ACR_NAME_VAR_VAL#$DEV_ACR_NAME#g" \
     -e "s#AZURE_PIPELINES_SERVICE_CONN_NAME_VAR_VAL#$AZURE_PIPELINES_SERVICE_CONN_NAME#g" \
     ${pipelinePath}/azure-pipelines.yml
 done
