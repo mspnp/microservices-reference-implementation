@@ -84,8 +84,12 @@ jobs:
 
   - task: HelmInstaller@0
     condition: eq(variables['fullCI'],True)
-    displayName: 'Install Helm 2.12.3'
+    displayName: 'Install Helm 3.0.3'
     inputs:
+      helmVersion: 3.0.3
+
+      checkLatestHelmVersion: false
+
       kubectlVersion: 1.12.4
 
       checkLatestKubectl: false
@@ -100,7 +104,11 @@ jobs:
 
       chartVersion: $(Build.SourceBranchName)
 
-      arguments: '--app-version $(Build.SourceBranchName) --dependency-update'
+      updateDependency: true
+
+      save: false
+
+      arguments: '--app-version $(Build.SourceBranchName)'
 
   - task: AzureCLI@1
     condition: eq(variables['fullCI'],True)
