@@ -38,6 +38,9 @@
                 },
                 "ACR_NAME": {
                     "value": "DEV_ACR_NAME_VAR_VAL"
+                },
+                "CLUSTER_SUBNET_PREFIX": {
+                    "value": "DEV_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -182,7 +185,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-dev",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),secrets.appinsights.ikey=$(AI_IKEY),secrets.mongo.pwd=$(COSMOSDB_CONNECTION),cosmosDb.collectionName=$(COSMOSDB_COL_NAME),reason=\"$(REASON)\",envs.dev=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),secrets.appinsights.ikey=$(AI_IKEY),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",secrets.mongo.pwd=$(COSMOSDB_CONNECTION),cosmosDb.collectionName=$(COSMOSDB_COL_NAME),reason=\"$(REASON)\",envs.dev=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -372,6 +375,9 @@
                 },
                 "ACR_NAME": {
                     "value": "QA_ACR_NAME_VAR_VAL"
+                },
+                "CLUSTER_SUBNET_PREFIX": {
+                    "value": "QA_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -516,7 +522,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-qa",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),secrets.appinsights.ikey=$(AI_IKEY),secrets.mongo.pwd=$(COSMOSDB_CONNECTION),cosmosDb.collectionName=$(COSMOSDB_COL_NAME),reason=\"$(REASON)\",envs.qa=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),secrets.appinsights.ikey=$(AI_IKEY),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",secrets.mongo.pwd=$(COSMOSDB_CONNECTION),cosmosDb.collectionName=$(COSMOSDB_COL_NAME),reason=\"$(REASON)\",envs.qa=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -701,6 +707,9 @@
                 },
                 "ACR_NAME": {
                     "value": "STAGING_ACR_NAME_VAR_VAL"
+                },
+                "CLUSTER_SUBNET_PREFIX": {
+                    "value": "STAGING_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -845,7 +854,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-staging",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),secrets.appinsights.ikey=$(AI_IKEY),secrets.mongo.pwd=$(COSMOSDB_CONNECTION),cosmosDb.collectionName=$(COSMOSDB_COL_NAME),reason=\"$(REASON)\",envs.staging=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),secrets.appinsights.ikey=$(AI_IKEY),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",secrets.mongo.pwd=$(COSMOSDB_CONNECTION),cosmosDb.collectionName=$(COSMOSDB_COL_NAME),reason=\"$(REASON)\",envs.staging=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -1036,6 +1045,9 @@
                 },
                 "ACR_NAME": {
                     "value": "PROD_ACR_NAME_VAR_VAL"
+                },
+                "CLUSTER_SUBNET_PREFIX": {
+                    "value": "PROD_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -1209,7 +1221,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),secrets.appinsights.ikey=$(AI_IKEY),secrets.mongo.pwd=$(COSMOSDB_CONNECTION),cosmosDb.collectionName=$(COSMOSDB_COL_NAME),reason=\"$(REASON)\",envs.prod=true,package-prod.experimental=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),secrets.appinsights.ikey=$(AI_IKEY),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",secrets.mongo.pwd=$(COSMOSDB_CONNECTION),cosmosDb.collectionName=$(COSMOSDB_COL_NAME),reason=\"$(REASON)\",envs.prod=true,package-prod.experimental=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -1465,7 +1477,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),secrets.appinsights.ikey=$(AI_IKEY),secrets.mongo.pwd=$(COSMOSDB_CONNECTION),cosmosDb.collectionName=$(COSMOSDB_COL_NAME),reason=\"$(REASON)\",envs.prod=true,current=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),secrets.appinsights.ikey=$(AI_IKEY),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",secrets.mongo.pwd=$(COSMOSDB_CONNECTION),cosmosDb.collectionName=$(COSMOSDB_COL_NAME),reason=\"$(REASON)\",envs.prod=true,current=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",

@@ -68,33 +68,16 @@ autoscaling:
 networkPolicy:
   egress:
     enabled: true
-    # allowAll will be ingnored if customSelectons are provided. Comment out
-    # customSelectors if allowAll is required
     allowAll: false
-    customSelectors:
-      # allow egress traffic to kubedns
-      - to:
-        - podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-        ports:
-        - port: 53
-          protocol: UDP
-        - port: 53
-          protocol: TCP
+    external:
+      enabled: false
+      clusterSubnetPrefix:
   ingress:
     enabled: true
-    # allowAll will be ingnored if customSelectons are provided. Comment out
-    # customSelectors if allowAll is required
     allowAll: false
-    customSelectors:
-      # allow ingress traffic from workflow
-      templateSelector:
-        - podSelector:
-            matchLabels:
-              dd.fabrikam.com/egress-package: "true"
-              app.kubernetes.io/component: backend
-              app.kubernetes.io/part-of: dronedelivery
+    externalSubnet:
+      enabled: false
+      subnetPrefix:
 
 
 service:

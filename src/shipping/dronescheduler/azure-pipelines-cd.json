@@ -42,6 +42,9 @@
                 },
                 "COSMOSDB_COLLECTIONID": {
                     "value": "DEV_COSMOSDB_COLLECTIONID_VAR_VAL"
+                },
+                "CLUSTER_SUBNET_PREFIX": {
+                    "value": "DEV_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -186,7 +189,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-dev",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(DRONESCHEDULER_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DRONESCHEDULER_PRINCIPAL_RESOURCE_ID),keyvault.uri=$(DRONESCHEDULER_KEYVAULT_URI),cosmosdb.id=$COSMOSDB_DATABASEID,cosmosdb.collectionid=$COSMOSDB_COLLECTIONID,reason=\"$(REASON)\",envs.dev=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(DRONESCHEDULER_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DRONESCHEDULER_PRINCIPAL_RESOURCE_ID),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",keyvault.uri=$(DRONESCHEDULER_KEYVAULT_URI),cosmosdb.id=$(COSMOSDB_DATABASEID),cosmosdb.collectionid=$(COSMOSDB_COLLECTIONID),reason=\"$(REASON)\",envs.dev=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -375,6 +378,9 @@
                 },
                 "COSMOSDB_COLLECTIONID": {
                     "value": "QA_COSMOSDB_COLLECTIONID_VAR_VAL"
+                },
+                "CLUSTER_SUBNET_PREFIX": {
+                    "value": "QA_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -519,7 +525,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-qa",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(DRONESCHEDULER_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DRONESCHEDULER_PRINCIPAL_RESOURCE_ID),keyvault.uri=$(DRONESCHEDULER_KEYVAULT_URI),cosmosdb.id=$COSMOSDB_DATABASEID,cosmosdb.collectionid=$COSMOSDB_COLLECTIONID,reason=\"$(REASON)\",envs.qa=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(DRONESCHEDULER_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DRONESCHEDULER_PRINCIPAL_RESOURCE_ID),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",keyvault.uri=$(DRONESCHEDULER_KEYVAULT_URI),cosmosdb.id=$(COSMOSDB_DATABASEID),cosmosdb.collectionid=$(COSMOSDB_COLLECTIONID),reason=\"$(REASON)\",envs.qa=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -708,6 +714,9 @@
                 },
                 "COSMOSDB_COLLECTIONID": {
                     "value": "STAGING_COSMOSDB_COLLECTIONID_VAR_VAL"
+                },
+                "CLUSTER_SUBNET_PREFIX": {
+                    "value": "STAGING_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -852,7 +861,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-staging",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(DRONESCHEDULER_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DRONESCHEDULER_PRINCIPAL_RESOURCE_ID),keyvault.uri=$(DRONESCHEDULER_KEYVAULT_URI),cosmosdb.id=$COSMOSDB_DATABASEID,cosmosdb.collectionid=$COSMOSDB_COLLECTIONID,reason=\"$(REASON)\",envs.staging=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(DRONESCHEDULER_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DRONESCHEDULER_PRINCIPAL_RESOURCE_ID),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",keyvault.uri=$(DRONESCHEDULER_KEYVAULT_URI),cosmosdb.id=$(COSMOSDB_DATABASEID),cosmosdb.collectionid=$(COSMOSDB_COLLECTIONID),reason=\"$(REASON)\",envs.staging=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -1047,6 +1056,9 @@
                 },
                 "COSMOSDB_COLLECTIONID": {
                     "value": "PROD_COSMOSDB_COLLECTIONID_VAR_VAL"
+                },
+                "CLUSTER_SUBNET_PREFIX": {
+                    "value": "PROD_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -1219,7 +1231,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(DRONESCHEDULER_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DRONESCHEDULER_PRINCIPAL_RESOURCE_ID),keyvault.uri=$(DRONESCHEDULER_KEYVAULT_URI),cosmosdb.id=$COSMOSDB_DATABASEID,cosmosdb.collectionid=$COSMOSDB_COLLECTIONID,reason=\"$(REASON)\",envs.prod=true,dronescheduler-prod.experimental=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(DRONESCHEDULER_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DRONESCHEDULER_PRINCIPAL_RESOURCE_ID),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",keyvault.uri=$(DRONESCHEDULER_KEYVAULT_URI),cosmosdb.id=$(COSMOSDB_DATABASEID),cosmosdb.collectionid=$(COSMOSDB_COLLECTIONID),reason=\"$(REASON)\",envs.prod=true,dronescheduler-prod.experimental=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -1475,7 +1487,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(DRONESCHEDULER_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DRONESCHEDULER_PRINCIPAL_RESOURCE_ID),keyvault.uri=$(DRONESCHEDULER_KEYVAULT_URI),cosmosdb.id=$COSMOSDB_DATABASEID,cosmosdb.collectionid=$COSMOSDB_COLLECTIONID,reason=\"$(REASON)\",envs.prod=true,current=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(DRONESCHEDULER_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DRONESCHEDULER_PRINCIPAL_RESOURCE_ID),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",keyvault.uri=$(DRONESCHEDULER_KEYVAULT_URI),cosmosdb.id=$(COSMOSDB_DATABASEID),cosmosdb.collectionid=$(COSMOSDB_COLLECTIONID),reason=\"$(REASON)\",envs.prod=true,current=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",

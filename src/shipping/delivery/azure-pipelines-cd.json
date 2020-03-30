@@ -61,6 +61,9 @@
                },
                "GATEWAY_SUBNET_PREFIX": {
                    "value": "DEV_GATEWAY_SUBNET_PREFIX_VAR_VAL"
+               },
+               "CLUSTER_SUBNET_PREFIX": {
+                   "value": "DEV_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                }
             },
             "variableGroups": [],
@@ -205,7 +208,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-dev",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.ingress.customSelectors.argSelector={ipBlock},networkPolicy.ingress.customSelectors.argSelector[0].ipBlock.cidr=\"$(GATEWAY_SUBNET_PREFIX)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",envs.dev=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",networkPolicy.ingress.externalSubnet.enabled=true,networkPolicy.ingress.externalSubnet.subnetPrefix=\"$(GATEWAY_SUBNET_PREFIX)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",envs.dev=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -416,6 +419,9 @@
                },
                "GATEWAY_SUBNET_PREFIX": {
                    "value": "QA_GATEWAY_SUBNET_PREFIX_VAR_VAL"
+               },
+               "CLUSTER_SUBNET_PREFIX": {
+                   "value": "QA_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                }
             },
             "variableGroups": [],
@@ -560,7 +566,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-qa",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.ingress.customSelectors.argSelector={ipBlock},networkPolicy.ingress.customSelectors.argSelector[0].ipBlock.cidr=\"$(GATEWAY_SUBNET_PREFIX)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",envs.qa=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",networkPolicy.ingress.externalSubnet.enabled=true,networkPolicy.ingress.externalSubnet.subnetPrefix=\"$(GATEWAY_SUBNET_PREFIX)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",envs.qa=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -766,6 +772,9 @@
                },
                "GATEWAY_SUBNET_PREFIX": {
                    "value": "STAGING_GATEWAY_SUBNET_PREFIX_VAR_VAL"
+               },
+               "CLUSTER_SUBNET_PREFIX": {
+                   "value": "STAGING_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                }
             },
             "variableGroups": [],
@@ -910,7 +919,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-staging",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.ingress.customSelectors.argSelector={ipBlock},networkPolicy.ingress.customSelectors.argSelector[0].ipBlock.cidr=\"$(GATEWAY_SUBNET_PREFIX)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",envs.staging=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",networkPolicy.ingress.externalSubnet.enabled=true,networkPolicy.ingress.externalSubnet.subnetPrefix=\"$(GATEWAY_SUBNET_PREFIX)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",envs.staging=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -1121,6 +1130,9 @@
                },
                "GATEWAY_SUBNET_PREFIX": {
                    "value": "PROD_GATEWAY_SUBNET_PREFIX_VAR_VAL"
+               },
+               "CLUSTER_SUBNET_PREFIX": {
+                   "value": "PROD_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                }
             },
             "variableGroups": [],
@@ -1293,7 +1305,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.ingress.customSelectors.argSelector={ipBlock},networkPolicy.ingress.customSelectors.argSelector[0].ipBlock.cidr=\"$(GATEWAY_SUBNET_PREFIX)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",envs.prod=true,delivery-prod.experimental=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",networkPolicy.ingress.externalSubnet.enabled=true,networkPolicy.ingress.externalSubnet.subnetPrefix=\"$(GATEWAY_SUBNET_PREFIX)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",envs.prod=true,delivery-prod.experimental=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -1549,7 +1561,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.ingress.customSelectors.argSelector={ipBlock},networkPolicy.ingress.customSelectors.argSelector[0].ipBlock.cidr=\"$(GATEWAY_SUBNET_PREFIX)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",envs.prod=true,current=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",networkPolicy.ingress.externalSubnet.enabled=true,networkPolicy.ingress.externalSubnet.subnetPrefix=\"$(GATEWAY_SUBNET_PREFIX)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",envs.prod=true,current=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",

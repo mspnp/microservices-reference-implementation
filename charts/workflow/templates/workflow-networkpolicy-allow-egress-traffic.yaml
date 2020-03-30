@@ -23,10 +23,27 @@ spec:
       app.kubernetes.io/version: {{ .Chart.AppVersion }}
   policyTypes:
   - Egress
-{{- if .Values.networkPolicy.egress.customSelectors }}
   egress:
-{{ toYaml .Values.networkPolicy.egress.customSelectors | indent 2 }}
+  # allow egress traffic to kubedns
+  - to:
+    - podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+      namespaceSelector: {}
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+{{- if .Values.networkPolicy.egress.external.enabled }}
+  # allow egress traffic to all external resources except pods within the
+  # cluster subnet
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+        except:
+        - {{ required "networkPolicy.egress.external.clusterSubnetPrefix is required to enable external traffic" .Values.networkPolicy.egress.external.clusterSubnetPrefix }}
 {{- else if .Values.networkPolicy.egress.allowAll }}
-  egress: []
+  - to: []
 {{- end -}}
 {{ end }}

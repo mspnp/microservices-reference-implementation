@@ -4,7 +4,7 @@
 #  ------------------------------------------------------------
 
 ###################################################################################################
-# Package allow ingress ingress traffic
+# Package allow ingress traffic
 ###################################################################################################
 
 {{- if .Values.networkPolicy.ingress.enabled }}
@@ -24,21 +24,19 @@ spec:
   policyTypes:
   - Ingress
   ingress:
-  - ports:
+  - from:
+    - podSelector:
+        matchLabels:
+          dd.fabrikam.com/egress-package: "true"
+          app.kubernetes.io/component: backend
+          app.kubernetes.io/part-of: dronedelivery
+{{- if .Values.networkPolicy.ingress.externalSubnet.enabled }}
+    - ipBlock:
+        cidr: {{ required "networkPolicy.ingress.externalSubnet.subnetPrefix is required to enable allow traffic from" .Values.networkPolicy.ingress.externalSubnet.subnetPrefix }}
+{{- else if .Values.networkPolicy.egress.allowAll }}
+    - {}
+{{- end }}
+    ports:
     - protocol: {{ .Values.service.targetProtocol }}
       port: {{ .Values.service.targetPort }}
-{{- if .Values.networkPolicy.ingress.customSelectors }}
-    from:
-{{- if .Values.networkPolicy.ingress.customSelectors.templateSelector }}
-{{ toYaml .Values.networkPolicy.ingress.customSelectors.templateSelector | indent 6 }}
 {{- end }}
-{{- if .Values.networkPolicy.ingress.customSelectors.argSelector }}
-{{ toYaml .Values.networkPolicy.ingress.customSelectors.argSelector | indent 6 }}
-{{- end }}
-{{- else if .Values.networkPolicy.ingress.allowAll }}
-    from:
-    - podSelector: {}
-    - namespaceSelector: {}
-    - ipBlock: {}
-{{- end -}}
-{{ end }}
