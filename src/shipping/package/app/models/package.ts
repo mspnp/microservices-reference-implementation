@@ -8,12 +8,12 @@ import { ObjectID } from 'mongodb';
 export type PackageSize = "small" | "medium" | "large";
 
 export class Package {
-    readonly _id: ObjectID;
+    readonly _id: string;
     tag: string;
     weight: number;
     size: PackageSize;
 
     constructor(id? : string) {
-        this._id = id || (new ObjectID(id)).toHexString();
+        this._id = id || (new ObjectID()).toHexString();
     }
 }

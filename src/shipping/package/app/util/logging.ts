@@ -26,11 +26,11 @@ const defaultFormat = combine(
 );
 
 export interface ILogger {
-    log(level: string, msg: string, meta?: any)
-    debug(msg: string, meta?: any)
-    info(msg: string, meta?: any)
-    warn(msg: string, meta?: any)
-    error(msg: string, meta?: any)
+    log(level: string, msg: string, meta?: any) : any
+    debug(msg: string, meta?: any) : any
+    info(msg: string, meta?: any) : any
+    warn(msg: string, meta?: any) : any
+    error(msg: string, meta?: any) : any
 }
 
 export function logger(level: string) {

@@ -13,7 +13,7 @@ gulp.task('set-env', gulp.series(function(done) {
 }));
 
 // Generate types that can be used when working with api definitions
-gulp.task ('create-api-classes', gulp.series(function() {
+gulp.task ('create-api-classes', function(done) {
 
     let generated = "// GENERATED FILE - DO NOT EDIT\n\n";
 
@@ -47,13 +47,16 @@ gulp.task ('create-api-classes', gulp.series(function() {
             return console.log(err);
         }
     });
-}));
+
+    done();
+
+});
 
 // delete all build output files
 gulp.task('clean', gulp.series(function (done) {
     return del(['.bin/'], done);
  }));
- 
+
 gulp.task('build', gulp.series('clean', function () {
     gulp.src('**/*.json', {'cwd':'app'})
         .pipe(gulp.dest('.bin/app'));

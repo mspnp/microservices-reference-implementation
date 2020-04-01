@@ -2,9 +2,11 @@
   "compilerOptions": {
     "outDir": ".bin",
     "module": "commonjs",
-    "target": "ES2015",
-    "noImplicitAny": false,
-    "sourceMap": true
+    "target": "es2017",
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true
   },
   "exclude": [
     "node_modules"

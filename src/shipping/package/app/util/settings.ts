@@ -3,7 +3,7 @@
 // Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
 // ------------------------------------------------------------
 
-import process = require("process")
+const process = require("process")
 
 export class Settings {
   static collectionName() : string {
