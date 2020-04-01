@@ -100,8 +100,7 @@ az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 kubectl create namespace backend-dev && \
 kubectl create namespace backend-qa && \
 kubectl create namespace backend-staging && \
-kubectl create namespace backend && \
-kubectl create namespace ingress-controllers
+kubectl create namespace backend
 ```
 
 Setup Helm
@@ -126,7 +125,8 @@ Note: the tested nmi version was 1.4. It enables namespaced pod identity.
 
 ```bash
 # setup AAD pod identity
-kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/deployment-rbac.yaml
+helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-identity/master/chart && \
+helm install aad-pod-identity/aad-pod-identity -n kube-system
 
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
@@ -242,7 +242,7 @@ export {${ENV}_APP_GATEWAY_PUBLIC_IP_FQDN,APP_GATEWAY_PUBLIC_IP_FQDN}=$(az group
 export ENV_NAMESPACE=$([ $env == 'prod' ] && echo 'backend' || echo "backend-$env")
 
 helm install ingress-azure-${env} application-gateway-kubernetes-ingress/ingress-azure \
-     --namespace ingress-controllers \
+     --namespace kube-system \
      --set appgw.name=$APP_GATEWAY_NAME \
      --set appgw.resourceGroup=$RESOURCE_GROUP \
      --set appgw.subscriptionId=$SUBSCRIPTION_ID \
