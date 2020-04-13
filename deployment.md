@@ -190,7 +190,7 @@ Note: the tested nmi version was 1.4. It enables namespaced pod identity.
 
 ```bash
 # setup AAD pod identity
-helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-identity/master/chart && \
+helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts && \
 helm install aad-pod-identity/aad-pod-identity -n kube-system
 
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
