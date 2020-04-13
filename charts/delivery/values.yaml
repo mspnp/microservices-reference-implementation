@@ -1,20 +1,34 @@
 # Default values for delivery.
 nameOverride: delivery
+
+
 replicaCount: 1
+
+
 identity:
   clientid:
   resourceid:
+
+
 dockerregistrynamespace:
 dockerregistry:
+
+
 image:
   repository:
   tag:
   pullPolicy: IfNotPresent
+
+
 cosmosdb:
   id:
   collectionid:
+
 keyvault:
   uri:
+
+
+# probes
 readinessProbe:
   httpGet:
     path: /healthz
@@ -29,50 +43,51 @@ livenessProbe:
     port: 8080
   initialDelaySeconds: 50
   periodSeconds: 15
+
+
 telemetry:
   level: "Error"
+
+
+# specify an installation/upgrade reason
 reason: unknown
-tags:
+
+
+# indicate what environment is meant to be installed/upgraded
+envs:
   dev: false
   prod: false
   qa: false
   staging: false
+
+
 current: false
+
+
+# Horizontal Pod Autoscaling
 autoscaling:
   enabled: false
   maxReplicas:
   minReplicas:
   targetCPUUtilizationPercentage:
+
+
+# Pod-to-pod traffic: east-west
 networkPolicy:
   egress:
     enabled: true
-    # allowAll will be ingnored if customSelectons are provided. Comment out
-    # customSelectors if allowAll is required
     allowAll: false
-    customSelectors:
-      # allow egress traffic to kubedns
-      - to:
-        - podSelector:
-            matchLabels:
-              k8s-app: kube-dns
-        ports:
-        - port: 53
-          protocol: UDP
-        - port: 53
-          protocol: TCP
+    external:
+      enabled: false
+      clusterSubnetPrefix:
   ingress:
     enabled: true
-    # allowAll will be ingnored if customSelectons are provided. Comment out
-    # customSelectors if allowAll is required
     allowAll: false
-    customSelectors:
-      # allow ingress traffic from workflow
-      templateSelector:
-        - podSelector:
-            matchLabels:
-              dd.fabrikam.com/egress-delivery: "true"
-              app.kubernetes.io/component: backend
-              app.kubernetes.io/part-of: dronedelivery
+    externalSubnet:
+      enabled: false
+      subnetPrefix:
+
+
 service:
   targetPort: 8080
   targetProtocol: TCP

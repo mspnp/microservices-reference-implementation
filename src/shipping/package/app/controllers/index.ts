@@ -4,3 +4,5 @@
 // ------------------------------------------------------------
 
 export * from './package-controllers';
+export * from './healthz-controllers';
+export * from './swagger-controllers';

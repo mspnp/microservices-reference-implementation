@@ -1,4 +1,42 @@
+apiVersion: v2
 name: dronescheduler
 version: v0.1.0
 appVersion: v0.1.0
 description: Fabrikam Drone Scheduler Service
+type: application
+home: https://docs.microsoft.com/en-us/azure/architecture/reference-architectures/microservices/aks
+sources:
+  - https://github.com/mspnp/microservices-reference-implementation
+dependencies:
+  - name: dronescheduler-dev
+    repository: "file://envs/dronescheduler-dev"
+    version: v0.1.0
+    condition: envs.dev
+    tags:
+      - dev
+    import-values:
+      - data
+
+  - name: dronescheduler-prod
+    repository: "file://envs/dronescheduler-prod"
+    version: v0.1.0
+    condition: envs.prod
+    import-values:
+      - data
+
+  - name: dronescheduler-qa
+    repository: "file://envs/dronescheduler-qa"
+    version: v0.1.0
+    condition: envs.qa
+    import-values:
+      - data
+
+  - name: dronescheduler-staging
+    repository: "file://envs/dronescheduler-staging"
+    version: v0.1.0
+    condition: envs.staging
+    import-values:
+      - data
+maintainers:
+  - email: v-fean@microsoft.com
+    name: ferantivero

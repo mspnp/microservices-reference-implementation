@@ -71,14 +71,12 @@ export {${ENV}_CLUSTER_SERVER,CLUSTER_SERVER}=$(az aks show -n $CLUSTER_NAME -g 
 export CLUSTER_SERVERS=${CLUSTER_SERVERS}\'${CLUSTER_SERVER}\',
 export {${ENV}_ACR_SERVER,ACR_SERVER}=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
 export ACR_SERVERS=${ACR_SERVERS}\'${ACR_SERVER}\',
-export DELIVERY_REDIS_HOSTNAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.deliveryRedisHostName.value -o tsv)
+export DELIVERY_REDIS_HOSTNAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.deliveryRedisHostName.value -o tsv)
 export DELIVERY_REDIS_HOSTNAMES=${DELIVERY_REDIS_HOSTNAMES}\'${DELIVERY_REDIS_HOSTNAME}\',
 done
 
 # Restrict cluster egress traffic
-export FIREWALL_PIP_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-prod --query properties.outputs.firewallPublicIpName.value -o tsv) && \
-
-export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.acrName.value -o tsv) && \
+export FIREWALL_PIP_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.firewallPublicIpName.value -o tsv) && \
 az group deployment create -g $RESOURCE_GROUP --name azuredeploy-firewall --template-file ${PROJECT_ROOT}/azuredeploy-firewall.json \
 --parameters aksVnetName=${VNET_NAME} \
             aksClusterSubnetName=${CLUSTER_SUBNET_NAME} \
@@ -108,12 +106,8 @@ kubectl create namespace backend
 Setup Helm
 
 ```bash
-# install helm client side
-DESIRED_VERSION=v2.14.2;curl -L https://git.io/get_helm.sh | bash
-
-# setup tiller in your cluster
-kubectl apply -f $K8S/tiller-rbac.yaml
-helm init --service-account tiller
+# install helm CLI
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 ```
 
 ## Integrate Application Insights instance
@@ -131,7 +125,8 @@ Note: the tested nmi version was 1.4. It enables namespaced pod identity.
 
 ```bash
 # setup AAD pod identity
-kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/deployment-rbac.yaml
+helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-identity/master/chart && \
+helm install aad-pod-identity/aad-pod-identity -n kube-system
 
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
@@ -246,9 +241,8 @@ export APP_GATEWAY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azurede
 export {${ENV}_APP_GATEWAY_PUBLIC_IP_FQDN,APP_GATEWAY_PUBLIC_IP_FQDN}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appGatewayPublicIpFqdn.value -o tsv)
 export ENV_NAMESPACE=$([ $env == 'prod' ] && echo 'backend' || echo "backend-$env")
 
-helm install application-gateway-kubernetes-ingress/ingress-azure \
-     --name ingress-azure-${env} \
-     --namespace ingress-controllers \
+helm install ingress-azure-${env} application-gateway-kubernetes-ingress/ingress-azure \
+     --namespace kube-system \
      --set appgw.name=$APP_GATEWAY_NAME \
      --set appgw.resourceGroup=$RESOURCE_GROUP \
      --set appgw.subscriptionId=$SUBSCRIPTION_ID \
@@ -259,7 +253,8 @@ helm install application-gateway-kubernetes-ingress/ingress-azure \
      --set armAuth.identityClientID=$GATEWAY_CONTROLLER_PRINCIPAL_CLIENT_ID \
      --set rbac.enabled=true \
      --set verbosityLevel=3 \
-     --set aksClusterConfiguration.apiServerAddress=$CLUSTER_SERVER
+     --set aksClusterConfiguration.apiServerAddress=$CLUSTER_SERVER \
+     --set appgw.usePrivateIP=false
 
 # Create a self-signed certificate for TLS for the environment
 export {${ENV}_EXTERNAL_INGEST_FQDN,EXTERNAL_INGEST_FQDN}=$APP_GATEWAY_PUBLIC_IP_FQDN
@@ -282,8 +277,8 @@ export DRONE_PATH=$PROJECT_ROOT/src/shipping/dronescheduler
 # configure build YAML definitions
 for pipelinePath in $DELIVERY_PATH $PACKAGE_PATH $WORKFLOW_PATH $INGESTION_PATH $DRONE_PATH; do
 sed -i \
-    -e "s#ACR_SERVER_VAR_VAL#$ACR_SERVER#g" \
-    -e "s#ACR_NAME_VAR_VAL#$ACR_NAME#g" \
+    -e "s#ACR_SERVER_VAR_VAL#$DEV_ACR_SERVER#g" \
+    -e "s#ACR_NAME_VAR_VAL#$DEV_ACR_NAME#g" \
     -e "s#AZURE_PIPELINES_SERVICE_CONN_NAME_VAR_VAL#$AZURE_PIPELINES_SERVICE_CONN_NAME#g" \
     ${pipelinePath}/azure-pipelines.yml
 done
@@ -348,6 +343,7 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL#$DEV_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#DEV_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
      sed "s#DEV_GATEWAY_SUBNET_PREFIX_VAR_VAL#$DEV_GATEWAY_SUBNET_PREFIX#g" | \
+     sed "s#DEV_CLUSTER_SUBNET_PREFIX_VAR_VAL#$DEV_CLUSTER_SUBNET_PREFIX#g" | \
      # qa resources
      sed "s#QA_ACR_SERVER_VAR_VAL#$QA_ACR_SERVER#g" | \
      sed "s#QA_ACR_NAME_VAR_VAL#$QA_ACR_NAME#g" | \
@@ -361,6 +357,7 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#QA_INGRESS_TLS_SECRET_KEY_VAR_VAL#$QA_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#QA_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
      sed "s#QA_GATEWAY_SUBNET_PREFIX_VAR_VAL#$QA_GATEWAY_SUBNET_PREFIX#g" | \
+     sed "s#QA_CLUSTER_SUBNET_PREFIX_VAR_VAL#$QA_CLUSTER_SUBNET_PREFIX#g" | \
      # staging resources
      sed "s#STAGING_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
      sed "s#STAGING_ACR_NAME_VAR_VAL#$STAGING_ACR_NAME#g" | \
@@ -374,6 +371,7 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#STAGING_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
      sed "s#STAGING_GATEWAY_SUBNET_PREFIX_VAR_VAL#$STAGING_GATEWAY_SUBNET_PREFIX#g" | \
+     sed "s#STAGING_CLUSTER_SUBNET_PREFIX_VAR_VAL#$STAGING_CLUSTER_SUBNET_PREFIX#g" | \
      # production resources
      sed "s#SOURCE_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
      sed "s#SOURCE_ACR_NAME_VAR_VAL#$STAGING_ACR_NAME#g" | \
@@ -388,7 +386,8 @@ cat $DELIVERY_PATH/azure-pipelines-cd.json | \
      sed "s#PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL#$PROD_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL#$PROD_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
-     sed "s#PROD_GATEWAY_SUBNET_PREFIX_VAR_VAL#$PROD_GATEWAY_SUBNET_PREFIX#g" \
+     sed "s#PROD_GATEWAY_SUBNET_PREFIX_VAR_VAL#$PROD_GATEWAY_SUBNET_PREFIX#g" | \
+     sed "s#PROD_CLUSTER_SUBNET_PREFIX_VAR_VAL#$PROD_CLUSTER_SUBNET_PREFIX#g" \
      > $DELIVERY_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
@@ -408,7 +407,7 @@ git push newremote release/delivery/v0.1.0
 Verify delivery was deployed
 
 ```bash
-helm status delivery-v0.1.0
+helm status delivery-v0.1.0 --namespace backend-dev
 ```
 
 ## Add Package CI/CD
@@ -452,18 +451,21 @@ cat $PACKAGE_PATH/azure-pipelines-cd.json | \
      sed "s#DEV_ACR_NAME_VAR_VAL#$DEV_ACR_NAME#g" | \
      sed "s#DEV_COSMOSDB_COL_NAME_VAR_VAL#$DEV_COSMOSDB_COL_NAME#g" | \
      sed "s#DEV_COSMOSDB_CONNECTION_VAR_VAL#${DEV_COSMOSDB_CONNECTION//&/\\&}#g" | \
+     sed "s#DEV_CLUSTER_SUBNET_PREFIX_VAR_VAL#$DEV_CLUSTER_SUBNET_PREFIX#g" | \
      # qa resources
      sed "s#QA_AI_IKEY_VAR_VAL#$QA_AI_IKEY#g" | \
      sed "s#QA_ACR_SERVER_VAR_VAL#$QA_ACR_SERVER#g" | \
      sed "s#QA_ACR_NAME_VAR_VAL#$QA_ACR_NAME#g" | \
      sed "s#QA_COSMOSDB_COL_NAME_VAR_VAL#$QA_COSMOSDB_COL_NAME#g" | \
      sed "s#QA_COSMOSDB_CONNECTION_VAR_VAL#${QA_COSMOSDB_CONNECTION//&/\\&}#g" | \
+     sed "s#QA_CLUSTER_SUBNET_PREFIX_VAR_VAL#$QA_CLUSTER_SUBNET_PREFIX#g" | \
      # staging resources
      sed "s#STAGING_AI_IKEY_VAR_VAL#$STAGING_AI_IKEY#g" | \
      sed "s#STAGING_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
      sed "s#STAGING_ACR_NAME_VAR_VAL#$STAGING_ACR_NAME#g" | \
      sed "s#STAGING_COSMOSDB_COL_NAME_VAR_VAL#$STAGING_COSMOSDB_COL_NAME#g" | \
      sed "s#STAGING_COSMOSDB_CONNECTION_VAR_VAL#${STAGING_COSMOSDB_CONNECTION//&/\\&}#g" | \
+     sed "s#STAGING_CLUSTER_SUBNET_PREFIX_VAR_VAL#$STAGING_CLUSTER_SUBNET_PREFIX#g" | \
      # production resources
      sed "s#PROD_AI_IKEY_VAR_VAL#$PROD_AI_IKEY#g" | \
      sed "s#SOURCE_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
@@ -471,7 +473,8 @@ cat $PACKAGE_PATH/azure-pipelines-cd.json | \
      sed "s#PROD_ACR_SERVER_VAR_VAL#$PROD_ACR_SERVER#g" | \
      sed "s#PROD_ACR_NAME_VAR_VAL#$PROD_ACR_NAME#g" | \
      sed "s#PROD_COSMOSDB_COL_NAME_VAR_VAL#$PROD_COSMOSDB_COL_NAME#g" | \
-     sed "s#PROD_COSMOSDB_CONNECTION_VAR_VAL#${PROD_COSMOSDB_CONNECTION//&/\\&}#g" \
+     sed "s#PROD_COSMOSDB_CONNECTION_VAR_VAL#${PROD_COSMOSDB_CONNECTION//&/\\&}#g" | \
+     sed "s#PROD_CLUSTER_SUBNET_PREFIX_VAR_VAL#$PROD_CLUSTER_SUBNET_PREFIX#g" \
      > $PACKAGE_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
@@ -491,7 +494,7 @@ git push newremote release/package/v0.1.0
 Verify package was deployed
 
 ```bash
-helm status package-v0.1.0
+helm status package-v0.1.0 --namespace backend-dev
 ```
 
 ## Add Workflow CI/CD
@@ -539,6 +542,7 @@ cat $WORKFLOW_PATH/azure-pipelines-cd.json | \
      sed "s#DEV_WORKFLOW_KEYVAULT_NAME_VAR_VAL#$DEV_WORKFLOW_KEYVAULT_NAME#g" | \
      sed "s#DEV_SUBSCRIPTION_ID_VAR_VAL#$SUBSCRIPTION_ID#g" | \
      sed "s#DEV_TENANT_ID_VAR_VAL#$TENANT_ID#g" | \
+     sed "s#DEV_CLUSTER_SUBNET_PREFIX_VAR_VAL#$DEV_CLUSTER_SUBNET_PREFIX#g" | \
      # qa resources
      sed "s#QA_ACR_SERVER_VAR_VAL#$QA_ACR_SERVER#g" | \
      sed "s#QA_ACR_NAME_VAR_VAL#$QA_ACR_NAME#g" | \
@@ -548,6 +552,7 @@ cat $WORKFLOW_PATH/azure-pipelines-cd.json | \
      sed "s#QA_WORKFLOW_KEYVAULT_NAME_VAR_VAL#$QA_WORKFLOW_KEYVAULT_NAME#g" | \
      sed "s#QA_SUBSCRIPTION_ID_VAR_VAL#$SUBSCRIPTION_ID#g" | \
      sed "s#QA_TENANT_ID_VAR_VAL#$TENANT_ID#g" | \
+     sed "s#QA_CLUSTER_SUBNET_PREFIX_VAR_VAL#$QA_CLUSTER_SUBNET_PREFIX#g" | \
      # staging resources
      sed "s#STAGING_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
      sed "s#STAGING_ACR_NAME_VAR_VAL#$STAGING_ACR_NAME#g" | \
@@ -557,6 +562,7 @@ cat $WORKFLOW_PATH/azure-pipelines-cd.json | \
      sed "s#STAGING_WORKFLOW_KEYVAULT_NAME_VAR_VAL#$STAGING_WORKFLOW_KEYVAULT_NAME#g" | \
      sed "s#STAGING_SUBSCRIPTION_ID_VAR_VAL#$SUBSCRIPTION_ID#g" | \
      sed "s#STAGING_TENANT_ID_VAR_VAL#$TENANT_ID#g" | \
+     sed "s#STAGING_CLUSTER_SUBNET_PREFIX_VAR_VAL#$STAGING_CLUSTER_SUBNET_PREFIX#g" | \
      # production resources
      sed "s#SOURCE_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
      sed "s#SOURCE_ACR_NAME_VAR_VAL#$STAGING_ACR_NAME#g" | \
@@ -567,7 +573,8 @@ cat $WORKFLOW_PATH/azure-pipelines-cd.json | \
      sed "s#PROD_WORKFLOW_PRINCIPAL_RESOURCE_ID_VAR_VAL#$PROD_WORKFLOW_PRINCIPAL_RESOURCE_ID#g" | \
      sed "s#PROD_WORKFLOW_KEYVAULT_NAME_VAR_VAL#$PROD_WORKFLOW_KEYVAULT_NAME#g" | \
      sed "s#PROD_SUBSCRIPTION_ID_VAR_VAL#$SUBSCRIPTION_ID#g" | \
-     sed "s#PROD_TENANT_ID_VAR_VAL#$TENANT_ID#g" \
+     sed "s#PROD_TENANT_ID_VAR_VAL#$TENANT_ID#g" | \
+     sed "s#PROD_CLUSTER_SUBNET_PREFIX_VAR_VAL#$PROD_CLUSTER_SUBNET_PREFIX#g" \
     > $WORKFLOW_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
@@ -587,7 +594,7 @@ git push newremote release/workflow/v0.1.0
 Verify workflow was deployed
 
 ```bash
-helm status workflow-v0.1.0
+helm status workflow-v0.1.0 --namespace backend-dev
 ```
 
 ## Add Ingestion CI/CD
@@ -641,6 +648,7 @@ cat $INGESTION_PATH/azure-pipelines-cd.json | \
      sed "s#DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL#$DEV_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#DEV_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
      sed "s#DEV_GATEWAY_SUBNET_PREFIX_VAR_VAL#$DEV_GATEWAY_SUBNET_PREFIX#g" | \
+     sed "s#DEV_CLUSTER_SUBNET_PREFIX_VAR_VAL#$DEV_CLUSTER_SUBNET_PREFIX#g" | \
      # qa resources
      sed "s#QA_AI_IKEY_VAR_VAL#$QA_AI_IKEY#g" | \
      sed "s#QA_ACR_SERVER_VAR_VAL#$QA_ACR_SERVER#g" | \
@@ -653,6 +661,7 @@ cat $INGESTION_PATH/azure-pipelines-cd.json | \
      sed "s#QA_INGRESS_TLS_SECRET_KEY_VAR_VAL#$QA_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#QA_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
      sed "s#QA_GATEWAY_SUBNET_PREFIX_VAR_VAL#$QA_GATEWAY_SUBNET_PREFIX#g" | \
+     sed "s#QA_CLUSTER_SUBNET_PREFIX_VAR_VAL#$QA_CLUSTER_SUBNET_PREFIX#g" | \
      # staging resources
      sed "s#STAGING_AI_IKEY_VAR_VAL#$STAGING_AI_IKEY#g" | \
      sed "s#STAGING_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
@@ -665,6 +674,7 @@ cat $INGESTION_PATH/azure-pipelines-cd.json | \
      sed "s#STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL#$STAGING_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#STAGING_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
      sed "s#STAGING_GATEWAY_SUBNET_PREFIX_VAR_VAL#$STAGING_GATEWAY_SUBNET_PREFIX#g" | \
+     sed "s#STAGING_CLUSTER_SUBNET_PREFIX_VAR_VAL#$STAGING_CLUSTER_SUBNET_PREFIX#g" | \
      # production resources
      sed "s#PROD_AI_IKEY_VAR_VAL#$PROD_AI_IKEY#g" | \
      sed "s#SOURCE_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
@@ -678,7 +688,8 @@ cat $INGESTION_PATH/azure-pipelines-cd.json | \
      sed "s#PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL#$PROD_INGRESS_TLS_SECRET_CERT#g" | \
      sed "s#PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL#$PROD_INGRESS_TLS_SECRET_KEY#g" | \
      sed "s#PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL#$INGRESS_TLS_SECRET_NAME#g" | \
-     sed "s#PROD_GATEWAY_SUBNET_PREFIX_VAR_VAL#$PROD_GATEWAY_SUBNET_PREFIX#g" \
+     sed "s#PROD_GATEWAY_SUBNET_PREFIX_VAR_VAL#$PROD_GATEWAY_SUBNET_PREFIX#g" | \
+     sed "s#PROD_CLUSTER_SUBNET_PREFIX_VAR_VAL#$PROD_CLUSTER_SUBNET_PREFIX#g" \
      > $INGESTION_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
@@ -698,7 +709,7 @@ git push newremote release/ingestion/v0.1.0
 Verify ingestion was deployed
 
 ```bash
-helm status ingestion-v0.1.0
+helm status ingestion-v0.1.0 --namespace backend-dev
 ```
 
 ## Add DroneScheduler CI/CD
@@ -725,7 +736,9 @@ envIdentitiesDeploymentName="${ENV}_IDENTITIES_DEPLOYMENT_NAME"
 export ${ENV}_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n ${!envIdentitiesDeploymentName} --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv)
 envDroneSchedulerIdName="${ENV}_DRONESCHEDULER_ID_NAME"
 export ${ENV}_DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n ${!envDroneSchedulerIdName} --query clientId -o tsv)
-export ${ENV}_DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
+export ${ENV}_DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv) && \
+export ${ENV}_COSMOSDB_DATABASEID="${env}_invoicing" && \
+export ${ENV}_COSMOSDB_COLLECTIONID="${env}_utilization"
 done
 
 # add relese definition
@@ -744,18 +757,27 @@ cat $DRONE_PATH/azure-pipelines-cd.json | \
      sed "s#DEV_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$DEV_DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
      sed "s#DEV_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$DEV_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
      sed "s#DEV_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$DEV_DRONESCHEDULER_KEYVAULT_URI#g" | \
+     sed "s#DEV_COSMOSDB_DATABASEID_VAR_VAL#$DEV_COSMOSDB_DATABASEID#g" | \
+     sed "s#DEV_COSMOSDB_COLLECTIONID_VAR_VAL#$DEV_COSMOSDB_COLLECTIONID#g" | \
+     sed "s#DEV_CLUSTER_SUBNET_PREFIX_VAR_VAL#$DEV_CLUSTER_SUBNET_PREFIX#g" | \
      # qa resources
      sed "s#QA_ACR_SERVER_VAR_VAL#$QA_ACR_SERVER#g" | \
      sed "s#QA_ACR_NAME_VAR_VAL#$QA_ACR_NAME#g" | \
      sed "s#QA_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$QA_DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
      sed "s#QA_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$QA_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
      sed "s#QA_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$QA_DRONESCHEDULER_KEYVAULT_URI#g" | \
+     sed "s#QA_COSMOSDB_DATABASEID_VAR_VAL#$QA_COSMOSDB_DATABASEID#g" | \
+     sed "s#QA_COSMOSDB_COLLECTIONID_VAR_VAL#$QA_COSMOSDB_COLLECTIONID#g" | \
+     sed "s#QA_CLUSTER_SUBNET_PREFIX_VAR_VAL#$QA_CLUSTER_SUBNET_PREFIX#g" | \
      # staging resources
      sed "s#STAGING_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
      sed "s#STAGING_ACR_NAME_VAR_VAL#$STAGING_ACR_NAME#g" | \
      sed "s#STAGING_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$STAGING_DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
      sed "s#STAGING_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$STAGING_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
      sed "s#STAGING_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$STAGING_DRONESCHEDULER_KEYVAULT_URI#g" | \
+     sed "s#STAGING_COSMOSDB_DATABASEID_VAR_VAL#$STAGING_COSMOSDB_DATABASEID#g" | \
+     sed "s#STAGING_COSMOSDB_COLLECTIONID_VAR_VAL#$STAGING_COSMOSDB_COLLECTIONID#g" | \
+     sed "s#STAGING_CLUSTER_SUBNET_PREFIX_VAR_VAL#$STAGING_CLUSTER_SUBNET_PREFIX#g" | \
      # production resources
      sed "s#SOURCE_ACR_SERVER_VAR_VAL#$STAGING_ACR_SERVER#g" | \
      sed "s#SOURCE_ACR_NAME_VAR_VAL#$STAGING_ACR_NAME#g" | \
@@ -763,7 +785,10 @@ cat $DRONE_PATH/azure-pipelines-cd.json | \
      sed "s#PROD_ACR_NAME_VAR_VAL#$PROD_ACR_NAME#g" | \
      sed "s#PROD_DRONESCHEDULER_PRINCIPAL_CLIENT_ID_VAR_VAL#$PROD_DRONESCHEDULER_PRINCIPAL_CLIENT_ID#g" | \
      sed "s#PROD_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID_VAR_VAL#$PROD_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID#g" | \
-     sed "s#PROD_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$PROD_DRONESCHEDULER_KEYVAULT_URI#g" \
+     sed "s#PROD_DRONESCHEDULER_KEYVAULT_URI_VAR_VAL#$PROD_DRONESCHEDULER_KEYVAULT_URI#g" | \
+     sed "s#PROD_COSMOSDB_DATABASEID_VAR_VAL#$PROD_COSMOSDB_DATABASEID#g" | \
+     sed "s#PROD_COSMOSDB_COLLECTIONID_VAR_VAL#$PROD_COSMOSDB_COLLECTIONID#g" | \
+     sed "s#PROD_CLUSTER_SUBNET_PREFIX_VAR_VAL#$PROD_CLUSTER_SUBNET_PREFIX#g" \
      > $DRONE_PATH/azure-pipelines-cd-0.json
 
 curl -sL -w "%{http_code}" -X POST ${AZURE_DEVOPS_VSRM_ORG}/${AZURE_DEVOPS_PROJECT_NAME}/_apis/release/definitions?api-version=5.1-preview.3 \
@@ -783,7 +808,7 @@ git push newremote release/dronescheduler/v0.1.0
 Verify dronescheduler was deployed
 
 ```bash
-helm status dronescheduler-v0.1.0
+helm status dronescheduler-v0.1.0 --namespace backend-dev
 ```
 
 ## Validate the application is running

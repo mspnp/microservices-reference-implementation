@@ -45,6 +45,9 @@
                 },
                 "ACR_NAME": {
                     "value": "DEV_ACR_NAME_VAR_VAL"
+                },
+                "CLUSTER_SUBNET_PREFIX": {
+                    "value": "DEV_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -114,7 +117,7 @@
                             "environment": {},
                             "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
                             "version": "0.*",
-                            "name": "install helm 2.12.3",
+                            "name": "install helm 3.0.3",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -124,57 +127,11 @@
                             "overrideInputs": {},
                             "condition": "succeeded()",
                             "inputs": {
-                                "helmVersion": "2.12.3",
+                                "helmVersion": "3.0.3",
                                 "checkLatestHelmVersion": "false",
                                 "installKubeCtl": "true",
                                 "kubectlVersion": "1.12.4",
                                 "checkLatestKubeCtl": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm init",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "",
-                                "command": "init",
-                                "chartType": "Name",
-                                "chartName": "",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "",
-                                "overrideValues": "",
-                                "valueFile": "",
-                                "destination": "$(Build.ArtifactStagingDirectory)",
-                                "canaryimage": "false",
-                                "upgradetiller": "true",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "false",
-                                "waitForExecution": "true",
-                                "arguments": "--service-account tiller",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
                             }
                         },
                         {
@@ -228,7 +185,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-dev",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.dev=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",envs.dev=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -245,7 +202,8 @@
                                 "caCert": "",
                                 "certificate": "",
                                 "privatekey": "",
-                                "tillernamespace": ""
+                                "tillernamespace": "",
+                                "failOnStderr": "false"
                             }
                         }
                     ]
@@ -419,6 +377,9 @@
                 },
                 "ACR_NAME": {
                     "value": "QA_ACR_NAME_VAR_VAL"
+                },
+                "CLUSTER_SUBNET_PREFIX": {
+                    "value": "QA_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -488,7 +449,7 @@
                             "environment": {},
                             "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
                             "version": "0.*",
-                            "name": "install helm 2.12.3",
+                            "name": "install helm 3.0.3",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -498,57 +459,11 @@
                             "overrideInputs": {},
                             "condition": "succeeded()",
                             "inputs": {
-                                "helmVersion": "2.12.3",
+                                "helmVersion": "3.0.3",
                                 "checkLatestHelmVersion": "false",
                                 "installKubeCtl": "true",
                                 "kubectlVersion": "1.12.4",
                                 "checkLatestKubeCtl": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm init",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "",
-                                "command": "init",
-                                "chartType": "Name",
-                                "chartName": "",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "",
-                                "overrideValues": "",
-                                "valueFile": "",
-                                "destination": "$(Build.ArtifactStagingDirectory)",
-                                "canaryimage": "false",
-                                "upgradetiller": "true",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "false",
-                                "waitForExecution": "true",
-                                "arguments": "--service-account tiller",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
                             }
                         },
                         {
@@ -602,7 +517,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-qa",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.qa=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",envs.qa=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -619,7 +534,8 @@
                                 "caCert": "",
                                 "certificate": "",
                                 "privatekey": "",
-                                "tillernamespace": ""
+                                "tillernamespace": "",
+                                "failOnStderr": "false"
                             }
                         }
                     ]
@@ -793,6 +709,9 @@
                 },
                 "ACR_NAME": {
                     "value": "STAGING_ACR_NAME_VAR_VAL"
+                },
+                "CLUSTER_SUBNET_PREFIX": {
+                    "value": "STAGING_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -862,7 +781,7 @@
                             "environment": {},
                             "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
                             "version": "0.*",
-                            "name": "install helm 2.12.3",
+                            "name": "install helm 3.0.3",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -872,57 +791,11 @@
                             "overrideInputs": {},
                             "condition": "succeeded()",
                             "inputs": {
-                                "helmVersion": "2.12.3",
+                                "helmVersion": "3.0.3",
                                 "checkLatestHelmVersion": "false",
                                 "installKubeCtl": "true",
                                 "kubectlVersion": "1.12.4",
                                 "checkLatestKubeCtl": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm init",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "",
-                                "command": "init",
-                                "chartType": "Name",
-                                "chartName": "",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "",
-                                "overrideValues": "",
-                                "valueFile": "",
-                                "destination": "$(Build.ArtifactStagingDirectory)",
-                                "canaryimage": "false",
-                                "upgradetiller": "true",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "false",
-                                "waitForExecution": "true",
-                                "arguments": "--service-account tiller",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
                             }
                         },
                         {
@@ -976,7 +849,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-staging",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.staging=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",envs.staging=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -993,7 +866,8 @@
                                 "caCert": "",
                                 "certificate": "",
                                 "privatekey": "",
-                                "tillernamespace": ""
+                                "tillernamespace": "",
+                                "failOnStderr": "false"
                             }
                         }
                     ]
@@ -1173,6 +1047,9 @@
                 },
                 "ACR_NAME": {
                     "value": "PROD_ACR_NAME_VAR_VAL"
+                },
+                "CLUSTER_SUBNET_PREFIX": {
+                    "value": "PROD_CLUSTER_SUBNET_PREFIX_VAR_VAL"
                 }
             },
             "variableGroups": [],
@@ -1278,7 +1155,7 @@
                             "environment": {},
                             "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
                             "version": "0.*",
-                            "name": "install helm 2.12.3",
+                            "name": "install helm 3.0.3",
                             "refName": "",
                             "enabled": true,
                             "alwaysRun": false,
@@ -1288,57 +1165,11 @@
                             "overrideInputs": {},
                             "condition": "succeeded()",
                             "inputs": {
-                                "helmVersion": "2.12.3",
+                                "helmVersion": "3.0.3",
                                 "checkLatestHelmVersion": "false",
                                 "installKubeCtl": "true",
                                 "kubectlVersion": "1.12.4",
                                 "checkLatestKubeCtl": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm init",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "",
-                                "command": "init",
-                                "chartType": "Name",
-                                "chartName": "",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "",
-                                "overrideValues": "",
-                                "valueFile": "",
-                                "destination": "$(Build.ArtifactStagingDirectory)",
-                                "canaryimage": "false",
-                                "upgradetiller": "true",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "false",
-                                "waitForExecution": "true",
-                                "arguments": "--service-account tiller",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
                             }
                         },
                         {
@@ -1392,7 +1223,7 @@
                                 "chartPath": "",
                                 "version": "",
                                 "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.prod=true",
+                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),networkPolicy.egress.external.enabled=true,networkPolicy.egress.external.clusterSubnetPrefix=\"$(CLUSTER_SUBNET_PREFIX)\",keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",envs.prod=true",
                                 "valueFile": "",
                                 "destination": "",
                                 "canaryimage": "false",
@@ -1409,7 +1240,8 @@
                                 "caCert": "",
                                 "certificate": "",
                                 "privatekey": "",
-                                "tillernamespace": ""
+                                "tillernamespace": "",
+                                "failOnStderr": "false"
                             }
                         }
                     ]

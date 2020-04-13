@@ -2,9 +2,9 @@ Thank you for installing {{ .Chart.Name }}.
 
 Your release is named {{ .Release.Name }}.
 
-All the objects were created in the namespace {{ .Values.namespace }}
+All the objects were created in the namespace {{ .Release.Namespace }}
 
 To learn more about the release, try:
 
-  $ helm status {{ .Release.Name }}
-  $ helm get {{ .Release.Name }}
+  $ helm status {{ .Release.Name }} --namespace {{ .Release.Namespace }}
+  $ helm get all {{ .Release.Name }} --namespace {{ .Release.Namespace }}
