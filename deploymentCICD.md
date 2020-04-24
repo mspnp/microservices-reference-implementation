@@ -223,6 +223,13 @@ export AZURE_DEVOPS_USER_ID=$(az devops user show --user ${AZURE_DEVEOPS_USER} -
 
 ### Build pipelines pre-requisites
 
+> :warning: WARNING
+>
+> Certificates created by these scripts MUST NOT be used for production. They
+> are provided for demonstration purposes.
+> When productizing against CA Certificates, you'll need to use your own
+> security best practices for certification creation and lifetime management.
+
 ```bash
 # Deploy the AppGateway ingress controller
 helm repo add application-gateway-kubernetes-ingress https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
