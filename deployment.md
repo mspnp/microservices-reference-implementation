@@ -202,8 +202,8 @@ kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-fl
 >
 > Do not use the certificates created by these scripts for production. The
 > certificates are provided for demonstration purposes only.
-> For your production cluster, use your ```
-> security best practices for certification creation and lifetime management.
+> For your production cluster, use your
+> security best practices for digital certificates creation and lifetime management.
 
 ```bash
 # Deploy the AppGateway ingress controller
