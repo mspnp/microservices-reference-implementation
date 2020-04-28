@@ -202,7 +202,7 @@ kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-fl
 >
 > Do not use the certificates created by these scripts for production. The
 > certificates are provided for demonstration purposes only.
-> When productizing against CA Certificates, you'll need to use your own
+> For you production workload, use your ```
 > security best practices for certification creation and lifetime management.
 
 ```bash
