@@ -227,7 +227,7 @@ export AZURE_DEVOPS_USER_ID=$(az devops user show --user ${AZURE_DEVEOPS_USER} -
 >
 > Do not use the certificates created by these scripts for production. The
 > are provided for demonstration purposes.
-> When productizing against CA Certificates, you'll need to use your own
+> For your production workload, use your own
 > security best practices for certification creation and lifetime management.
 
 ```bash
