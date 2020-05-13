@@ -123,6 +123,24 @@
                                         "9000",
                                         "22"
                                     ]
+                                },
+                                {
+                                    "name": "[concat(variables('regionalRulePrefix'),'TunnelFrontCommToK8sApiServerUdp')]",
+                                    "protocols": [
+                                        "UDP"
+                                    ],
+                                    "sourceAddresses": [
+                                        "[parameters('aksClusterSubnetPrefix')]"
+                                    ],
+                                    "destinationAddresses": [
+                                        "[concat('AzureCloud.',parameters('serviceTagsLocation'))]"
+                                    ],
+                                    "sourceIpGroups": [],
+                                    "destinationIpGroups": [],
+                                    "destinationFqdns": [],
+                                    "destinationPorts": [
+                                        "1194"
+                                    ]
                                 }
                             ]
                         }
@@ -343,7 +361,8 @@
                                         "aksrepos.azurecr.io",
                                         "*mcr.microsoft.com",
                                         "*.cdn.mscr.io",
-                                        "*.blob.core.windows.net"
+                                        "*.blob.core.windows.net",
+                                         "*.data.mcr.microsoft.com"
                                     ]
                                 },
                                 {
