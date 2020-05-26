@@ -197,6 +197,13 @@ export AZURE_DEVOPS_USER_ID=$(az devops user show --user ${AZURE_DEVEOPS_USER} -
 
 ### Build pipelines pre-requisites
 
+> :warning: WARNING
+ >
+ > Do not use the certificates created by these scripts for production. The
+ > certificates are provided for demonstration purposes only.
+ > For your production cluster, use your
+ > security best practices for digital certificates creation and lifetime management.
+
 ```bash
 # Create a self-signed certificate for TLS and public ip addresses
 export RESOURCE_GROUP_NODE=$(az aks show -g $RESOURCE_GROUP -n $CLUSTER_NAME --query "nodeResourceGroup" -o tsv) && \

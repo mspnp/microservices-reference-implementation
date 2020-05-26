@@ -3,6 +3,7 @@
 ## Prerequisites
 
 - Azure subscription
+  > Important: The user initiating the deployment process must have access to the **Microsoft.Authorization/roleAssignments/write** permission. For more information, see [the Container Insights doc](https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-troubleshoot#authorization-error-during-onboarding-or-update-operation)
 - [Azure CLI 2.0](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
 - [JQ](https://stedolan.github.io/jq/download/)
@@ -178,6 +179,13 @@ kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-fl
 ```
 
 ## Deploy the ingress controller
+
+> :warning: WARNING
+ >
+ > Do not use the certificates created by these scripts for production. The
+ > certificates are provided for demonstration purposes only.
+ > For your production cluster, use your
+ > security best practices for digital certificates creation and lifetime management.
 
 ```bash
 # Deploy the ngnix ingress controller
@@ -497,10 +505,9 @@ You can send delivery requests and check their statuses using curl.
 Since the certificate used for TLS is self-signed, the request disables TLS validation using the '-k' option.
 
 ```bash
-curl -X POST "https://$EXTERNAL_INGEST_FQDN/api/deliveryrequests" --header 'Content-Type: application/json' --header 'Accept: application/json' -k -i -d '{
+curl -X POST "https://$EXTERNAL_INGEST_FQDN/api/deliveryrequests" --header 'Content-Type: application/json' --header 'Accept: application/json' -k -d '{
    "confirmationRequired": "None",
    "deadline": "",
-   "deliveryId": "mydelivery",
    "dropOffLocation": "drop off",
    "expedited": true,
    "ownerId": "myowner",
@@ -512,13 +519,13 @@ curl -X POST "https://$EXTERNAL_INGEST_FQDN/api/deliveryrequests" --header 'Cont
    },
    "pickupLocation": "my pickup",
    "pickupTime": "2019-05-08T20:00:00.000Z"
- }'
+ }' > deliveryresponse.json
 ```
 
 ### Check the request status
-
 ```bash
-curl "https://$EXTERNAL_INGEST_FQDN/api/deliveries/mydelivery" --header 'Accept: application/json' -k -i
+DELIVERY_ID=$(cat deliveryresponse.json | jq -r .deliveryId)
+curl "https://$EXTERNAL_INGEST_FQDN/api/deliveries/$DELIVERY_ID" --header 'Accept: application/json' -k
 ```
 
 ## Optional steps
