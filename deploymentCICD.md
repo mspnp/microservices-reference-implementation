@@ -211,7 +211,7 @@ export ${ENV}_EXTERNAL_INGEST_FQDN=${EXTERNAL_INGEST_FQDN}
 export ${ENV}_INGRESS_LOAD_BALANCER_IP=$(az network public-ip show --name ${EXTERNAL_INGEST_DNS_NAME}-${env}-pip --query "ipAddress" -g $RESOURCE_GROUP_NODE --output tsv)
 
 # Deploy the ngnix ingress controller
-helm install stable/nginx-ingress --name nginx-ingress-${env} --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-${env} --set controller.service.loadBalancerIP=${ENV}_INGRESS_LOAD_BALANCER_IP
+helm install stable/nginx-ingress --name nginx-ingress-${env} --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-${env} --set controller.service.loadBalancerIP=${ENV}_INGRESS_LOAD_BALANCER_IP --version 1.24.7
 
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -out ingestion-ingress-tls-${env}.crt \
