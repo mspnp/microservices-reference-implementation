@@ -198,6 +198,13 @@ kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-fl
 
 ## Deploy the ingress controllers
 
+> :warning: WARNING
+>
+> Do not use the certificates created by these scripts for production. The
+> certificates are provided for demonstration purposes only.
+> For your production cluster, use your
+> security best practices for digital certificates creation and lifetime management.
+
 ```bash
 # Deploy the AppGateway ingress controller
 helm repo add application-gateway-kubernetes-ingress https://appgwingress.blob.core.windows.net/ingress-azure-helm-package/
@@ -567,7 +574,7 @@ curl -X POST "https://$EXTERNAL_INGEST_FQDN/api/deliveryrequests" --header 'Cont
 ### Check the request status
 ```bash
 DELIVERY_ID=$(cat deliveryresponse.json | jq -r .deliveryId)
-curl "https://$EXTERNAL_INGEST_FQDN/api/deliveries/$DELIVERY_ID" --header 'Accept: application/json' -k 
+curl "https://$EXTERNAL_INGEST_FQDN/api/deliveries/$DELIVERY_ID" --header 'Accept: application/json' -k
 ```
 
 ## Optional steps
