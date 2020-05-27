@@ -228,7 +228,8 @@ helm install ingress-azure-dev application-gateway-kubernetes-ingress/ingress-az
      --set rbac.enabled=true \
      --set verbosityLevel=3 \
      --set aksClusterConfiguration.apiServerAddress=$CLUSTER_SERVER \
-     --set appgw.usePrivateIP=false
+     --set appgw.usePrivateIP=false \
+     --version 1.2.0-rc2
 
 # Create a self-signed certificate for TLS
 export EXTERNAL_INGEST_FQDN=$APP_GATEWAY_PUBLIC_IP_FQDN
