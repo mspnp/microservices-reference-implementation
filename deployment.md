@@ -583,10 +583,6 @@ curl "https://$EXTERNAL_INGEST_FQDN/api/deliveries/$DELIVERY_ID" --header 'Accep
 
 ## Optional steps
 
-### Load Test the application
-
-To run load testing against the solution, follow the steps listed [here](./src/loadtests/readme.md).
-
 ### Fluentd and Elastic Search
 
 Follow these steps to add logging and monitoring capabilities to the solution.
