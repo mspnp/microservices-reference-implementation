@@ -17,8 +17,8 @@ metadata:
   "helm.sh/hook-weight": "0"
 spec:
  type: 0
- ResourceID: {{ .Values.identity.resourceid }}
- ClientID: {{ .Values.identity.clientid }}
+ resourceID: {{ .Values.identity.resourceid }}
+ clientID: {{ .Values.identity.clientid }}
 ---
 apiVersion: "aadpodidentity.k8s.io/v1"
 kind: AzureIdentityBinding
@@ -29,5 +29,5 @@ metadata:
   "helm.sh/hook-delete-policy": hook-failed,before-hook-creation
   "helm.sh/hook-weight": "1"
 spec:
- AzureIdentity: {{ $fullname }}-identity
- Selector: {{ $fullname }}
+ azureIdentity: {{ $fullname }}-identity
+ selector: {{ $fullname }}
