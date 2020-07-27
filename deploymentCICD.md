@@ -12,17 +12,19 @@
 ```bash
 # Export the kubernetes cluster version and deploy
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv) && \
+export PREREQ_DEPLOYMENT_NAME=azuredeploy-prereqs-${DEPLOYMENT_SUFFIX}
+export DEPLOYMENT_NAME=azuredeploy-${DEPLOYMENT_SUFFIX}
 for env in dev qa staging prod; do
 ENV=${env^^}
 az deployment create \
-   --name azuredeploy-prereqs-${env} \
+   --name $PREREQ_DEPLOYMENT_NAME-${env} \
    --location $LOCATION \
    --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
    --parameters resourceGroupName=$RESOURCE_GROUP \
                 resourceGroupLocation=$LOCATION \
                 environmentName=${env}
 
-export {${ENV}_IDENTITIES_DEPLOYMENT_NAME,IDENTITIES_DEPLOYMENT_NAME}=$(az deployment show -n azuredeploy-adv-prereqs-adv-${env} --query properties.outputs.identitiesDeploymentName.value -o tsv) && \
+export {${ENV}_IDENTITIES_DEPLOYMENT_NAME,IDENTITIES_DEPLOYMENT_NAME}=$(az deployment show -n $PREREQ_DEPLOYMENT_NAME-${env} --query properties.outputs.identitiesDeploymentName.value -o tsv) && \
 export {${ENV}_DELIVERY_ID_NAME,DELIVERY_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.deliveryIdName.value -o tsv)
 export DELIVERY_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DELIVERY_ID_NAME --query principalId -o tsv)
 export {${ENV}_DRONESCHEDULER_ID_NAME,DRONESCHEDULER_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerIdName.value -o tsv)
@@ -36,7 +38,7 @@ until az ad sp show --id $DELIVERY_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiti
 until az ad sp show --id $DRONESCHEDULER_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id $WORKFLOW_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 
-az group deployment create -g $RESOURCE_GROUP --name azuredeploy-${env} --template-file ${PROJECT_ROOT}/azuredeploy.json \
+az group deployment create -g $RESOURCE_GROUP --name $DEPLOYMENT_NAME-${env} --template-file ${PROJECT_ROOT}/azuredeploy.json \
    --parameters servicePrincipalClientId=${SP_APP_ID} \
                servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
                servicePrincipalId=${SP_OBJECT_ID} \
@@ -52,9 +54,9 @@ az group deployment create -g $RESOURCE_GROUP --name azuredeploy-${env} --templa
                acrResourceGroupLocation=$LOCATION \
                environmentName=${env}
 
-export {${ENV}_AI_NAME,AI_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.appInsightsName.value -o tsv)
+export {${ENV}_AI_NAME,AI_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.appInsightsName.value -o tsv)
 export ${ENV}_AI_IKEY=$(az resource show -g $RESOURCE_GROUP -n $AI_NAME --resource-type "Microsoft.Insights/components" --query properties.InstrumentationKey -o tsv)
-export {${ENV}_ACR_NAME,ACR_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.acrName.value -o tsv)
+export {${ENV}_ACR_NAME,ACR_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.acrName.value -o tsv)
 export ${ENV}_ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
 
 done
@@ -274,7 +276,7 @@ ENV=${env^^}
 export ${ENV}_DATABASE_NAME="deliveries-db"
 export ${ENV}_COLLECTION_NAME="deliveries-col"
 envIdentitiesDeploymentName="${ENV}_IDENTITIES_DEPLOYMENT_NAME"
-export ${ENV}_DELIVERY_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.deliveryKeyVaultUri.value -o tsv)
+export ${ENV}_DELIVERY_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.deliveryKeyVaultUri.value -o tsv)
 export ${ENV}_DELIVERY_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n ${!envIdentitiesDeploymentName} --query properties.outputs.deliveryPrincipalResourceId.value -o tsv)
 envDeliveryIdName="${ENV}_DELIVERY_ID_NAME"
 export ${ENV}_DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n ${!envDeliveryIdName} --query clientId -o tsv)
@@ -383,7 +385,7 @@ export AZURE_DEVOPS_PACKAGE_BUILD_ID=$(az pipelines build definition list --orga
 export AZURE_DEVOPS_PACKAGE_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='package-ci'].queue.id" -o tsv) && \
 for env in dev qa staging prod;do
 ENV=${env^^}
-export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.packageMongoDbName.value -o tsv)
+export COSMOSDB_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.packageMongoDbName.value -o tsv)
 export ${ENV}_COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g')
 export ${ENV}_COSMOSDB_COL_NAME=packages
 done
@@ -466,7 +468,7 @@ export AZURE_DEVOPS_WORKFLOW_QUEUE_ID=$(az pipelines build definition list --org
 for env in dev qa staging prod;do
 ENV=${env^^}
 envIdentitiesDeploymentName="${ENV}_IDENTITIES_DEPLOYMENT_NAME"
-export ${ENV}_WORKFLOW_KEYVAULT_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.workflowKeyVaultName.value -o tsv)
+export ${ENV}_WORKFLOW_KEYVAULT_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.workflowKeyVaultName.value -o tsv)
 export ${ENV}_WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n ${!envIdentitiesDeploymentName} --query properties.outputs.workflowPrincipalResourceId.value -o tsv)
 envWorkflowIdName="${ENV}_WORKFLOW_ID_NAME"
 export ${ENV}_WORKFLOW_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n ${!envWorkflowIdName} --query clientId -o tsv)
@@ -564,9 +566,9 @@ export AZURE_DEVOPS_INGESTION_BUILD_ID=$(az pipelines build definition list --or
 export AZURE_DEVOPS_INGESTION_QUEUE_ID=$(az pipelines build definition list --organization $AZURE_DEVOPS_ORG --project $AZURE_DEVOPS_PROJECT_NAME --query "[?name=='ingestion-ci'].queue.id" -o tsv) && \
 for env in dev qa staging prod;do
 ENV=${env^^}
-export {${ENV}_INGESTION_QUEUE_NAMESPACE,INGESTION_QUEUE_NAMESPACE}=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.ingestionQueueNamespace.value -o tsv)
-export ${ENV}_INGESTION_QUEUE_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.ingestionQueueName.value -o tsv)
-export INGESTION_ACCESS_KEY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.ingestionServiceAccessKeyName.value -o tsv)
+export {${ENV}_INGESTION_QUEUE_NAMESPACE,INGESTION_QUEUE_NAMESPACE}=$(az group deployment show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.ingestionQueueNamespace.value -o tsv)
+export ${ENV}_INGESTION_QUEUE_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.ingestionQueueName.value -o tsv)
+export INGESTION_ACCESS_KEY_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.ingestionServiceAccessKeyName.value -o tsv)
 export ${ENV}_INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_ACCESS_KEY_NAME --query primaryKey -o tsv)
 done && \
 export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
@@ -673,7 +675,7 @@ envIdentitiesDeploymentName="${ENV}_IDENTITIES_DEPLOYMENT_NAME"
 export ${ENV}_DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az group deployment show -g $RESOURCE_GROUP -n ${!envIdentitiesDeploymentName} --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv)
 envDroneSchedulerIdName="${ENV}_DRONESCHEDULER_ID_NAME"
 export ${ENV}_DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n ${!envDroneSchedulerIdName} --query clientId -o tsv)
-export ${ENV}_DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-${env} --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
+export ${ENV}_DRONESCHEDULER_KEYVAULT_URI=$(az group deployment show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
 done
 
 # add relese definition
