@@ -17,6 +17,7 @@ using Fabrikam.DroneDelivery.DeliveryService.Services;
 using Fabrikam.DroneDelivery.DeliveryService.Middlewares.Builder;
 using Serilog;
 using Serilog.Formatting.Compact;
+using System.Text.Encodings.Web;
 
 namespace Fabrikam.DroneDelivery.DeliveryService
 {
@@ -47,6 +48,8 @@ namespace Fabrikam.DroneDelivery.DeliveryService
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton(JavaScriptEncoder.Default);
+
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             // Configure AppInsights
