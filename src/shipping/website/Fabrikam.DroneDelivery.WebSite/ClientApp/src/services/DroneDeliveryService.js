@@ -9,11 +9,11 @@ const createDroneDeliveryService = () => {
     const response = await fetch(`weatherforecast/${trackngId}`);
     return response.json();
   };
-  const fetchCurrentLocation= async() => {
+  const fetchCurrentLocation= async(trackngId) => {
     const response = await fetch(`weatherforecast/${trackngId}`);
     return response.json();
   };    
-  const fetchDropOffLocation= async() => {
+  const fetchDropOffLocation= async(trackngId) => {
     const response = await fetch(`weatherforecast/${trackngId}`);
     return response.json();
   };    
