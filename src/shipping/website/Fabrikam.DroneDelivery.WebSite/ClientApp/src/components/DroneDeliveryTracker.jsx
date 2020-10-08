@@ -6,11 +6,18 @@ export const DroneDeliveryTracker = () => {
     const [droneLocationPoints, setDroneLocations] = useState([]);
     const [trackingId, setTrackingId] = useState();
     const [currentLocation, setCurrentLocation] = useState([]);
+    const [showWarning, setShowWarning] = useState(false);
 
     const onTrack = async () => {
         const info = await droneDeliveryService.fetchCompleteTrackingInfo(trackingId);
-        const locationPoints = populateLocations(info);
-        setDroneLocations(locationPoints);
+        if (info && info.id) {
+            const locationPoints = populateLocations(info);
+            setDroneLocations(locationPoints); 
+            setShowWarning(false);
+        } else {
+            setShowWarning(true);
+            setDroneLocations([])
+        }
     }
     const handleInput = (event) => {
         setTrackingId(event.target.value)
@@ -59,6 +66,7 @@ export const DroneDeliveryTracker = () => {
                         display: 'inline-block',
                     }}
                     onClick={onTrack}>Track</button>
+                {showWarning && <span>No data available</span>}
             </div>
             <div style={{ height: "600px", width: "1000px" }}>
                 <ReactBingmaps
