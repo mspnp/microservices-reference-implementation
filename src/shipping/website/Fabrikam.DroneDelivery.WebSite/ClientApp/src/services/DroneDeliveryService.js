@@ -2,7 +2,7 @@
 const createDroneDeliveryService = () => {
 
  const fetchCompleteTrackingInfo= async(trackngId) => {
-    const response = await fetch(`locations/${trackngId}`);
+    const response = await fetch(`api/drone/GetAllLocations?id=${trackngId}`);
     return response.json();
   };
   const fetchPickUpLocation= async(trackngId) => {
