@@ -10,13 +10,13 @@
 {{- $appversion := .Chart.AppVersion }}
 {{- $defaultversionedpath := printf "/%s/" $appversion }}
 {{- $relname := .Release.Name }}
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: {{ $relname }}-ingress
   annotations:
     kubernetes.io/ingress.class: {{ required "ingress.class is required" .Values.ingress.class | quote }}
-    nginx.ingress.kubernetes.io/rewrite-target: /api/deliveries/public$1
+    nginx.ingress.kubernetes.io/rewrite-target: /api/deliveries$1
 spec:
   {{- if .Values.ingress.tls }}
   tls:
