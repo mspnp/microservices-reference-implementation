@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -9,7 +10,7 @@ namespace Fabrikam.DroneDelivery.WebSite.Common
 {
     public static class RestClient
     {
-        public static async Task<HttpResponseMessage> GetHttpResponse(string Url, string token = null, Dictionary<string, string> requestHeader = null)
+        public static async Task<HttpResponseMessage> Get(string Url, string token = null, Dictionary<string, string> requestHeader = null)
         {                   
             using (HttpClient client = new HttpClient())
             {
@@ -31,7 +32,7 @@ namespace Fabrikam.DroneDelivery.WebSite.Common
             }
         }
 
-        public static async Task<string> GetHttpResponse(string Url)
+        public static async Task<T> Get<T>(string Url)
         {
             try
             {
@@ -41,8 +42,8 @@ namespace Fabrikam.DroneDelivery.WebSite.Common
                 {
                     using (var response = await httpClient.GetAsync(Url))
                     {
-                        string apiResponse = await response.Content.ReadAsStringAsync();
-                        return apiResponse;
+                        var json = await response.Content.ReadAsStringAsync();
+                        return JsonConvert.DeserializeObject<T>(json);
                     }
                 }
             }

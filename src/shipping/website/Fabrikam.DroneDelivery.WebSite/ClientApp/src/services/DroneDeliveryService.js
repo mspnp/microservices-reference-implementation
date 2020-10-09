@@ -1,27 +1,13 @@
 
-const createDroneDeliveryService = () => {
+export default class DroneDeliveryService {
+    
+    getDelivery = async (trackingId) => {
+        const response = await fetch(`api/drone/${trackingId}`);
+        return response.json();
+    }
 
- const fetchCompleteTrackingInfo= async(trackngId) => {
-    const response = await fetch(`api/drone/GetAllLocations?id=${trackngId}`);
-    return response.json();
-  };
-  const fetchPickUpLocation= async(trackngId) => {
-    const response = await fetch(`weatherforecast/${trackngId}`);
-    return response.json();
-  };
-  const fetchCurrentLocation= async(trackngId) => {
-    const response = await fetch(`weatherforecast/${trackngId}`);
-    return response.json();
-  };    
-  const fetchDropOffLocation= async(trackngId) => {
-    const response = await fetch(`weatherforecast/${trackngId}`);
-    return response.json();
-  };    
-  return {
-    fetchCompleteTrackingInfo,
-    fetchPickUpLocation,
-    fetchCurrentLocation,
-    fetchDropOffLocation
-};
-};
-export const droneDeliveryService = createDroneDeliveryService();
+    getDroneLocation = async (trackingId) => {
+        const response = await fetch(`api/drone/${trackingId}/dronelocation`);
+        return response.json();
+    }
+}

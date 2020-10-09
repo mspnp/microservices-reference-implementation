@@ -8,6 +8,8 @@ using Microsoft.Extensions.Hosting;
 
 namespace Fabrikam.DroneDelivery.WebSite
 {
+  
+
     public class Startup
     {
         public Startup(IConfiguration configuration)

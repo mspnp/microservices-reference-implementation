@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ReactBingmaps } from 'react-bingmaps';
-import { droneDeliveryService } from '../services/DroneDeliveryService';
+import DroneDeliveryService  from '../services/DroneDeliveryService';
 
 export const DroneDeliveryTracker = () => {
     const [droneLocationPoints, setDroneLocations] = useState([]);
@@ -9,9 +9,14 @@ export const DroneDeliveryTracker = () => {
     const [showWarning, setShowWarning] = useState(false);
 
     const onTrack = async () => {
-        const info = await droneDeliveryService.fetchCompleteTrackingInfo(trackingId);
-        if (info && info.id) {
-            const locationPoints = populateLocations(info);
+        const droneDeliveryService = new DroneDeliveryService();
+
+        const delivery = await droneDeliveryService.getDelivery(trackingId);
+        const droneLocation = await droneDeliveryService.getDroneLocation(trackingId);
+
+        if (delivery && delivery.id) {
+            const locationPoints = populateLocations(delivery, droneLocation);
+
             setDroneLocations(locationPoints); 
             setShowWarning(false);
         } else {
@@ -19,37 +24,41 @@ export const DroneDeliveryTracker = () => {
             setDroneLocations([])
         }
     }
+
     const handleInput = (event) => {
         setTrackingId(event.target.value)
     }
 
-    const populateLocations = (info) => {
+    const populateLocations = (delivery, droneLocation) => {
 
         let locationPoints = [
             {
-                location: [info.pickup.latitude, info.pickup.longitude],
-                option: { color: 'red', title: 'Pick up' },
+                location: [delivery.pickup.latitude, delivery.pickup.longitude],
+                option: { color: 'blue', title: 'Pick up' },
             },
             {
-                location: [info.currentLocation.latitude, info.currentLocation.longitude],
-                option: { color: 'green', title: 'Current location' }
+                location: [droneLocation.latitude, droneLocation.longitude],
+                option: { color: 'blue', title: 'Drone', icon: 'https://squalldronestorage.blob.core.windows.net/images/mapdrone.png' }
             },
             {
-                location: [info.dropoff.latitude, info.dropoff.longitude],
+                location: [delivery.dropoff.latitude, delivery.dropoff.longitude],
                 option: { color: 'green', title: 'Drop off' }
             }
         ]
 
-        setCurrentLocation([info.dropoff.latitude, info.dropoff.longitude])
+        setCurrentLocation([delivery.dropoff.latitude, delivery.dropoff.longitude])
         return locationPoints;
     };
+
     return (
         <div>
-            <h1> Drone delivery tracker:</h1>
+            <h2>Drone Tracking:</h2>
+
             <div style={{ paddingBottom: 10 }}>
                 <input type="text"
                     style={{ marginRight: 10, width: '400px', border: '2px solid #008CBA' }}
                     onChange={handleInput} placeholder="Enter tracking id"></input>
+
                 <button type="primary"
                     style={{
                         width: '100px',
@@ -66,11 +75,13 @@ export const DroneDeliveryTracker = () => {
                         display: 'inline-block',
                     }}
                     onClick={onTrack}>Track</button>
+
                 {showWarning && <span>No data available</span>}
             </div>
             <div style={{ height: "600px", width: "1000px" }}>
                 <ReactBingmaps
                     disableStreetside={true}
+                    zoom={8}
                     navigationBarMode={"compact"}
                     bingmapKey="ApNNsibpeT5vu3CzJDsU2qX755x7lF8N-tlrSUGc9iaUthHe0HcMzcX1B2yHYzec"
                     center={currentLocation}
