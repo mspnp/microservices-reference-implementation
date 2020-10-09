@@ -55,6 +55,12 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
                 return NotFound();
             }
 
+            internalDelivery.Pickup.Latitude = 39.087672;
+            internalDelivery.Pickup.Longitude = -94.588683;
+
+            internalDelivery.Dropoff.Latitude = 39.101050;
+            internalDelivery.Dropoff.Longitude = -94.586392;
+
             return Ok(internalDelivery.ToExternal());
         }
 
@@ -90,6 +96,10 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
             }
 
             var status = new DeliveryStatus(DeliveryStage.HeadedToDropoff, new Location(0, 0, 0), DateTime.Now.AddMinutes(10).ToString(), DateTime.Now.AddHours(1).ToString());
+
+            status.LastKnownLocation.Latitude = 39.098032;
+            status.LastKnownLocation.Longitude = -94.586389;
+
             return Ok(status);
         }
 
