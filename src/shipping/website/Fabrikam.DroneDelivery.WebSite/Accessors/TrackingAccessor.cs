@@ -25,7 +25,7 @@ namespace Fabrikam.DroneDelivery.WebSite.Accessors
             return await this._trackingClient.GetDelivery(deliveryId);
         }
 
-        public async Task<Location> GetDroneLocation(Guid deliveryId)
+        public async Task<DroneLocation> GetDroneLocation(Guid deliveryId)
         {
             return await this._trackingClient.GetDroneLocation(deliveryId);
         }

@@ -19,9 +19,10 @@ namespace Fabrikam.DroneDelivery.ApiClient
             return await RestClient.Get<Delivery>($"{this._baseUrl}/api/deliveries/{deliveryId}");
         }
 
-        public async Task<Location> GetDroneLocation(Guid deliveryId)
+        public async Task<DroneLocation> GetDroneLocation(Guid deliveryId)
         {
-            return await RestClient.Get<Location>($"{this._baseUrl}/api/deliveries/{deliveryId}/status");
+            var droneLocation = await RestClient.Get<DroneLocation>($"{this._baseUrl}/api/deliveries/{deliveryId}/status");
+            return droneLocation;
         }
     }
 }

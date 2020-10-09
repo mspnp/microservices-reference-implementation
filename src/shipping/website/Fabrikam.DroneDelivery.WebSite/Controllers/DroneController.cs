@@ -18,7 +18,7 @@ namespace Fabrikam.DroneDelivery.WebSite.Controllers
     [ApiController]
     public class DroneController : ControllerBase
     {
-        private const string apiUrl = "https://russdronebasic2-ingest-dev.eastus.cloudapp.azure.com";
+        private const string apiUrl = "https://localhost:44322";
 
         private IDroneManager _droneManager;
 
@@ -45,7 +45,7 @@ namespace Fabrikam.DroneDelivery.WebSite.Controllers
         /// <param name="id"></param>
         /// <returns></returns>
         [HttpGet("{deliveryId}/dronelocation")]
-        public async Task<Location> GetDroneLocation(Guid deliveryId)
+        public async Task<DroneLocation> GetDroneLocation(Guid deliveryId)
         {
             return await this._droneManager.GetDroneLocation(deliveryId);
         }

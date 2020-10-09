@@ -37,8 +37,8 @@ export const DroneDeliveryTracker = () => {
                 option: { color: 'blue', title: 'Pick up' },
             },
             {
-                location: [droneLocation.latitude, droneLocation.longitude],
-                option: { color: 'blue', title: 'Drone', icon: 'https://squalldronestorage.blob.core.windows.net/images/mapdrone.png' }
+                location: [droneLocation.lastKnownLocation.latitude, droneLocation.lastKnownLocation.longitude],
+                option: { title: 'Drone', icon: 'https://squalldronestorage.blob.core.windows.net/images/mapdrone.png' }
             },
             {
                 location: [delivery.dropoff.latitude, delivery.dropoff.longitude],
@@ -81,7 +81,7 @@ export const DroneDeliveryTracker = () => {
             <div style={{ height: "600px", width: "1000px" }}>
                 <ReactBingmaps
                     disableStreetside={true}
-                    zoom={8}
+                    zoom={12}
                     navigationBarMode={"compact"}
                     bingmapKey="ApNNsibpeT5vu3CzJDsU2qX755x7lF8N-tlrSUGc9iaUthHe0HcMzcX1B2yHYzec"
                     center={currentLocation}
