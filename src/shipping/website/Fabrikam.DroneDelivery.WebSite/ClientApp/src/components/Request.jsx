@@ -14,6 +14,7 @@ export const Request = () => {
 
   const onSend = async (event) => {
     event.preventDefault();
+    setTrackingKey('');
     if (packageWeight) {
       setShowValidation(false);
       let deliveryRequest = {
@@ -67,8 +68,8 @@ export const Request = () => {
     <div>
       <h2 style={{ marginLeft: 20 }}>Request delivery</h2>
       <form onSubmit={onSend}>
-        {showValidation && <span style={{ paddingLeft: 10, color: 'red', float: 'right', marginRight: 17 }}>{validation}</span>}
-        <div style={{marginBottom:40}}>
+        {showValidation && <span style={{ color: 'red', float: 'right' }}>{validation}</span>}
+        <div style={{ marginBottom: 40 }}>
           <div className="container" >
             <p>Select Package size:</p>
             <select className="custom-input"
@@ -96,12 +97,12 @@ export const Request = () => {
           </div>
         </div>
         <div style={{ marginLeft: 20 }}>
-        <p>Tracking ID:</p>
-        <textarea style={{ width: '800px', height: '110px', border: '2px solid #008CBA', }} value={trackingKey} type="text"></textarea>
-      </div>
+          <p>Tracking ID:</p>
+          <textarea style={{ width: '800px', height: '110px', border: '2px solid #008CBA', }} value={trackingKey} type="text"></textarea>
+        </div>
       </form>
- 
-      {showErrorMessage && <span style={{ paddingLeft: 10, color: 'red' }}>{errorMessage}</span>}
+
+      {showErrorMessage && <span style={{ marginLeft: 19, color: 'red' }}>{errorMessage}</span>}
     </div>
   );
 }
