@@ -4,14 +4,6 @@ using System.Text;
 
 namespace Fabrikam.DroneDelivery.ApiClient.Model
 {
-    public class PackageInfo
-    {
-        public string packageId { get; set; }
-        public string size { get; set; }
-        public string tag { get; set; }
-        public int weight { get; set; }
-    }
-
     public class DeliveryRequest
     {
         public string confirmationRequired { get; set; }
