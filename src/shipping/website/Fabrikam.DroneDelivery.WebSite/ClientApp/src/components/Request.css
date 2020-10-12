@@ -1,0 +1,22 @@
+.outerContainer {
+  padding-top: 10px;
+  width: 900px;
+  margin-left: -6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.container {
+  width: '1000px';
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  background: #FFFFFF;
+  align-items: center;
+}
+ .custom-input {
+  width: 200px;
+  height: 40px;
+  border: 2px solid #008CBA;
+}

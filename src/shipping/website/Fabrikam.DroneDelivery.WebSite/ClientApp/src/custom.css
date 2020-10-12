@@ -12,3 +12,17 @@ code {
   background-color: #1b6ec2;
   border-color: #1861ac;
 }
+.main-button {
+  width: 100px;
+  background-color: white;
+  color: black;
+  border: 2px solid #008CBA;
+  border-radius: 12px;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  padding: 5px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+}

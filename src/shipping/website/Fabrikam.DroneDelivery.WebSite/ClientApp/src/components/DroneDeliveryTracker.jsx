@@ -1,29 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { ReactBingmaps } from 'react-bingmaps';
-import DroneDeliveryService  from '../services/DroneDeliveryService';
+import DroneDeliveryService from '../services/DroneDeliveryService';
 
 export const DroneDeliveryTracker = () => {
     const [droneLocationPoints, setDroneLocations] = useState([]);
     const [trackingId, setTrackingId] = useState();
     const [currentLocation, setCurrentLocation] = useState([]);
     const [showWarning, setShowWarning] = useState(false);
+    const [warning, setWarning] = useState('');
 
     const onTrack = async () => {
         const droneDeliveryService = new DroneDeliveryService();
-
-        const delivery = await droneDeliveryService.getDelivery(trackingId);
-        const droneLocation = await droneDeliveryService.getDroneLocation(trackingId);
-
+        let delivery;
+        let droneLocation;
+        try {
+            delivery = await droneDeliveryService.getDelivery(trackingId);
+            droneLocation = await droneDeliveryService.getDroneLocation(trackingId);
+        } catch (error) {
+            setShowWarning(true);
+            setWarning("Request cannot be processed!!");
+        }
         if (delivery && delivery.id) {
             const locationPoints = populateLocations(delivery, droneLocation);
-
-            setDroneLocations(locationPoints); 
+            setDroneLocations(locationPoints);
             setShowWarning(false);
         } else {
             setShowWarning(true);
+            setWarning('No data available');
             setDroneLocations([])
         }
     }
+
 
     const handleInput = (event) => {
         setTrackingId(event.target.value)
@@ -59,24 +66,8 @@ export const DroneDeliveryTracker = () => {
                     style={{ marginRight: 10, width: '400px', border: '2px solid #008CBA' }}
                     onChange={handleInput} placeholder="Enter tracking id"></input>
 
-                <button type="primary"
-                    style={{
-                        width: '100px',
-                        backgroundColor: 'white',
-                        color: 'black',
-                        border: '2px solid #008CBA',
-                        borderRadius: '12px',
-                        fontSize: '16px',
-                        margin: '4px 2px',
-                        cursor: 'pointer',
-                        padding: '5px 10px',
-                        textAlign: 'center',
-                        textDecoration: 'none',
-                        display: 'inline-block',
-                    }}
-                    onClick={onTrack}>Track</button>
-
-                {showWarning && <span>No data available</span>}
+                <button type="primary" className="main-button" onClick={onTrack}>Track</button>
+                {showWarning && <span style={{ paddingLeft: 10,color:'red' }}>{warning}</span>}
             </div>
             <div style={{ height: "600px", width: "1000px" }}>
                 <ReactBingmaps
