@@ -7,27 +7,36 @@ export const Request = () => {
   const [trackingKey, setTrackingKey] = useState('');
   const [packageSize, setPackageSize] = useState('Small');
   const [packageWeight, setPackageWeight] = useState('');
-  const [showWaring, setShowWarning] = useState(false);
-  const [warning, setWarning] = useState('');
+  const [showValidation, setShowValidation] = useState(false);
+  const [validation, setValidation] = useState(false);
+  const [showErrorMessage, setShowErrorMessage] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const onSend = async (event) => {
     event.preventDefault();
-    let deliveryRequest = {
-      confirmationRequired: "None",
-      deadline: "",
-      dropOffLocation: "drop off",
-      expedited: true,
-      ownerId: "myowner",
-      packageInfo: {
-        packageId: "mypackage",
-        size: packageSize,
-        tag: "mytag",
-        weight: packageWeight
-      },
-      pickupLocation: "my pickup",
-      pickupTime: "2019-05-08T20:00:00.000Z"
+    setTrackingKey('');
+    if (packageWeight) {
+      setShowValidation(false);
+      let deliveryRequest = {
+        confirmationRequired: "None",
+        deadline: "",
+        dropOffLocation: "drop off",
+        expedited: true,
+        ownerId: "myowner",
+        packageInfo: {
+          packageId: "mypackage",
+          size: packageSize,
+          tag: "mytag",
+          weight: packageWeight
+        },
+        pickupLocation: "my pickup",
+        pickupTime: "2019-05-08T20:00:00.000Z"
+      }
+      sendDeliveryRequest(deliveryRequest);
+    } else {
+      setShowValidation(true);
+      setValidation("Input package weight !!");
     }
-    sendDeliveryRequest(deliveryRequest);
   }
 
   const sendDeliveryRequest = async (deliveryRequest) => {
@@ -37,13 +46,19 @@ export const Request = () => {
       deliveryResponse = await droneDeliveryService.deliveryRequest(deliveryRequest);
       setTrackingKey(deliveryResponse.deliveryId);
     } catch (error) {
-      setShowWarning(true);
-      setWarning("Request cannot be processed !!");
+      setShowErrorMessage(true);
+      setErrorMessage('Request can not be processed !!');
     }
   }
 
   const onPackageWeightChange = (event) => {
     let weight = parseInt(event.target.value);
+    if (!weight) {
+      setShowValidation(true);
+      setValidation("Input package weight !!");
+    } else {
+      setShowValidation(false);
+    }
     setPackageWeight(weight);
   }
   const onPackageSizeChange = (event) => {
@@ -51,9 +66,10 @@ export const Request = () => {
   }
   return (
     <div>
-      <h1 style={{marginLeft: 8}}>Request delivery</h1>
+      <h2 style={{ marginLeft: 20 }}>Request delivery</h2>
       <form onSubmit={onSend}>
-        <div className="outerContainer">
+        {showValidation && <span style={{ color: 'red', float: 'right' }}>{validation}</span>}
+        <div style={{ marginBottom: 40 }}>
           <div className="container" >
             <p>Select Package size:</p>
             <select className="custom-input"
@@ -70,20 +86,23 @@ export const Request = () => {
           <div className="container">
             <p>Enter Package weight:</p>
             <input
-              className="custom-input"
+              className={showValidation ? 'custom-input error' : 'custom-input'}
               placeholder="Enter package weight"
               onChange={onPackageWeightChange}
-              type="text"
+              type="number"
             />
           </div>
-          <input className="main-button" type='submit' value="Request" />
+          <div className="request-button-container">
+            <input className="main-button" type='submit' value="Request" />
+          </div>
+        </div>
+        <div style={{ marginLeft: 20 }}>
+          <p>Tracking ID:</p>
+          <textarea style={{ width: '800px', height: '110px', border: '2px solid #008CBA', }} value={trackingKey} type="text"></textarea>
         </div>
       </form>
-      <div style={{ padding: 10 }}>
-        <p>Delivery Id:</p>
-        <textarea style={{ width: '800px', height: '110px', border: '2px solid #008CBA', }} value={trackingKey} type="text"></textarea>
-      </div>
-      {showWaring && <span style={{ paddingLeft: 10, color: 'red' }}>{warning}</span>}
+
+      {showErrorMessage && <span style={{ marginLeft: 19, color: 'red' }}>{errorMessage}</span>}
     </div>
   );
 }

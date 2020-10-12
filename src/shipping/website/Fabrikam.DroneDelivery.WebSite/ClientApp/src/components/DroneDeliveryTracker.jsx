@@ -3,37 +3,65 @@ import { ReactBingmaps } from 'react-bingmaps';
 import DroneDeliveryService from '../services/DroneDeliveryService';
 
 export const DroneDeliveryTracker = () => {
+    const [bingMapKey, setBingmapKey] = useState('');
     const [droneLocationPoints, setDroneLocations] = useState([]);
-    const [trackingId, setTrackingId] = useState();
+    const [trackingId, setTrackingId] = useState('');
     const [currentLocation, setCurrentLocation] = useState([]);
     const [showWarning, setShowWarning] = useState(false);
     const [warning, setWarning] = useState('');
 
+    useEffect(() => {
+        const fetchBingmapKey = async () => {
+            const droneDeliveryService = new DroneDeliveryService();
+            const bingMapKey = localStorage.getItem('bingMapKey') || '';
+            if (bingMapKey) {
+                setBingmapKey(bingMapKey);
+            } else {
+                const bingMapKey = await droneDeliveryService.getBingMapKey();
+                localStorage.setItem('bingMapKey', bingMapKey);
+                setBingmapKey(bingMapKey);
+            }
+        }
+        fetchBingmapKey();
+    }, [])
+
     const onTrack = async () => {
+        if (!trackingId) {
+            setShowWarning(true);
+            setWarning("Input tracking id !!");
+            return;
+        }
         const droneDeliveryService = new DroneDeliveryService();
         let delivery;
         let droneLocation;
         try {
             delivery = await droneDeliveryService.getDelivery(trackingId);
             droneLocation = await droneDeliveryService.getDroneLocation(trackingId);
+            if (delivery.id) {
+                const locationPoints = populateLocations(delivery, droneLocation);
+                setDroneLocations(locationPoints);
+                setShowWarning(false);
+            } else {
+                setShowWarning(true);
+                setWarning('No data available for given tracking id !!');
+                setDroneLocations([])
+            }
         } catch (error) {
             setShowWarning(true);
-            setWarning("Request cannot be processed!!");
-        }
-        if (delivery && delivery.id) {
-            const locationPoints = populateLocations(delivery, droneLocation);
-            setDroneLocations(locationPoints);
-            setShowWarning(false);
-        } else {
-            setShowWarning(true);
-            setWarning('No data available');
-            setDroneLocations([])
+            setWarning("Request can not be processed!!");
         }
     }
 
 
     const handleInput = (event) => {
-        setTrackingId(event.target.value)
+        const trackingid = event.target.value;
+        if (!trackingid) {
+            setShowWarning(true);
+            setWarning("Input tracking id !!");
+        } else {
+            setShowWarning(false);
+        }
+        setTrackingId(trackingid)
     }
 
     const populateLocations = (delivery, droneLocation) => {
@@ -53,6 +81,7 @@ export const DroneDeliveryTracker = () => {
             }
         ]
 
+
         setCurrentLocation([delivery.dropoff.latitude, delivery.dropoff.longitude])
         return locationPoints;
     };
@@ -60,25 +89,23 @@ export const DroneDeliveryTracker = () => {
     return (
         <div>
             <h2>Drone Tracking:</h2>
-
             <div style={{ paddingBottom: 10 }}>
                 <input type="text"
-                    style={{ marginRight: 10, width: '400px', border: '2px solid #008CBA' }}
+                    className={showWarning ? 'custom-input error' : 'custom-input'}
                     onChange={handleInput} placeholder="Enter tracking id"></input>
-
                 <button type="primary" className="main-button" onClick={onTrack}>Track</button>
-                {showWarning && <span style={{ paddingLeft: 10,color:'red' }}>{warning}</span>}
+                {showWarning && <span style={{ paddingLeft: 10, color: 'red' }}>{warning}</span>}
             </div>
             <div style={{ height: "600px", width: "1000px" }}>
-                <ReactBingmaps
+                {bingMapKey && <ReactBingmaps
                     disableStreetside={true}
                     zoom={12}
                     navigationBarMode={"compact"}
-                    bingmapKey="ApNNsibpeT5vu3CzJDsU2qX755x7lF8N-tlrSUGc9iaUthHe0HcMzcX1B2yHYzec"
+                    bingmapKey={bingMapKey}
                     center={currentLocation}
                     pushPins={droneLocationPoints}
                 >
-                </ReactBingmaps>
+                </ReactBingmaps>}
             </div>
         </div>
     );

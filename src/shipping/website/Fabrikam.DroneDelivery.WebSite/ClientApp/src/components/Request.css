@@ -1,9 +1,8 @@
 .outerContainer {
   padding-top: 10px;
   width: 900px;
-  margin-left: -6px;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   align-items: center;
 }
 
@@ -14,9 +13,19 @@
   justify-content: space-between;
   background: #FFFFFF;
   align-items: center;
+  padding-top:10px;
+  padding-left:20px;
+  padding-right:2px;
 }
  .custom-input {
-  width: 200px;
-  height: 40px;
+  width: 500px;
+  height: 35px;
   border: 2px solid #008CBA;
+}
+.request-button-container {
+  float: right;
+  margin-right: -4px;
+  margin-bottom:10px;
+  margin-top:8px;
+
 }

@@ -11,6 +11,7 @@ using Fabrikam.DroneDelivery.WebSite.Interfaces;
 using Fabrikam.DroneDelivery.WebSite.Manager;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 
 namespace Fabrikam.DroneDelivery.WebSite.Controllers
 {
@@ -18,14 +19,16 @@ namespace Fabrikam.DroneDelivery.WebSite.Controllers
     [ApiController]
     public class DroneController : ControllerBase
     {
-        private const string apiUrl = "https://localhost:44322";
+        private const string apiUrl = "https://russdronebasic2-ingest-dev.eastus.cloudapp.azure.com/";
 
         private IDroneManager _droneManager;
+        private IConfiguration _configuration;
 
-        public DroneController()
+        public DroneController(IConfiguration iconfiguration)
         {
             //IDroneManager droneManager
-            this._droneManager = new DroneManager(new TrackingAccessor(new TrackingClient(apiUrl)));
+            _droneManager = new DroneManager(new TrackingAccessor(new TrackingClient(apiUrl)));
+            _configuration = iconfiguration;
         }
 
         /// <summary>
@@ -48,8 +51,8 @@ namespace Fabrikam.DroneDelivery.WebSite.Controllers
         public async Task<DroneLocation> GetDroneLocation(Guid deliveryId)
         {
             return await this._droneManager.GetDroneLocation(deliveryId);
-        }
-
+        }     
+        
         /// <summary>
         /// Accepts post request with content from request body
         /// </summary>
@@ -59,6 +62,15 @@ namespace Fabrikam.DroneDelivery.WebSite.Controllers
         public async Task<DeliveryResponse> AddDeliveryRequest([FromBody] DeliveryRequest deliveryRequest)
         {
             return await this._droneManager.AddDeliveryRequest(deliveryRequest);
+        }
+        /// <summary>
+        /// Returns Bing map key
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("bingMapKey")]
+        public string GetBingMapKey()
+        {
+            return _configuration["BingMapKey"];  
         }
     }
 }
