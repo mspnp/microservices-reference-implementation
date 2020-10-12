@@ -1,24 +1,23 @@
+import {
+    axiosInstance
+} from '../axiosHelper';
 export default class DroneDeliveryService {
 
     getDelivery = async (trackingId) => {
-        const response = await fetch(`api/drone/${trackingId}`);
-        return response.json();
+        const response = await axiosInstance.get(`api/drone/${trackingId}`);
+        return response.data;
     }
 
     getDroneLocation = async (trackingId) => {
-        const response = await fetch(`api/drone/${trackingId}/dronelocation`);
-        return response.json();
+        const response = await axiosInstance.get(`api/drone/${trackingId}/dronelocation`);
+        return response.data;
     }
     deliveryRequest = async (requestData) => {
-        const params = {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestData),
-        }
-        const response = await fetch('api/drone/deliveryrequest',params);
-        return response.json();
+        const response = await axiosInstance.post('api/drone/deliveryrequest', requestData);
+        return response.data;
+    }
+    getBingMapKey = async () => {
+        const response = await axiosInstance.get('api/drone/bingMapKey');
+        return response.data;
     }
 }

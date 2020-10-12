@@ -19,10 +19,13 @@ code {
   border: 2px solid #008CBA;
   border-radius: 12px;
   font-size: 16px;
-  margin: 4px 2px;
+  margin: 4px 6px;
   cursor: pointer;
   padding: 5px 10px;
   text-align: center;
   text-decoration: none;
   display: inline-block;
+}
+.error {
+  border-color: red;
 }
