@@ -70,8 +70,7 @@ namespace Fabrikam.DroneDelivery.WebSite.Controllers
         [HttpGet("bingMapKey")]
         public string GetBingMapKey()
         {
-            return _configuration["BingMapKey"];
-            
+            return _configuration["BingMapKey"];  
         }
     }
 }
