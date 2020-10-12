@@ -12,7 +12,6 @@ export const DroneDeliveryTracker = () => {
 
     useEffect(() => {
         const fetchBingmapKey = async () => {
-            localStorage.clear();
             const droneDeliveryService = new DroneDeliveryService();
             const bingMapKey = localStorage.getItem('bingMapKey') || '';
             if (bingMapKey) {
