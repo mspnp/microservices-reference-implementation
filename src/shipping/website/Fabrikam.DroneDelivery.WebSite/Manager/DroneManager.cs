@@ -13,7 +13,10 @@ namespace Fabrikam.DroneDelivery.WebSite.Manager
         {
             this._trackingAccessor = trackingAccessor;
         }
-
+        public async Task<DeliveryResponse> AddDeliveryRequest(DeliveryRequest deliveryRequest)
+        {
+            return await this._trackingAccessor.AddDeliveryRequest(deliveryRequest);
+        }
         public async Task<Delivery> GetDelivery(Guid deliveryId)
         {
             return await this._trackingAccessor.GetDelivery(deliveryId);

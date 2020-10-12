@@ -1,9 +1,11 @@
-﻿using Newtonsoft.Json;
+﻿using Fabrikam.DroneDelivery.ApiClient.Model;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace Fabrikam.DroneDelivery.WebSite.Common
@@ -11,7 +13,7 @@ namespace Fabrikam.DroneDelivery.WebSite.Common
     public static class RestClient
     {
         public static async Task<HttpResponseMessage> Get(string Url, string token = null, Dictionary<string, string> requestHeader = null)
-        {                   
+        {
             using (HttpClient client = new HttpClient())
             {
                 var request = new HttpRequestMessage()
@@ -51,7 +53,27 @@ namespace Fabrikam.DroneDelivery.WebSite.Common
             {
                 throw ex;
             }
-           
+
+        }
+        public static async Task<T> Post<T>(string Url, DeliveryRequest deliveryRequest)
+        {
+            try
+            {
+                HttpClientHandler clientHandler = new HttpClientHandler();
+                clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
+                using (var client = new System.Net.Http.HttpClient(clientHandler))
+                {
+                    client.BaseAddress = new Uri(Url);
+                    var json = Newtonsoft.Json.JsonConvert.SerializeObject(deliveryRequest);
+                    var response = await client.PostAsync(new Uri(Url), new StringContent(json, System.Text.Encoding.UTF8, "application/json"));
+                    return JsonConvert.DeserializeObject<T>(await response.Content.ReadAsStringAsync());
+                } 
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+
         }
     }
 }

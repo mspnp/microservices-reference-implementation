@@ -49,5 +49,16 @@ namespace Fabrikam.DroneDelivery.WebSite.Controllers
         {
             return await this._droneManager.GetDroneLocation(deliveryId);
         }
+
+        /// <summary>
+        /// Accepts post request with content from request body
+        /// </summary>
+        /// <param name="content"></param>
+        /// <returns></returns>        
+        [HttpPost("deliveryrequest")]
+        public async Task<DeliveryResponse> AddDeliveryRequest([FromBody] DeliveryRequest deliveryRequest)
+        {
+            return await this._droneManager.AddDeliveryRequest(deliveryRequest);
+        }
     }
 }

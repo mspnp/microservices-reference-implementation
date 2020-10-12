@@ -9,5 +9,7 @@ namespace Fabrikam.DroneDelivery.WebSite.Interfaces
         Task<Delivery> GetDelivery(Guid deliveryId);
 
         Task<DroneLocation> GetDroneLocation(Guid deliveryId);
+
+        Task<DeliveryResponse> AddDeliveryRequest(DeliveryRequest deliveryRequest);
     }
 }

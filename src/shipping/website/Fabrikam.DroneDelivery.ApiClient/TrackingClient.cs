@@ -14,6 +14,13 @@ namespace Fabrikam.DroneDelivery.ApiClient
             _baseUrl = url;
         }
 
+        public async Task<DeliveryResponse> AddDeliveryRequest(DeliveryRequest deliveryRequest)
+        {
+            string body = string.Empty;
+            var delivery = await RestClient.Post<DeliveryResponse>($"{this._baseUrl}/api/deliveryrequests", deliveryRequest);
+            return delivery;
+
+        }
         public async Task<Delivery> GetDelivery(Guid deliveryId)
         {
             return await RestClient.Get<Delivery>($"{this._baseUrl}/api/deliveries/{deliveryId}");
