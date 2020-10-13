@@ -14,6 +14,7 @@ export default class App extends Component {
     return (
       <Layout>
         <Route exact path='/' component={Home} />
+        <Route path='/tracking' component={Home} />
         <Route path='/request' component={Request} />
         <Route path='/fetch-data' component={FetchData} />
       </Layout>

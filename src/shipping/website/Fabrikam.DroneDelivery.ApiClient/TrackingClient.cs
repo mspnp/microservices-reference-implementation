@@ -1,34 +1,34 @@
 ﻿using Fabrikam.DroneDelivery.ApiClient.Model;
 using Fabrikam.DroneDelivery.WebSite.Common;
 using System;
+using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace Fabrikam.DroneDelivery.ApiClient
 {
     public class TrackingClient
     {
-        private string _baseUrl;
-        
-        public TrackingClient(string url)
+        private RestClient _client;
+
+        public TrackingClient(HttpClient httpClient)
         {
-            _baseUrl = url;
+            _client = new RestClient(httpClient);
         }
 
         public async Task<DeliveryResponse> AddDeliveryRequest(DeliveryRequest deliveryRequest)
         {
-            string body = string.Empty;
-            var delivery = await RestClient.Post<DeliveryResponse>($"{this._baseUrl}/api/deliveryrequests", deliveryRequest);
+            var delivery = await this._client.Post<DeliveryResponse>($"api/deliveryrequests", deliveryRequest);
             return delivery;
-
         }
+
         public async Task<Delivery> GetDelivery(Guid deliveryId)
         {
-            return await RestClient.Get<Delivery>($"{this._baseUrl}/api/deliveries/{deliveryId}");
+            return await this._client.Get<Delivery>($"api/deliveries/{deliveryId}");
         }
 
         public async Task<DroneLocation> GetDroneLocation(Guid deliveryId)
         {
-            var droneLocation = await RestClient.Get<DroneLocation>($"{this._baseUrl}/api/deliveries/{deliveryId}/status");
+            var droneLocation = await this._client.Get<DroneLocation>($"api/deliveries/{deliveryId}/status");
             return droneLocation;
         }
     }

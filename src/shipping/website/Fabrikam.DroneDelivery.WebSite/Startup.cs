@@ -1,10 +1,20 @@
+using Fabrikam.DroneDelivery.ApiClient;
+using Fabrikam.DroneDelivery.WebSite.Accessors;
+using Fabrikam.DroneDelivery.WebSite.Common;
+using Fabrikam.DroneDelivery.WebSite.Interfaces;
+using Fabrikam.DroneDelivery.WebSite.Manager;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
+using System;
+using System.IO;
 
 namespace Fabrikam.DroneDelivery.WebSite
 {
@@ -12,9 +22,17 @@ namespace Fabrikam.DroneDelivery.WebSite
 
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        private const string HealCheckName = "ReadinessLiveness";
+
+        public Startup(IWebHostEnvironment env)
         {
-            Configuration = configuration;
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(env.ContentRootPath)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
+                .AddEnvironmentVariables();
+
+            Configuration = builder.Build();
         }
 
         public IConfiguration Configuration { get; }
@@ -22,6 +40,16 @@ namespace Fabrikam.DroneDelivery.WebSite
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            // Configure AppInsights
+            services.AddApplicationInsightsKubernetesEnricher();
+            services.AddApplicationInsightsTelemetry(Configuration);
+
+            // Add health check
+            services.AddHealthChecks().AddCheck(
+                    HealCheckName,
+                    () => HealthCheckResult.Healthy("OK"));
 
             services.AddControllersWithViews();
 
@@ -30,7 +58,16 @@ namespace Fabrikam.DroneDelivery.WebSite
             {
                 configuration.RootPath = "ClientApp/build";
             });
+
             services.AddSingleton<IConfiguration>(Configuration);
+
+            services.AddHttpClient("delivery", c =>
+            {
+                c.BaseAddress = new Uri(Configuration["ApiUrl"]);
+            });
+
+            services.AddScoped<ITrackingAccessor, TrackingAccessor>();
+            services.AddScoped<IDroneManager, DroneManager>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -47,7 +84,7 @@ namespace Fabrikam.DroneDelivery.WebSite
                 app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
+
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
 
@@ -55,6 +92,7 @@ namespace Fabrikam.DroneDelivery.WebSite
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapHealthChecks("/healthz");
                 endpoints.MapControllerRoute(
                     name: "default",
                     pattern: "{controller}/{action=Index}/{id?}");

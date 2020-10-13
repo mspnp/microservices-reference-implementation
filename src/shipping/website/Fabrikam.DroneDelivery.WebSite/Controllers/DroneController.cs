@@ -19,16 +19,13 @@ namespace Fabrikam.DroneDelivery.WebSite.Controllers
     [ApiController]
     public class DroneController : ControllerBase
     {
-        private const string apiUrl = "https://russdronebasic2-ingest-dev.eastus.cloudapp.azure.com/";
-
         private IDroneManager _droneManager;
         private IConfiguration _configuration;
 
-        public DroneController(IConfiguration iconfiguration)
+        public DroneController(IConfiguration configuration, IDroneManager droneManager)
         {
-            //IDroneManager droneManager
-            _droneManager = new DroneManager(new TrackingAccessor(new TrackingClient(apiUrl)));
-            _configuration = iconfiguration;
+            this._droneManager = droneManager;
+            this._configuration = configuration;
         }
 
         /// <summary>
@@ -63,6 +60,7 @@ namespace Fabrikam.DroneDelivery.WebSite.Controllers
         {
             return await this._droneManager.AddDeliveryRequest(deliveryRequest);
         }
+
         /// <summary>
         /// Returns Bing map key
         /// </summary>

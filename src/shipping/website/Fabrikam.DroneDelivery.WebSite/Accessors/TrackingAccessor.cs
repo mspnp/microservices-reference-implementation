@@ -15,9 +15,9 @@ namespace Fabrikam.DroneDelivery.WebSite.Accessors
     {
         private TrackingClient _trackingClient;
 
-        public TrackingAccessor(TrackingClient trackingClient)
+        public TrackingAccessor(IHttpClientFactory clientFactory)
         {
-            this._trackingClient = trackingClient;
+            this._trackingClient = new TrackingClient(clientFactory.CreateClient("delivery"));
         }
 
         public async Task<DeliveryResponse> AddDeliveryRequest(DeliveryRequest deliveryRequest)

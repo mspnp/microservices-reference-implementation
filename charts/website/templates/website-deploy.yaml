@@ -1,0 +1,101 @@
+#  ------------------------------------------------------------
+#   Copyright (c) Microsoft Corporation.  All rights reserved.
+#   Licensed under the MIT License (MIT). See License.txt in the repo root for license information.
+#  ------------------------------------------------------------
+
+###################################################################################################
+# Website
+###################################################################################################
+{{- $fullname := include "website.fullname" . | replace "." "" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $fullname }}
+  labels:
+    app.kubernetes.io/name: {{ include "website.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/version: {{ .Chart.AppVersion }}
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: dronedelivery
+    helm.sh/chart: {{ include "website.chart" . }}
+    aadpodidbinding: {{ $fullname }}
+  annotations:
+    kubernetes.io/change-cause: {{ .Values.reason }}
+spec:
+  replicas: {{ default 1 .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "website.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "website.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/managed-by: {{ .Release.Service }}
+        app.kubernetes.io/version: {{ .Chart.AppVersion }}
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: dronedelivery
+        helm.sh/chart: {{ include "website.chart" . }}
+        aadpodidbinding: {{ $fullname }}
+    spec:
+      securityContext:
+        fsGroup: 1
+      containers:
+      - name: fabrikam-website
+        image: {{ .Values.dockerregistry }}{{ .Values.dockerregistrynamespace }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        readinessProbe:
+          httpGet:
+            path: {{ required "readinessProbe.httpGet.path is required" .Values.readinessProbe.httpGet.path }}
+            port: {{ required "readinessProbe.httpGet.port is required" .Values.readinessProbe.httpGet.port }}
+{{- if .Values.readinessProbe.initialDelaySeconds }}
+          initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+{{- end }}
+{{- if .Values.readinessProbe.periodSeconds }}
+          periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+{{- end }}
+{{- if .Values.readinessProbe.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+{{- end }}
+{{- if .Values.readinessProbe.failureThreshold }}
+          failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+{{- end }}
+        livenessProbe:
+          httpGet:
+            path: {{ required "livenessProbe.httpGet.path is required" .Values.livenessProbe.httpGet.path }}
+            port: {{ required "livenessProbe.httpGet.port is required" .Values.livenessProbe.httpGet.port }}
+{{- if .Values.livenessProbe.initialDelaySeconds }}
+          initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+{{- end }}
+{{- if .Values.livenessProbe.periodSeconds }}
+          periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+{{- end }}
+{{- if .Values.livenessProbe.timeoutSeconds }}
+          timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+{{- end }}
+{{- if .Values.livenessProbe.failureThreshold }}
+          failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+{{- end }}
+        resources:
+          requests:
+            cpu:   {{ required "A valid .Values.resources.requests.cpu entry required!" .Values.resources.requests.cpu }}
+            memory: {{ required "A valid .Values.resources.requests.memory entry required!" .Values.resources.requests.memory }}
+          limits:
+            cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
+            memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}
+        env:
+        - name: DOCDB_DATABASEID
+          value: {{ .Values.cosmosdb.id }}
+        - name: DOCDB_COLLECTIONID
+          value: {{ .Values.cosmosdb.collectionid }}
+        - name: KEY_VAULT_URI
+          value: {{ .Values.keyvault.uri }}
+        - name: LOGGING__ApplicationInsights__LOGLEVEL__DEFAULT
+          value: {{ default "Error" .Values.telemetry.level | quote }}
+        - name: no_proxy
+          value: 169.254.169.254
+      ports:
+        - name: service
+          containerPort: 8080

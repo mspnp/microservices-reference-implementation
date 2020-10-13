@@ -1,0 +1,20 @@
+# Staging values for website.
+nameOverride: website
+exports:
+  data:
+    replicaCount: 1
+    image:
+      pullPolicy: Always
+    telemetry:
+      level: "Information"
+    reason: "new staging deploy"
+    current: true
+    ingress:
+      class: "nginx-staging"
+    resources:
+      requests:
+        cpu: 100m
+        memory: 350Mi
+      limits:
+        cpu: 200m
+        memory: 500Mi

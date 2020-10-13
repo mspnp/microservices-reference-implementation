@@ -1,0 +1,32 @@
+dependencies:
+  - name: website-dev
+    repository: "file://envs/website-dev"
+    version: ">= 0.0.1"
+    tags:
+      - dev
+    import-values:
+      - data
+
+  - name: website-prod
+    repository: "file://envs/website-prod"
+    version: ">= 0.0.1"
+    tags:
+      - prod
+    import-values:
+      - data
+
+  - name: website-qa
+    repository: "file://envs/website-qa"
+    version: ">= 0.0.1"
+    tags:
+      - qa
+    import-values:
+      - data
+
+  - name: website-staging
+    repository: "file://envs/website-staging"
+    version: ">= 0.0.1"
+    tags:
+      - staging
+    import-values:
+      - data

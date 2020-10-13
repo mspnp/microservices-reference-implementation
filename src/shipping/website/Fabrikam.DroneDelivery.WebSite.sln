@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29709.97
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fabrikam.DroneDelivery.WebSite", "Fabrikam.DroneDelivery.WebSite.csproj", "{10F11810-5C65-4C8A-82DD-B1502F9CC337}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fabrikam.DroneDelivery.WebSite", "Fabrikam.DroneDelivery.WebSite\Fabrikam.DroneDelivery.WebSite.csproj", "{10F11810-5C65-4C8A-82DD-B1502F9CC337}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fabrikam.DroneDelivery.ApiClient", "..\Fabrikam.DroneDelivery.ApiClient\Fabrikam.DroneDelivery.ApiClient.csproj", "{8AD2600C-E872-4EED-AA53-97F737DB28FA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Fabrikam.DroneDelivery.ApiClient", "Fabrikam.DroneDelivery.ApiClient\Fabrikam.DroneDelivery.ApiClient.csproj", "{8AD2600C-E872-4EED-AA53-97F737DB28FA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{12FC544E-77B3-4511-91C1-76A171AEB4B6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
