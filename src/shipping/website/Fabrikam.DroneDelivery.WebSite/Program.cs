@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -26,11 +27,15 @@ namespace Fabrikam.DroneDelivery.WebSite
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder.UseStartup<Startup>()
+                    .ConfigureAppConfiguration(appConfig =>
+                    {
+                        appConfig.AddEnvironmentVariables();
+                    })
                     .ConfigureLogging((hostingContext, loggingBuilder) =>
                     {
                         loggingBuilder.AddApplicationInsights();
                     })
-                    .UseUrls("http://0.0.0.0:8080");
+                    .UseUrls("http://*:8080");
                 });
-    }
+       }
 }

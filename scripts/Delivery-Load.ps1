@@ -15,11 +15,17 @@ else
 	$baseUrl = "https://russdronebasic2-ingest-dev.eastus.cloudapp.azure.com"
 }
 
+$ProgressPreference = "SilentlyContinue"
 $deliveryRequestEndPoint= "/api/deliveryrequests"
 $deliveryStatusEndPoint= "/api/deliveries/{0}/status"
 $delayForRequests = 1
-[int]$requestLatencyMedium = 90
-[int]$requestLatencyHigh = 110
+[int]$requestLatencyMedium = 150
+[int]$requestLatencyHigh = 200
+$psVersion = $PSVersionTable.PSEdition
+if ($psVersion -eq 'Core') {
+    $requestLatencyMedium = 250
+    $requestLatencyHigh = 270
+}
 
 $header = @{
  "Accept"="application/json"
@@ -43,28 +49,37 @@ $jsonToPost = @'
    "pickupLocation": "my pickup1",
    "pickupTime": "2019-05-08T20:00:00.000Z"
  }
-
 '@
-#Fixes SSL validation error
-add-type @"
-    using System.Net;
-    using System.Security.Cryptography.X509Certificates;
-    public class TrustAllCertsPolicy : ICertificatePolicy {
-        public bool CheckValidationResult(
-            ServicePoint srvPoint, X509Certificate certificate,
-            WebRequest request, int certificateProblem) {
-            return true;
-        }
-    }
+
+if ($psVersion -ne 'Core') {
+    try {
+  add-type @"
+     using System.Net;
+     using System.Security.Cryptography.X509Certificates;
+     public class TrustAllCertsPolicy : ICertificatePolicy {
+     public bool CheckValidationResult(
+        ServicePoint srvPoint, X509Certificate certificate,
+        WebRequest request, int certificateProblem) {
+        return true;
+     }
+  }
 "@
-[System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+    } catch {
+        
+    }
+ [System.Net.ServicePointManager]::CertificatePolicy = New-Object TrustAllCertsPolicy
+}
 
 	try
 	{
         Write-Host "Requesting Tracking ID: " -NoNewline
 
-		#Calls the delivery request API and fetches the tracking number
-		$response = Invoke-WebRequest -Uri ($baseUrl + $deliveryRequestEndPoint) -Method POST -Body $jsonToPost -Headers $header 
+        #Calls the delivery request API and fetches the tracking number
+        if ($psVersion -eq 'Core') {
+		    $response = Invoke-WebRequest -Uri ($baseUrl + $deliveryRequestEndPoint) -Method POST -Body $jsonToPost -Headers $header -SkipCertificateCheck
+        } else {
+            $response = Invoke-WebRequest -Uri ($baseUrl + $deliveryRequestEndPoint) -Method POST -Body $jsonToPost -Headers $header
+        }
 
 		#Response with StatusCode = 202 is only treated as a Valid request, rest will be treated as Invalid
 		if($response.StatusCode -eq "202")
@@ -90,7 +105,13 @@ add-type @"
 				try
 				{
 					#Calls the status API continously
-					[int]$responseTime = (Measure-Command -Expression {$statusResponse = Invoke-WebRequest -Uri $statusUrl -Method GET}).Milliseconds
+                    [int]$responseTime = 0;
+                    
+                    if ($psVersion -eq 'Core') {
+                        $responseTime = (Measure-Command -Expression {Invoke-WebRequest -Uri $statusUrl -Method GET -SkipCertificateCheck}).Milliseconds 
+                    } else {
+                        $responseTime = (Measure-Command -Expression {Invoke-WebRequest -Uri $statusUrl -Method GET }).Milliseconds
+                    }
 				}
 				catch
 				{
@@ -112,7 +133,7 @@ add-type @"
                 }
 
                 Write-Host "  $responseTime" -ForegroundColor $fgColor -BackgroundColor $bgColor -NoNewline 
-                for ($i=0; $i -lt $responseTime / 5; $i++) { Write-Host " " -ForegroundColor $fgColor -BackgroundColor $bgColor -NoNewline }
+                for ($i=0; $i -lt $responseTime / 10; $i++) { Write-Host "_" -ForegroundColor $bgColor -BackgroundColor $bgColor -NoNewline }
                 Write-Host
 
 				Start-Sleep -Seconds $delayForRequests

@@ -1,0 +1,3 @@
+FROM mcr.microsoft.com/dotnet/core/sdk:3.0
+COPY Delivery-Load.ps1 /
+ENTRYPOINT [ "pwsh", "Delivery-Load.ps1" ] 

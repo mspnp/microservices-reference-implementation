@@ -52,7 +52,6 @@ export const DroneDeliveryTracker = () => {
         }
     }
 
-
     const handleInput = (event) => {
         const trackingid = event.target.value;
         if (!trackingid) {
@@ -81,7 +80,6 @@ export const DroneDeliveryTracker = () => {
             }
         ]
 
-
         setCurrentLocation([delivery.dropoff.latitude, delivery.dropoff.longitude])
         return locationPoints;
     };
@@ -96,14 +94,16 @@ export const DroneDeliveryTracker = () => {
                 <button type="primary" className="main-button" onClick={onTrack}>Track</button>
                 {showWarning && <span style={{ paddingLeft: 10, color: 'red' }}>{warning}</span>}
             </div>
-            <div style={{ height: "600px", width: "1000px" }}>
-                {bingMapKey && <ReactBingmaps
+            <div style={{ height: "700px", width: "1100px" }}>
+                {bingMapKey &&
+                 <ReactBingmaps
                     disableStreetside={true}
-                    zoom={12}
+                    zoom={14}
                     navigationBarMode={"compact"}
                     bingmapKey={bingMapKey}
-                    center={currentLocation}
                     pushPins={droneLocationPoints}
+                    id="mainMap" 
+                    center={currentLocation}
                 >
                 </ReactBingmaps>}
             </div>

@@ -86,14 +86,17 @@ spec:
             cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
             memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}
         env:
-        - name: DOCDB_DATABASEID
-          value: {{ .Values.cosmosdb.id }}
-        - name: DOCDB_COLLECTIONID
-          value: {{ .Values.cosmosdb.collectionid }}
-        - name: KEY_VAULT_URI
-          value: {{ .Values.keyvault.uri }}
+        - name: BingMapKey
+          value: {{ .Values.bingmap.key }}
+        - name: ApiUrl
+          value: {{ .Values.api.url }}
         - name: LOGGING__ApplicationInsights__LOGLEVEL__DEFAULT
           value: {{ default "Error" .Values.telemetry.level | quote }}
+        - name: APPINSIGHTS_INSTRUMENTATIONKEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-secrets
+              key: appinsights-ikey
         - name: no_proxy
           value: 169.254.169.254
       ports:

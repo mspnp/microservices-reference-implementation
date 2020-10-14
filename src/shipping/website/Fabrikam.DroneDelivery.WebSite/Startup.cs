@@ -1,6 +1,7 @@
 using Fabrikam.DroneDelivery.ApiClient;
 using Fabrikam.DroneDelivery.WebSite.Accessors;
 using Fabrikam.DroneDelivery.WebSite.Common;
+using Fabrikam.DroneDelivery.WebSite.Handlers;
 using Fabrikam.DroneDelivery.WebSite.Interfaces;
 using Fabrikam.DroneDelivery.WebSite.Manager;
 using Microsoft.AspNetCore.Builder;
@@ -24,15 +25,9 @@ namespace Fabrikam.DroneDelivery.WebSite
     {
         private const string HealCheckName = "ReadinessLiveness";
 
-        public Startup(IWebHostEnvironment env)
+        public Startup(IConfiguration configuration)
         {
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(env.ContentRootPath)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
-                .AddEnvironmentVariables();
-
-            Configuration = builder.Build();
+            Configuration = configuration;
         }
 
         public IConfiguration Configuration { get; }
@@ -59,12 +54,14 @@ namespace Fabrikam.DroneDelivery.WebSite
                 configuration.RootPath = "ClientApp/build";
             });
 
+            services.AddTransient<IgnoreSSLValidateDelegatingHandler>();
+
             services.AddSingleton<IConfiguration>(Configuration);
 
             services.AddHttpClient("delivery", c =>
             {
-                c.BaseAddress = new Uri(Configuration["ApiUrl"]);
-            });
+                c.BaseAddress = new Uri($"{Environment.GetEnvironmentVariable("ApiUrl") ?? Configuration["ApiUrl"]}");
+            }).AddHttpMessageHandler<IgnoreSSLValidateDelegatingHandler>();
 
             services.AddScoped<ITrackingAccessor, TrackingAccessor>();
             services.AddScoped<IDroneManager, DroneManager>();
@@ -83,7 +80,6 @@ namespace Fabrikam.DroneDelivery.WebSite
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
-
 
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
