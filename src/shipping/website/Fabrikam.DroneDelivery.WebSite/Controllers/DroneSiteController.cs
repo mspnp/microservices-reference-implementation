@@ -17,12 +17,12 @@ namespace Fabrikam.DroneDelivery.WebSite.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class DroneController : ControllerBase
+    public class DroneSiteController : ControllerBase
     {
         private IDroneManager _droneManager;
         private IConfiguration _configuration;
 
-        public DroneController(IConfiguration configuration, IDroneManager droneManager)
+        public DroneSiteController(IConfiguration configuration, IDroneManager droneManager)
         {
             this._droneManager = droneManager;
             this._configuration = configuration;
