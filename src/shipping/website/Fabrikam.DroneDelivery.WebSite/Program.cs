@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -35,6 +37,7 @@ namespace Fabrikam.DroneDelivery.WebSite
                     {
                         loggingBuilder.AddApplicationInsights();
                     })
+                    .UseContentRoot(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location))
                     .UseUrls("http://*:8080");
                 });
        }

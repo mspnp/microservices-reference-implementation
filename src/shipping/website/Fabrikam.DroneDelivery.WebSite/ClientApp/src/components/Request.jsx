@@ -47,7 +47,7 @@ export const Request = () => {
       setTrackingKey(deliveryResponse.deliveryId);
     } catch (error) {
       setShowErrorMessage(true);
-      setErrorMessage('Request can not be processed !!');
+      setErrorMessage(error);
     }
   }
 
