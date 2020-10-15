@@ -18,6 +18,7 @@ using Fabrikam.DroneDelivery.DeliveryService.Middlewares.Builder;
 using Serilog;
 using Serilog.Formatting.Compact;
 using System.Text.Encodings.Web;
+using Fabrikam.DroneDelivery.DeliveryService.Hubs;
 
 namespace Fabrikam.DroneDelivery.DeliveryService
 {
@@ -73,6 +74,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             services.AddSingleton<INotifyMeRequestRepository, NotifyMeRequestRepository>();
             services.AddSingleton<INotificationService, NoOpNotificationService>();
             services.AddSingleton<IDeliveryTrackingEventRepository, DeliveryTrackingRepository>();
+            services.AddSignalR();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -96,6 +98,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             {
                 endpoints.MapHealthChecks("/healthz");
                 endpoints.MapControllers();
+                endpoints.MapHub<DroneHub>("/droneHub");
             });
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.

@@ -13,6 +13,8 @@ using Microsoft.Extensions.Logging;
 using Fabrikam.DroneDelivery.Common;
 using Fabrikam.DroneDelivery.DeliveryService.Models;
 using Fabrikam.DroneDelivery.DeliveryService.Services;
+using Microsoft.AspNet.SignalR;
+using Fabrikam.DroneDelivery.DeliveryService.Hubs;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
 {
@@ -25,18 +27,21 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
         private readonly INotificationService notificationService;
         private readonly IDeliveryTrackingEventRepository deliveryTrackingRepository;
         private readonly ILogger logger;
+        private readonly IHubContext<DroneHub> HubContext;
 
         public DroneController(IDeliveryRepository deliveryRepository,
                                INotifyMeRequestRepository notifyMeRequestRepository,
                                INotificationService notificationService,
                                IDeliveryTrackingEventRepository deliveryTrackingRepository,
-                               ILoggerFactory loggerFactory)
+                               ILoggerFactory loggerFactory,
+                               IHubContext<DroneHub> hubContext)
         {
             this.deliveryRepository = deliveryRepository;
             this.notifyMeRequestRepository = notifyMeRequestRepository;
             this.notificationService = notificationService;
             this.deliveryTrackingRepository = deliveryTrackingRepository;
             this.logger = loggerFactory.CreateLogger<DeliveriesController>();
+            this.HubContext = hubContext;
         }
 
         // GET api/drone/5/location
@@ -57,16 +62,16 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
             if (latestDeliveryEvent == null) return NotFound();
 
             var status = new DeliveryStatus(latestDeliveryEvent?.Stage ?? DeliveryStage.Created,
-                                            latestDeliveryEvent?.Location ?? new Location(0, 0, 0), 
-                                            DateTime.Now.AddMinutes(10).ToString(), 
-                                            DateTime.Now.AddHours(1).ToString());            
+                                            latestDeliveryEvent?.Location ?? new Location(0, 0, 0),
+                                            DateTime.Now.AddMinutes(10).ToString(),
+                                            DateTime.Now.AddHours(1).ToString());
             return Ok(status);
         }
 
         // PUT api/drone/5
         [HttpPut("{id}")]
         [ProducesResponseType(typeof(void), StatusCodes.Status204NoContent)]
-        public async Task<IActionResult> Put([FromBody]DeliveryTracking deliveryTracking, string id)
+        public async Task<IActionResult> Put([FromBody] DeliveryTracking deliveryTracking, string id)
         {
             logger.LogInformation("In Put action with delivery {Id}: {@deliveryTracking}", id, deliveryTracking.ToLogInfo());
 
@@ -77,13 +82,16 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
                 return NotFound();
             }
 
-            await this.deliveryTrackingRepository.AddAsync(new DeliveryTrackingEvent() { 
+            await this.deliveryTrackingRepository.AddAsync(new DeliveryTrackingEvent()
+            {
                 DeliveryId = deliveryTracking.DeliveryId,
                 Location = deliveryTracking.Location,
                 Stage = deliveryTracking.Stage,
                 Created = DateTimeOffset.UtcNow
             });
 
+            //Invokes hub to sync data
+            await this.HubContext.Clients.All.GetDroneLocation(id);
             return Ok();
         }
 
