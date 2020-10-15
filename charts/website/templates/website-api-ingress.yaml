@@ -13,10 +13,10 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: {{ $relname }}-ingress
+  name: {{ $relname }}-api-ingress
   annotations:
     kubernetes.io/ingress.class: {{ required "ingress.class is required" .Values.ingress.class | quote }}
-    nginx.ingress.kubernetes.io/rewrite-target: /api/deliveries$1
+    nginx.ingress.kubernetes.io/rewrite-target: /api/DroneSite$1
 spec:
   {{- if .Values.ingress.tls }}
   tls:
@@ -34,15 +34,15 @@ spec:
     http:
       paths:
       {{- if .path }}
-      - path: {{ printf "%s/%s/" .path $appversion }}api/deliveries(.*)
+      - path: {{ printf "%s/%s/" .path $appversion }}api/DroneSite(.*)
       {{- else }}
-      - path: {{ $defaultversionedpath }}api/deliveries(.*)      
+      - path: {{ $defaultversionedpath }}api/DroneSite(.*)
       {{- end }}
         backend:
           serviceName: "{{ .serviceName }}-{{ $svcversion }}"
           servicePort: http
       {{- if (eq $appversion "v0.1.0") }}
-      - path: {{ default "/" .path }}api/deliveries(.*)
+      - path: {{ default "/" .path }}api/DroneSite(.*)
         backend:
           serviceName: "{{ .serviceName }}"
           servicePort: http
