@@ -45,6 +45,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
         public async Task<DeliveryTrackingEvent> GetLatestDeliveryEvent(string deliveryId)
         {
             var trackingIds = await RedisCache<DeliveryTrackingIds>.GetItemAsync(deliveryId).ConfigureAwait(continueOnCapturedContext: false); ;
+            if (trackingIds == null) return null;
 
             var trackingEvents = new List<DeliveryTrackingEvent>();
             foreach (var deliveryKey in trackingIds.DeliveryKeys)

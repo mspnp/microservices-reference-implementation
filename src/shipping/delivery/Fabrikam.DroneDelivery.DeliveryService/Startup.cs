@@ -99,12 +99,16 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             });
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
-            app.UseSwagger();
+            app.UseSwagger(c => 
+            { 
+                c.RouteTemplate = "deliveries/swagger/{documentname}/swagger.json";
+            });
 
             // Enable middleware to serve swagger-ui (HTML, JS, CSS etc.), specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Fabrikam DroneDelivery DeliveryService API V1");
+                c.SwaggerEndpoint("/deliveries/swagger/v1/swagger.json", "Fabrikam DroneDelivery DeliveryService API V1");
+                c.RoutePrefix = "deliveries/swagger";
             });
 
             //TODO look into creating a factory of DocDBRepos/RedisCache/EventHubMessenger

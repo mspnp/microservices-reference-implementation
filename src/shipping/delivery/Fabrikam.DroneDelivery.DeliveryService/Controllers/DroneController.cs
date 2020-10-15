@@ -54,6 +54,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
             }
 
             var latestDeliveryEvent = await this.deliveryTrackingRepository.GetLatestDeliveryEvent(id);
+            if (latestDeliveryEvent == null) return NotFound();
 
             var status = new DeliveryStatus(latestDeliveryEvent?.Stage ?? DeliveryStage.Created,
                                             latestDeliveryEvent?.Location ?? new Location(0, 0, 0), 

@@ -13,11 +13,10 @@
 apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
-  name: {{ $relname }}-ingress
+  name: {{ $relname }}-drone-ingress
   annotations:
     kubernetes.io/ingress.class: {{ required "ingress.class is required" .Values.ingress.class | quote }}
-    nginx.ingress.kubernetes.io/rewrite-target: /api/deliveries$1
-    nginx.ingress.kubernetes.io/rewrite-target: /deliveries/swagger$1
+    nginx.ingress.kubernetes.io/rewrite-target: /api/drone$1
 spec:
   {{- if .Values.ingress.tls }}
   tls:
@@ -35,27 +34,15 @@ spec:
     http:
       paths:
       {{- if .path }}
-      - path: {{ printf "%s/%s/" .path $appversion }}api/deliveries(.*)
+      - path: {{ printf "%s/%s/" .path $appversion }}api/drone(.*)
       {{- else }}
-      - path: {{ $defaultversionedpath }}api/deliveries(.*)      
-      {{- end }}
-        backend:
-          serviceName: "{{ .serviceName }}-{{ $svcversion }}"
-          servicePort: http
-      {{- if .path }}
-      - path: {{ printf "%s/%s/" .path $appversion }}deliveries/swagger(.*)
-      {{- else }}
-      - path: {{ $defaultversionedpath }}deliveries/swagger(.*)      
+      - path: {{ $defaultversionedpath }}api/drone(.*)
       {{- end }}
         backend:
           serviceName: "{{ .serviceName }}-{{ $svcversion }}"
           servicePort: http
       {{- if (eq $appversion "v0.1.0") }}
-      - path: {{ default "/" .path }}api/deliveries(.*)
-        backend:
-          serviceName: "{{ .serviceName }}"
-          servicePort: http
-      - path: {{ default "/" .path }}deliveries/swagger(.*)
+      - path: {{ default "/" .path }}api/drone(.*)
         backend:
           serviceName: "{{ .serviceName }}"
           servicePort: http
