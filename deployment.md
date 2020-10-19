@@ -133,7 +133,7 @@ export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $DEV_DEPLOY
 Download kubectl and create a k8s namespace
 ```bash
 #  Install kubectl
-sudo az aks install-cli
+az aks install-cli
 
 # Get the Kubernetes cluster credentials
 az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
