@@ -1,50 +1,50 @@
 variables:
-  repositoryName: package
-  chartPath: charts/package
-  dockerFileName: src/shipping/package/Dockerfile
+  repositoryName: ingestion
+  chartPath: charts/ingestion
+  dockerFileName: src/shipping/ingestion/Dockerfile
   imageName: $(repositoryName):$(Build.SourceBranchName)
   azureSubscription: AZURE_PIPELINES_SERVICE_CONN_NAME_VAR_VAL
   azureContainerRegistry: ACR_SERVER_VAR_VAL
-  azureContainerRegistryName: ACR_NAME_VAR_VAL
+  azureContainerRegistryName: ACR_NAME_VAR_VALw
 
 name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
 
 pr: # only valid for GitHub. Using Azure repo it must be configure as a Branch Policy
   paths:
     include:
-      - /src/shipping/package/
+      - /src/shipping/ingestion/
 
   branches:
     include:
       - master
-      - release/package/v* # for bug fixes
+      - release/ingestion/v* # for bug fixes
 
 trigger:
   batch: true
   branches:
     include:
       # for new release to production: release flow strategy
-      - release/package/v*
-      - refs/relelase/package/v*
+      - release/ingestion/v*
+      - refs/relelase/ingestion/v*
       - master
-      - feature/package/*
-      - topic/package/*
+      - feature/ingestion/*
+      - topic/ingestion/*
   paths:
     include:
-      - /src/shipping/package/
+      - /src/shipping/ingestion/
 
 resources:
   - repo: self
 
 jobs:
   # CI
-  - job: packagejobci
-    displayName: "Package CI"
+  - job: ingestionjobci
+    displayName: "ingestion CI"
     pool:
       vmImage: "Ubuntu 16.04"
     timeoutInMinutes: 90
     variables:
-      fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/package/v') ]
+      fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/ingestion/v') ]
       buildImage: $[ eq(variables['build.sourceBranch'], 'refs/heads/master') ]
     steps:
       - task: PowerShell@2
@@ -57,6 +57,47 @@ jobs:
             Write-Host "$(imageName)"
 
       - task: Docker@1
+        displayName: "Build testrunner image"
+        inputs:
+          azureSubscriptionEndpoint: $(azureSubscription)
+
+          azureContainerRegistry: $(azureContainerRegistry)
+
+          arguments: "--pull --target testrunner"
+
+          dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
+
+          imageName: "$(imageName)-test"
+
+      - task: Docker@1
+        displayName: "Run tests"
+        inputs:
+          azureSubscriptionEndpoint: $(azureSubscription)
+
+          azureContainerRegistry: $(azureContainerRegistry)
+
+          command: "run"
+
+          containerName: testrunner
+
+          volumes: "$(System.DefaultWorkingDirectory)/TestResults:/usr/src/app/target/surefire-reports/"
+
+          imageName: "$(imageName)-test"
+
+          runInBackground: false
+
+      - task: PublishTestResults@2
+        displayName: "Publish test results"
+        inputs:
+          testResultsFormat: "JUnit" # Options: JUnit, NUnit, VSTest, xUnit
+
+          testResultsFiles: "TestResults/TEST*.xml"
+
+          searchFolder: "$(System.DefaultWorkingDirectory)"
+
+          publishRunAttachments: true
+
+      - task: Docker@1
         condition: or(eq(variables['buildImage'],True),eq(variables['fullCI'],True))
         displayName: "Build runtime image"
         inputs:
@@ -66,7 +107,7 @@ jobs:
 
           dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
 
-          includeLatestTag: true
+          includeLatestTag: false
 
           imageName: "$(imageName)"
 
@@ -86,8 +127,12 @@ jobs:
 
       - task: HelmInstaller@0
         condition: eq(variables['fullCI'],True)
-        displayName: "Install Helm 2.12.3"
+        displayName: "Install Helm  3.0.3"
         inputs:
+          helmVersion: 3.0.3
+
+          checkLatestHelmVersion: false
+
           kubectlVersion: 1.12.4
 
           checkLatestKubectl: false
@@ -102,7 +147,11 @@ jobs:
 
           chartVersion: $(Build.SourceBranchName)
 
-          arguments: "--app-version $(Build.SourceBranchName) --dependency-update"
+          updateDependency: true
+
+          save: false
+
+          arguments: "--app-version $(Build.SourceBranchName)"
 
       - task: AzureCLI@1
         condition: eq(variables['fullCI'],True)

@@ -8,6 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
+using System;
+using System.Collections;
 
 namespace Fabrikam.DroneDelivery.DeliveryService
 {
@@ -18,6 +20,9 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             var host = CreateHostBuilder(args).Build();
             var logger = host.Services.GetRequiredService<ILogger<Program>>();
             logger.LogInformation("Fabrikam Delivery Service is starting.");
+
+            foreach (DictionaryEntry de in Environment.GetEnvironmentVariables())
+                logger.LogInformation("  {0} = {1}", de.Key, de.Value);
 
             host.Run();
         }

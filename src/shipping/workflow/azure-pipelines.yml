@@ -1,7 +1,7 @@
 variables:
-  repositoryName: package
-  chartPath: charts/package
-  dockerFileName: src/shipping/package/Dockerfile
+  repositoryName: workflow
+  chartPath: charts/workflow
+  dockerFileName: src/shipping/workflow/Dockerfile
   imageName: $(repositoryName):$(Build.SourceBranchName)
   azureSubscription: AZURE_PIPELINES_SERVICE_CONN_NAME_VAR_VAL
   azureContainerRegistry: ACR_SERVER_VAR_VAL
@@ -12,39 +12,39 @@ name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
 pr: # only valid for GitHub. Using Azure repo it must be configure as a Branch Policy
   paths:
     include:
-      - /src/shipping/package/
+      - /src/shipping/workflow/
 
   branches:
     include:
       - master
-      - release/package/v* # for bug fixes
+      - release/workflow/v* # for bug fixes
 
 trigger:
   batch: true
   branches:
     include:
       # for new release to production: release flow strategy
-      - release/package/v*
-      - refs/relelase/package/v*
+      - release/workflow/v*
+      - refs/relelase/workflow/v*
       - master
-      - feature/package/*
-      - topic/package/*
+      - feature/workflow/*
+      - topic/workflow/*
   paths:
     include:
-      - /src/shipping/package/
+      - /src/shipping/workflow/
 
 resources:
   - repo: self
 
 jobs:
   # CI
-  - job: packagejobci
-    displayName: "Package CI"
+  - job: workflowjobci
+    displayName: "Workflow CI"
     pool:
       vmImage: "Ubuntu 16.04"
     timeoutInMinutes: 90
     variables:
-      fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/package/v') ]
+      fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/workflow/v') ]
       buildImage: $[ eq(variables['build.sourceBranch'], 'refs/heads/master') ]
     steps:
       - task: PowerShell@2
@@ -57,6 +57,47 @@ jobs:
             Write-Host "$(imageName)"
 
       - task: Docker@1
+        displayName: "Build testrunner image"
+        inputs:
+          azureSubscriptionEndpoint: $(azureSubscription)
+
+          azureContainerRegistry: $(azureContainerRegistry)
+
+          arguments: "--pull --target testrunner"
+
+          dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
+
+          imageName: "$(imageName)-test"
+
+      - task: Docker@1
+        displayName: "Run tests"
+        inputs:
+          azureSubscriptionEndpoint: $(azureSubscription)
+
+          azureContainerRegistry: $(azureContainerRegistry)
+
+          command: "run"
+
+          containerName: testrunner
+
+          volumes: "$(System.DefaultWorkingDirectory)/TestResults:/src/tests/TestResults"
+
+          imageName: "$(imageName)-test"
+
+          runInBackground: false
+
+      - task: PublishTestResults@2
+        displayName: "Publish test results"
+        inputs:
+          testResultsFormat: "VSTest" # Options: JUnit, NUnit, VSTest, xUnit
+
+          testResultsFiles: "TestResults/*.trx"
+
+          searchFolder: "$(System.DefaultWorkingDirectory)"
+
+          publishRunAttachments: true
+
+      - task: Docker@1
         condition: or(eq(variables['buildImage'],True),eq(variables['fullCI'],True))
         displayName: "Build runtime image"
         inputs:
@@ -66,7 +107,7 @@ jobs:
 
           dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
 
-          includeLatestTag: true
+          includeLatestTag: false
 
           imageName: "$(imageName)"
 

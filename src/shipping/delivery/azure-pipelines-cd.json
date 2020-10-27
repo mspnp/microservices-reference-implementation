@@ -16,8 +16,7 @@
         }
     },
     "variableGroups": [],
-    "environments": [
-        {
+    "environments": [{
             "id": 2,
             "name": "dev",
             "rank": 1,
@@ -40,19 +39,19 @@
                 "DELIVERY_KEYVAULT_URI": {
                     "value": "DEV_DELIVERY_KEYVAULT_URI_VAR_VAL"
                 },
-               "EXTERNAL_INGEST_FQDN": {
-                   "value": "DEV_EXTERNAL_INGEST_FQDN_VAR_VAL"
-               },
-               "INGRESS_TLS_SECRET_CERT": {
-                   "value": "DEV_INGRESS_TLS_SECRET_CERT_VAR_VAL"
-               },
-               "INGRESS_TLS_SECRET_KEY": {
-                   "value": "DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL",
-                   "isSecret": true
-               },
-               "INGRESS_TLS_SECRET_NAME": {
-                   "value": "DEV_INGRESS_TLS_SECRET_NAME_VAR_VAL"
-               },
+                "EXTERNAL_INGEST_FQDN": {
+                    "value": "DEV_EXTERNAL_INGEST_FQDN_VAR_VAL"
+                },
+                "INGRESS_TLS_SECRET_CERT": {
+                    "value": "DEV_INGRESS_TLS_SECRET_CERT_VAR_VAL"
+                },
+                "INGRESS_TLS_SECRET_KEY": {
+                    "value": "DEV_INGRESS_TLS_SECRET_KEY_VAR_VAL",
+                    "isSecret": true
+                },
+                "INGRESS_TLS_SECRET_NAME": {
+                    "value": "DEV_INGRESS_TLS_SECRET_NAME_VAR_VAL"
+                },
                 "ACR_SERVER": {
                     "value": "DEV_ACR_SERVER_VAR_VAL"
                 },
@@ -62,14 +61,12 @@
             },
             "variableGroups": [],
             "preDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 4
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 4
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -83,14 +80,12 @@
                 "id": 11
             },
             "postDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 12
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 12
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -100,177 +95,172 @@
                     "executionOrder": 2
                 }
             },
-            "deployPhases": [
-                {
-                    "deploymentInput": {
-                        "parallelExecution": {
-                            "parallelExecutionType": 0
-                        },
-                        "skipArtifactsDownload": false,
-                        "artifactsDownloadInput": {
-                            "downloadInputs": [
-                                {
-                                    "alias": "ci-delivery",
-                                    "artifactType": "Build",
-                                    "artifactDownloadMode": "All",
-                                    "artifactItems": []
-                                }
-                            ]
-                        },
-                        "queueId": AZURE_DEVOPS_QUEUE_ID_VAR_VAL,
-                        "demands": [],
-                        "enableAccessToken": false,
-                        "timeoutInMinutes": 0,
-                        "jobCancelTimeoutInMinutes": 1,
-                        "condition": "succeeded()",
-                        "overrideInputs": {}
+            "deployPhases": [{
+                "deploymentInput": {
+                    "parallelExecution": {
+                        "parallelExecutionType": 0
                     },
-                    "rank": 1,
-                    "phaseType": 1,
-                    "name": "Agent job",
-                    "refName": null,
-                    "workflowTasks": [
-                        {
-                            "environment": {},
-                            "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
-                            "version": "0.*",
-                            "name": "install helm 2.12.3",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "helmVersion": "2.12.3",
-                                "checkLatestHelmVersion": "false",
-                                "installKubeCtl": "true",
-                                "kubectlVersion": "1.12.4",
-                                "checkLatestKubeCtl": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm init",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "",
-                                "command": "init",
-                                "chartType": "Name",
-                                "chartName": "",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "",
-                                "overrideValues": "",
-                                "valueFile": "",
-                                "destination": "$(Build.ArtifactStagingDirectory)",
-                                "canaryimage": "false",
-                                "upgradetiller": "true",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "false",
-                                "waitForExecution": "true",
-                                "arguments": "--service-account tiller",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
-                            "version": "1.*",
-                            "name": "add helm repo",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
-                                "scriptLocation": "inlineScript",
-                                "scriptPath": "",
-                                "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
-                                "args": "",
-                                "addSpnToEnvironment": "false",
-                                "useGlobalConfig": "false",
-                                "cwd": "",
-                                "failOnStandardError": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm upgrade delivery dev",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "backend-dev",
-                                "command": "upgrade",
-                                "chartType": "Name",
-                                "chartName": "$(ACR_NAME)/$(REPO_NAME)",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-dev",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",tags.dev=true",
-                                "valueFile": "",
-                                "destination": "",
-                                "canaryimage": "false",
-                                "upgradetiller": "false",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "true",
-                                "waitForExecution": "false",
-                                "arguments": "--version $(Build.SourceBranchName)",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
+                    "skipArtifactsDownload": false,
+                    "artifactsDownloadInput": {
+                        "downloadInputs": [{
+                            "alias": "ci-delivery",
+                            "artifactType": "Build",
+                            "artifactDownloadMode": "All",
+                            "artifactItems": []
+                        }]
+                    },
+                    "queueId": AZURE_DEVOPS_QUEUE_ID_VAR_VAL,
+                    "demands": [],
+                    "enableAccessToken": false,
+                    "timeoutInMinutes": 0,
+                    "jobCancelTimeoutInMinutes": 1,
+                    "condition": "succeeded()",
+                    "overrideInputs": {}
+                },
+                "rank": 1,
+                "phaseType": 1,
+                "name": "Agent job",
+                "refName": null,
+                "workflowTasks": [{
+                        "environment": {},
+                        "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
+                        "version": "0.*",
+                        "name": "install helm 2.12.3",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "helmVersion": "2.12.3",
+                            "checkLatestHelmVersion": "false",
+                            "installKubeCtl": "true",
+                            "kubectlVersion": "1.12.4",
+                            "checkLatestKubeCtl": "false"
                         }
-                    ]
-                }
-            ],
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm init",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "",
+                            "command": "init",
+                            "chartType": "Name",
+                            "chartName": "",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "",
+                            "overrideValues": "",
+                            "valueFile": "",
+                            "destination": "$(Build.ArtifactStagingDirectory)",
+                            "canaryimage": "false",
+                            "upgradetiller": "true",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "false",
+                            "waitForExecution": "true",
+                            "arguments": "--service-account tiller",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
+                        "version": "1.*",
+                        "name": "add helm repo",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
+                            "scriptLocation": "inlineScript",
+                            "scriptPath": "",
+                            "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
+                            "args": "",
+                            "addSpnToEnvironment": "false",
+                            "useGlobalConfig": "false",
+                            "cwd": "",
+                            "failOnStandardError": "false"
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm upgrade delivery dev",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "backend-dev",
+                            "command": "upgrade",
+                            "chartType": "Name",
+                            "chartName": "$(ACR_NAME)/$(REPO_NAME)",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-dev",
+                            "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",tags.dev=true",
+                            "valueFile": "",
+                            "destination": "",
+                            "canaryimage": "false",
+                            "upgradetiller": "false",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "true",
+                            "waitForExecution": "false",
+                            "arguments": "--version $(Build.SourceBranchName)",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    }
+                ]
+            }],
             "environmentOptions": {
                 "emailNotificationType": "OnlyOnFailure",
                 "emailRecipients": "release.environment.owner;release.creator",
@@ -283,8 +273,7 @@
                 "pullRequestDeploymentEnabled": false
             },
             "demands": [],
-            "conditions": [
-                {
+            "conditions": [{
                     "name": "ReleaseStarted",
                     "conditionType": 1,
                     "value": ""
@@ -307,8 +296,7 @@
                 "retainBuild": true
             },
             "processParameters": {
-                "inputs": [
-                    {
+                "inputs": [{
                         "aliases": [],
                         "options": {
                             "Azure Resource Manager": "Azure Resource Manager",
@@ -381,8 +369,7 @@
                         "groupName": ""
                     }
                 ],
-                "dataSourceBindings": [
-                    {
+                "dataSourceBindings": [{
                         "parameters": {},
                         "endpointId": "$(azureSubscriptionEndpoint)",
                         "target": "kubernetesCluster",
@@ -437,19 +424,19 @@
                 "DELIVERY_KEYVAULT_URI": {
                     "value": "QA_DELIVERY_KEYVAULT_URI_VAR_VAL"
                 },
-               "EXTERNAL_INGEST_FQDN": {
-                   "value": "QA_EXTERNAL_INGEST_FQDN_VAR_VAL"
-               },
-               "INGRESS_TLS_SECRET_CERT": {
-                   "value": "QA_INGRESS_TLS_SECRET_CERT_VAR_VAL"
-               },
-               "INGRESS_TLS_SECRET_KEY": {
-                   "value": "QA_INGRESS_TLS_SECRET_KEY_VAR_VAL",
-                   "isSecret": true
-               },
-               "INGRESS_TLS_SECRET_NAME": {
-                   "value": "QA_INGRESS_TLS_SECRET_NAME_VAR_VAL"
-               },
+                "EXTERNAL_INGEST_FQDN": {
+                    "value": "QA_EXTERNAL_INGEST_FQDN_VAR_VAL"
+                },
+                "INGRESS_TLS_SECRET_CERT": {
+                    "value": "QA_INGRESS_TLS_SECRET_CERT_VAR_VAL"
+                },
+                "INGRESS_TLS_SECRET_KEY": {
+                    "value": "QA_INGRESS_TLS_SECRET_KEY_VAR_VAL",
+                    "isSecret": true
+                },
+                "INGRESS_TLS_SECRET_NAME": {
+                    "value": "QA_INGRESS_TLS_SECRET_NAME_VAR_VAL"
+                },
                 "ACR_SERVER": {
                     "value": "QA_ACR_SERVER_VAR_VAL"
                 },
@@ -459,14 +446,12 @@
             },
             "variableGroups": [],
             "preDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 5
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 5
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -480,14 +465,12 @@
                 "id": 10
             },
             "postDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 13
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 13
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -497,177 +480,172 @@
                     "executionOrder": 2
                 }
             },
-            "deployPhases": [
-                {
-                    "deploymentInput": {
-                        "parallelExecution": {
-                            "parallelExecutionType": 0
-                        },
-                        "skipArtifactsDownload": false,
-                        "artifactsDownloadInput": {
-                            "downloadInputs": [
-                                {
-                                    "alias": "ci-delivery",
-                                    "artifactType": "Build",
-                                    "artifactDownloadMode": "All",
-                                    "artifactItems": []
-                                }
-                            ]
-                        },
-                        "queueId": AZURE_DEVOPS_QUEUE_ID_VAR_VAL,
-                        "demands": [],
-                        "enableAccessToken": false,
-                        "timeoutInMinutes": 0,
-                        "jobCancelTimeoutInMinutes": 1,
-                        "condition": "succeeded()",
-                        "overrideInputs": {}
+            "deployPhases": [{
+                "deploymentInput": {
+                    "parallelExecution": {
+                        "parallelExecutionType": 0
                     },
-                    "rank": 1,
-                    "phaseType": 1,
-                    "name": "Agent job",
-                    "refName": null,
-                    "workflowTasks": [
-                        {
-                            "environment": {},
-                            "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
-                            "version": "0.*",
-                            "name": "install helm 2.12.3",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "helmVersion": "2.12.3",
-                                "checkLatestHelmVersion": "false",
-                                "installKubeCtl": "true",
-                                "kubectlVersion": "1.12.4",
-                                "checkLatestKubeCtl": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm init",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "",
-                                "command": "init",
-                                "chartType": "Name",
-                                "chartName": "",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "",
-                                "overrideValues": "",
-                                "valueFile": "",
-                                "destination": "$(Build.ArtifactStagingDirectory)",
-                                "canaryimage": "false",
-                                "upgradetiller": "true",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "false",
-                                "waitForExecution": "true",
-                                "arguments": "--service-account tiller",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
-                            "version": "1.*",
-                            "name": "add helm repo",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
-                                "scriptLocation": "inlineScript",
-                                "scriptPath": "",
-                                "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
-                                "args": "",
-                                "addSpnToEnvironment": "false",
-                                "useGlobalConfig": "false",
-                                "cwd": "",
-                                "failOnStandardError": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm upgrade delivery qa",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "backend-qa",
-                                "command": "upgrade",
-                                "chartType": "Name",
-                                "chartName": "$(ACR_NAME)/$(REPO_NAME)",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-qa",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",tags.qa=true",
-                                "valueFile": "",
-                                "destination": "",
-                                "canaryimage": "false",
-                                "upgradetiller": "false",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "true",
-                                "waitForExecution": "false",
-                                "arguments": "--version $(Build.SourceBranchName)",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
+                    "skipArtifactsDownload": false,
+                    "artifactsDownloadInput": {
+                        "downloadInputs": [{
+                            "alias": "ci-delivery",
+                            "artifactType": "Build",
+                            "artifactDownloadMode": "All",
+                            "artifactItems": []
+                        }]
+                    },
+                    "queueId": AZURE_DEVOPS_QUEUE_ID_VAR_VAL,
+                    "demands": [],
+                    "enableAccessToken": false,
+                    "timeoutInMinutes": 0,
+                    "jobCancelTimeoutInMinutes": 1,
+                    "condition": "succeeded()",
+                    "overrideInputs": {}
+                },
+                "rank": 1,
+                "phaseType": 1,
+                "name": "Agent job",
+                "refName": null,
+                "workflowTasks": [{
+                        "environment": {},
+                        "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
+                        "version": "0.*",
+                        "name": "install helm 2.12.3",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "helmVersion": "2.12.3",
+                            "checkLatestHelmVersion": "false",
+                            "installKubeCtl": "true",
+                            "kubectlVersion": "1.12.4",
+                            "checkLatestKubeCtl": "false"
                         }
-                    ]
-                }
-            ],
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm init",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "",
+                            "command": "init",
+                            "chartType": "Name",
+                            "chartName": "",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "",
+                            "overrideValues": "",
+                            "valueFile": "",
+                            "destination": "$(Build.ArtifactStagingDirectory)",
+                            "canaryimage": "false",
+                            "upgradetiller": "true",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "false",
+                            "waitForExecution": "true",
+                            "arguments": "--service-account tiller",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
+                        "version": "1.*",
+                        "name": "add helm repo",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
+                            "scriptLocation": "inlineScript",
+                            "scriptPath": "",
+                            "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
+                            "args": "",
+                            "addSpnToEnvironment": "false",
+                            "useGlobalConfig": "false",
+                            "cwd": "",
+                            "failOnStandardError": "false"
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm upgrade delivery qa",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "backend-qa",
+                            "command": "upgrade",
+                            "chartType": "Name",
+                            "chartName": "$(ACR_NAME)/$(REPO_NAME)",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-qa",
+                            "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",tags.qa=true",
+                            "valueFile": "",
+                            "destination": "",
+                            "canaryimage": "false",
+                            "upgradetiller": "false",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "true",
+                            "waitForExecution": "false",
+                            "arguments": "--version $(Build.SourceBranchName)",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    }
+                ]
+            }],
             "environmentOptions": {
                 "emailNotificationType": "OnlyOnFailure",
                 "emailRecipients": "release.environment.owner;release.creator",
@@ -680,13 +658,11 @@
                 "pullRequestDeploymentEnabled": false
             },
             "demands": [],
-            "conditions": [
-                {
-                    "name": "dev",
-                    "conditionType": 2,
-                    "value": "4"
-                }
-            ],
+            "conditions": [{
+                "name": "dev",
+                "conditionType": 2,
+                "value": "4"
+            }],
             "executionPolicy": {
                 "concurrencyCount": 1,
                 "queueDepthCount": 0
@@ -699,8 +675,7 @@
                 "retainBuild": true
             },
             "processParameters": {
-                "inputs": [
-                    {
+                "inputs": [{
                         "aliases": [],
                         "options": {
                             "Azure Resource Manager": "Azure Resource Manager",
@@ -773,8 +748,7 @@
                         "groupName": ""
                     }
                 ],
-                "dataSourceBindings": [
-                    {
+                "dataSourceBindings": [{
                         "parameters": {},
                         "endpointId": "$(azureSubscriptionEndpoint)",
                         "target": "kubernetesCluster",
@@ -829,19 +803,19 @@
                 "DELIVERY_KEYVAULT_URI": {
                     "value": "STAGING_DELIVERY_KEYVAULT_URI_VAR_VAL"
                 },
-               "EXTERNAL_INGEST_FQDN": {
-                   "value": "STAGING_EXTERNAL_INGEST_FQDN_VAR_VAL"
-               },
-               "INGRESS_TLS_SECRET_CERT": {
-                   "value": "STAGING_INGRESS_TLS_SECRET_CERT_VAR_VAL"
-               },
-               "INGRESS_TLS_SECRET_KEY": {
-                   "value": "STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL",
-                   "isSecret": true
-               },
-               "INGRESS_TLS_SECRET_NAME": {
-                   "value": "STAGING_INGRESS_TLS_SECRET_NAME_VAR_VAL"
-               },
+                "EXTERNAL_INGEST_FQDN": {
+                    "value": "STAGING_EXTERNAL_INGEST_FQDN_VAR_VAL"
+                },
+                "INGRESS_TLS_SECRET_CERT": {
+                    "value": "STAGING_INGRESS_TLS_SECRET_CERT_VAR_VAL"
+                },
+                "INGRESS_TLS_SECRET_KEY": {
+                    "value": "STAGING_INGRESS_TLS_SECRET_KEY_VAR_VAL",
+                    "isSecret": true
+                },
+                "INGRESS_TLS_SECRET_NAME": {
+                    "value": "STAGING_INGRESS_TLS_SECRET_NAME_VAR_VAL"
+                },
                 "ACR_SERVER": {
                     "value": "STAGING_ACR_SERVER_VAR_VAL"
                 },
@@ -851,14 +825,12 @@
             },
             "variableGroups": [],
             "preDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 7
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 7
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -872,14 +844,12 @@
                 "id": 8
             },
             "postDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 15
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 15
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -889,177 +859,172 @@
                     "executionOrder": 2
                 }
             },
-            "deployPhases": [
-                {
-                    "deploymentInput": {
-                        "parallelExecution": {
-                            "parallelExecutionType": 0
-                        },
-                        "skipArtifactsDownload": false,
-                        "artifactsDownloadInput": {
-                            "downloadInputs": [
-                                {
-                                    "alias": "ci-delivery",
-                                    "artifactType": "Build",
-                                    "artifactDownloadMode": "All",
-                                    "artifactItems": []
-                                }
-                            ]
-                        },
-                        "queueId": AZURE_DEVOPS_QUEUE_ID_VAR_VAL,
-                        "demands": [],
-                        "enableAccessToken": false,
-                        "timeoutInMinutes": 0,
-                        "jobCancelTimeoutInMinutes": 1,
-                        "condition": "succeeded()",
-                        "overrideInputs": {}
+            "deployPhases": [{
+                "deploymentInput": {
+                    "parallelExecution": {
+                        "parallelExecutionType": 0
                     },
-                    "rank": 1,
-                    "phaseType": 1,
-                    "name": "Agent job",
-                    "refName": null,
-                    "workflowTasks": [
-                        {
-                            "environment": {},
-                            "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
-                            "version": "0.*",
-                            "name": "install helm 2.12.3",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "helmVersion": "2.12.3",
-                                "checkLatestHelmVersion": "false",
-                                "installKubeCtl": "true",
-                                "kubectlVersion": "1.12.4",
-                                "checkLatestKubeCtl": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm init",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "",
-                                "command": "init",
-                                "chartType": "Name",
-                                "chartName": "",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "",
-                                "overrideValues": "",
-                                "valueFile": "",
-                                "destination": "$(Build.ArtifactStagingDirectory)",
-                                "canaryimage": "false",
-                                "upgradetiller": "true",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "false",
-                                "waitForExecution": "true",
-                                "arguments": "--service-account tiller",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
-                            "version": "1.*",
-                            "name": "add helm repo",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
-                                "scriptLocation": "inlineScript",
-                                "scriptPath": "",
-                                "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
-                                "args": "",
-                                "addSpnToEnvironment": "false",
-                                "useGlobalConfig": "false",
-                                "cwd": "",
-                                "failOnStandardError": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm upgrade delivery staging",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "backend-staging",
-                                "command": "upgrade",
-                                "chartType": "Name",
-                                "chartName": "$(ACR_NAME)/$(REPO_NAME)",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-staging",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",tags.staging=true",
-                                "valueFile": "",
-                                "destination": "",
-                                "canaryimage": "false",
-                                "upgradetiller": "false",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "true",
-                                "waitForExecution": "false",
-                                "arguments": "--version $(Build.SourceBranchName)",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
+                    "skipArtifactsDownload": false,
+                    "artifactsDownloadInput": {
+                        "downloadInputs": [{
+                            "alias": "ci-delivery",
+                            "artifactType": "Build",
+                            "artifactDownloadMode": "All",
+                            "artifactItems": []
+                        }]
+                    },
+                    "queueId": AZURE_DEVOPS_QUEUE_ID_VAR_VAL,
+                    "demands": [],
+                    "enableAccessToken": false,
+                    "timeoutInMinutes": 0,
+                    "jobCancelTimeoutInMinutes": 1,
+                    "condition": "succeeded()",
+                    "overrideInputs": {}
+                },
+                "rank": 1,
+                "phaseType": 1,
+                "name": "Agent job",
+                "refName": null,
+                "workflowTasks": [{
+                        "environment": {},
+                        "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
+                        "version": "0.*",
+                        "name": "install helm 2.12.3",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "helmVersion": "2.12.3",
+                            "checkLatestHelmVersion": "false",
+                            "installKubeCtl": "true",
+                            "kubectlVersion": "1.12.4",
+                            "checkLatestKubeCtl": "false"
                         }
-                    ]
-                }
-            ],
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm init",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "",
+                            "command": "init",
+                            "chartType": "Name",
+                            "chartName": "",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "",
+                            "overrideValues": "",
+                            "valueFile": "",
+                            "destination": "$(Build.ArtifactStagingDirectory)",
+                            "canaryimage": "false",
+                            "upgradetiller": "true",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "false",
+                            "waitForExecution": "true",
+                            "arguments": "--service-account tiller",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
+                        "version": "1.*",
+                        "name": "add helm repo",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
+                            "scriptLocation": "inlineScript",
+                            "scriptPath": "",
+                            "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
+                            "args": "",
+                            "addSpnToEnvironment": "false",
+                            "useGlobalConfig": "false",
+                            "cwd": "",
+                            "failOnStandardError": "false"
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm upgrade delivery staging",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "backend-staging",
+                            "command": "upgrade",
+                            "chartType": "Name",
+                            "chartName": "$(ACR_NAME)/$(REPO_NAME)",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-staging",
+                            "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),ingress.hosts[0].name=$(EXTERNAL_INGEST_FQDN),ingress.hosts[0].serviceName=$(SERVICE_NAME),ingress.hosts[0].tls=true,ingress.hosts[0].tlsSecretName=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].name=$(INGRESS_TLS_SECRET_NAME),ingress.tls.secrets[0].key=\"$(INGRESS_TLS_SECRET_KEY)\",ingress.tls.secrets[0].certificate=\"$(INGRESS_TLS_SECRET_CERT)\",identity.clientid=$(DELIVERY_PRINCIPAL_CLIENT_ID),identity.resourceid=$(DELIVERY_PRINCIPAL_RESOURCE_ID),cosmosdb.id=$(DATABASE_NAME),cosmosdb.collectionid=$(COLLECTION_NAME),keyvault.uri=$(DELIVERY_KEYVAULT_URI),reason=\"$(REASON)\",tags.staging=true",
+                            "valueFile": "",
+                            "destination": "",
+                            "canaryimage": "false",
+                            "upgradetiller": "false",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "true",
+                            "waitForExecution": "false",
+                            "arguments": "--version $(Build.SourceBranchName)",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    }
+                ]
+            }],
             "environmentOptions": {
                 "emailNotificationType": "OnlyOnFailure",
                 "emailRecipients": "release.environment.owner;release.creator",
@@ -1072,13 +1037,11 @@
                 "pullRequestDeploymentEnabled": false
             },
             "demands": [],
-            "conditions": [
-                {
-                    "name": "dev",
-                    "conditionType": 2,
-                    "value": "4"
-                }
-            ],
+            "conditions": [{
+                "name": "dev",
+                "conditionType": 2,
+                "value": "4"
+            }],
             "executionPolicy": {
                 "concurrencyCount": 1,
                 "queueDepthCount": 0
@@ -1090,8 +1053,7 @@
                 "retainBuild": true
             },
             "processParameters": {
-                "inputs": [
-                    {
+                "inputs": [{
                         "aliases": [],
                         "options": {
                             "Azure Resource Manager": "Azure Resource Manager",
@@ -1164,8 +1126,7 @@
                         "groupName": ""
                     }
                 ],
-                "dataSourceBindings": [
-                    {
+                "dataSourceBindings": [{
                         "parameters": {},
                         "endpointId": "$(azureSubscriptionEndpoint)",
                         "target": "kubernetesCluster",
@@ -1220,19 +1181,19 @@
                 "DELIVERY_KEYVAULT_URI": {
                     "value": "PROD_DELIVERY_KEYVAULT_URI_VAR_VAL"
                 },
-               "EXTERNAL_INGEST_FQDN": {
-                   "value": "PROD_EXTERNAL_INGEST_FQDN_VAR_VAL"
-               },
-               "INGRESS_TLS_SECRET_CERT": {
-                   "value": "PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL"
-               },
-               "INGRESS_TLS_SECRET_KEY": {
-                   "value": "PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL",
-                   "isSecret": true
-               },
-               "INGRESS_TLS_SECRET_NAME": {
-                   "value": "PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL"
-               },
+                "EXTERNAL_INGEST_FQDN": {
+                    "value": "PROD_EXTERNAL_INGEST_FQDN_VAR_VAL"
+                },
+                "INGRESS_TLS_SECRET_CERT": {
+                    "value": "PROD_INGRESS_TLS_SECRET_CERT_VAR_VAL"
+                },
+                "INGRESS_TLS_SECRET_KEY": {
+                    "value": "PROD_INGRESS_TLS_SECRET_KEY_VAR_VAL",
+                    "isSecret": true
+                },
+                "INGRESS_TLS_SECRET_NAME": {
+                    "value": "PROD_INGRESS_TLS_SECRET_NAME_VAR_VAL"
+                },
                 "SOURCE_ACR_SERVER": {
                     "value": "SOURCE_ACR_SERVER_VAR_VAL"
                 },
@@ -1248,17 +1209,15 @@
             },
             "variableGroups": [],
             "preDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": false,
-                        "isNotificationOn": false,
-                        "approver": {
-                            "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
-                        },
-                        "id": 14
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": false,
+                    "isNotificationOn": false,
+                    "approver": {
+                        "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
+                    },
+                    "id": 14
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": true,
@@ -1272,14 +1231,12 @@
                 "id": 16
             },
             "postDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 17
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 17
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -1289,22 +1246,19 @@
                     "executionOrder": 2
                 }
             },
-            "deployPhases": [
-                {
+            "deployPhases": [{
                     "deploymentInput": {
                         "parallelExecution": {
                             "parallelExecutionType": 0
                         },
                         "skipArtifactsDownload": false,
                         "artifactsDownloadInput": {
-                            "downloadInputs": [
-                                {
-                                    "alias": "ci-delivery",
-                                    "artifactType": "Build",
-                                    "artifactDownloadMode": "All",
-                                    "artifactItems": []
-                                }
-                            ]
+                            "downloadInputs": [{
+                                "alias": "ci-delivery",
+                                "artifactType": "Build",
+                                "artifactDownloadMode": "All",
+                                "artifactItems": []
+                            }]
                         },
                         "queueId": AZURE_DEVOPS_QUEUE_ID_VAR_VAL,
                         "demands": [],
@@ -1318,8 +1272,7 @@
                     "phaseType": 1,
                     "name": "Agent job",
                     "refName": null,
-                    "workflowTasks": [
-                        {
+                    "workflowTasks": [{
                             "environment": {},
                             "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
                             "version": "1.*",
@@ -1498,27 +1451,25 @@
                     "phaseType": 2,
                     "name": "Agentless job",
                     "refName": null,
-                    "workflowTasks": [
-                        {
-                            "environment": {},
-                            "taskId": "bcb64569-d51a-4af0-9c01-ea5d05b3b622",
-                            "version": "8.*",
-                            "name": "Swap (blue-green)",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 3600,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "instructions": "consider running some canary or just resume for swapping blue and green versions",
-                                "emailRecipients": "",
-                                "onTimeout": "reject"
-                            }
+                    "workflowTasks": [{
+                        "environment": {},
+                        "taskId": "bcb64569-d51a-4af0-9c01-ea5d05b3b622",
+                        "version": "8.*",
+                        "name": "Swap (blue-green)",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 3600,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "instructions": "consider running some canary or just resume for swapping blue and green versions",
+                            "emailRecipients": "",
+                            "onTimeout": "reject"
                         }
-                    ]
+                    }]
                 },
                 {
                     "deploymentInput": {
@@ -1527,14 +1478,12 @@
                         },
                         "skipArtifactsDownload": false,
                         "artifactsDownloadInput": {
-                            "downloadInputs": [
-                                {
-                                    "alias": "ci-delivery",
-                                    "artifactType": "Build",
-                                    "artifactDownloadMode": "All",
-                                    "artifactItems": []
-                                }
-                            ]
+                            "downloadInputs": [{
+                                "alias": "ci-delivery",
+                                "artifactType": "Build",
+                                "artifactDownloadMode": "All",
+                                "artifactItems": []
+                            }]
                         },
                         "queueId": AZURE_DEVOPS_QUEUE_ID_VAR_VAL,
                         "demands": [],
@@ -1548,8 +1497,7 @@
                     "phaseType": 1,
                     "name": "Agent job (swap)",
                     "refName": null,
-                    "workflowTasks": [
-                        {
+                    "workflowTasks": [{
                             "environment": {},
                             "taskId": "cbc316a2-586f-4def-be79-488a1f503564",
                             "version": "1.*",
@@ -1798,8 +1746,7 @@
                 "pullRequestDeploymentEnabled": false
             },
             "demands": [],
-            "conditions": [
-                {
+            "conditions": [{
                     "name": "QA",
                     "conditionType": 2,
                     "value": "4"
@@ -1821,8 +1768,7 @@
                 "retainBuild": true
             },
             "processParameters": {
-                "inputs": [
-                    {
+                "inputs": [{
                         "aliases": [],
                         "options": {
                             "Azure Resource Manager": "Azure Resource Manager",
@@ -1895,8 +1841,7 @@
                         "groupName": ""
                     }
                 ],
-                "dataSourceBindings": [
-                    {
+                "dataSourceBindings": [{
                         "parameters": {},
                         "endpointId": "$(azureSubscriptionEndpoint)",
                         "target": "kubernetesCluster",
@@ -1929,71 +1874,65 @@
             "badgeUrl": null
         }
     ],
-    "artifacts": [
-        {
-            "sourceId": "AZURE_DEVOPS_PROJECT_ID_VAR_VAL:AZURE_DEVOPS_DELIVERY_BUILD_ID_VAR_VAL",
-            "type": "Build",
-            "alias": "ci-delivery",
-            "definitionReference": {
-                "artifactSourceDefinitionUrl": {
-                    "id": "",
-                    "name": ""
-                },
-                "defaultVersionBranch": {
-                    "id": "",
-                    "name": ""
-                },
-                "defaultVersionSpecific": {
-                    "id": "",
-                    "name": ""
-                },
-                "defaultVersionTags": {
-                    "id": "",
-                    "name": ""
-                },
-                "defaultVersionType": {
-                    "id": "selectDuringReleaseCreationType",
-                    "name": "Specify at the time of release creation"
-                },
-                "definition": {
-                    "id": "AZURE_DEVOPS_DELIVERY_BUILD_ID_VAR_VAL",
-                    "name": "aks-ri-ci-delivery"
-                },
-                "definitions": {
-                    "id": "",
-                    "name": ""
-                },
-                "IsMultiDefinitionType": {
-                    "id": "False",
-                    "name": "False"
-                },
-                "project": {
-                    "id": "AZURE_DEVOPS_PROJECT_ID_VAR_VAL",
-                    "name": "roadmap"
-                },
-                "repository": {
-                    "id": "AZURE_DEVOPS_REPOS_ID_VAR_VALL",
-                    "name": "roadmap"
-                }
+    "artifacts": [{
+        "sourceId": "AZURE_DEVOPS_PROJECT_ID_VAR_VAL:AZURE_DEVOPS_DELIVERY_BUILD_ID_VAR_VAL",
+        "type": "Build",
+        "alias": "ci-delivery",
+        "definitionReference": {
+            "artifactSourceDefinitionUrl": {
+                "id": "",
+                "name": ""
             },
-            "isPrimary": true,
-            "isRetained": false
-        }
-    ],
-    "triggers": [
-        {
-            "artifactAlias": "ci-delivery",
-            "triggerConditions": [
-                {
-                    "sourceBranch": "release/$(REPO_NAME)/v*",
-                    "tags": [],
-                    "useBuildDefinitionBranch": false,
-                    "createReleaseOnBuildTagging": false
-                }
-            ],
-            "triggerType": 1
-        }
-    ],
+            "defaultVersionBranch": {
+                "id": "",
+                "name": ""
+            },
+            "defaultVersionSpecific": {
+                "id": "",
+                "name": ""
+            },
+            "defaultVersionTags": {
+                "id": "",
+                "name": ""
+            },
+            "defaultVersionType": {
+                "id": "selectDuringReleaseCreationType",
+                "name": "Specify at the time of release creation"
+            },
+            "definition": {
+                "id": "AZURE_DEVOPS_DELIVERY_BUILD_ID_VAR_VAL",
+                "name": "aks-ri-ci-delivery"
+            },
+            "definitions": {
+                "id": "",
+                "name": ""
+            },
+            "IsMultiDefinitionType": {
+                "id": "False",
+                "name": "False"
+            },
+            "project": {
+                "id": "AZURE_DEVOPS_PROJECT_ID_VAR_VAL",
+                "name": "roadmap"
+            },
+            "repository": {
+                "id": "AZURE_DEVOPS_REPOS_ID_VAR_VALL",
+                "name": "roadmap"
+            }
+        },
+        "isPrimary": true,
+        "isRetained": false
+    }],
+    "triggers": [{
+        "artifactAlias": "ci-delivery",
+        "triggerConditions": [{
+            "sourceBranch": "release/$(REPO_NAME)/v*",
+            "tags": [],
+            "useBuildDefinitionBranch": false,
+            "createReleaseOnBuildTagging": false
+        }],
+        "triggerType": 1
+    }],
     "releaseNameFormat": "release-$(rev:r)",
     "tags": [],
     "pipelineProcess": {
@@ -2005,7 +1944,6 @@
             "$value": "Other"
         }
     },
-    "id": 2,
     "name": "delivery-cd",
     "path": null,
     "projectReference": null,
