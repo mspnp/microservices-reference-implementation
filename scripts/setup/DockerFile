@@ -1,0 +1,5 @@
+FROM mcr.microsoft.com/azure-cli
+COPY drone-basic-setup.sh /
+ARG DRONEINGRESSURL
+ENV DRONE_INGRESS_URL=${DRONEINGRESSURL}
+CMD bash drone-basic-setup.sh
