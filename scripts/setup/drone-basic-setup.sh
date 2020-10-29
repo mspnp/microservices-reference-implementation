@@ -3,19 +3,32 @@
 #########################################################################################
 #  App Settings
 #########################################################################################
-az login
-
+export login=$(az login --allow-no-subscriptions)
 az account set --subscription=018bf144-3a6d-4c13-b1d3-d100a03adc6b
 
+git clone https://github.com/mspnp/microservices-reference-implementation.git && \
+pushd ./microservices-reference-implementation && \
+git checkout basic-valorem && \
+popd
+
 export LOCATION=eastus
-export RESOURCE_GROUP=russdronebasic8
+export RESOURCE_GROUP=russdronebasic9
 export BING_MAP_API_KEY=ApD5kx42U0dhe4a2K6hfYsynhND3eCLWGANvKn7Tje6ET5r79CYrlk93C4m40jlB
 export AD_GROUP_ID='b311c8bf-855a-432a-8928-cfa4206addf6'
 
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 export SUBSCRIPTION_NAME=$(az account show --query name --output tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
-export SSH_PUBLIC_KEY_FILE=~/.ssh/id_rsa.pub 
+
+export SSH_PUBLIC_KEY_FILE=/root/.ssh/id_rsa.pub 
+
+if [ -f "$SSH_PUBLIC_KEY_FILE" ]; then
+    export TEST=SSH_PUBLIC_KEY_FILE
+else 
+    mkdir /root/.ssh
+    cp /id_rsa.pub /root/.ssh/id_rsa.pub 
+    cp /id_rsa /root/.ssh/id_rsa 
+fi
 
 #########################################################################################
 
@@ -38,13 +51,14 @@ export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
 
 # Deploy the resource groups and managed identities
 # These are deployed first in a separate template to avoid propagation delays with AAD
+echo "Deploying prereqs..."
 export DEV_PREREQ_DEPLOYMENT_NAME=azuredeploy-prereqs-${DEPLOYMENT_SUFFIX}-dev
- az deployment create \
+export AZURE_DEPLOY_PREREQ=$(az deployment create \
     --name $DEV_PREREQ_DEPLOYMENT_NAME \
     --location $LOCATION \
     --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
     --parameters resourceGroupName=$RESOURCE_GROUP \
-                 resourceGroupLocation=$LOCATION
+                 resourceGroupLocation=$LOCATION)
 
 export IDENTITIES_DEPLOYMENT_NAME=$(az deployment show -n $DEV_PREREQ_DEPLOYMENT_NAME --query properties.outputs.identitiesDeploymentName.value -o tsv) 
 export DELIVERY_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.deliveryIdName.value -o tsv)
@@ -66,7 +80,8 @@ export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrat
 # Deploy all other resources
 export DEV_DEPLOYMENT_NAME=azuredeploy-${DEPLOYMENT_SUFFIX}-dev
 
-az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
+echo "Deploying resources..."
+export AZURE_DEPLOY=$(az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
      --parameters servicePrincipalId=${SP_OBJECT_ID} \
                kubernetesVersion=${KUBERNETES_VERSION} \
                sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
@@ -77,7 +92,7 @@ az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --temp
                workflowIdName=${WORKFLOW_ID_NAME} \
                workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
                acrResourceGroupName=${RESOURCE_GROUP_ACR} \
-               clusterAdminGroupObjectIds="['b311c8bf-855a-432a-8928-cfa4206addf6']"
+               clusterAdminGroupObjectIds="['b311c8bf-855a-432a-8928-cfa4206addf6']")
 
 #########################################################################################
 
@@ -92,7 +107,7 @@ export CLUSTER_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOY
 sudo az aks install-cli
 
 # Get the Kubernetes cluster credentials
-az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
+az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME -y
 
 # Create namespaces
 kubectl create namespace backend-dev
@@ -101,9 +116,11 @@ kubectl create namespace backend-dev
 
 # install helm client side
 curl -L https://git.io/get_helm.sh | bash -s -- -v v2.14.2
+helm init
+helm repo update
 
 # setup tiller in your cluster
-kubectl apply -f $K8S/tiller-rbac.yaml
+kubectl apply -f $K8S/tiller-rbac.yam
 
 helm init --service-account tiller --override spec.selector.matchLabels.'name'='tiller',spec.selector.matchLabels.'app'='helm' --output yaml | sed 's@apiVersion: extensions/v1beta1@apiVersion: apps/v1@' | kubectl apply -f -
 

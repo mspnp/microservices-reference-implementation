@@ -1,5 +1,11 @@
-FROM mcr.microsoft.com/azure-cli
+FROM docker:dind
 COPY drone-basic-setup.sh /
-ARG DRONEINGRESSURL
-ENV DRONE_INGRESS_URL=${DRONEINGRESSURL}
-CMD bash drone-basic-setup.sh
+
+RUN apk add --no-cache curl tar openssl perl sudo bash jq python3 libffi py-pip
+RUN apk --update --no-cache add postgresql-client postgresql
+RUN apk add --virtual=build gcc libffi-dev musl-dev openssl-dev make python3-dev
+RUN apk add curl
+RUN apk add git
+RUN pip install azure-cli
+RUN apk del --purge build
+
