@@ -4,14 +4,26 @@
 #  App Settings
 #########################################################################################
 
-export SUBSCRIPTION=018bf144-3a6d-4c13-b1d3-d100a03adc6b
-export LOCATION=eastus
-export RESOURCE_GROUP=russdronebasic9
-export BING_MAP_API_KEY=ApD5kx42U0dhe4a2K6hfYsynhND3eCLWGANvKn7Tje6ET5r79CYrlk93C4m40jlB
-export AD_GROUP_ID='b311c8bf-855a-432a-8928-cfa4206addf6'
+while getopts s:l:r:b:g: option
+do
+case "${option}"
+in
+s) SUBSCRIPTION=${OPTARG};;
+l) LOCATION=${OPTARG};;
+r) RESOURCEGROUP=${OPTARG};;
+b) BINGKEY=${OPTARG};;
+g) ADGROUPID=${OPTARG};;
+esac
+done
+
+export SUBSCRIPTIONID=$SUBSCRIPTION
+export LOCATION=$LOCATION
+export RESOURCE_GROUP=$RESOURCEGROUP
+export BING_MAP_API_KEY=$BINGKEY
+export AD_GROUP_ID=$ADGROUPID
 
 export login=$(az login --allow-no-subscriptions)
-az account set --subscription=$SUBSCRIPTION
+az account set --subscription=$SUBSCRIPTIONID
 
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 export SUBSCRIPTION_NAME=$(az account show --query name --output tsv)
@@ -83,7 +95,7 @@ export AZURE_DEPLOY=$(az deployment group create -g $RESOURCE_GROUP --name $DEV_
                workflowIdName=${WORKFLOW_ID_NAME} \
                workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
                acrResourceGroupName=${RESOURCE_GROUP_ACR} \
-               clusterAdminGroupObjectIds="[${AD_GROUP_ID}]")
+               clusterAdminGroupObjectIds="['${AD_GROUP_ID}']")
 
 #########################################################################################
 
@@ -98,7 +110,7 @@ export CLUSTER_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOY
 sudo az aks install-cli
 
 # Get the Kubernetes cluster credentials
-az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME -y
+az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 
 # Create namespaces
 kubectl create namespace backend-dev
@@ -144,7 +156,7 @@ helm install stable/nginx-ingress --name nginx-ingress-dev --namespace ingress-c
 # Obtain the load balancer ip address and assign a domain name
 until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-dev-controller -n ingress-controllers -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
 export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv)
-export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest-dev2"
+export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest-dev"
 export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
 
 CRTFILE=ingestion-ingress-tls-${env}.crt
@@ -322,7 +334,7 @@ helm install $HELM_CHARTS/ingestion/ \
 export DRONESCHEDULER_KEYVAULT_URI=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
 export DRONESCHEDULER_COSMOSDB_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerCosmosDbName.value -o tsv)
 export ENDPOINT_URL=$(az cosmosdb show -n $DRONESCHEDULER_COSMOSDB_NAME -g $RESOURCE_GROUP --query documentEndpoint -o tsv)
-export AUTH_KEY=$(az cosmosdb list-keys -n $DRONESCHEDULER_COSMOSDB_NAME -g $RESOURCE_GROUP --query primaryMasterKey -o tsv)
+export AUTH_KEY=$(az cosmosdb keys list -n $DRONESCHEDULER_COSMOSDB_NAME -g $RESOURCE_GROUP --query primaryMasterKey -o tsv)
 export DATABASE_NAME="invoicing"
 export COLLECTION_NAME="utilization"
 
