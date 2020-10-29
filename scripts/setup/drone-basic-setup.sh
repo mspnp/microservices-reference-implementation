@@ -3,22 +3,24 @@
 #########################################################################################
 #  App Settings
 #########################################################################################
-export login=$(az login --allow-no-subscriptions)
-az account set --subscription=018bf144-3a6d-4c13-b1d3-d100a03adc6b
 
-git clone https://github.com/mspnp/microservices-reference-implementation.git && \
-pushd ./microservices-reference-implementation && \
-git checkout basic-valorem && \
-popd
-
+export SUBSCRIPTION=018bf144-3a6d-4c13-b1d3-d100a03adc6b
 export LOCATION=eastus
 export RESOURCE_GROUP=russdronebasic9
 export BING_MAP_API_KEY=ApD5kx42U0dhe4a2K6hfYsynhND3eCLWGANvKn7Tje6ET5r79CYrlk93C4m40jlB
 export AD_GROUP_ID='b311c8bf-855a-432a-8928-cfa4206addf6'
 
+export login=$(az login --allow-no-subscriptions)
+az account set --subscription=$SUBSCRIPTION
+
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 export SUBSCRIPTION_NAME=$(az account show --query name --output tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
+
+git clone https://github.com/mspnp/microservices-reference-implementation.git && \
+pushd ./microservices-reference-implementation && \
+git checkout basic-valorem && \
+popd
 
 export SSH_PUBLIC_KEY_FILE=/root/.ssh/id_rsa.pub 
 
@@ -32,20 +34,10 @@ fi
 
 #########################################################################################
 
-export DEPLOYMENT_SUFFIX=29926087414
-#export DEPLOYMENT_SUFFIX=$(date +%S%N)
-
+export DEPLOYMENT_SUFFIX=$(date +%S%N)
 export PROJECT_ROOT=../../../microservices-reference-implementation
 export K8S=$PROJECT_ROOT/k8s
 export HELM_CHARTS=$PROJECT_ROOT/charts
-
-# Create service principal for AKS
-# export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor" -o json)
-# export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r)
-# export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r)
-export SP_APP_ID=07798b66-44df-438e-bdca-859e6a3b4257
-export SP_CLIENT_SECRET=Cet-IumBvF-z~wEsdEX2BqkIzFX7TyW~DG
-export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
 
 #########################################################################################
 
@@ -82,8 +74,7 @@ export DEV_DEPLOYMENT_NAME=azuredeploy-${DEPLOYMENT_SUFFIX}-dev
 
 echo "Deploying resources..."
 export AZURE_DEPLOY=$(az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
-     --parameters servicePrincipalId=${SP_OBJECT_ID} \
-               kubernetesVersion=${KUBERNETES_VERSION} \
+     --parameters kubernetesVersion=${KUBERNETES_VERSION} \
                sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
                deliveryIdName=${DELIVERY_ID_NAME} \
                deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
@@ -92,7 +83,7 @@ export AZURE_DEPLOY=$(az deployment group create -g $RESOURCE_GROUP --name $DEV_
                workflowIdName=${WORKFLOW_ID_NAME} \
                workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
                acrResourceGroupName=${RESOURCE_GROUP_ACR} \
-               clusterAdminGroupObjectIds="['b311c8bf-855a-432a-8928-cfa4206addf6']")
+               clusterAdminGroupObjectIds="[${AD_GROUP_ID}]")
 
 #########################################################################################
 
@@ -156,11 +147,15 @@ export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddr
 export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest-dev2"
 export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
 
-# Create a self-signed certificate for TLS
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -out ingestion-ingress-tls.crt \
-    -keyout ingestion-ingress-tls.key \
+CRTFILE=ingestion-ingress-tls-${env}.crt
+if [ -f "$CRTFILE" ]; then
+    echo "$CRTFILE exists."
+else 
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -out CRTFILE \
+    -keyout ingestion-ingress-tls-${env}.key \
     -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
+fi
 
 #########################################################################################
 

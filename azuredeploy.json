@@ -52,12 +52,6 @@
         "description": "Configure all linux machines with the SSH RSA public key string.  Your key should include three parts, for example 'ssh-rsa AAAAB...snip...UcyupgH azureuser@linuxvm'"
       }
     },
-    "servicePrincipalId": {
-      "metadata": {
-        "description": "Principal ID (used by cloudprovider)"
-      },
-      "type": "string"
-    },
     "osType": {
       "type": "string",
       "defaultValue": "Linux",
@@ -267,28 +261,6 @@
               "properties": {
                 "adminUserEnabled": false
               }
-            },
-            {
-              "type": "Microsoft.ContainerRegistry/registries/providers/roleAssignments",
-              "name": "[concat(variables('environmentSettings')[parameters('environmentName')].acrName,'/Microsoft.Authorization/',guid(concat('aks',variables('environmentSettings')[parameters('environmentName')].acrName), resourceGroup().id))]",
-              "apiVersion": "2017-05-01",
-              "comments": "Grant the AKS cluster access to the ACR instance",
-              "tags": {
-                "displayName": "AKS SP RBAC Access to ACR",
-                "what": "rbac",
-                "to": "cluster",
-                "identity-type": "sp",
-                "access": "acr",
-                "reason": "pull-images"
-              },
-              "properties": {
-                "roleDefinitionId": "[variables('readerRoleId')]",
-                "principalId": "[parameters('servicePrincipalId')]",
-                "scope": "[concat(subscription().id, '/resourceGroups/',parameters('acrResourceGroupName'),'/providers/Microsoft.ContainerRegistry/registries/',variables('environmentSettings')[parameters('environmentName')].acrName)]"
-              },
-              "dependsOn": [
-                "[concat(subscription().id, '/resourceGroups/',parameters('acrResourceGroupName'),'/providers/Microsoft.ContainerRegistry/registries/',variables('environmentSettings')[parameters('environmentName')].acrName)]"
-              ]
             },
             {
               "type": "Microsoft.ContainerRegistry/registries/providers/roleAssignments",
