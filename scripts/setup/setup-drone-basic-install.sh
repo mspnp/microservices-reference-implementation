@@ -18,8 +18,8 @@ fi
 docker run -t -d --privileged --name $RESOURCEGROUP replyvalorem/aksdemodeployment:1.1
 export imageid=$(docker ps | grep $RESOURCEGROUP | awk '{ print $1 }')
 
-docker cp ~/.ssh/id_rsa_console $imageid:/id_rsa
-docker cp ~/.ssh/id_rsa_console.pub $imageid:/id_rsa.pub
+docker cp ~/.ssh/id_rsa $imageid:/id_rsa
+docker cp ~/.ssh/id_rsa.pub $imageid:/id_rsa.pub
 docker cp run-drone-basic-install.sh $imageid:/run-drone-basic-install.sh
 
 docker exec -it $imageid bash
