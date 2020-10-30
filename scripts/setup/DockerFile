@@ -1,5 +1,4 @@
 FROM docker:dind
-COPY drone-basic-setup.sh /
 
 RUN apk add --no-cache curl tar openssl perl sudo bash jq python3 libffi py-pip
 RUN apk --update --no-cache add postgresql-client postgresql
@@ -8,4 +7,3 @@ RUN apk add curl
 RUN apk add git
 RUN pip install azure-cli
 RUN apk del --purge build
-

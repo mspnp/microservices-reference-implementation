@@ -64,7 +64,7 @@ fi
 
 #########################################################################################
 
-export DEPLOYMENT_SUFFIX=08
+export DEPLOYMENT_SUFFIX=$(date +%s%N)
 export PROJECT_ROOT=../../../microservices-reference-implementation
 export K8S=$PROJECT_ROOT/k8s
 export HELM_CHARTS=$PROJECT_ROOT/charts
