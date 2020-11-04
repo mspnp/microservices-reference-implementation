@@ -61,14 +61,5 @@ namespace Fabrikam.DroneDelivery.WebSite.Controllers
             return await this._droneManager.AddDeliveryRequest(deliveryRequest);
         }
 
-        /// <summary>
-        /// Returns Bing map key
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet("bingMapKey")]
-        public string GetBingMapKey()
-        {
-            return _configuration["BingMapKey"];  
-        }
     }
 }

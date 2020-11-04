@@ -2,12 +2,10 @@ import {
     axiosInstance
 } from '../axiosHelper';
 export default class DroneDeliveryService {
-
     getDelivery = async (trackingId) => {
         const response = await axiosInstance.get(`api/DroneSite/${trackingId}`);
         return response.data;
     }
-
     getDroneLocation = async (trackingId) => {
         const response = await axiosInstance.get(`api/DroneSite/${trackingId}/dronelocation`);
         return response.data;

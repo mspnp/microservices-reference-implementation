@@ -8,28 +8,25 @@ using Fabrikam.DroneDelivery.DeliveryService.Models;
 using Fabrikam.DroneDelivery.DeliveryService.Services;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Mvc;
+using Fabrikam.DroneDelivery.DeliveryService.Interfaces;
+using Microsoft.AspNetCore.Cors;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Hubs
 {
-    public class DroneHub : Hub
+    [EnableCors("CorsPolicy")]
+    public class DroneHub : Hub<ITrackingClient>
     {
         private readonly IDeliveryRepository deliveryRepository;
-        private readonly INotifyMeRequestRepository notifyMeRequestRepository;
-        private readonly INotificationService notificationService;
         private readonly IDeliveryTrackingEventRepository deliveryTrackingRepository;
+
         public DroneHub(IDeliveryRepository deliveryRepository,
-                               INotifyMeRequestRepository notifyMeRequestRepository,
-                               INotificationService notificationService,
-                               IDeliveryTrackingEventRepository deliveryTrackingRepository
-                              )
+                        IDeliveryTrackingEventRepository deliveryTrackingRepository)
         {
             this.deliveryRepository = deliveryRepository;
-            this.notifyMeRequestRepository = notifyMeRequestRepository;
-            this.notificationService = notificationService;
             this.deliveryTrackingRepository = deliveryTrackingRepository;
-
         }
-        public async Task GetDroneLocation(String deliveryId)
+
+        public async Task SendLocation(string deliveryId)
         {
             var delivery = await deliveryRepository.GetAsync(deliveryId);
             var latestDeliveryEvent = await this.deliveryTrackingRepository.GetLatestDeliveryEvent(deliveryId);
@@ -39,10 +36,13 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Hubs
                                                 latestDeliveryEvent?.Location ?? new Location(0, 0, 0),
                                                 DateTime.Now.AddMinutes(10).ToString(),
                                                 DateTime.Now.AddHours(1).ToString());
-                await Clients.All.SendAsync("PositionUpdated", status);
+
+                await Clients.All.RecieveLocation(status);
             }
-            else
-                await Clients.All.SendAsync("PositionUpdated", "Not Found");
+            else 
+            { 
+                await Clients.All.RecieveLocation(null);
+            }
         }
     }
 }

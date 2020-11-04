@@ -19,6 +19,7 @@ using Serilog;
 using Serilog.Formatting.Compact;
 using System.Text.Encodings.Web;
 using Fabrikam.DroneDelivery.DeliveryService.Hubs;
+using System;
 
 namespace Fabrikam.DroneDelivery.DeliveryService
 {
@@ -49,8 +50,27 @@ namespace Fabrikam.DroneDelivery.DeliveryService
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton(JavaScriptEncoder.Default);
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy", builder => builder
+                .SetIsOriginAllowed((host) => true)
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials());
+            });
+           
+            services.AddSignalR()
+                 .AddHubOptions<DroneHub>(options => 
+                 {
+                     options.EnableDetailedErrors = true;
+                     options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+                 })
+                 .AddJsonProtocol(options =>
+                 {
+                     options.PayloadSerializerOptions.PropertyNamingPolicy = null;
+                 });
 
+            services.AddSingleton(JavaScriptEncoder.Default);
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             // Configure AppInsights
@@ -74,7 +94,6 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             services.AddSingleton<INotifyMeRequestRepository, NotifyMeRequestRepository>();
             services.AddSingleton<INotificationService, NoOpNotificationService>();
             services.AddSingleton<IDeliveryTrackingEventRepository, DeliveryTrackingRepository>();
-            services.AddSignalR();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -91,15 +110,15 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             // Important: it has to be second: Enable global exception, error handling
             app.UseGlobalExceptionHandler();
 
-            // TODO: Add middleware AuthZ here
+            //app.UseWebSockets(new WebSocketOptions()
+            //{
+            //    KeepAliveInterval = TimeSpan.FromSeconds(120),
+            //    ReceiveBufferSize = 4 * 1024
+            //});
 
             app.UseRouting();
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapHealthChecks("/healthz");
-                endpoints.MapControllers();
-                endpoints.MapHub<DroneHub>("/droneHub");
-            });
+            app.UseCors("AllowCors");
+            app.UseAuthorization();
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger(c => 
@@ -119,6 +138,13 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
             RedisCache<DeliveryTrackingEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
             RedisCache<DeliveryTrackingIds>.Configure(Constants.RedisCacheDBId_DeliveryKeys, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
+
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapHealthChecks("/healthz");
+                endpoints.MapControllers();
+                endpoints.MapHub<DroneHub>("/droneHub");
+            });
         }
     }
 }

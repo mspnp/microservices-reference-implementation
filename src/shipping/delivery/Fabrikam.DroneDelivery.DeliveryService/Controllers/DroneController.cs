@@ -13,8 +13,9 @@ using Microsoft.Extensions.Logging;
 using Fabrikam.DroneDelivery.Common;
 using Fabrikam.DroneDelivery.DeliveryService.Models;
 using Fabrikam.DroneDelivery.DeliveryService.Services;
-using Microsoft.AspNet.SignalR;
 using Fabrikam.DroneDelivery.DeliveryService.Hubs;
+using Microsoft.AspNetCore.SignalR;
+using Fabrikam.DroneDelivery.DeliveryService.Interfaces;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
 {
@@ -27,21 +28,21 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
         private readonly INotificationService notificationService;
         private readonly IDeliveryTrackingEventRepository deliveryTrackingRepository;
         private readonly ILogger logger;
-        private readonly IHubContext<DroneHub> HubContext;
+        private readonly IHubContext<DroneHub, ITrackingClient> hubContext;
 
         public DroneController(IDeliveryRepository deliveryRepository,
                                INotifyMeRequestRepository notifyMeRequestRepository,
                                INotificationService notificationService,
                                IDeliveryTrackingEventRepository deliveryTrackingRepository,
                                ILoggerFactory loggerFactory,
-                               IHubContext<DroneHub> hubContext)
+                               IHubContext<DroneHub, ITrackingClient> hubContext)
         {
             this.deliveryRepository = deliveryRepository;
             this.notifyMeRequestRepository = notifyMeRequestRepository;
             this.notificationService = notificationService;
             this.deliveryTrackingRepository = deliveryTrackingRepository;
             this.logger = loggerFactory.CreateLogger<DeliveriesController>();
-            this.HubContext = hubContext;
+            this.hubContext = hubContext;
         }
 
         // GET api/drone/5/location
@@ -91,7 +92,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
             });
 
             //Invokes hub to sync data
-            await this.HubContext.Clients.All.GetDroneLocation(id);
+            await this.hubContext.Clients.All.SendLocation(deliveryTracking);
             return Ok();
         }
 

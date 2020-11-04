@@ -20,7 +20,7 @@ export const Request = () => {
       let deliveryRequest = {
         confirmationRequired: "None",
         deadline: "",
-        dropOffLocation: "drop off",
+        dropOffLocation: "555 110th Ave NE, Bellevue, WA 98004",
         expedited: true,
         ownerId: "myowner",
         packageInfo: {
@@ -29,7 +29,7 @@ export const Request = () => {
           tag: "mytag",
           weight: packageWeight
         },
-        pickupLocation: "my pickup",
+        pickupLocation: "1 Microsoft Way, Redmond, WA 98052",
         pickupTime: "2019-05-08T20:00:00.000Z"
       }
       sendDeliveryRequest(deliveryRequest);
@@ -47,7 +47,7 @@ export const Request = () => {
       setTrackingKey(deliveryResponse.deliveryId);
     } catch (error) {
       setShowErrorMessage(true);
-      setErrorMessage(error);
+      setErrorMessage(error.message);
     }
   }
 
@@ -61,9 +61,11 @@ export const Request = () => {
     }
     setPackageWeight(weight);
   }
+
   const onPackageSizeChange = (event) => {
     setPackageSize(event.target.value);
   }
+
   return (
     <div>
       <h2 style={{ marginLeft: 20 }}>Request delivery</h2>

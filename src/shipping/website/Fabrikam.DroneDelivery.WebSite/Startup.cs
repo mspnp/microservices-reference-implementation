@@ -2,8 +2,10 @@ using Fabrikam.DroneDelivery.ApiClient;
 using Fabrikam.DroneDelivery.WebSite.Accessors;
 using Fabrikam.DroneDelivery.WebSite.Common;
 using Fabrikam.DroneDelivery.WebSite.Handlers;
+using Fabrikam.DroneDelivery.WebSite.Hubs;
 using Fabrikam.DroneDelivery.WebSite.Interfaces;
 using Fabrikam.DroneDelivery.WebSite.Manager;
+using Fabrikam.DroneDelivery.WebSite.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -19,7 +21,7 @@ using System.IO;
 
 namespace Fabrikam.DroneDelivery.WebSite
 {
-  
+
 
     public class Startup
     {
@@ -63,8 +65,10 @@ namespace Fabrikam.DroneDelivery.WebSite
                 c.BaseAddress = new Uri($"{Environment.GetEnvironmentVariable("ApiUrl") ?? Configuration["ApiUrl"]}");
             }).AddHttpMessageHandler<IgnoreSSLValidateDelegatingHandler>();
 
+            services.AddScoped<IGeoCodeService, GeoCodeService>();
             services.AddScoped<ITrackingAccessor, TrackingAccessor>();
             services.AddScoped<IDroneManager, DroneManager>();
+            services.AddSignalR();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -83,7 +87,6 @@ namespace Fabrikam.DroneDelivery.WebSite
 
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
-
             app.UseRouting();
 
             app.UseEndpoints(endpoints =>

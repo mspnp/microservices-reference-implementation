@@ -26,6 +26,53 @@ code {
   text-decoration: none;
   display: inline-block;
 }
+
+.main-button:disabled {
+    width: 100px;
+    background-color: lightgray;
+    color: gray;
+    border: 2px solid lightgray;
+    border-radius: 12px;
+    font-size: 16px;
+    margin: 4px 6px;
+    cursor: default;
+    padding: 5px 10px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
 .error {
-  border-color: red;
+    border-color: red;
+    
+}
+
+.errorBox {
+    border-radius: 5px;
+    padding-left: 10px;
+    padding-right: 10px;
+    color: red;
+    font-size: 1.5em;
+    border: 1px solid red;
+    text-transform: uppercase;
+    background-color: rgba(255, 0, 0, 0.3);
+    margin-left: 50px;
+}
+
+.warningBox {
+    padding-left: 10px;
+    padding-right: 10px;
+    color: red;
+    font-size: 1.2em;
+    margin-left: 50px;
+}
+
+.blink_me {
+    animation: blinker 1.5s linear infinite;
+}
+
+@keyframes blinker {
+    50% {
+        opacity: 0;
+    }
 }

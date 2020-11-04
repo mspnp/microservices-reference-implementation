@@ -55,17 +55,17 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
                 return NotFound();
             }
 
-            if (internalDelivery.Pickup != null)
-            {
-                internalDelivery.Pickup.Latitude = 39.087672;
-                internalDelivery.Pickup.Longitude = -94.588683;
-            }
+            //if (internalDelivery.Pickup != null)
+            //{
+            //    internalDelivery.Pickup.Latitude = 39.087672;
+            //    internalDelivery.Pickup.Longitude = -94.588683;
+            //}
 
-            if (internalDelivery.Dropoff != null)
-            {
-                internalDelivery.Dropoff.Latitude = 39.032888;
-                internalDelivery.Dropoff.Longitude = -94.594098;
-            }
+            //if (internalDelivery.Dropoff != null)
+            //{
+            //    internalDelivery.Dropoff.Latitude = 39.032888;
+            //    internalDelivery.Dropoff.Longitude = -94.594098;
+            //}
 
             return Ok(internalDelivery.ToExternal());
         }
@@ -103,11 +103,11 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
 
             var status = new DeliveryStatus(DeliveryStage.HeadedToDropoff, new Location(0, 0, 0), DateTime.Now.AddMinutes(10).ToString(), DateTime.Now.AddHours(1).ToString());
 
-            if (status.LastKnownLocation != null)
-            {
-                status.LastKnownLocation.Latitude = 39.098032;
-                status.LastKnownLocation.Longitude = -94.586389;
-            }
+            //if (status.LastKnownLocation != null)
+            //{
+            //    status.LastKnownLocation.Latitude = 39.098032;
+            //    status.LastKnownLocation.Longitude = -94.586389;
+            //}
 
             return Ok(status);
         }
