@@ -20,6 +20,7 @@ using Serilog.Formatting.Compact;
 using System.Text.Encodings.Web;
 using Fabrikam.DroneDelivery.DeliveryService.Hubs;
 using System;
+using System.Text.Json.Serialization;
 
 namespace Fabrikam.DroneDelivery.DeliveryService
 {
@@ -68,6 +69,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService
                  .AddJsonProtocol(options =>
                  {
                      options.PayloadSerializerOptions.PropertyNamingPolicy = null;
+                     options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
                  });
 
             services.AddSingleton(JavaScriptEncoder.Default);

@@ -4,6 +4,8 @@
 // ------------------------------------------------------------
 
 using Fabrikam.DroneDelivery.Common;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Models
 {
@@ -16,9 +18,14 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Models
             PickupETA = pickupeta;
             DeliveryETA = deliveryeta;
         }
+
+        [JsonConverter(typeof(StringEnumConverter))]
         public DeliveryStage Stage { get; }
+
         public Location LastKnownLocation { get; }
+
         public string PickupETA { get; }
+
         public string DeliveryETA { get; }
     }
 }

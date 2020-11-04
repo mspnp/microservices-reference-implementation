@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { Route } from 'react-router';
 import { Layout } from './components/Layout';
 import { Home } from './components/Home';
-import { FetchData } from './components/FetchData';
 import { Request } from './components/Request';
 
 import './custom.css'
@@ -16,7 +15,6 @@ export default class App extends Component {
         <Route exact path='/' component={Home} />
         <Route path='/tracking' component={Home} />
         <Route path='/request' component={Request} />
-        <Route path='/fetch-data' component={FetchData} />
       </Layout>
     );
   }

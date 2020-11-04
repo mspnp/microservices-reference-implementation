@@ -23,6 +23,10 @@ export const DroneDeliveryTracker = () => {
     const [showError, setShowError] = useState(false);
     const [warning, setWarning] = useState('');
 
+    const [droneStatus, setDroneStatus] = useState('None');
+    const [droneAltitude, setDroneAltitude] = useState(0);
+
+
     let connection;
     let droneLocationRetrieved = false;
 
@@ -106,6 +110,9 @@ export const DroneDeliveryTracker = () => {
                     droneLocation.Location.Longitude
                 ]
             )
+
+            setDroneStatus(droneLocation.Stage);
+            setDroneAltitude(droneLocation.Location.Altitude);
         });
 
         connection.onclose(function() {
@@ -185,6 +192,14 @@ export const DroneDeliveryTracker = () => {
     return (
         <div>
             <div style={{ paddingBottom: 10 }}>
+                <div>
+                    <span style={{ width: '300px', display: 'inline-block', overflow: 'hidden' }}>
+                        <a style={{ fontWeight: 'bold' }}>Delivery Status:</a><a style={{ paddingLeft: '10px' }}>{droneStatus}</a>
+                    </span>
+                    <span style={{ paddingLeft: '10px', display: 'inline-block', overflow: 'hidden' }}>
+                        <a style={{ fontWeight: 'bold' }}>Drone Altitude (ft):</a><a style={{ paddingLeft: '10px' }}>{droneAltitude}</a>
+                    </span>
+                </div>
                 <input type="text"
                     className={showWarning ? 'custom-input error' : 'custom-input'}
                     onChange={handleInput} placeholder="Enter tracking id"></input>

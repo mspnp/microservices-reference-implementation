@@ -26,11 +26,36 @@ namespace Fabrikam.DroneDelivery.Drone
             return delivery;
         }
 
+        public async Task<DroneLocation> GetDroneLocation(string deliveryId)
+        {
+            try
+            {
+                var response = await Client.GetAsync($"{this.apiUrl}/api/Drone/{deliveryId}");
+                response.EnsureSuccessStatusCode();
+                var json = await response.Content.ReadAsStringAsync();
+                var delivery = JsonConvert.DeserializeObject<DroneLocation>(json);
+                return delivery;
+            } 
+            catch(Exception)
+            {
+                return new DroneLocation()
+                {
+                    LastKnownLocation = new LastKnownLocation()
+                    {
+                        Altitude = 0,
+                        Latitude = 0,
+                        Longitude = 0
+                    },
+                    Stage = DeliveryStage.Created
+                };
+            }
+        }
+
         public async Task UpdateDroneLocation(string deliveryId, DeliveryStage stage, double altitude, double latitude, double longitude)
         {
             try
             {
-                Console.Write($"Altitude: {altitude} | Latitude: {latitude} | Longitude: {longitude} | ");
+                Console.Write($"Stage: {stage} | Altitude: {altitude} | Latitude: {latitude} | Longitude: {longitude} | ");
 
                 var deliveryTracking = new DeliveryTracking()
                 {
