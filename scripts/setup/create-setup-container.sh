@@ -20,6 +20,6 @@ export imageid=$(docker ps | grep $RESOURCEGROUP | awk '{ print $1 }')
 
 docker cp ~/.ssh/id_rsa $imageid:/id_rsa
 docker cp ~/.ssh/id_rsa.pub $imageid:/id_rsa.pub
-docker cp run-drone-basic-install.sh $imageid:/run-drone-basic-install.sh
+docker cp install-drone-demo.sh $imageid:/install-drone-demo.sh
 
 docker exec -it $imageid bash
