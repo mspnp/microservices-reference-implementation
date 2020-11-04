@@ -270,6 +270,7 @@ helm install $HELM_CHARTS/delivery/ \
      --set cosmosdb.id=$DATABASE_NAME \
      --set cosmosdb.collectionid=$COLLECTION_NAME \
      --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
+     --set secrets.appinsights.ikey=$AI_IKEY \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \
@@ -528,7 +529,7 @@ Once the new key is created click on the 'Show key' option and then copy the key
 Run then command below and replace '&lt;Bing Map API Key&gt;' with the key you just created.
 
 ```bash
-export $BING_MAP_API_KEY=<Bing Map API Key>
+export BING_MAP_API_KEY=<Bing Map API Key>
 ```
 
 ## Deploy Website service
@@ -577,7 +578,9 @@ helm install $HELM_CHARTS/website/ \
      --set identity.clientid=$WEBSITE_PRINCIPAL_CLIENT_ID \
      --set identity.resourceid=$WEBSITE_PRINCIPAL_RESOURCE_ID \
      --set bingmap.key=$BING_MAP_API_KEY \
-     --set api.url=$EXTERNAL_INGEST_FQDN \
+     --set api.url=https://$EXTERNAL_INGEST_FQDN \
+     --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
+     --set secrets.appinsights.ikey=$AI_IKEY \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \

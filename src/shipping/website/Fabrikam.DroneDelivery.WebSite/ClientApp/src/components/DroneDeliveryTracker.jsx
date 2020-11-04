@@ -29,14 +29,8 @@ export const DroneDeliveryTracker = () => {
     useEffect(() => {
         const fetchBingmapKey = async () => {
             const configurationService = new ConfigurationService();
-            const bingMapKey = localStorage.getItem('bingMapKey') || '';
-            if (bingMapKey) {
-                setBingmapKey(bingMapKey);
-            } else {
-                const bingMapKey = await configurationService.getBingMapKey();
-                localStorage.setItem('bingMapKey', bingMapKey);
-                setBingmapKey(bingMapKey);
-            }
+            const bingMapKey = await configurationService.getBingMapKey();
+            setBingmapKey(bingMapKey);
         }
 
         fetchBingmapKey();

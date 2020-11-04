@@ -11,7 +11,7 @@ done
 
 if [ -z "$RESOURCEGROUP" ]
 then
-print_help;
+print_help;s
 exit 2
 fi
 

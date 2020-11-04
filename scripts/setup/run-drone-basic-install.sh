@@ -442,3 +442,10 @@ helm install $HELM_CHARTS/website/ \
      --namespace backend-dev \
      --name website-v0.1.0-dev \
      --dep-up
+
+echo "##############################################################################"
+echo "To Access the Drone Demo Site run the following URL from your browser"
+echo
+echo "https://$EXTERNAL_INGEST_FQDN"
+echo
+echo "##############################################################################"
