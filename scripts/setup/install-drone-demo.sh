@@ -77,12 +77,16 @@ printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESO
 # These are deployed first in a separate template to avoid propagation delays with AAD
 echo "Deploying prereqs..."
 export DEV_PREREQ_DEPLOYMENT_NAME=azuredeploy-prereqs-${DEPLOYMENT_SUFFIX}-dev
-export AZURE_DEPLOY_PREREQ=$(az deployment create \
-   --name $DEV_PREREQ_DEPLOYMENT_NAME \
-   --location $LOCATION \
-   --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
-   --parameters resourceGroupName=$RESOURCE_GROUP \
-                resourceGroupLocation=$LOCATION)
+
+for i in 1 2 3; 
+do 
+     export AZURE_DEPLOY_PREREQ=$(az deployment create \
+     --name $DEV_PREREQ_DEPLOYMENT_NAME \
+     --location $LOCATION \
+     --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
+     --parameters resourceGroupName=$RESOURCE_GROUP \
+                    resourceGroupLocation=$LOCATION) && break || sleep 15; 
+done
 
 export IDENTITIES_DEPLOYMENT_NAME=$(az deployment show -n $DEV_PREREQ_DEPLOYMENT_NAME --query properties.outputs.identitiesDeploymentName.value -o tsv)
 export DELIVERY_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.deliveryIdName.value -o tsv)
@@ -106,18 +110,21 @@ export DEV_DEPLOYMENT_NAME=azuredeploy-${DEPLOYMENT_SUFFIX}-dev
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
-echo "Deploying resources..."
-export AZURE_DEPLOY=$(az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
-    --parameters kubernetesVersion=${KUBERNETES_VERSION} \
-              sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
-              deliveryIdName=${DELIVERY_ID_NAME} \
-              deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
-              droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
-              droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
-              workflowIdName=${WORKFLOW_ID_NAME} \
-              workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
-              acrResourceGroupName=${RESOURCE_GROUP_ACR} \
-              clusterAdminGroupObjectIds="['${AD_GROUP_ID}']")
+for i in 1 2 3; 
+do
+     echo "Deploying resources..."
+     export AZURE_DEPLOY=$(az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
+     --parameters kubernetesVersion=${KUBERNETES_VERSION} \
+               sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
+               deliveryIdName=${DELIVERY_ID_NAME} \
+               deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
+               droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
+               droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
+               workflowIdName=${WORKFLOW_ID_NAME} \
+               workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
+               acrResourceGroupName=${RESOURCE_GROUP_ACR} \
+               clusterAdminGroupObjectIds="['${AD_GROUP_ID}']") && break || sleep 15; 
+done
 
 #########################################################################################
 
