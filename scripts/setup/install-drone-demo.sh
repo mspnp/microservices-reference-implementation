@@ -127,12 +127,24 @@ do
      echo $?
      if [[ $? = 0 ]] 
      then
-       break
+       az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.acrName.value -o tsv 2>&1 1>/dev/null
+       
+       echo $?
+       
+       if [[ $? = 0 ]] 
+       then
+         break
+       else 
+         echo "Error: $error"
+         sleep 15
+       fi
      else 
        echo "Error: $error"
        sleep 15
      fi
 done
+
+
 
 #########################################################################################
 
