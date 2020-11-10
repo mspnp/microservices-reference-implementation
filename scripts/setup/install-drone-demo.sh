@@ -501,6 +501,7 @@ helm install $HELM_CHARTS/website/ \
      --name website-v0.1.0-dev \
      --dep-up
 
+echo "az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME --admin" >> import-$RESOURCE_GROUP-envs.sh
 echo
 echo "##############################################################################"
 echo "To Access the Drone Demo Site run the following URL from your browser"
