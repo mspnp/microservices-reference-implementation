@@ -123,16 +123,11 @@ do
                workflowIdName=${WORKFLOW_ID_NAME} \
                workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
                clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
-               acrResourceGroupName=${RESOURCE_GROUP_ACR} 2>&1 1>/dev/null && break || sleep 15; 
-     echo "Test1"
-     echo $?
+               acrResourceGroupName=${RESOURCE_GROUP_ACR} 2>&1 1>/dev/null 
      if [[ $? = 0 ]] 
      then
        az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.acrName.value -o tsv 2>&1 1>/dev/null
        
-       echo "Test2"
-       echo $?
-
        if [[ $? = 0 ]] 
        then
          echo "break"
