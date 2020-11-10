@@ -88,7 +88,7 @@ do
                     resourceGroupLocation=$LOCATION &> /dev/null && break || sleep 15; 
 done
 
-export IDENTITIES_DEPLOYMENT_NAME=$(az deployment sub show -n $DEV_PREREQ_DEPLOYMENT_NAME --query properties.outputs.identitiesDeploymentName.value -o tsv)
+export IDENTITIES_DEPLOYMENT_NAME=$(az deployment subl show -n $DEV_PREREQ_DEPLOYMENT_NAME --query properties.outputs.identitiesDeploymentName.value -o tsv)
 export DELIVERY_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.deliveryIdName.value -o tsv)
 export DELIVERY_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DELIVERY_ID_NAME --query principalId -o tsv)
 export DRONESCHEDULER_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerIdName.value -o tsv)
@@ -219,12 +219,11 @@ export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddr
 export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest-dev"
 export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
 
-CRTFILE=ingestion-ingress-tls.crt
-if [ -f "$CRTFILE" ]; then
-    echo "$CRTFILE exists."
+if [ -f "ingestion-ingress-tls.crt" ]; then
+    echo "ingestion-ingress-tls.crt exists."
 else
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -out CRTFILE \
+    -out ingestion-ingress-tls.crt \
     -keyout ingestion-ingress-tls.key \
     -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
 fi
