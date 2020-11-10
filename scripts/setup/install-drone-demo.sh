@@ -123,7 +123,15 @@ do
                workflowIdName=${WORKFLOW_ID_NAME} \
                workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
                clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
-               acrResourceGroupName=${RESOURCE_GROUP_ACR} &> /dev/null && break || sleep 15; 
+               acrResourceGroupName=${RESOURCE_GROUP_ACR} 2>&1 1>/dev/null && break || sleep 15; 
+     echo $?
+     if [[ $? = 0 ]] 
+     then
+       break
+     else 
+       echo "Error: $error"
+       sleep 15
+     fi
 done
 
 #########################################################################################
