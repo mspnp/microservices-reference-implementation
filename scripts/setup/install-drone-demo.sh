@@ -124,23 +124,26 @@ do
                workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
                clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
                acrResourceGroupName=${RESOURCE_GROUP_ACR} 2>&1 1>/dev/null && break || sleep 15; 
+     echo "Test1"
      echo $?
      if [[ $? = 0 ]] 
      then
        az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.acrName.value -o tsv 2>&1 1>/dev/null
        
+       echo "Test2"
        echo $?
 
        if [[ $? = 0 ]] 
        then
+         echo "break"
          break
        else 
-         echo "Error: $error"
+         echo " - Error: $error"
          if [[ $i -ge 3 ]]; then exit 1; fi
          sleep 15
        fi
      else 
-       echo "Error: $error"
+       echo " - Error: $error"
        if [[ $i -ge 3 ]]; then exit 1; fi
        sleep 15
      fi
