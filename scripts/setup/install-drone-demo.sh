@@ -122,8 +122,8 @@ do
                droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
                workflowIdName=${WORKFLOW_ID_NAME} \
                workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
-               acrResourceGroupName=${RESOURCE_GROUP_ACR} \
-               clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" &> /dev/null && break || sleep 15; 
+               clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
+               acrResourceGroupName=${RESOURCE_GROUP_ACR} &> /dev/null && break || sleep 15; 
 done
 
 #########################################################################################
