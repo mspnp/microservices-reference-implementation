@@ -85,7 +85,7 @@ do
      --location $LOCATION \
      --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
      --parameters resourceGroupName=$RESOURCE_GROUP \
-                    resourceGroupLocation=$LOCATION) && break || sleep 15; 
+                    resourceGroupLocation=$LOCATION) &> /dev/null && break || sleep 15; 
 done
 
 export IDENTITIES_DEPLOYMENT_NAME=$(az deployment show -n $DEV_PREREQ_DEPLOYMENT_NAME --query properties.outputs.identitiesDeploymentName.value -o tsv)
@@ -123,7 +123,7 @@ do
                workflowIdName=${WORKFLOW_ID_NAME} \
                workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
                acrResourceGroupName=${RESOURCE_GROUP_ACR} \
-               clusterAdminGroupObjectIds="['${AD_GROUP_ID}']") && break || sleep 15; 
+               clusterAdminGroupObjectIds="['${AD_GROUP_ID}']") &> /dev/null && break || sleep 15; 
 done
 
 #########################################################################################
