@@ -135,6 +135,8 @@ export CLUSTER_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOY
 
 #########################################################################################
 
+echo "Installing kubectl..."
+
 #  Install kubectl
 sudo az aks install-cli
 
@@ -146,6 +148,8 @@ kubectl create namespace backend-dev
 
 #########################################################################################
 
+echo "Installing Helm..."
+
 # install helm client side
 curl -L https://git.io/get_helm.sh | bash -s -- -v v2.14.2
 helm init --wait
@@ -153,6 +157,8 @@ helm repo update
 
 # setup tiller in your cluster
 kubectl apply -f $K8S/tiller-rbac.yaml
+
+echo "Installing Tiller..."
 
 sleep 60s
 
@@ -176,12 +182,16 @@ kubectl apply -f $K8S/k8s-rbac-ai.yaml
 
 #########################################################################################
 
+echo "Configuring AAD POD Identity..."
+
 # setup AAD pod identity
 kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/deployment-rbac.yaml
 
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 
 #########################################################################################
+
+echo "Deploy the ngnix ingress controller..."
 
 # Deploy the ngnix ingress controller
 helm install stable/nginx-ingress --name nginx-ingress-dev --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-dev --version 1.24.7
@@ -207,6 +217,8 @@ fi
 kubectl apply -f $K8S/k8s-resource-quotas-dev.yaml
 
 #########################################################################################
+
+echo "Deploying Delivery Service..."
 
 export COSMOSDB_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.deliveryCosmosDbName.value -o tsv)
 export DATABASE_NAME="${COSMOSDB_NAME}-db"
@@ -255,6 +267,8 @@ helm install $HELM_CHARTS/delivery/ \
 
 #########################################################################################
 
+echo "Deploying Packing Service..."
+
 export COSMOSDB_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.packageMongoDbName.value -o tsv)
 
 export PACKAGE_PATH=$PROJECT_ROOT/src/shipping/package
@@ -292,6 +306,8 @@ helm install $HELM_CHARTS/package/ \
 
 #########################################################################################
 
+echo "Deploying Workflow Service..."
+
 export WORKFLOW_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.workflowKeyVaultName.value -o tsv)
 export WORKFLOW_PATH=$PROJECT_ROOT/src/shipping/workflow
 
@@ -326,6 +342,8 @@ helm install $HELM_CHARTS/workflow/ \
      --dep-up
 
 #########################################################################################
+
+echo "Deploying Ingestion Service..."
 
 export INGESTION_QUEUE_NAMESPACE=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.ingestionQueueNamespace.value -o tsv)
 export INGESTION_QUEUE_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.ingestionQueueName.value -o tsv)
@@ -371,6 +389,8 @@ helm install $HELM_CHARTS/ingestion/ \
 
 #########################################################################################
 
+echo "Deploying Drone Scheduler Service..."
+
 export DRONESCHEDULER_KEYVAULT_URI=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
 export DRONESCHEDULER_COSMOSDB_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerCosmosDbName.value -o tsv)
 export ENDPOINT_URL=$(az cosmosdb show -n $DRONESCHEDULER_COSMOSDB_NAME -g $RESOURCE_GROUP --query documentEndpoint -o tsv)
@@ -413,6 +433,8 @@ helm install $HELM_CHARTS/dronescheduler/ \
 
 #########################################################################################
 
+echo "Deploying Website Service..."
+
 export WEBSITE_PATH=$PROJECT_ROOT/src/shipping/website
 
 docker build --pull --compress -t $ACR_SERVER/website:0.1.0 $WEBSITE_PATH/.
@@ -450,6 +472,7 @@ helm install $HELM_CHARTS/website/ \
      --name website-v0.1.0-dev \
      --dep-up
 
+echo
 echo "##############################################################################"
 echo "To Access the Drone Demo Site run the following URL from your browser"
 echo
