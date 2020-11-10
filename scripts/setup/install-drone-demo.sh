@@ -80,7 +80,7 @@ export DEV_PREREQ_DEPLOYMENT_NAME=azuredeploy-prereqs-${DEPLOYMENT_SUFFIX}-dev
 
 for i in 1 2 3; 
 do 
-     az deployment create \
+     az deployment sub create \
      --name $DEV_PREREQ_DEPLOYMENT_NAME \
      --location $LOCATION \
      --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
@@ -113,7 +113,7 @@ printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESO
 for i in 1 2 3; 
 do
      echo "Deploying resources..."
-     az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
+     az deployment sub create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
      --parameters kubernetesVersion=${KUBERNETES_VERSION} \
                sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
                deliveryIdName=${DELIVERY_ID_NAME} \
