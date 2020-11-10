@@ -244,8 +244,10 @@ export DELIVERY_KEYVAULT_URI=$(az deployment group show -g $RESOURCE_GROUP -n $D
 
 export DELIVERY_PATH=$PROJECT_ROOT/src/shipping/delivery
 
-# Build the Docker image
-docker build --pull --compress -t $ACR_SERVER/delivery:0.1.0 $DELIVERY_PATH/.
+if [[ "$(docker images $ACR_SERVER/delivery:0.1.0 2> /dev/null)" == "" ]]; then
+     # Build the Docker image
+     docker build --pull --compress -t $ACR_SERVER/delivery:0.1.0 $DELIVERY_PATH/.
+fi
 
 # Push the image to ACR
 az acr login --name $ACR_NAME
@@ -290,8 +292,10 @@ export COSMOSDB_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLO
 
 export PACKAGE_PATH=$PROJECT_ROOT/src/shipping/package
 
-# Build the docker image
-docker build -f $PACKAGE_PATH/Dockerfile -t $ACR_SERVER/package:0.1.0 $PACKAGE_PATH
+if [[ "$(docker images $ACR_SERVER/package:0.1.0 2> /dev/null)" == "" ]]; then
+     # Build the docker image
+     docker build -f $PACKAGE_PATH/Dockerfile -t $ACR_SERVER/package:0.1.0 $PACKAGE_PATH
+fi
 
 # Push the docker image to ACR
 az acr login --name $ACR_NAME
@@ -328,8 +332,10 @@ echo "Deploying Workflow Service..."
 export WORKFLOW_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.workflowKeyVaultName.value -o tsv)
 export WORKFLOW_PATH=$PROJECT_ROOT/src/shipping/workflow
 
-# Build the Docker image
-docker build --pull --compress -t $ACR_SERVER/workflow:0.1.0 $WORKFLOW_PATH/.
+if [[ "$(docker images $ACR_SERVER/workflow:0.1.0 2> /dev/null)" == "" ]]; then
+     # Build the Docker image
+     docker build --pull --compress -t $ACR_SERVER/workflow:0.1.0 $WORKFLOW_PATH/.
+fi
 
 # Push the image to ACR
 az acr login --name $ACR_NAME
@@ -369,8 +375,10 @@ export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule k
 
 export INGESTION_PATH=$PROJECT_ROOT/src/shipping/ingestion
 
-# Build the docker image
-docker build -f $INGESTION_PATH/Dockerfile -t $ACR_SERVER/ingestion:0.1.0 $INGESTION_PATH
+if [[ "$(docker images $ACR_SERVER/ingestion:0.1.0 2> /dev/null)" == "" ]]; then
+     # Build the docker image
+     docker build -f $INGESTION_PATH/Dockerfile -t $ACR_SERVER/ingestion:0.1.0 $INGESTION_PATH
+fi
 
 # Push the docker image to ACR
 az acr login --name $ACR_NAME
@@ -421,7 +429,9 @@ export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOU
 export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query clientId -o tsv)
 
 # Build the Docker image
-docker build -f $DRONE_PATH/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 $DRONE_PATH/../
+if [[ "$(docker images $ACR_SERVER/dronescheduler:0.1.0 2> /dev/null)" == "" ]]; then
+   docker build -f $DRONE_PATH/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 $DRONE_PATH/../
+fi
 
 # Push the images to ACR
 az acr login --name $ACR_NAME
@@ -454,7 +464,9 @@ echo "Deploying Website Service..."
 
 export WEBSITE_PATH=$PROJECT_ROOT/src/shipping/website
 
-docker build --pull --compress -t $ACR_SERVER/website:0.1.0 $WEBSITE_PATH/.
+if [[ "$(docker images $ACR_SERVER/website:0.1.0 2> /dev/null)" == "" ]]; then
+   docker build --pull --compress -t $ACR_SERVER/website:0.1.0 $WEBSITE_PATH/.
+fi
 
 az acr login --name $ACR_NAME
 docker push $ACR_SERVER/website:0.1.0
