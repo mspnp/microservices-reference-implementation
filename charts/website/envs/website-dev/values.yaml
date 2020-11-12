@@ -13,8 +13,8 @@ exports:
       class: "nginx-dev"
     resources:
       requests:
-        cpu: 91m
-        memory: 350Mi
+        cpu: 442m
+        memory: 100Mi
       limits:
-        cpu: 130m
-        memory: 500Mi
+        cpu: 664m
+        memory: 140Mi

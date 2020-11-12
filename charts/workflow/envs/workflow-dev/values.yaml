@@ -10,8 +10,8 @@ exports:
     reason: "new dev deploy"
     resources:
       requests:
-        cpu: 442m
+        cpu: 129m
         memory: 100Mi
       limits:
-        cpu: 664m
+        cpu: 194m
         memory: 140Mi
