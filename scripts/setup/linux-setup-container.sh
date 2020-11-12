@@ -12,7 +12,7 @@ done
 if [ -z "$RESOURCEGROUP" ]
 then
 print_help;s
-exit 2
+kill -INT $$
 fi
 
 docker run -t -d --privileged --name $RESOURCEGROUP replyvalorem/aksdemodeployment:1.1
@@ -23,3 +23,4 @@ docker cp ~/.ssh/id_rsa.pub $imageid:/id_rsa.pub
 docker cp install-drone-demo.sh $imageid:/install-drone-demo.sh
 
 docker exec -it $imageid bash
+
