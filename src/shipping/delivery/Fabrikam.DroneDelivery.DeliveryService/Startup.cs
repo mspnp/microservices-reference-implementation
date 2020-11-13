@@ -135,6 +135,14 @@ namespace Fabrikam.DroneDelivery.DeliveryService
                 c.RoutePrefix = "deliveries/swagger";
             });
 
+            Log.Logger.Information($"Configuring Data Access...");
+            Log.Logger.Information($"CosmosDB-Endpoint: {Configuration["CosmosDB-Endpoint"]}");
+            Log.Logger.Information($"CosmosDB-Key: {Configuration["CosmosDB-Key"]}");
+            Log.Logger.Information($"DOCDB_DATABASEID: {Configuration["DOCDB_DATABASEID"]}");
+            Log.Logger.Information($"DOCDB_COLLECTIONID: {Configuration["DOCDB_COLLECTIONID"]}");
+            Log.Logger.Information($"Redis-Endpoint: {Configuration["Redis-Endpoint"]}");
+            Log.Logger.Information($"Redis-AccessKey: {Configuration["Redis-AccessKey"]}");
+
             //TODO look into creating a factory of DocDBRepos/RedisCache/EventHubMessenger
             DocumentDBRepository<InternalNotifyMeRequest>.Configure(Configuration["CosmosDB-Endpoint"], Configuration["CosmosDB-Key"], Configuration["DOCDB_DATABASEID"], Configuration["DOCDB_COLLECTIONID"], loggerFactory);
             RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
@@ -147,6 +155,8 @@ namespace Fabrikam.DroneDelivery.DeliveryService
                 endpoints.MapControllers();
                 endpoints.MapHub<DroneHub>("/droneHub");
             });
+
+            Log.Logger.Information($"Configure Complete");
         }
     }
 }
