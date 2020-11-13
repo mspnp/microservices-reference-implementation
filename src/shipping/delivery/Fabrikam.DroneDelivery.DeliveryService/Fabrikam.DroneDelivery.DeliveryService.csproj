@@ -16,7 +16,7 @@
     <PackageReference Include="Microsoft.ApplicationInsights.Kubernetes" Version="1.0.2" />
     <PackageReference Include="Microsoft.Azure.DocumentDB.Core" Version="1.5.0" />
     <PackageReference Include="Microsoft.Azure.EventHubs" Version="1.0.3" />
-    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.0.3" />
+    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.6.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.AzureKeyVault" Version="2.2.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="2.0.0" />
     <PackageReference Include="Serilog.Extensions.Logging.File" Version="1.1.0" />
