@@ -95,12 +95,15 @@ export DRONESCHEDULER_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $
 export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query principalId -o tsv)
 export WORKFLOW_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.workflowIdName.value -o tsv)
 export WORKFLOW_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query principalId -o tsv)
+export WEBSITE_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.websiteIdName.value -o tsv)
+export WEBSOTE_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WEBSITE_ID_NAME --query principalId -o tsv)
 export RESOURCE_GROUP_ACR=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
 
 # Wait for AAD propagation
 until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id ${WEBSITE_ID_NAME} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 
 # Export the kubernetes cluster version
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv)
@@ -202,7 +205,7 @@ kubectl apply -f $K8S/k8s-rbac-ai.yaml
 echo "Configuring AAD POD Identity..."
 
 # setup AAD pod identity
-kubectl create -f https://raw.githubusercontent.com/Azure/aad-pod-identity/master/deploy/infra/deployment-rbac.yaml
+kubectl create -f ../../k8s/deployment-rbac.yaml
 
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 
@@ -458,8 +461,8 @@ docker build --pull --compress -t $ACR_SERVER/website:0.1.0 $WEBSITE_PATH/.
 az acr login --name $ACR_NAME
 docker push $ACR_SERVER/website:0.1.0
 
-export WEBSITE_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.deliveryPrincipalResourceId.value -o tsv)
-export WEBSITE_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DELIVERY_ID_NAME --query clientId -o tsv)
+export WEBSITE_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.websitePrincipalResourceId.value -o tsv)
+export WEBSITE_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $WEBSITE_ID_NAME --query clientId -o tsv)
 export WEBSITE_INGRESS_TLS_SECRET_NAME=website-ingress-tls
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
