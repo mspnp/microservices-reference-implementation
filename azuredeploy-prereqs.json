@@ -140,16 +140,16 @@
               "value": "[variables('environmentSettings')[parameters('environmentName')].deliveryIdName]",
               "type": "string"
             },
+            "deliveryPrincipalResourceId": {
+              "value": "[concat(subscription().id, '/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',variables('environmentSettings')[parameters('environmentName')].deliveryIdName)]",
+              "type": "string"
+            },
             "websiteIdName": {
               "value": "[variables('environmentSettings')[parameters('environmentName')].websiteIdName]",
               "type": "string"
             },
             "websitePrincipalResourceId": {
               "value": "[concat(subscription().id, '/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',variables('environmentSettings')[parameters('environmentName')].websiteIdName)]",
-              "type": "string"
-            },
-            "deliveryPrincipalResourceId": {
-              "value": "[concat(subscription().id, '/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',variables('environmentSettings')[parameters('environmentName')].deliveryIdName)]",
               "type": "string"
             },
             "droneSchedulerIdName": {
