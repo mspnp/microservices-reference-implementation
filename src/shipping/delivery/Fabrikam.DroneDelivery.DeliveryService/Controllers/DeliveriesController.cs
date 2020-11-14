@@ -92,7 +92,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
 
             if (cpu)
             {
-                NumberUtility.FindPrimeNumber(100000);
+                NumberUtility.FindPrimeNumber(10000);
             }
 
             var status = new DeliveryStatus(DeliveryStage.HeadedToDropoff, new Location(0, 0, 0), DateTime.Now.AddMinutes(10).ToString(), DateTime.Now.AddHours(1).ToString());
