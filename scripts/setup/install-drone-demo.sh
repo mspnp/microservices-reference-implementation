@@ -207,7 +207,7 @@ kubectl apply -f $K8S/k8s-rbac-ai.yaml
 echo "Configuring AAD POD Identity..."
 
 # setup AAD pod identity
-kubectl create -f ../../k8s/deployment-rbac.yaml
+kubectl create -f $PROJECT_ROOT/k8s/deployment-rbac.yaml
 
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 
