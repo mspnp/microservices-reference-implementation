@@ -15,11 +15,16 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Utilities
             {
                 var th = new Thread(() =>
                 {
-                    FindPrimeNumber(20000);
+                    FindPrimeNumber(5000);
                 });
-                th.Start();
+          
                 threadList.Add(th);
             }
+
+            Parallel.ForEach(threadList, (thread) =>
+            {
+                thread.Start();
+            });
 
             Thread.Sleep(10);
 
