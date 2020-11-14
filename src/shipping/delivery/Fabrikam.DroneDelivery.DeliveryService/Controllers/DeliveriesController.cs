@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Fabrikam.DroneDelivery.Common;
 using Fabrikam.DroneDelivery.DeliveryService.Models;
 using Fabrikam.DroneDelivery.DeliveryService.Services;
+using Fabrikam.DroneDelivery.DeliveryService.Utilities;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
 {
@@ -78,7 +79,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
         // GET api/deliveries/5/status
         [HttpGet("{id}/status")]
         [ProducesResponseType(typeof(DeliveryStatus), StatusCodes.Status200OK)]
-        public async Task<IActionResult> GetStatus(string id)
+        public async Task<IActionResult> GetStatus(string id, bool cpu = false)
         {
             logger.LogInformation("In GetStatus action with id: {Id}", id);
 
@@ -87,6 +88,11 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
             {
                 logger.LogDebug("Delivery id: {Id} not found", id);
                 return NotFound();
+            }
+
+            if (cpu)
+            {
+                NumberUtility.FindPrimeNumber(100000);
             }
 
             var status = new DeliveryStatus(DeliveryStage.HeadedToDropoff, new Location(0, 0, 0), DateTime.Now.AddMinutes(10).ToString(), DateTime.Now.AddHours(1).ToString());
