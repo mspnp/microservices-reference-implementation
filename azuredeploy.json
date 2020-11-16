@@ -972,7 +972,7 @@
     },
     {
       "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
-      "name": "[concat(parameters('websiteIdName'), '/Microsoft.Authorization/', guid(concat('msi-delivery',parameters('environmentName')), resourceGroup().id))]",
+      "name": "[concat(parameters('websiteIdName'), '/Microsoft.Authorization/', guid(concat('msi-website',parameters('environmentName')), resourceGroup().id))]",
       "apiVersion": "2017-05-01",
       "comments": "Grant the AKS cluster Managed Identity access to the delivery managed id",
       "properties": {
