@@ -53,9 +53,19 @@ namespace Fabrikam.DroneDelivery.Drone
                 }
 
                 await Land(deliveryId, droneLocation);
-                await Task.Delay(20000);
+
+                await Task.Delay(30000);
+
+                await deliveryApi.UpdateDroneLocation(deliveryId, Model.DeliveryStage.Completed, 0, delivery?.Dropoff?.Latitude ?? 0, delivery?.Dropoff?.Longitude ?? 0);
+
+                await Task.Delay(30000);
+
+                await TakeOff(deliveryId, droneLocation, 300);
+
+                await Task.Delay(5000);
 
                 await this.deliveryApi.UpdateDroneLocation(deliveryId, Model.DeliveryStage.Completed, 0, 0, 0);
+
                 Console.WriteLine("Delivery Complete");
             }
             catch (Exception ex)
