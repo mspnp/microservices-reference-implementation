@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import DroneDeliveryService from '../services/DroneDeliveryService';
 import './Request.css';
+import { css } from "@emotion/core";
+import ScaleLoader from "react-spinners/ScaleLoader"
 
 export const Request = () => {
   const packageSizes = ['Small', 'Medium', 'Large'];
@@ -11,6 +13,7 @@ export const Request = () => {
   const [validation, setValidation] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const onSend = async (event) => {
     event.preventDefault();
@@ -40,15 +43,18 @@ export const Request = () => {
   }
 
   const sendDeliveryRequest = async (deliveryRequest) => {
+    setLoading(true);
     const droneDeliveryService = new DroneDeliveryService();
     let deliveryResponse;
-    try {
-      deliveryResponse = await droneDeliveryService.deliveryRequest(deliveryRequest);
-      setTrackingKey(deliveryResponse.deliveryId);
-    } catch (error) {
-      setShowErrorMessage(true);
-      setErrorMessage(error.message);
-    }
+      try {
+          deliveryResponse = await droneDeliveryService.deliveryRequest(deliveryRequest);
+          setTrackingKey(deliveryResponse.deliveryId);
+      } catch (error) {
+          setShowErrorMessage(true);
+          setErrorMessage(error.message);
+      } finally {
+          setLoading(false);
+      }
   }
 
   const onPackageWeightChange = (event) => {
@@ -64,7 +70,16 @@ export const Request = () => {
 
   const onPackageSizeChange = (event) => {
     setPackageSize(event.target.value);
-  }
+    }
+
+  const override = css`
+      display: block;
+      margin: 0 auto;
+      border-color: red;
+      position:relative;
+      top: -180px;
+      left: 380px;
+  `;
 
   return (
     <div>
@@ -94,8 +109,9 @@ export const Request = () => {
               type="number"
             />
           </div>
+
           <div className="request-button-container">
-            <input className="main-button" type='submit' value="Request" />
+                <input className="main-button" type='submit' value="Request" />
           </div>
         </div>
         <div style={{ marginLeft: 20 }}>
@@ -104,7 +120,17 @@ export const Request = () => {
         </div>
       </form>
 
-      {showErrorMessage && <span style={{ marginLeft: 19, color: 'red' }}>{errorMessage}</span>}
+        {showErrorMessage && <span style={{ marginLeft: 19, color: 'red' }}>{errorMessage}</span>}
+
+        <div className="sweet-loading">
+            <ScaleLoader
+                css={override}
+                size={50}
+                  color={"#484848"}
+                loading={loading}
+            />
+        </div>
     </div>
+
   );
 }

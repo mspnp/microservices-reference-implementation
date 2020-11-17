@@ -974,7 +974,7 @@
       "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
       "name": "[concat(parameters('websiteIdName'), '/Microsoft.Authorization/', guid(concat('msi-website',parameters('environmentName')), resourceGroup().id))]",
       "apiVersion": "2017-05-01",
-      "comments": "Grant the AKS cluster Managed Identity access to the delivery managed id",
+      "comments": "Grant the AKS cluster Managed Identity access to the website managed id",
       "properties": {
         "roleDefinitionId": "[variables('managedIdentityOperatorRoleId')]",
         "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('environmentSettings')[parameters('environmentName')].aksClusterName), '2020-03-01').identityProfile.kubeletidentity.objectId]",

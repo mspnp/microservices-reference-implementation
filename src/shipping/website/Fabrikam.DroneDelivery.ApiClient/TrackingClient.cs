@@ -23,7 +23,22 @@ namespace Fabrikam.DroneDelivery.ApiClient
 
         public async Task<Delivery> GetDelivery(Guid deliveryId)
         {
-            return await this._client.Get<Delivery>($"api/deliveries/{deliveryId}");
+            for (var i = 0; i <= 5; i++)
+            {
+                try
+                {
+                    return await this._client.Get<Delivery>($"api/deliveries/{deliveryId}");
+                }
+                catch (Exception)
+                {
+                    if (i >= 5)
+                    {
+                        throw;
+                    }
+                    await Task.Delay(1000);
+                }
+            }
+            return null;
         }
 
         public async Task<DroneLocation> GetDroneLocation(Guid deliveryId)

@@ -3,11 +3,13 @@ import { ReactBingmaps } from 'react-bingmaps';
 import DroneDeliveryService from '../services/DroneDeliveryService';
 import ConfigurationService from '../services/ConfigurationService';
 import * as signalR from '@microsoft/signalr';
+import { css } from "@emotion/core";
+import ScaleLoader from "react-spinners/ScaleLoader"
 
 export const DroneDeliveryTracker = () => {
 
     const droneErrorIconurl = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAACXBIWXMAAAsTAAALEwEAmpwYAAACbUlEQVRIibWVPW/TUBSG3+tey1FKF2fCLTSiiYlaihSpQ5HgL6QZW6RkYGBgowMs2RASQqh0YWOhA4ilH/kXhapFKolK7AhQkTMlS0hIZMeXwR+pk5smadV3snWP3+eec+71Aa5Y5LzF/elERKRWmhCSAsM8gOvuUgUERcZYXupIOwt/CrWxAAeKEqbi5DoDngGYGrLJOgFeW2ZjY8kwmkMBx3NzNyxL2AOQHGLcqyNK7ZXFcvl0IMA130e3FOPKoNRePgsRvIcDRQm7O7+oOQAoliXsHShKuA9Axcl1jF8WnpIT4uTTAGB/OhFxGxrQzTevEPu0BRqJ9LlQWYaa30Z8+zMP8rwwsyD7AJFaaXBOixSN4tq9ZQciywHz2McthO/egRAK8QBT5kQ77QMIISle1M/HT9A6KSGkxn2IZx5KqGhpOsqZR7xPwZiQAtxTdDQb1wDEeIEBw5MSAPjm+moGVrXKBYBAS/7SVK/JA0+OVatBf5h1Mkmoo5kDAHM8hcER54ixkUM9QGVQQKBEJQ0tTQ/0ZKCI4ym4L8VRzPW1LPTVzGgQmxR9AGMsz4u59eG9Y/6j5Nfcqla7kNsqou82+QkQO+8DpI60A6DeG8RabTSPv0Nfy8Kqdf/IHuTvl6/4556sHtXFjrTrFMfVt9l4jgEv+PmOrVzyt/bSzwAALLOxAeDoss4MOOyYjbfeuw9YMowmpfYKAOMS/oZI7fTZwRO4B4vl8iml9jIukAkDDntnQR/Ag3TMxn0AOXAaz1EdQM42Gw96zYEhQ78wsyCbE+00Y0IKApv3rj8IKrBJkRA7L3ak3fOG/pXrP2gABsQqGCMbAAAAAElFTkSuQmCC';
-    const droneIconUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAYAAACNiR0NAAAACXBIWXMAAAsTAAALEwEAmpwYAAABJ0lEQVQ4jeXTyyrFURQG8B+OktxKRkQYMMBUJsoMI2XoGXgBL6AYKa9gJicTydjM3ES5RQZKR26hjsF/qe30P4dkIl99tfe6fHut1tr8e0z8IGc8vdRhCqtx78MZSpjBSxWRJuyiFb04D/tSGtSJnZzkMSwGx3L822jPe3UODxgOjmItqiwHn7GCkSTuDdPVBMu4Dz4lQpV8TOLKqWB9IljCEVqC7TjMefgAbUncReQiG0oeGrCFZtxhPuyb6MYVFqK6b2EZxaSDAfTHuRH7KiZaC424jko2Qng2WMQ6hmStVuvwE4ZwKVvYU1lbe8EyjmUf4AY9lckNOYIF2bK+YhIdGAzCLU5kg9iVbcO38VFhyuNaCfW1nD9B4Qv/KroqbNe/XcQfxzuZPEeYskKPRwAAAABJRU5ErkJggg==";
+    const droneIconUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACMAAAAjCAYAAAAe2bNZAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAAJ2SURBVHja7NdNiI1hFAfw38xcZgwLk698ZiMLXwn5miQbUUixpFnJQiJKSfKdj1KSjdmgxIJSyEKyQNnJArORj4Z8lQgzzIxrc269vb333rlmZBb31O2873nP8zz/5znnf85za/L5vIEitQaQVMFUwVQqNTZl2s/gBm79gzXXYgm2Z4HZgPUYgW78xhy8Qzvq0IhrOPwXi+/HCnSgB5MwEo8iMoPwFpdz6ArHzgDTjV9h60AONfj5lyfRmfh1h/6B7wGkJ547i4XpIS7idMkQMwvjErY3eFwG3C4sw/L0h1yG80rMx3CcLXIidTiRFXccw+4Id1qGYTMmoxn3y4FpCD0U4/E14fcbM3AIC0rsfDH24FmCsd2Rl43xXt+bkyk0qwl4kngvhKY+dClpxt041fT4htQ6JcEUpAefE4PyEZ5RoctJsfGji9W3XJF8gBeYG4wq2DqwDpfLAOrAGtzGkLB1xUYeYUwWoCwwT3E1QvQl9a0pWFDuZBqCCA+CxgX5hAuYiOe9rcBZMgE3MRNX8Ao7MvwOY3YCzKoIV1nJ9RLIYFwKIPuiqtYGQxZFotZHWA7GmJNB/fNY3ZfelEXXoziFbRVU3/PYiE1o7Q8wTWiLpJwW+TA12FKHl9FbxkUxK9jboty34SOmR5vp0xViadCxNXrIzsiFh6Fbwq8lZd+C9ziHKSWKZEVgCpPcSVE/eXKzQ2fNfTv0wv5I4LGhr+MIvqW+b4lE7UrZf2Avtqbm6ROYe5gXvSpfopcVqz3f8SHC12cwrSkmHO8lkxqjDByoXsj/B5iafvaruB0k5RVeZ7AqfaNrr3iX1T/+VTBVMP0kfwYA/DeTgr7tS7YAAAAASUVORK5CYII=";
 
     const [bingMapKey, setBingmapKey] = useState('');
     const [trackingId, setTrackingId] = useState('');
@@ -25,7 +27,7 @@ export const DroneDeliveryTracker = () => {
 
     const [droneStatus, setDroneStatus] = useState('None');
     const [droneAltitude, setDroneAltitude] = useState(0);
-
+    const [loading, setLoading] = useState(false);
 
     let connection;
     let droneLocationRetrieved = false;
@@ -134,6 +136,8 @@ export const DroneDeliveryTracker = () => {
 
         const droneDeliveryService = new DroneDeliveryService();
         try {
+            setLoading(true);
+
             const delivery = await droneDeliveryService.getDelivery(trackingId);
             if (delivery.id) {
                 setMapCenterLocation([delivery.pickup.latitude, delivery.pickup.longitude]);
@@ -156,6 +160,8 @@ export const DroneDeliveryTracker = () => {
             setShowError(false);
             setShowWarning(true);
             setWarning("Request can not be processed!! - " + error.message);
+        } finally {
+           setLoading(false);
         }
     }
 
@@ -189,6 +195,15 @@ export const DroneDeliveryTracker = () => {
         setMapPoints(locationPoints);
     };
 
+    const override = css`
+      display: block;
+      margin: 0 auto;
+      border-color: red;
+      position:relative;
+      top: -430px;
+      left: 530px;
+    `;
+
     return (
         <div>
             <div style={{ paddingBottom: 10 }}>
@@ -220,6 +235,14 @@ export const DroneDeliveryTracker = () => {
                         center={mapCenterLocation}
                     >
                     </ReactBingmaps>}
+            </div>
+            <div className="sweet-loading">
+                <ScaleLoader
+                    css={override}
+                    size={50}
+                    color={"#484848"}
+                    loading={loading}
+                />
             </div>
         </div>
     );
