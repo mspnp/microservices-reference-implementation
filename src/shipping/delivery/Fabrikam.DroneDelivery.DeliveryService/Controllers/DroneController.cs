@@ -92,7 +92,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
             });
 
             //Invokes hub to sync data
-            await this.hubContext.Clients.All.SendLocation(deliveryTracking);
+            await this.hubContext.Clients.Group(id).SendLocation(deliveryTracking);
             return Ok();
         }
 

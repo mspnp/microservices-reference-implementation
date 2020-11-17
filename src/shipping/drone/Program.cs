@@ -36,6 +36,11 @@ namespace Fabrikam.DroneDelivery.Drone
             Console.WriteLine($"ApiUrl: {apiUrl}");
             Console.WriteLine($"TrackingId: {trackingId}");
 
+            if (apiUrl.EndsWith("/"))
+            {
+                apiUrl = apiUrl.TrimEnd('/');
+            }
+
             var flightEngine = new FlightEngine(new DeliveryApi(apiUrl));
             flightEngine.ExecuteDroneDelivery(trackingId).GetAwaiter().GetResult();
         }

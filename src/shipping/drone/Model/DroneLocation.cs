@@ -14,8 +14,8 @@ namespace Fabrikam.DroneDelivery.Drone.Model
 
     public class LastKnownLocation
     {
-        public int Altitude { get; set; }
-        public int Latitude { get; set; }
-        public int Longitude { get; set; }
+        public double Altitude { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 }

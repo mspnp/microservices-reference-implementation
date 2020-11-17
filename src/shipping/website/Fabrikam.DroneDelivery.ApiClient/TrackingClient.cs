@@ -43,7 +43,7 @@ namespace Fabrikam.DroneDelivery.ApiClient
 
         public async Task<DroneLocation> GetDroneLocation(Guid deliveryId)
         {
-            var droneLocation = await this._client.Get<DroneLocation>($"api/deliveries/{deliveryId}/status");
+            var droneLocation = await this._client.Get<DroneLocation>($"api/Drone/{deliveryId}");
             return droneLocation;
         }
     }

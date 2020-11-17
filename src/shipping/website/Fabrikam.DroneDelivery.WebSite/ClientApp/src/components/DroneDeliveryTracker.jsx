@@ -13,7 +13,7 @@ export const DroneDeliveryTracker = () => {
 
     const [bingMapKey, setBingmapKey] = useState('');
     const [trackingId, setTrackingId] = useState('');
-    const [buttonDisabled, setButtonDisabled] = useState(true);
+    const [buttonDisabled, setButtonDisabled] = useState(false);
 
     const [mapPoints, setMapPoints] = useState([]);
     const [droneLocation, setDroneLocation] = useState([]);
@@ -28,8 +28,9 @@ export const DroneDeliveryTracker = () => {
     const [droneStatus, setDroneStatus] = useState('None');
     const [droneAltitude, setDroneAltitude] = useState(0);
     const [loading, setLoading] = useState(false);
+   
+    const [hubConnection, setConnection] = useState();
 
-    let connection;
     let droneLocationRetrieved = false;
 
     useEffect(() => {
@@ -40,8 +41,6 @@ export const DroneDeliveryTracker = () => {
         }
 
         fetchBingmapKey();
-
-        connect();
     }, [])
 
     useEffect(() => {
@@ -77,21 +76,34 @@ export const DroneDeliveryTracker = () => {
         }
     }
 
-    async function connect() {
+    async function connect(deliveryId) {
         const configurationService = new ConfigurationService();
         const apiUrl = await configurationService.getApiUrl();
 
-        connection = new signalR.HubConnectionBuilder()
+        if (hubConnection) {
+            hubConnection.stop();
+        }
+
+        let connection = new signalR.HubConnectionBuilder()
             .withUrl(apiUrl + `/DroneHub`)
             .configureLogging(new MyLogger())
             .withAutomaticReconnect()
             .build();
+
+        setConnection(connection);
 
         //Start signlR connection
         connection.start().then(resp => {
             console.log("Live tracking started")
             setButtonDisabled(false);
             setDroneIcon(droneIconUrl);
+            setShowError(false);
+            setShowWarning(false);
+            setDroneLocation([]);
+
+            connection.invoke("subscribe", deliveryId).catch(function (err) {
+                return console.error(err.toString());
+            });
         }).catch(error => {
             if (!showError) {
                 setShowError(false);
@@ -117,13 +129,13 @@ export const DroneDeliveryTracker = () => {
             setDroneAltitude(droneLocation.Location.Altitude);
         });
 
-        connection.onclose(function() {
-            if (!showError) {
-                setShowError(false);
-                setShowWarning(true);
-                setWarning("Live tracking lost");
-            }
-            setDroneIcon(droneErrorIconurl);
+        connection.onclose(function (e) {
+            //if (!showError) {
+            //    setShowError(false);
+            //    setShowWarning(true);
+            //    setWarning("Live tracking lost");
+            //}
+            //setDroneIcon(droneErrorIconurl);
         });
     }
 
@@ -146,6 +158,8 @@ export const DroneDeliveryTracker = () => {
                     Pickup: [delivery.pickup.latitude, delivery.pickup.longitude],
                     Dropoff: [delivery.dropoff.latitude, delivery.dropoff.longitude]
                 });
+
+                connect(delivery.id);
 
                 setShowError(false);
                 setShowWarning(false);

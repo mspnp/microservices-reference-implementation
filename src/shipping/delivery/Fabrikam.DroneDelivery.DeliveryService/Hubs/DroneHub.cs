@@ -26,6 +26,11 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Hubs
             this.deliveryTrackingRepository = deliveryTrackingRepository;
         }
 
+        public async Task Subscribe(string deliveryId)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, deliveryId);
+        }
+
         public async Task SendLocation(string deliveryId)
         {
             var delivery = await deliveryRepository.GetAsync(deliveryId);
@@ -37,11 +42,11 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Hubs
                                                 DateTime.Now.AddMinutes(10).ToString(),
                                                 DateTime.Now.AddHours(1).ToString());
 
-                await Clients.All.RecieveLocation(status);
+                await Clients.Group(deliveryId).RecieveLocation(status);
             }
             else 
             { 
-                await Clients.All.RecieveLocation(null);
+                await Clients.Group(deliveryId).RecieveLocation(null);
             }
         }
     }
