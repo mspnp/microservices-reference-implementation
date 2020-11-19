@@ -3,7 +3,7 @@ Param(
     [string]$ResourceGroup
 )
 
-docker run -t -d --name $ResourceGroup --privileged  replyvalorem/aksdemodeployment:1.1 bash
+docker run -t -d --name $ResourceGroup --privileged  replyvalorem/aksdemodeployment:1.1
 
 $imageId=$(docker ps --format "{{.Names}}\t{{.ID}}\t{{.Status}}\t{{.Ports}}" |
      ConvertFrom-CSV -Delimiter "`t" -Header ("Names","Id","Status","Ports") |
