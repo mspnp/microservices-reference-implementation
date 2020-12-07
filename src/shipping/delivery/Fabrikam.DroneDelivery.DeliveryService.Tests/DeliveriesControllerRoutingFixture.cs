@@ -17,7 +17,6 @@ using Fabrikam.DroneDelivery.DeliveryService.Middlewares.Builder;
 using Fabrikam.DroneDelivery.DeliveryService.Models;
 using Fabrikam.DroneDelivery.DeliveryService.Services;
 using Moq;
-using Fabrikam.DroneDelivery.DeliveryService.Middlewares;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Tests
 {
@@ -44,7 +43,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Tests
                         .Configure(builder =>
                         {
                             builder.UseGlobalExceptionHandler();
-                            builder.UseMiddleware<ExceptionMiddleware>();
+
                             builder.UseRouting();
                             builder.UseEndpoints(endpoints =>
                             {

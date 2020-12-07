@@ -13,6 +13,5 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
     {
         Task AddAsync(DeliveryTrackingEvent deliveryTrackingEvent);
         Task<ReadOnlyCollection<DeliveryTrackingEvent>> GetByDeliveryIdAsync(string deliveryId);
-        Task<DeliveryTrackingEvent> GetLatestDeliveryEvent(string deliveryId);
     }
 }

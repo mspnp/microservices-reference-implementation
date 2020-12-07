@@ -53,19 +53,14 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Models
             return JsonConvert.SerializeObject(rescheduledDelivery); //Nothing secure that needs to be obfuscated
         }
 
-        public static string ToLogInfo(this Confirmation confirmation)
-        {
-            return JsonConvert.SerializeObject(confirmation); //Nothing secure that needs to be obfuscated
-        }
-
         public static string ToLogInfo(this NotifyMeRequest notifyMeRequest)
         {
             return JsonConvert.SerializeObject(notifyMeRequest); //Nothing secure that needs to be obfuscated
         }
 
-        public static string ToLogInfo(this DeliveryTracking deliveryTracking)
+        public static string ToLogInfo(this Confirmation confirmation)
         {
-            return JsonConvert.SerializeObject(deliveryTracking); //Nothing secure that needs to be obfuscated
+            return JsonConvert.SerializeObject(confirmation); //Nothing secure that needs to be obfuscated
         }
     }
 }

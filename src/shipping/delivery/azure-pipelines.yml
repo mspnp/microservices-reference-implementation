@@ -47,15 +47,6 @@ jobs:
       fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/delivery/v') ]
       buildImage: $[ eq(variables['build.sourceBranch'], 'refs/heads/master') ]
     steps:
-      - task: PowerShell@2
-        displayName: "Convert ImageName"
-        inputs:
-          targetType: "inline"
-          script: |
-            $lowerImageName= "$(imageName)".ToLower()
-            Write-Host "##vso[task.setvariable variable=imageName]$lowerImageName"
-            Write-Host "$(imageName)"
-
       - task: Docker@1
         displayName: "Build testrunner image"
         inputs:

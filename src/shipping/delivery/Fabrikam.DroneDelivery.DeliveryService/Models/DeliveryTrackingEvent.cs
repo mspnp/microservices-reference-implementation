@@ -4,7 +4,6 @@
 // ------------------------------------------------------------
 
 using Fabrikam.DroneDelivery.Common;
-using System;
 
 namespace Fabrikam.DroneDelivery.DeliveryService.Models
 {
@@ -13,7 +12,6 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Models
         public string DeliveryId { get; set; }
         public DeliveryStage Stage { get; set; }
         public Location Location { get; set; }
-        public override string Key => $"{this.DeliveryId}_{this.Created.Ticks}";
-        public DateTimeOffset Created { get; set; }
+        public override string Key => $"{this.DeliveryId}_{this.Stage.ToString()}";
     }
 }

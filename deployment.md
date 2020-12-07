@@ -270,7 +270,6 @@ helm install $HELM_CHARTS/delivery/ \
      --set cosmosdb.id=$DATABASE_NAME \
      --set cosmosdb.collectionid=$COLLECTION_NAME \
      --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
-     --set secrets.appinsights.ikey=$AI_IKEY \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \

@@ -17,10 +17,6 @@ using Fabrikam.DroneDelivery.DeliveryService.Services;
 using Fabrikam.DroneDelivery.DeliveryService.Middlewares.Builder;
 using Serilog;
 using Serilog.Formatting.Compact;
-using System.Text.Encodings.Web;
-using Fabrikam.DroneDelivery.DeliveryService.Hubs;
-using System;
-using System.Text.Json.Serialization;
 
 namespace Fabrikam.DroneDelivery.DeliveryService
 {
@@ -51,28 +47,6 @@ namespace Fabrikam.DroneDelivery.DeliveryService
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddCors(options =>
-            {
-                options.AddPolicy("CorsPolicy", builder => builder
-                .SetIsOriginAllowed((host) => true)
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials());
-            });
-           
-            services.AddSignalR()
-                 .AddHubOptions<DroneHub>(options => 
-                 {
-                     options.EnableDetailedErrors = true;
-                     options.KeepAliveInterval = TimeSpan.FromSeconds(15);
-                 })
-                 .AddJsonProtocol(options =>
-                 {
-                     options.PayloadSerializerOptions.PropertyNamingPolicy = null;
-                     options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-                 });
-
-            services.AddSingleton(JavaScriptEncoder.Default);
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             // Configure AppInsights
@@ -112,43 +86,26 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             // Important: it has to be second: Enable global exception, error handling
             app.UseGlobalExceptionHandler();
 
-            //app.UseWebSockets(new WebSocketOptions()
-            //{
-            //    KeepAliveInterval = TimeSpan.FromSeconds(120),
-            //    ReceiveBufferSize = 4 * 1024
-            //});
-
             app.UseRouting();
-            app.UseCors("AllowCors");
-            app.UseAuthorization();
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapHealthChecks("/healthz");
+                endpoints.MapControllers();
+            });
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
-            app.UseSwagger(c => 
-            { 
-                c.RouteTemplate = "deliveries/swagger/{documentname}/swagger.json";
-            });
+            app.UseSwagger();
 
             // Enable middleware to serve swagger-ui (HTML, JS, CSS etc.), specifying the Swagger JSON endpoint.
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/deliveries/swagger/v1/swagger.json", "Fabrikam DroneDelivery DeliveryService API V1");
-                c.RoutePrefix = "deliveries/swagger";
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Fabrikam DroneDelivery DeliveryService API V1");
             });
 
             //TODO look into creating a factory of DocDBRepos/RedisCache/EventHubMessenger
             DocumentDBRepository<InternalNotifyMeRequest>.Configure(Configuration["CosmosDB-Endpoint"], Configuration["CosmosDB-Key"], Configuration["DOCDB_DATABASEID"], Configuration["DOCDB_COLLECTIONID"], loggerFactory);
             RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
             RedisCache<DeliveryTrackingEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
-            RedisCache<DeliveryTrackingIds>.Configure(Constants.RedisCacheDBId_DeliveryKeys, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
-
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapHealthChecks("/healthz");
-                endpoints.MapControllers();
-                endpoints.MapHub<DroneHub>("/droneHub");
-            });
-
-            Log.Logger.Information($"Configure Complete");
         }
     }
 }

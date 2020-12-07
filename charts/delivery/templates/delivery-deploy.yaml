@@ -96,11 +96,6 @@ spec:
           value: {{ default "Error" .Values.telemetry.level | quote }}
         - name: no_proxy
           value: 169.254.169.254
-        - name: APPINSIGHTS_INSTRUMENTATIONKEY
-          valueFrom:
-            secretKeyRef:
-              name: {{ .Release.Name }}-secrets
-              key: appinsights-ikey
       ports:
         - name: service
           containerPort: 8080

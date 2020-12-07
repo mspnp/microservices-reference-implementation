@@ -16,7 +16,7 @@ metadata:
   name: {{ $relname }}-ingress
   annotations:
     kubernetes.io/ingress.class: {{ required "ingress.class is required" .Values.ingress.class | quote }}
-    nginx.ingress.kubernetes.io/rewrite-target: /api/deliveries$1
+    nginx.ingress.kubernetes.io/rewrite-target: /api/deliveries/public$1
 spec:
   {{- if .Values.ingress.tls }}
   tls:
@@ -36,7 +36,7 @@ spec:
       {{- if .path }}
       - path: {{ printf "%s/%s/" .path $appversion }}api/deliveries(.*)
       {{- else }}
-      - path: {{ $defaultversionedpath }}api/deliveries(.*)      
+      - path: {{ $defaultversionedpath }}api/deliveries(.*)
       {{- end }}
         backend:
           serviceName: "{{ .serviceName }}-{{ $svcversion }}"
