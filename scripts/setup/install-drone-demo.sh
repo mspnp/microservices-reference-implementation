@@ -4,7 +4,6 @@ function print_help { echo $'Usage\n\n' \
                            $'-s Subscription\n' \
                            $'-l Location\n' \
                            $'-r Resource Group\n' \
-                           $'-b Bing API KEY\n' \
                            $'-g Azure AD Group ID\n' \
                            $'-? Show Usage' \
                            >&2;
@@ -17,13 +16,12 @@ in
 s) SUBSCRIPTION=${OPTARG};;
 l) LOCATION=${OPTARG};;
 r) RESOURCEGROUP=${OPTARG};;
-b) BINGKEY=${OPTARG};;
 g) ADGROUPID=${OPTARG};;
 ?) print_help; exit 0;;
 esac
 done
 
-if [[ -z "$SUBSCRIPTION" || -z "$LOCATION" || -z "$RESOURCEGROUP" || -z "$RESOURCEGROUP" || -z "$BINGKEY" || -z "$ADGROUPID" ]]
+if [[ -z "$SUBSCRIPTION" || -z "$LOCATION" || -z "$RESOURCEGROUP" || -z "$RESOURCEGROUP" || -z "$ADGROUPID" ]]
 then
 print_help;
 exit 2
@@ -32,7 +30,6 @@ fi
 export SUBSCRIPTIONID=$SUBSCRIPTION
 export LOCATION=$LOCATION
 export RESOURCE_GROUP=$RESOURCEGROUP
-export BING_MAP_API_KEY=$BINGKEY
 export AD_GROUP_ID=$ADGROUPID
 
 userObjectId=$(az ad signed-in-user show --query objectId -o tsv)
@@ -49,7 +46,7 @@ export TENANT_ID=$(az account show --query tenantId --output tsv)
 
 git clone https://github.com/mspnp/microservices-reference-implementation.git && \
 pushd ./microservices-reference-implementation && \
-git checkout basic-valorem && \
+git checkout basic && \
 popd
 
 export SSH_PUBLIC_KEY_FILE=/root/.ssh/id_rsa.pub
@@ -78,14 +75,14 @@ printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESO
 echo "Deploying prereqs..."
 export DEV_PREREQ_DEPLOYMENT_NAME=azuredeploy-prereqs-${DEPLOYMENT_SUFFIX}-dev
 
-for i in 1 2 3; 
-do 
+for i in 1 2 3;
+do
      az deployment sub create \
      --name $DEV_PREREQ_DEPLOYMENT_NAME \
      --location $LOCATION \
      --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
      --parameters resourceGroupName=$RESOURCE_GROUP \
-                    resourceGroupLocation=$LOCATION &> /dev/null && break || sleep 15; 
+                    resourceGroupLocation=$LOCATION &> /dev/null && break || sleep 15;
 done
 
 export IDENTITIES_DEPLOYMENT_NAME=$(az deployment sub show -n $DEV_PREREQ_DEPLOYMENT_NAME --query properties.outputs.identitiesDeploymentName.value -o tsv)
@@ -95,15 +92,12 @@ export DRONESCHEDULER_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $
 export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query principalId -o tsv)
 export WORKFLOW_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.workflowIdName.value -o tsv)
 export WORKFLOW_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query principalId -o tsv)
-export WEBSITE_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.websiteIdName.value -o tsv)
-export WEBSITE_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WEBSITE_ID_NAME --query principalId -o tsv)
 export RESOURCE_GROUP_ACR=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
 
 # Wait for AAD propagation
 until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${WEBSITE_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 
 # Export the kubernetes cluster version
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv)
@@ -113,7 +107,7 @@ export DEV_DEPLOYMENT_NAME=azuredeploy-${DEPLOYMENT_SUFFIX}-dev
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
-for i in 1 2 3; 
+for i in 1 2 3;
 do
      echo "Deploying resources..."
      az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
@@ -125,22 +119,20 @@ do
                droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
                workflowIdName=${WORKFLOW_ID_NAME} \
                workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
-               websiteIdName=${WEBSITE_ID_NAME} \
-               websitePrincipalId=${WEBSITE_ID_PRINCIPAL_ID} \
                clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
-               acrResourceGroupName=${RESOURCE_GROUP_ACR} 2>&1 1>/dev/null 
-     if [[ $? = 0 ]] 
+               acrResourceGroupName=${RESOURCE_GROUP_ACR} 2>&1 1>/dev/null
+     if [[ $? = 0 ]]
      then
        az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.acrName.value -o tsv 2>&1 1>/dev/null
-       
-       if [[ $? = 0 ]] 
+
+       if [[ $? = 0 ]]
        then
          break
-       else 
+       else
          if [[ $i -ge 3 ]]; then exit 1; fi
          sleep 15
        fi
-     else 
+     else
        if [[ $i -ge 3 ]]; then exit 1; fi
        sleep 15
      fi
@@ -303,7 +295,7 @@ docker push $ACR_SERVER/package:0.1.0
 
 # Create secret
 # Note: Connection strings cannot be exported as outputs in ARM deployments
-export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g')       
+export COSMOSDB_CONNECTION=$(az cosmosdb list-connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g')
 export COSMOSDB_COL_NAME=packages
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
@@ -454,50 +446,25 @@ helm install $HELM_CHARTS/dronescheduler/ \
 
 #########################################################################################
 
-echo "Deploying Website Service..."
+echo "Validate the application is running"
 
-export WEBSITE_PATH=$PROJECT_ROOT/src/shipping/website
+curl -X POST "https://$EXTERNAL_INGEST_FQDN/api/deliveryrequests" --header 'Content-Type: application/json' --header 'Accept: application/json' -k -d '{
+   "confirmationRequired": "None",
+   "deadline": "",
+   "dropOffLocation": "drop off",
+   "expedited": true,
+   "ownerId": "myowner",
+   "packageInfo": {
+     "packageId": "mypackage",
+     "size": "Small",
+     "tag": "mytag",
+     "weight": 10
+   },
+   "pickupLocation": "my pickup",
+   "pickupTime": "2019-05-08T20:00:00.000Z"
+ }' > deliveryresponse.json
 
-docker build --pull --compress -t $ACR_SERVER/website:0.1.0 $WEBSITE_PATH/.
 
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/website:0.1.0
+DELIVERY_ID=$(cat deliveryresponse.json | jq -r .deliveryId)
+curl "https://$EXTERNAL_INGEST_FQDN/api/deliveries/$DELIVERY_ID" --header 'Accept: application/json' -k
 
-export WEBSITE_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.websitePrincipalResourceId.value -o tsv)
-export WEBSITE_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $WEBSITE_ID_NAME --query clientId -o tsv)
-export WEBSITE_INGRESS_TLS_SECRET_NAME=website-ingress-tls
-
-printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
-
-# Deploy the service
-helm install $HELM_CHARTS/website/ \
-     --set image.tag=0.1.0 \
-     --set image.repository=website \
-     --set dockerregistry=$ACR_SERVER \
-     --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
-     --set ingress.hosts[0].serviceName=website \
-     --set ingress.hosts[0].tls=true \
-     --set ingress.hosts[0].tlsSecretName=$DELIVERY_INGRESS_TLS_SECRET_NAME \
-     --set ingress.tls.secrets[0].name=$DELIVERY_INGRESS_TLS_SECRET_NAME \
-     --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
-     --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
-     --set identity.clientid=$WEBSITE_PRINCIPAL_CLIENT_ID \
-     --set identity.resourceid=$WEBSITE_PRINCIPAL_RESOURCE_ID \
-     --set bingmap.key=$BING_MAP_API_KEY \
-     --set api.url=https://$EXTERNAL_INGEST_FQDN \
-     --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
-     --set secrets.appinsights.ikey=$AI_IKEY \
-     --set reason="Initial deployment" \
-     --set tags.dev=true \
-     --namespace backend-dev \
-     --name website-v0.1.0-dev \
-     --dep-up
-
-echo "az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME --admin" >> import-$RESOURCE_GROUP-envs.sh
-echo
-echo "##############################################################################"
-echo "To Access the Drone Demo Site run the following URL from your browser"
-echo
-echo "https://$EXTERNAL_INGEST_FQDN"
-echo
-echo "##############################################################################"

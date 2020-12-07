@@ -23,28 +23,24 @@
         "deliveryIdName": "dev-d",
         "workflowIdName": "dev-wf",
         "droneSchedulerIdName": "dev-ds",
-        "websiteIdName": "dev-web",
         "acrResourceGroupName": "[variables('acrResourceGroupNamePrefix')]"
       },
       "qa": {
         "deliveryIdName": "qa-d",
         "workflowIdName": "qa-wf",
         "droneSchedulerIdName": "qa-ds",
-        "websiteIdName": "qa-web",
         "acrResourceGroupName": "[variables('acrResourceGroupNamePrefix')]"
       },
       "staging": {
         "deliveryIdName": "staging-d",
         "workflowIdName": "staging-wf",
         "droneSchedulerIdName": "staging-ds",
-        "websiteIdName": "staging-web",
         "acrResourceGroupName": "[variables('acrResourceGroupNamePrefix')]"
       },
       "prod": {
         "deliveryIdName": "prod-d",
         "workflowIdName": "prod-wf",
         "droneSchedulerIdName": "prod-ds",
-        "websiteIdName": "prod-web",
         "acrResourceGroupName": "[concat(variables('acrResourceGroupNamePrefix'),'-',parameters('environmentName'))]"
       }
     }
@@ -110,19 +106,6 @@
             },
             {
               "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
-              "name": "[variables('environmentSettings')[parameters('environmentName')].websiteIdName]",
-              "apiVersion": "2015-08-31-preview",
-              "location": "[parameters('resourceGroupLocation')]",
-              "tags": {
-                "displayName": "website managed identity",
-                "what": "rbac",
-                "reason": "aad-pod-identity",
-                "app": "fabrikam-website",
-                "[parameters('environmentName')]": true
-              }
-            },
-            {
-              "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
               "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerIdName]",
               "apiVersion": "2015-08-31-preview",
               "location": "[parameters('resourceGroupLocation')]",
@@ -146,10 +129,6 @@
             },
             "websiteIdName": {
               "value": "[variables('environmentSettings')[parameters('environmentName')].websiteIdName]",
-              "type": "string"
-            },
-            "websitePrincipalResourceId": {
-              "value": "[concat(subscription().id, '/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',variables('environmentSettings')[parameters('environmentName')].websiteIdName)]",
               "type": "string"
             },
             "droneSchedulerIdName": {
