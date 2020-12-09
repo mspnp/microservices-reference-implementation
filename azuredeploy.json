@@ -52,6 +52,24 @@
         "description": "Configure all linux machines with the SSH RSA public key string.  Your key should include three parts, for example 'ssh-rsa AAAAB...snip...UcyupgH azureuser@linuxvm'"
       }
     },
+    "servicePrincipalClientId": {
+        "metadata": {
+            "description": "Client ID (used by cloudprovider)"
+        },
+        "type": "string"
+    },
+    "servicePrincipalClientSecret": {
+        "metadata": {
+            "description": "The Service Principal Client Secret."
+        },
+        "type": "securestring"
+    },
+    "servicePrincipalId": {
+        "metadata": {
+            "description": "Principal ID (used by cloudprovider)"
+        },
+        "type": "string"
+    },
     "osType": {
       "type": "string",
       "defaultValue": "Linux",
@@ -96,13 +114,6 @@
       "defaultValue": false,
       "metadata": {
         "description": "A value that indicates whether diagnostics should be saved to the specified storage account."
-      }
-    },
-    "clusterAdminGroupObjectIds": {
-      "defaultValue": [],
-      "type": "array",
-      "metadata": {
-        "description": "Array of Azure AD Group object Ids to use for cluster administrators."
       }
     }
   },
@@ -313,18 +324,6 @@
       ],
       "properties": {
         "kubernetesVersion": "[parameters('kubernetesVersion')]",
-        "enableRBAC": true,
-        "nodeResourceGroup": "[variables('nodeResourceGroupName')]",
-        "aadProfile": {
-          "managed": true,
-          "adminGroupObjectIds": "[parameters('clusterAdminGroupObjectIds')]",
-          "tenantId": "[subscription().tenantId]"
-        },
-        "enablePodSecurityPolicy": false,
-        "servicePrincipalProfile": {
-          "clientId": "msi",
-          "secret": null
-        },
         "dnsPrefix": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
         "agentPoolProfiles": [
           {
@@ -333,8 +332,7 @@
             "count": "[variables('environmentSettings')[parameters('environmentName')].agentCount]",
             "vmSize": "[variables('environmentSettings')[parameters('environmentName')].agentVMSize]",
             "osType": "[parameters('osType')]",
-            "storageProfile": "ManagedDisks",
-            "mode": "System"
+            "storageProfile": "ManagedDisks"
           }
         ],
         "linuxProfile": {
@@ -346,6 +344,10 @@
               }
             ]
           }
+        },
+        "servicePrincipalProfile": {
+            "clientId": "[parameters('servicePrincipalClientId')]",
+            "secret": "[parameters('servicePrincipalClientSecret')]"
         },
         "addonProfiles": {
           "omsagent": {
