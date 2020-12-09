@@ -5,7 +5,7 @@ variables:
   imageName: $(repositoryName):$(Build.SourceBranchName)
   azureSubscription: AZURE_PIPELINES_SERVICE_CONN_NAME_VAR_VAL
   azureContainerRegistry: ACR_SERVER_VAR_VAL
-  azureContainerRegistryName: ACR_NAME_VAR_VALw
+  azureContainerRegistryName: ACR_NAME_VAR_VAL
 
 name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
 
@@ -47,15 +47,6 @@ jobs:
       fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/ingestion/v') ]
       buildImage: $[ eq(variables['build.sourceBranch'], 'refs/heads/master') ]
     steps:
-      - task: PowerShell@2
-        displayName: "Convert ImageName"
-        inputs:
-          targetType: "inline"
-          script: |
-            $lowerImageName= "$(imageName)".ToLower()
-            Write-Host "##vso[task.setvariable variable=imageName]$lowerImageName"
-            Write-Host "$(imageName)"
-
       - task: Docker@1
         displayName: "Build testrunner image"
         inputs:
