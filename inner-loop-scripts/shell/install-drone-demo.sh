@@ -4,25 +4,24 @@ function print_help { echo $'Usage\n\n' \
                            $'-s Subscription\n' \
                            $'-l Location\n' \
                            $'-r Resource Group\n' \
-                           $'-g Azure AD Group ID\n' \
+                           $'-k Ssh pubic key filename\n' \
                            $'-? Show Usage' \
                            >&2;
                     }
 
-while getopts s:l:r:b:g:? option
+while getopts s:l:r:k:? option
 do
 case "${option}"
 in
 s) SUBSCRIPTION=${OPTARG};;
 l) LOCATION=${OPTARG};;
 r) RESOURCEGROUP=${OPTARG};;
-g) ADGROUPID=${OPTARG};;
+k) SSHPUBKEYFILENAME=${OPTARG};;
 ?) print_help; exit 0;;
 esac
 done
 
-if [[ -z "$SUBSCRIPTION" || -z "$LOCATION" || -z "$RESOURCEGROUP" || -z "$RESOURCEGROUP" || -z "$ADGROUPID" ]]
-then
+if [[ -z "$SUBSCRIPTION" || -z "$LOCATION" || -z "$RESOURCEGROUP" || -z "$SSHPUBKEYFILENAME" ]]; then
 print_help;
 exit 2
 fi
@@ -30,7 +29,6 @@ fi
 export SUBSCRIPTIONID=$SUBSCRIPTION
 export LOCATION=$LOCATION
 export RESOURCE_GROUP=$RESOURCEGROUP
-export AD_GROUP_ID=$ADGROUPID
 
 userObjectId=$(az ad signed-in-user show --query objectId -o tsv)
 
@@ -49,22 +47,25 @@ pushd ./microservices-reference-implementation && \
 git checkout basic && \
 popd
 
-export SSH_PUBLIC_KEY_FILE=/root/.ssh/id_rsa.pub
+export SSH_PUBLIC_KEY_FILE=$SSHPUBKEYFILENAME
 
-if [ -f "$SSH_PUBLIC_KEY_FILE" ]; then
+if [ -f "$SSH_PUBLIC_KEY_FILE" ];then
     export TEST=SSH_PUBLIC_KEY_FILE
 else
-    mkdir /root/.ssh
-    cp /id_rsa.pub /root/.ssh/id_rsa.pub
-    cp /id_rsa /root/.ssh/id_rsa
+    exit 1
 fi
 
 #########################################################################################
 
 export DEPLOYMENT_SUFFIX=$(date +%s%N)
-export PROJECT_ROOT=../../../microservices-reference-implementation
+export PROJECT_ROOT=./microservices-reference-implementation
 export K8S=$PROJECT_ROOT/k8s
 export HELM_CHARTS=$PROJECT_ROOT/charts
+
+export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor" -o json) && \
+export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
+export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
+export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
@@ -111,7 +112,10 @@ for i in 1 2 3;
 do
      echo "Deploying resources..."
      az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
-     --parameters kubernetesVersion=${KUBERNETES_VERSION} \
+     --parameters servicePrincipalClientId=${SP_APP_ID} \
+               servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
+               servicePrincipalId=${SP_OBJECT_ID} \
+               kubernetesVersion=${KUBERNETES_VERSION} \
                sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
                deliveryIdName=${DELIVERY_ID_NAME} \
                deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
@@ -119,8 +123,8 @@ do
                droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
                workflowIdName=${WORKFLOW_ID_NAME} \
                workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
-               clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
-               acrResourceGroupName=${RESOURCE_GROUP_ACR} 2>&1 1>/dev/null
+               acrResourceGroupName=${RESOURCE_GROUP_ACR} \
+               acrResourceGroupLocation=$LOCATION
      if [[ $? = 0 ]]
      then
        az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.acrName.value -o tsv 2>&1 1>/dev/null
@@ -199,7 +203,8 @@ kubectl apply -f $K8S/k8s-rbac-ai.yaml
 echo "Configuring AAD POD Identity..."
 
 # setup AAD pod identity
-kubectl create -f $PROJECT_ROOT/k8s/deployment-rbac.yaml
+helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts
+helm install aad-pod-identity/aad-pod-identity --set=installCRDs=true --set nmi.allowNetworkPluginKubenet=true --name aad-pod-identity --namespace kube-system
 
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 

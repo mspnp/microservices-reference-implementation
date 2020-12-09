@@ -1,9 +1,0 @@
-FROM docker:dind
-
-RUN apk add --no-cache curl tar openssl perl sudo bash jq python3 libffi py-pip
-RUN apk --update --no-cache add postgresql-client postgresql
-RUN apk add --virtual=build gcc libffi-dev musl-dev openssl-dev make python3-dev
-RUN apk add curl
-RUN apk add git
-RUN pip install azure-cli
-RUN apk del --purge build
