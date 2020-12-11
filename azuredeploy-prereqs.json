@@ -127,10 +127,6 @@
               "value": "[concat(subscription().id, '/resourceGroups/',parameters('resourceGroupName'),'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',variables('environmentSettings')[parameters('environmentName')].deliveryIdName)]",
               "type": "string"
             },
-            "websiteIdName": {
-              "value": "[variables('environmentSettings')[parameters('environmentName')].websiteIdName]",
-              "type": "string"
-            },
             "droneSchedulerIdName": {
               "value": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerIdName]",
               "type": "string"
