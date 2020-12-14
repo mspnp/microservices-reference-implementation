@@ -12,139 +12,145 @@ name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
 pr: # only valid for GitHub. Using Azure repo it must be configure as a Branch Policy
   paths:
     include:
-    - /src/shipping/ingestion/
+      - /src/shipping/ingestion/
 
   branches:
     include:
-    - master
-    - release/ingestion/v* # for bug fixes
+      - master
+      - release/ingestion/v* # for bug fixes
 
 trigger:
   batch: true
   branches:
     include:
-    # for new release to production: release flow strategy
-    - release/ingestion/v*
-    - refs/relelase/ingestion/v*
-    - master
-    - feature/ingestion/*
-    - topic/ingestion/*
+      # for new release to production: release flow strategy
+      - release/ingestion/v*
+      - refs/relelase/ingestion/v*
+      - master
+      - feature/ingestion/*
+      - topic/ingestion/*
   paths:
     include:
-    - /src/shipping/ingestion/
+      - /src/shipping/ingestion/
 
 resources:
-- repo: self
+  - repo: self
 
 jobs:
+  # CI
+  - job: ingestionjobci
+    displayName: "ingestion CI"
+    pool:
+      vmImage: "Ubuntu 16.04"
+    timeoutInMinutes: 90
+    variables:
+      fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/ingestion/v') ]
+      buildImage: $[ eq(variables['build.sourceBranch'], 'refs/heads/master') ]
+    steps:
+      - task: Docker@1
+        displayName: "Build testrunner image"
+        inputs:
+          azureSubscriptionEndpoint: $(azureSubscription)
 
-# CI
-- job: ingestionjobci
-  displayName: "ingestion CI"
-  pool:
-    vmImage: 'Ubuntu 16.04'
-  timeoutInMinutes: 90
-  variables:
-    fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/ingestion/v') ]
-    buildImage: $[ eq(variables['build.sourceBranch'], 'refs/heads/master') ]
-  steps:
-  - task: Docker@1
-    displayName: 'Build testrunner image'
-    inputs:
-      azureSubscriptionEndpoint: $(azureSubscription)
+          azureContainerRegistry: $(azureContainerRegistry)
 
-      azureContainerRegistry: $(azureContainerRegistry)
+          arguments: "--pull --target testrunner"
 
-      arguments: '--pull --target testrunner'
+          dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
 
-      dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
+          imageName: "$(imageName)-test"
 
-      imageName: '$(imageName)-test'
+      - task: Docker@1
+        displayName: "Run tests"
+        inputs:
+          azureSubscriptionEndpoint: $(azureSubscription)
 
-  - task: Docker@1
-    displayName: 'Run tests'
-    inputs:
-      azureSubscriptionEndpoint: $(azureSubscription)
+          azureContainerRegistry: $(azureContainerRegistry)
 
-      azureContainerRegistry: $(azureContainerRegistry)
+          command: "run"
 
-      command: 'run'
+          containerName: testrunner
 
-      containerName: testrunner
+          volumes: "$(System.DefaultWorkingDirectory)/TestResults:/usr/src/app/target/surefire-reports/"
 
-      volumes: '$(System.DefaultWorkingDirectory)/TestResults:/usr/src/app/target/surefire-reports/'
+          imageName: "$(imageName)-test"
 
-      imageName: '$(imageName)-test'
+          runInBackground: false
 
-      runInBackground: false
+      - task: PublishTestResults@2
+        displayName: "Publish test results"
+        inputs:
+          testResultsFormat: "JUnit" # Options: JUnit, NUnit, VSTest, xUnit
 
-  - task: PublishTestResults@2
-    displayName: 'Publish test results'
-    inputs:
-      testResultsFormat: 'JUnit' # Options: JUnit, NUnit, VSTest, xUnit
+          testResultsFiles: "TestResults/TEST*.xml"
 
-      testResultsFiles: 'TestResults/TEST*.xml'
+          searchFolder: "$(System.DefaultWorkingDirectory)"
 
-      searchFolder: '$(System.DefaultWorkingDirectory)'
+          publishRunAttachments: true
 
-      publishRunAttachments: true
+      - task: Docker@1
+        condition: or(eq(variables['buildImage'],True),eq(variables['fullCI'],True))
+        displayName: "Build runtime image"
+        inputs:
+          azureSubscriptionEndpoint: $(azureSubscription)
 
-  - task: Docker@1
-    condition: or(eq(variables['buildImage'],True),eq(variables['fullCI'],True))
-    displayName: 'Build runtime image'
-    inputs:
+          azureContainerRegistry: $(azureContainerRegistry)
 
-      azureSubscriptionEndpoint: $(azureSubscription)
+          dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
 
-      azureContainerRegistry: $(azureContainerRegistry)
+          includeLatestTag: false
 
-      dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
+          imageName: "$(imageName)"
 
-      includeLatestTag: false
+      - task: Docker@1
+        condition: eq(variables['fullCI'],True)
+        displayName: "Push runtime image"
+        inputs:
+          azureSubscriptionEndpoint: $(azureSubscription)
 
-      imageName: '$(imageName)'
+          azureContainerRegistry: $(azureContainerRegistry)
 
-  - task: Docker@1
-    condition: eq(variables['fullCI'],True)
-    displayName: 'Push runtime image'
-    inputs:
-      azureSubscriptionEndpoint: $(azureSubscription)
+          command: "Push an image"
 
-      azureContainerRegistry: $(azureContainerRegistry)
+          imageName: "$(imageName)"
 
-      command: 'Push an image'
+          includeSourceTags: false
 
-      imageName: '$(imageName)'
+      - task: HelmInstaller@0
+        condition: eq(variables['fullCI'],True)
+        displayName: "Install Helm  3.0.3"
+        inputs:
+          helmVersion: 3.0.3
 
-      includeSourceTags: false
+          checkLatestHelmVersion: false
 
-  - task: HelmInstaller@0
-    condition: eq(variables['fullCI'],True)
-    displayName: 'Install Helm 2.12.3'
-    inputs:
-      kubectlVersion: 1.12.4
+          kubectlVersion: 1.12.4
 
-      checkLatestKubectl: false
+          checkLatestKubectl: false
 
-  - task: HelmDeploy@0
-    condition: eq(variables['fullCI'],True)
-    displayName: 'helm package'
-    inputs:
-      command: package
+      - task: HelmDeploy@0
+        condition: eq(variables['fullCI'],True)
+        displayName: "helm package"
+        inputs:
+          command: package
 
-      chartPath: $(chartPath)
+          chartPath: $(chartPath)
 
-      chartVersion: $(Build.SourceBranchName)
+          chartVersion: $(Build.SourceBranchName)
 
-      arguments: '--app-version $(Build.SourceBranchName) --dependency-update'
+          updateDependency: true
 
-  - task: AzureCLI@1
-    condition: eq(variables['fullCI'],True)
-    displayName: 'Push a helm package'
-    inputs:
-      azureSubscription: $(azureSubscription)
+          save: false
 
-      scriptLocation: inlineScript
+          arguments: "--app-version $(Build.SourceBranchName)"
 
-      inlineScript: |
-       az acr helm push $(System.ArtifactsDirectory)/$(repositoryName)-$(Build.SourceBranchName).tgz --name $(azureContainerRegistryName) --force;
+      - task: AzureCLI@1
+        condition: eq(variables['fullCI'],True)
+        displayName: "Push a helm package"
+        inputs:
+          azureSubscription: $(azureSubscription)
+
+          scriptLocation: inlineScript
+
+          inlineScript: |
+            az acr helm push $(System.ArtifactsDirectory)/$(repositoryName)-$(Build.SourceBranchName).tgz --name $(azureContainerRegistryName) --force;

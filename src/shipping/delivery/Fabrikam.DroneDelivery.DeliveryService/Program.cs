@@ -27,7 +27,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService
                 .ConfigureWebHostDefaults(webBuilder =>
                 {
                     webBuilder
-                        .UseStartup<Startup>()                
+                        .UseStartup<Startup>()
                         .ConfigureLogging((hostingContext, loggingBuilder) =>
                         {
                             loggingBuilder.AddApplicationInsights();

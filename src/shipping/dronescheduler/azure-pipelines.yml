@@ -13,102 +13,100 @@ name: $(build.sourceBranch)-$(Date:yyyyMMdd)$(Rev:.rr)
 pr: # only valid for GitHub. Using Azure repo it must be configure as a Branch Policy
   paths:
     include:
-    - /src/shipping/dronescheduler/
+      - /src/shipping/dronescheduler/
 
   branches:
     include:
-    - master
-    - release/dronescheduler/v* # for bug fixes
+      - master
+      - release/dronescheduler/v* # for bug fixes
 
 trigger:
   batch: true
   branches:
     include:
-    # for new release to production: release flow strategy
-    - release/dronescheduler/v*
-    - refs/relelase/dronescheduler/v*
-    - master
-    - feature/dronescheduler/*
-    - topic/dronescheduler/*
+      # for new release to production: release flow strategy
+      - release/dronescheduler/v*
+      - refs/relelase/dronescheduler/v*
+      - master
+      - feature/dronescheduler/*
+      - topic/dronescheduler/*
   paths:
     include:
-    - /src/shipping/dronescheduler/
+      - /src/shipping/dronescheduler/
 
 resources:
-- repo: self
+  - repo: self
 
 jobs:
+  # CI
+  - job: droneschedulerjobci
+    displayName: "dronescheduler CI"
+    pool:
+      vmImage: "Ubuntu 16.04"
+    timeoutInMinutes: 90
+    variables:
+      fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/dronescheduler/v') ]
+      buildImage: $[ eq(variables['build.sourceBranch'], 'refs/heads/master') ]
+    steps:
+      - task: Docker@1
+        condition: or(eq(variables['buildImage'],True),eq(variables['fullCI'],True))
+        displayName: "Build runtime image"
+        inputs:
+          azureSubscriptionEndpoint: $(azureSubscription)
 
-# CI
-- job: droneschedulerjobci
-  displayName: "dronescheduler CI"
-  pool:
-    vmImage: 'Ubuntu 16.04'
-  timeoutInMinutes: 90
-  variables:
-    fullCI: $[ startsWith(variables['build.sourceBranch'], 'refs/heads/release/dronescheduler/v') ]
-    buildImage: $[ eq(variables['build.sourceBranch'], 'refs/heads/master') ]
-  steps:
-  - task: Docker@1
-    condition: or(eq(variables['buildImage'],True),eq(variables['fullCI'],True))
-    displayName: 'Build runtime image'
-    inputs:
+          azureContainerRegistry: $(azureContainerRegistry)
 
-      azureSubscriptionEndpoint: $(azureSubscription)
+          dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
 
-      azureContainerRegistry: $(azureContainerRegistry)
+          includeLatestTag: false
 
-      dockerFile: $(System.DefaultWorkingDirectory)/$(dockerFileName)
+          imageName: "$(imageName)"
 
-      includeLatestTag: false
+          buildContext: $(buildContext)
 
-      imageName: '$(imageName)'
+          useDefaultContext: false
 
-      buildContext: $(buildContext)
+      - task: Docker@1
+        condition: eq(variables['fullCI'],True)
+        displayName: "Push runtime image"
+        inputs:
+          azureSubscriptionEndpoint: $(azureSubscription)
 
-      useDefaultContext: false
+          azureContainerRegistry: $(azureContainerRegistry)
 
-  - task: Docker@1
-    condition: eq(variables['fullCI'],True)
-    displayName: 'Push runtime image'
-    inputs:
-      azureSubscriptionEndpoint: $(azureSubscription)
+          command: "Push an image"
 
-      azureContainerRegistry: $(azureContainerRegistry)
+          imageName: "$(imageName)"
 
-      command: 'Push an image'
+          includeSourceTags: false
 
-      imageName: '$(imageName)'
+      - task: HelmInstaller@0
+        condition: eq(variables['fullCI'],True)
+        displayName: "Install Helm 2.12.3"
+        inputs:
+          kubectlVersion: 1.12.4
 
-      includeSourceTags: false
+          checkLatestKubectl: false
 
-  - task: HelmInstaller@0
-    condition: eq(variables['fullCI'],True)
-    displayName: 'Install Helm 2.12.3'
-    inputs:
-      kubectlVersion: 1.12.4
+      - task: HelmDeploy@0
+        condition: eq(variables['fullCI'],True)
+        displayName: "helm package"
+        inputs:
+          command: package
 
-      checkLatestKubectl: false
+          chartPath: $(chartPath)
 
-  - task: HelmDeploy@0
-    condition: eq(variables['fullCI'],True)
-    displayName: 'helm package'
-    inputs:
-      command: package
+          chartVersion: $(Build.SourceBranchName)
 
-      chartPath: $(chartPath)
+          arguments: "--app-version $(Build.SourceBranchName) --dependency-update"
 
-      chartVersion: $(Build.SourceBranchName)
+      - task: AzureCLI@1
+        condition: eq(variables['fullCI'],True)
+        displayName: "Push a helm package"
+        inputs:
+          azureSubscription: $(azureSubscription)
 
-      arguments: '--app-version $(Build.SourceBranchName) --dependency-update'
+          scriptLocation: inlineScript
 
-  - task: AzureCLI@1
-    condition: eq(variables['fullCI'],True)
-    displayName: 'Push a helm package'
-    inputs:
-      azureSubscription: $(azureSubscription)
-
-      scriptLocation: inlineScript
-
-      inlineScript: |
-       az acr helm push $(System.ArtifactsDirectory)/$(repositoryName)-$(Build.SourceBranchName).tgz --name $(azureContainerRegistryName) --force;
+          inlineScript: |
+            az acr helm push $(System.ArtifactsDirectory)/$(repositoryName)-$(Build.SourceBranchName).tgz --name $(azureContainerRegistryName) --force;

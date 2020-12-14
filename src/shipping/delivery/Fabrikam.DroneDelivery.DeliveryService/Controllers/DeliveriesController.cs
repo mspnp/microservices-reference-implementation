@@ -105,7 +105,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
             {
                 var internalDelivery = delivery.ToInternal();
 
-                // Adds new inflight delivery 
+                // Adds new inflight delivery
                 await deliveryRepository.CreateAsync(internalDelivery);
 
                 // Adds the delivery created status event
@@ -121,7 +121,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
 
                 var internalDelivery = delivery.ToInternal();
 
-                // Updates inflight delivery 
+                // Updates inflight delivery
                 await deliveryRepository.UpdateAsync(id, internalDelivery);
 
                 return NoContent();
@@ -210,7 +210,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Controllers
         }
 
         /// <summary>
-        /// This method will eventually be deprecated, replaced with code that listens to drone 
+        /// This method will eventually be deprecated, replaced with code that listens to drone
         /// events that signify a delivery confirmation.
         /// </summary>
         /// <param name="id"></param>

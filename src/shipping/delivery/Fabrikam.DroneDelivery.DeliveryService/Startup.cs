@@ -86,8 +86,6 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             // Important: it has to be second: Enable global exception, error handling
             app.UseGlobalExceptionHandler();
 
-            // TODO: Add middleware AuthZ here
-
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {

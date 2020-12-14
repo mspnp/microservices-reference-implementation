@@ -13,8 +13,7 @@
         }
     },
     "variableGroups": [],
-    "environments": [
-        {
+    "environments": [{
             "id": 34,
             "name": "dev",
             "rank": 1,
@@ -49,14 +48,12 @@
             },
             "variableGroups": [],
             "preDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 102
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 102
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -70,14 +67,12 @@
                 "id": 109
             },
             "postDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 110
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 110
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -87,170 +82,167 @@
                     "executionOrder": 2
                 }
             },
-            "deployPhases": [
-                {
-                    "deploymentInput": {
-                        "parallelExecution": {
-                            "parallelExecutionType": 0
-                        },
-                        "skipArtifactsDownload": false,
-                        "artifactsDownloadInput": {
-                            "downloadInputs": []
-                        },
-                        "queueId": AZURE_DEVOPS_WORKFLOW_QUEUE_ID_VAR_VAL,
-                        "demands": [],
-                        "enableAccessToken": false,
-                        "timeoutInMinutes": 0,
-                        "jobCancelTimeoutInMinutes": 1,
-                        "condition": "succeeded()",
-                        "overrideInputs": {}
+            "deployPhases": [{
+                "deploymentInput": {
+                    "parallelExecution": {
+                        "parallelExecutionType": 0
                     },
-                    "rank": 1,
-                    "phaseType": 1,
-                    "name": "Agent job",
-                    "refName": null,
-                    "workflowTasks": [
-                        {
-                            "environment": {},
-                            "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
-                            "version": "0.*",
-                            "name": "install helm 2.12.3",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "helmVersion": "2.12.3",
-                                "checkLatestHelmVersion": "false",
-                                "installKubeCtl": "true",
-                                "kubectlVersion": "1.12.4",
-                                "checkLatestKubeCtl": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm init",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "",
-                                "command": "init",
-                                "chartType": "Name",
-                                "chartName": "",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "",
-                                "overrideValues": "",
-                                "valueFile": "",
-                                "destination": "$(Build.ArtifactStagingDirectory)",
-                                "canaryimage": "false",
-                                "upgradetiller": "true",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "false",
-                                "waitForExecution": "true",
-                                "arguments": "--service-account tiller",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
-                            "version": "1.*",
-                            "name": "add helm repo",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
-                                "scriptLocation": "inlineScript",
-                                "scriptPath": "",
-                                "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
-                                "args": "",
-                                "addSpnToEnvironment": "false",
-                                "useGlobalConfig": "false",
-                                "cwd": "",
-                                "failOnStandardError": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm upgrade workflow dev",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "backend-dev",
-                                "command": "upgrade",
-                                "chartType": "Name",
-                                "chartName": "$(ACR_NAME)/$(REPO_NAME)",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-dev",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.dev=true",
-                                "valueFile": "",
-                                "destination": "",
-                                "canaryimage": "false",
-                                "upgradetiller": "false",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "true",
-                                "waitForExecution": "false",
-                                "arguments": "--version $(Build.SourceBranchName)",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
+                    "skipArtifactsDownload": false,
+                    "artifactsDownloadInput": {
+                        "downloadInputs": []
+                    },
+                    "queueId": AZURE_DEVOPS_WORKFLOW_QUEUE_ID_VAR_VAL,
+                    "demands": [],
+                    "enableAccessToken": false,
+                    "timeoutInMinutes": 0,
+                    "jobCancelTimeoutInMinutes": 1,
+                    "condition": "succeeded()",
+                    "overrideInputs": {}
+                },
+                "rank": 1,
+                "phaseType": 1,
+                "name": "Agent job",
+                "refName": null,
+                "workflowTasks": [{
+                        "environment": {},
+                        "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
+                        "version": "0.*",
+                        "name": "install helm 2.12.3",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "helmVersion": "2.12.3",
+                            "checkLatestHelmVersion": "false",
+                            "installKubeCtl": "true",
+                            "kubectlVersion": "1.12.4",
+                            "checkLatestKubeCtl": "false"
                         }
-                    ]
-                }
-            ],
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm init",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "",
+                            "command": "init",
+                            "chartType": "Name",
+                            "chartName": "",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "",
+                            "overrideValues": "",
+                            "valueFile": "",
+                            "destination": "$(Build.ArtifactStagingDirectory)",
+                            "canaryimage": "false",
+                            "upgradetiller": "true",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "false",
+                            "waitForExecution": "true",
+                            "arguments": "--service-account tiller",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
+                        "version": "1.*",
+                        "name": "add helm repo",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
+                            "scriptLocation": "inlineScript",
+                            "scriptPath": "",
+                            "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
+                            "args": "",
+                            "addSpnToEnvironment": "false",
+                            "useGlobalConfig": "false",
+                            "cwd": "",
+                            "failOnStandardError": "false"
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm upgrade workflow dev",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "backend-dev",
+                            "command": "upgrade",
+                            "chartType": "Name",
+                            "chartName": "$(ACR_NAME)/$(REPO_NAME)",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-dev",
+                            "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.dev=true",
+                            "valueFile": "",
+                            "destination": "",
+                            "canaryimage": "false",
+                            "upgradetiller": "false",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "true",
+                            "waitForExecution": "false",
+                            "arguments": "--version $(Build.SourceBranchName)",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    }
+                ]
+            }],
             "environmentOptions": {
                 "emailNotificationType": "OnlyOnFailure",
                 "emailRecipients": "release.environment.owner;release.creator",
@@ -263,13 +255,11 @@
                 "pullRequestDeploymentEnabled": false
             },
             "demands": [],
-            "conditions": [
-                {
-                    "name": "ReleaseStarted",
-                    "conditionType": 1,
-                    "value": ""
-                }
-            ],
+            "conditions": [{
+                "name": "ReleaseStarted",
+                "conditionType": 1,
+                "value": ""
+            }],
             "executionPolicy": {
                 "concurrencyCount": 1,
                 "queueDepthCount": 0
@@ -281,8 +271,7 @@
                 "retainBuild": true
             },
             "processParameters": {
-                "inputs": [
-                    {
+                "inputs": [{
                         "aliases": [],
                         "options": {
                             "Azure Resource Manager": "Azure Resource Manager",
@@ -355,8 +344,7 @@
                         "groupName": ""
                     }
                 ],
-                "dataSourceBindings": [
-                    {
+                "dataSourceBindings": [{
                         "parameters": {},
                         "endpointId": "$(azureSubscriptionEndpoint)",
                         "target": "kubernetesCluster",
@@ -396,7 +384,7 @@
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
             "variables": {
-                 "WORKFLOW_KEYVAULT_RESOURCE_GROUP": {
+                "WORKFLOW_KEYVAULT_RESOURCE_GROUP": {
                     "value": "QA_WORKFLOW_KEYVAULT_RESOURCE_GROUP_VAR_VAL"
                 },
                 "SUBSCRIPTION_ID": {
@@ -423,14 +411,12 @@
             },
             "variableGroups": [],
             "preDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 103
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 103
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -444,14 +430,12 @@
                 "id": 108
             },
             "postDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 111
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 111
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -461,170 +445,167 @@
                     "executionOrder": 2
                 }
             },
-            "deployPhases": [
-                {
-                    "deploymentInput": {
-                        "parallelExecution": {
-                            "parallelExecutionType": 0
-                        },
-                        "skipArtifactsDownload": false,
-                        "artifactsDownloadInput": {
-                            "downloadInputs": []
-                        },
-                        "queueId": AZURE_DEVOPS_WORKFLOW_QUEUE_ID_VAR_VAL,
-                        "demands": [],
-                        "enableAccessToken": false,
-                        "timeoutInMinutes": 0,
-                        "jobCancelTimeoutInMinutes": 1,
-                        "condition": "succeeded()",
-                        "overrideInputs": {}
+            "deployPhases": [{
+                "deploymentInput": {
+                    "parallelExecution": {
+                        "parallelExecutionType": 0
                     },
-                    "rank": 1,
-                    "phaseType": 1,
-                    "name": "Agent job",
-                    "refName": null,
-                    "workflowTasks": [
-                        {
-                            "environment": {},
-                            "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
-                            "version": "0.*",
-                            "name": "install helm 2.12.3",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "helmVersion": "2.12.3",
-                                "checkLatestHelmVersion": "false",
-                                "installKubeCtl": "true",
-                                "kubectlVersion": "1.12.4",
-                                "checkLatestKubeCtl": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm init",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "",
-                                "command": "init",
-                                "chartType": "Name",
-                                "chartName": "",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "",
-                                "overrideValues": "",
-                                "valueFile": "",
-                                "destination": "$(Build.ArtifactStagingDirectory)",
-                                "canaryimage": "false",
-                                "upgradetiller": "true",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "false",
-                                "waitForExecution": "true",
-                                "arguments": "--service-account tiller",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
-                            "version": "1.*",
-                            "name": "add helm repo",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
-                                "scriptLocation": "inlineScript",
-                                "scriptPath": "",
-                                "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
-                                "args": "",
-                                "addSpnToEnvironment": "false",
-                                "useGlobalConfig": "false",
-                                "cwd": "",
-                                "failOnStandardError": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm upgrade workflow qa",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "backend-qa",
-                                "command": "upgrade",
-                                "chartType": "Name",
-                                "chartName": "$(ACR_NAME)/$(REPO_NAME)",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-qa",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.qa=true",
-                                "valueFile": "",
-                                "destination": "",
-                                "canaryimage": "false",
-                                "upgradetiller": "false",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "true",
-                                "waitForExecution": "false",
-                                "arguments": "--version $(Build.SourceBranchName)",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
+                    "skipArtifactsDownload": false,
+                    "artifactsDownloadInput": {
+                        "downloadInputs": []
+                    },
+                    "queueId": AZURE_DEVOPS_WORKFLOW_QUEUE_ID_VAR_VAL,
+                    "demands": [],
+                    "enableAccessToken": false,
+                    "timeoutInMinutes": 0,
+                    "jobCancelTimeoutInMinutes": 1,
+                    "condition": "succeeded()",
+                    "overrideInputs": {}
+                },
+                "rank": 1,
+                "phaseType": 1,
+                "name": "Agent job",
+                "refName": null,
+                "workflowTasks": [{
+                        "environment": {},
+                        "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
+                        "version": "0.*",
+                        "name": "install helm 2.12.3",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "helmVersion": "2.12.3",
+                            "checkLatestHelmVersion": "false",
+                            "installKubeCtl": "true",
+                            "kubectlVersion": "1.12.4",
+                            "checkLatestKubeCtl": "false"
                         }
-                    ]
-                }
-            ],
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm init",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "",
+                            "command": "init",
+                            "chartType": "Name",
+                            "chartName": "",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "",
+                            "overrideValues": "",
+                            "valueFile": "",
+                            "destination": "$(Build.ArtifactStagingDirectory)",
+                            "canaryimage": "false",
+                            "upgradetiller": "true",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "false",
+                            "waitForExecution": "true",
+                            "arguments": "--service-account tiller",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
+                        "version": "1.*",
+                        "name": "add helm repo",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
+                            "scriptLocation": "inlineScript",
+                            "scriptPath": "",
+                            "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
+                            "args": "",
+                            "addSpnToEnvironment": "false",
+                            "useGlobalConfig": "false",
+                            "cwd": "",
+                            "failOnStandardError": "false"
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm upgrade workflow qa",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "backend-qa",
+                            "command": "upgrade",
+                            "chartType": "Name",
+                            "chartName": "$(ACR_NAME)/$(REPO_NAME)",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-qa",
+                            "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.qa=true",
+                            "valueFile": "",
+                            "destination": "",
+                            "canaryimage": "false",
+                            "upgradetiller": "false",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "true",
+                            "waitForExecution": "false",
+                            "arguments": "--version $(Build.SourceBranchName)",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    }
+                ]
+            }],
             "environmentOptions": {
                 "emailNotificationType": "OnlyOnFailure",
                 "emailRecipients": "release.environment.owner;release.creator",
@@ -637,13 +618,11 @@
                 "pullRequestDeploymentEnabled": false
             },
             "demands": [],
-            "conditions": [
-                {
-                    "name": "dev",
-                    "conditionType": 2,
-                    "value": "4"
-                }
-            ],
+            "conditions": [{
+                "name": "dev",
+                "conditionType": 2,
+                "value": "4"
+            }],
             "executionPolicy": {
                 "concurrencyCount": 1,
                 "queueDepthCount": 0
@@ -655,8 +634,7 @@
                 "retainBuild": true
             },
             "processParameters": {
-                "inputs": [
-                    {
+                "inputs": [{
                         "aliases": [],
                         "options": {
                             "Azure Resource Manager": "Azure Resource Manager",
@@ -729,8 +707,7 @@
                         "groupName": ""
                     }
                 ],
-                "dataSourceBindings": [
-                    {
+                "dataSourceBindings": [{
                         "parameters": {},
                         "endpointId": "$(azureSubscriptionEndpoint)",
                         "target": "kubernetesCluster",
@@ -770,7 +747,7 @@
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
             "variables": {
-                 "WORKFLOW_KEYVAULT_RESOURCE_GROUP": {
+                "WORKFLOW_KEYVAULT_RESOURCE_GROUP": {
                     "value": "STAGING_WORKFLOW_KEYVAULT_RESOURCE_GROUP_VAR_VAL"
                 },
                 "SUBSCRIPTION_ID": {
@@ -797,14 +774,12 @@
             },
             "variableGroups": [],
             "preDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 104
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 104
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -818,14 +793,12 @@
                 "id": 107
             },
             "postDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 112
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 112
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -835,170 +808,167 @@
                     "executionOrder": 2
                 }
             },
-            "deployPhases": [
-                {
-                    "deploymentInput": {
-                        "parallelExecution": {
-                            "parallelExecutionType": 0
-                        },
-                        "skipArtifactsDownload": false,
-                        "artifactsDownloadInput": {
-                            "downloadInputs": []
-                        },
-                        "queueId": AZURE_DEVOPS_WORKFLOW_QUEUE_ID_VAR_VAL,
-                        "demands": [],
-                        "enableAccessToken": false,
-                        "timeoutInMinutes": 0,
-                        "jobCancelTimeoutInMinutes": 1,
-                        "condition": "succeeded()",
-                        "overrideInputs": {}
+            "deployPhases": [{
+                "deploymentInput": {
+                    "parallelExecution": {
+                        "parallelExecutionType": 0
                     },
-                    "rank": 1,
-                    "phaseType": 1,
-                    "name": "Agent job",
-                    "refName": null,
-                    "workflowTasks": [
-                        {
-                            "environment": {},
-                            "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
-                            "version": "0.*",
-                            "name": "install helm 2.12.3",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "helmVersion": "2.12.3",
-                                "checkLatestHelmVersion": "false",
-                                "installKubeCtl": "true",
-                                "kubectlVersion": "1.12.4",
-                                "checkLatestKubeCtl": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm init",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "",
-                                "command": "init",
-                                "chartType": "Name",
-                                "chartName": "",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "",
-                                "overrideValues": "",
-                                "valueFile": "",
-                                "destination": "$(Build.ArtifactStagingDirectory)",
-                                "canaryimage": "false",
-                                "upgradetiller": "true",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "false",
-                                "waitForExecution": "true",
-                                "arguments": "--service-account tiller",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
-                            "version": "1.*",
-                            "name": "add helm repo",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
-                                "scriptLocation": "inlineScript",
-                                "scriptPath": "",
-                                "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
-                                "args": "",
-                                "addSpnToEnvironment": "false",
-                                "useGlobalConfig": "false",
-                                "cwd": "",
-                                "failOnStandardError": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm upgrade workflow staging",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "backend-staging",
-                                "command": "upgrade",
-                                "chartType": "Name",
-                                "chartName": "$(ACR_NAME)/$(REPO_NAME)",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-staging",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.staging=true",
-                                "valueFile": "",
-                                "destination": "",
-                                "canaryimage": "false",
-                                "upgradetiller": "false",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "true",
-                                "waitForExecution": "false",
-                                "arguments": "--version $(Build.SourceBranchName)",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
+                    "skipArtifactsDownload": false,
+                    "artifactsDownloadInput": {
+                        "downloadInputs": []
+                    },
+                    "queueId": AZURE_DEVOPS_WORKFLOW_QUEUE_ID_VAR_VAL,
+                    "demands": [],
+                    "enableAccessToken": false,
+                    "timeoutInMinutes": 0,
+                    "jobCancelTimeoutInMinutes": 1,
+                    "condition": "succeeded()",
+                    "overrideInputs": {}
+                },
+                "rank": 1,
+                "phaseType": 1,
+                "name": "Agent job",
+                "refName": null,
+                "workflowTasks": [{
+                        "environment": {},
+                        "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
+                        "version": "0.*",
+                        "name": "install helm 2.12.3",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "helmVersion": "2.12.3",
+                            "checkLatestHelmVersion": "false",
+                            "installKubeCtl": "true",
+                            "kubectlVersion": "1.12.4",
+                            "checkLatestKubeCtl": "false"
                         }
-                    ]
-                }
-            ],
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm init",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "",
+                            "command": "init",
+                            "chartType": "Name",
+                            "chartName": "",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "",
+                            "overrideValues": "",
+                            "valueFile": "",
+                            "destination": "$(Build.ArtifactStagingDirectory)",
+                            "canaryimage": "false",
+                            "upgradetiller": "true",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "false",
+                            "waitForExecution": "true",
+                            "arguments": "--service-account tiller",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
+                        "version": "1.*",
+                        "name": "add helm repo",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
+                            "scriptLocation": "inlineScript",
+                            "scriptPath": "",
+                            "inlineScript": "az acr helm repo add --name $(ACR_NAME)",
+                            "args": "",
+                            "addSpnToEnvironment": "false",
+                            "useGlobalConfig": "false",
+                            "cwd": "",
+                            "failOnStandardError": "false"
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm upgrade workflow staging",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "backend-staging",
+                            "command": "upgrade",
+                            "chartType": "Name",
+                            "chartName": "$(ACR_NAME)/$(REPO_NAME)",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)-staging",
+                            "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.staging=true",
+                            "valueFile": "",
+                            "destination": "",
+                            "canaryimage": "false",
+                            "upgradetiller": "false",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "true",
+                            "waitForExecution": "false",
+                            "arguments": "--version $(Build.SourceBranchName)",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    }
+                ]
+            }],
             "environmentOptions": {
                 "emailNotificationType": "OnlyOnFailure",
                 "emailRecipients": "release.environment.owner;release.creator",
@@ -1011,13 +981,11 @@
                 "pullRequestDeploymentEnabled": false
             },
             "demands": [],
-            "conditions": [
-                {
-                    "name": "dev",
-                    "conditionType": 2,
-                    "value": "4"
-                }
-            ],
+            "conditions": [{
+                "name": "dev",
+                "conditionType": 2,
+                "value": "4"
+            }],
             "executionPolicy": {
                 "concurrencyCount": 1,
                 "queueDepthCount": 0
@@ -1029,8 +997,7 @@
                 "retainBuild": true
             },
             "processParameters": {
-                "inputs": [
-                    {
+                "inputs": [{
                         "aliases": [],
                         "options": {
                             "Azure Resource Manager": "Azure Resource Manager",
@@ -1103,8 +1070,7 @@
                         "groupName": ""
                     }
                 ],
-                "dataSourceBindings": [
-                    {
+                "dataSourceBindings": [{
                         "parameters": {},
                         "endpointId": "$(azureSubscriptionEndpoint)",
                         "target": "kubernetesCluster",
@@ -1144,7 +1110,7 @@
                 "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
             },
             "variables": {
-                 "WORKFLOW_KEYVAULT_RESOURCE_GROUP": {
+                "WORKFLOW_KEYVAULT_RESOURCE_GROUP": {
                     "value": "PROD_WORKFLOW_KEYVAULT_RESOURCE_GROUP_VAR_VAL"
                 },
                 "SUBSCRIPTION_ID": {
@@ -1177,18 +1143,16 @@
             },
             "variableGroups": [],
             "preDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": false,
-                        "isNotificationOn": false,
-                        "approver": {
-                            "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
-                        },
-                        "approver": null,
-                        "id": 105
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": false,
+                    "isNotificationOn": false,
+                    "approver": {
+                        "id": "AZURE_DEVOPS_USER_ID_VAR_VAL"
+                    },
+                    "approver": null,
+                    "id": 105
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": true,
@@ -1202,14 +1166,12 @@
                 "id": 106
             },
             "postDeployApprovals": {
-                "approvals": [
-                    {
-                        "rank": 1,
-                        "isAutomated": true,
-                        "isNotificationOn": false,
-                        "id": 113
-                    }
-                ],
+                "approvals": [{
+                    "rank": 1,
+                    "isAutomated": true,
+                    "isNotificationOn": false,
+                    "id": 113
+                }],
                 "approvalOptions": {
                     "requiredApproverCount": null,
                     "releaseCreatorCanBeApprover": false,
@@ -1219,202 +1181,197 @@
                     "executionOrder": 2
                 }
             },
-            "deployPhases": [
-                {
-                    "deploymentInput": {
-                        "parallelExecution": {
-                            "parallelExecutionType": 0
-                        },
-                        "skipArtifactsDownload": false,
-                        "artifactsDownloadInput": {
-                            "downloadInputs": [
-                                {
-                                    "alias": "ci-workflow",
-                                    "artifactType": "Build",
-                                    "artifactDownloadMode": "All",
-                                    "artifactItems": []
-                                }
-                            ]
-                        },
-                        "queueId": AZURE_DEVOPS_WORKFLOW_QUEUE_ID_VAR_VAL,
-                        "demands": [],
-                        "enableAccessToken": false,
-                        "timeoutInMinutes": 0,
-                        "jobCancelTimeoutInMinutes": 1,
-                        "condition": "succeeded()",
-                        "overrideInputs": {}
+            "deployPhases": [{
+                "deploymentInput": {
+                    "parallelExecution": {
+                        "parallelExecutionType": 0
                     },
-                    "rank": 1,
-                    "phaseType": 1,
-                    "name": "Agent job",
-                    "refName": null,
-                    "workflowTasks": [
-                        {
-                            "environment": {},
-                            "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
-                            "version": "1.*",
-                            "name": "promote workflow image to production",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
-                                "scriptLocation": "inlineScript",
-                                "scriptPath": "",
-                                "inlineScript": "az acr import --name $(ACR_NAME) --source $(SOURCE_ACR_SERVER)/$(REPO_NAME):$(Build.SourceBranchName) --force",
-                                "args": "",
-                                "addSpnToEnvironment": "false",
-                                "useGlobalConfig": "false",
-                                "cwd": "",
-                                "failOnStandardError": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
-                            "version": "0.*",
-                            "name": "install helm 2.12.3",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "helmVersion": "2.12.3",
-                                "checkLatestHelmVersion": "false",
-                                "installKubeCtl": "true",
-                                "kubectlVersion": "1.12.4",
-                                "checkLatestKubeCtl": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm init",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "",
-                                "command": "init",
-                                "chartType": "Name",
-                                "chartName": "",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "",
-                                "overrideValues": "",
-                                "valueFile": "",
-                                "destination": "$(Build.ArtifactStagingDirectory)",
-                                "canaryimage": "false",
-                                "upgradetiller": "true",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "false",
-                                "waitForExecution": "true",
-                                "arguments": "--service-account tiller",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
-                            "version": "1.*",
-                            "name": "add helm repo",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": "task",
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
-                                "scriptLocation": "inlineScript",
-                                "scriptPath": "",
-                                "inlineScript": "az acr helm repo add --name $(SOURCE_ACR_NAME)",
-                                "args": "",
-                                "addSpnToEnvironment": "false",
-                                "useGlobalConfig": "false",
-                                "cwd": "",
-                                "failOnStandardError": "false"
-                            }
-                        },
-                        {
-                            "environment": {},
-                            "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
-                            "version": "0.*",
-                            "name": "helm upgrade workflow prod",
-                            "refName": "",
-                            "enabled": true,
-                            "alwaysRun": false,
-                            "continueOnError": false,
-                            "timeoutInMinutes": 0,
-                            "definitionType": null,
-                            "overrideInputs": {},
-                            "condition": "succeeded()",
-                            "inputs": {
-                                "connectionType": "$(Parameters.connectionType)",
-                                "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
-                                "azureResourceGroup": "$(Parameters.azureResourceGroup)",
-                                "kubernetesCluster": "$(Parameters.kubernetesCluster)",
-                                "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
-                                "namespace": "backend",
-                                "command": "upgrade",
-                                "chartType": "Name",
-                                "chartName": "$(SOURCE_ACR_NAME)/$(REPO_NAME)",
-                                "chartPath": "",
-                                "version": "",
-                                "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",
-                                "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.prod=true",
-                                "valueFile": "",
-                                "destination": "",
-                                "canaryimage": "false",
-                                "upgradetiller": "false",
-                                "updatedependency": "false",
-                                "save": "true",
-                                "install": "true",
-                                "recreate": "false",
-                                "resetValues": "false",
-                                "force": "true",
-                                "waitForExecution": "false",
-                                "arguments": "--version $(Build.SourceBranchName)",
-                                "enableTls": "false",
-                                "caCert": "",
-                                "certificate": "",
-                                "privatekey": "",
-                                "tillernamespace": ""
-                            }
+                    "skipArtifactsDownload": false,
+                    "artifactsDownloadInput": {
+                        "downloadInputs": [{
+                            "alias": "ci-workflow",
+                            "artifactType": "Build",
+                            "artifactDownloadMode": "All",
+                            "artifactItems": []
+                        }]
+                    },
+                    "queueId": AZURE_DEVOPS_WORKFLOW_QUEUE_ID_VAR_VAL,
+                    "demands": [],
+                    "enableAccessToken": false,
+                    "timeoutInMinutes": 0,
+                    "jobCancelTimeoutInMinutes": 1,
+                    "condition": "succeeded()",
+                    "overrideInputs": {}
+                },
+                "rank": 1,
+                "phaseType": 1,
+                "name": "Agent job",
+                "refName": null,
+                "workflowTasks": [{
+                        "environment": {},
+                        "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
+                        "version": "1.*",
+                        "name": "promote workflow image to production",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
+                            "scriptLocation": "inlineScript",
+                            "scriptPath": "",
+                            "inlineScript": "az acr import --name $(ACR_NAME) --source $(SOURCE_ACR_SERVER)/$(REPO_NAME):$(Build.SourceBranchName) --force",
+                            "args": "",
+                            "addSpnToEnvironment": "false",
+                            "useGlobalConfig": "false",
+                            "cwd": "",
+                            "failOnStandardError": "false"
                         }
-                    ]
-                }
-            ],
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "068d5909-43e6-48c5-9e01-7c8a94816220",
+                        "version": "0.*",
+                        "name": "install helm 2.12.3",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "helmVersion": "2.12.3",
+                            "checkLatestHelmVersion": "false",
+                            "installKubeCtl": "true",
+                            "kubectlVersion": "1.12.4",
+                            "checkLatestKubeCtl": "false"
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm init",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "",
+                            "command": "init",
+                            "chartType": "Name",
+                            "chartName": "",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "",
+                            "overrideValues": "",
+                            "valueFile": "",
+                            "destination": "$(Build.ArtifactStagingDirectory)",
+                            "canaryimage": "false",
+                            "upgradetiller": "true",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "false",
+                            "waitForExecution": "true",
+                            "arguments": "--service-account tiller",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "46e4be58-730b-4389-8a2f-ea10b3e5e815",
+                        "version": "1.*",
+                        "name": "add helm repo",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": "task",
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectedServiceNameARM": "AZURE_DEVOPS_SERVICE_CONN_ID_VAR_VAL",
+                            "scriptLocation": "inlineScript",
+                            "scriptPath": "",
+                            "inlineScript": "az acr helm repo add --name $(SOURCE_ACR_NAME)",
+                            "args": "",
+                            "addSpnToEnvironment": "false",
+                            "useGlobalConfig": "false",
+                            "cwd": "",
+                            "failOnStandardError": "false"
+                        }
+                    },
+                    {
+                        "environment": {},
+                        "taskId": "afa7d54d-537b-4dc8-b60a-e0eeea2c9a87",
+                        "version": "0.*",
+                        "name": "helm upgrade workflow prod",
+                        "refName": "",
+                        "enabled": true,
+                        "alwaysRun": false,
+                        "continueOnError": false,
+                        "timeoutInMinutes": 0,
+                        "definitionType": null,
+                        "overrideInputs": {},
+                        "condition": "succeeded()",
+                        "inputs": {
+                            "connectionType": "$(Parameters.connectionType)",
+                            "azureSubscriptionEndpoint": "$(Parameters.azureSubscriptionEndpoint)",
+                            "azureResourceGroup": "$(Parameters.azureResourceGroup)",
+                            "kubernetesCluster": "$(Parameters.kubernetesCluster)",
+                            "kubernetesServiceEndpoint": "$(Parameters.kubernetesServiceEndpoint)",
+                            "namespace": "backend",
+                            "command": "upgrade",
+                            "chartType": "Name",
+                            "chartName": "$(SOURCE_ACR_NAME)/$(REPO_NAME)",
+                            "chartPath": "",
+                            "version": "",
+                            "releaseName": "$(REPO_NAME)-$(Build.SourceBranchName)",
+                            "overrideValues": "image.tag=$(Build.SourceBranchName),image.repository=$(REPO_NAME),dockerregistry=$(ACR_SERVER),identity.clientid=$(WORKFLOW_PRINCIPAL_CLIENT_ID),identity.resourceid=$(WORKFLOW_PRINCIPAL_RESOURCE_ID),keyvault.name=$(WORKFLOW_KEYVAULT_NAME),keyvault.resourcegroup=$(WORKFLOW_KEYVAULT_RESOURCE_GROUP),keyvault.subscriptionid=$(SUBSCRIPTION_ID),keyvault.tenantid=$(TENANT_ID),reason=\"$(REASON)\",tags.prod=true",
+                            "valueFile": "",
+                            "destination": "",
+                            "canaryimage": "false",
+                            "upgradetiller": "false",
+                            "updatedependency": "false",
+                            "save": "true",
+                            "install": "true",
+                            "recreate": "false",
+                            "resetValues": "false",
+                            "force": "true",
+                            "waitForExecution": "false",
+                            "arguments": "--version $(Build.SourceBranchName)",
+                            "enableTls": "false",
+                            "caCert": "",
+                            "certificate": "",
+                            "privatekey": "",
+                            "tillernamespace": ""
+                        }
+                    }
+                ]
+            }],
             "environmentOptions": {
                 "emailNotificationType": "OnlyOnFailure",
                 "emailRecipients": "release.environment.owner;release.creator",
@@ -1427,8 +1384,7 @@
                 "pullRequestDeploymentEnabled": false
             },
             "demands": [],
-            "conditions": [
-                {
+            "conditions": [{
                     "name": "QA",
                     "conditionType": 2,
                     "value": "4"
@@ -1450,8 +1406,7 @@
                 "retainBuild": true
             },
             "processParameters": {
-                "inputs": [
-                    {
+                "inputs": [{
                         "aliases": [],
                         "options": {
                             "Azure Resource Manager": "Azure Resource Manager",
@@ -1524,8 +1479,7 @@
                         "groupName": ""
                     }
                 ],
-                "dataSourceBindings": [
-                    {
+                "dataSourceBindings": [{
                         "parameters": {},
                         "endpointId": "$(azureSubscriptionEndpoint)",
                         "target": "kubernetesCluster",
@@ -1558,71 +1512,65 @@
             "badgeUrl": null
         }
     ],
-    "artifacts": [
-        {
-            "sourceId": "AZURE_DEVOPS_PROJECT_ID_VAR_VAL:AZURE_DEVOPS_WORKFLOW_BUILD_ID_VAR_VAL",
-            "type": "Build",
-            "alias": "ci-workflow",
-            "definitionReference": {
-                "artifactSourceDefinitionUrl": {
-                    "id": "",
-                    "name": ""
-                },
-                "defaultVersionBranch": {
-                    "id": "",
-                    "name": ""
-                },
-                "defaultVersionSpecific": {
-                    "id": "",
-                    "name": ""
-                },
-                "defaultVersionTags": {
-                    "id": "",
-                    "name": ""
-                },
-                "defaultVersionType": {
-                    "id": "selectDuringReleaseCreationType",
-                    "name": "Specify at the time of release creation"
-                },
-                "definition": {
-                    "id": "AZURE_DEVOPS_WORKFLOW_BUILD_ID_VAR_VAL",
-                    "name": "aks-ri-ci-workflow"
-                },
-                "definitions": {
-                    "id": "",
-                    "name": ""
-                },
-                "IsMultiDefinitionType": {
-                    "id": "False",
-                    "name": "False"
-                },
-                "project": {
-                    "id": "AZURE_DEVOPS_PROJECT_ID_VAR_VAL",
-                    "name": "roadmap"
-                },
-                "repository": {
-                    "id": "AZURE_DEVOPS_REPOS_ID_VAR_VALL",
-                    "name": "roadmap"
-                }
+    "artifacts": [{
+        "sourceId": "AZURE_DEVOPS_PROJECT_ID_VAR_VAL:AZURE_DEVOPS_WORKFLOW_BUILD_ID_VAR_VAL",
+        "type": "Build",
+        "alias": "ci-workflow",
+        "definitionReference": {
+            "artifactSourceDefinitionUrl": {
+                "id": "",
+                "name": ""
             },
-            "isPrimary": true,
-            "isRetained": false
-        }
-    ],
-    "triggers": [
-        {
-            "artifactAlias": "ci-workflow",
-            "triggerConditions": [
-                {
-                    "sourceBranch": "release/$(REPO_NAME)/v*",
-                    "tags": [],
-                    "useBuildDefinitionBranch": false,
-                    "createReleaseOnBuildTagging": false
-                }
-            ],
-            "triggerType": 1
-        }
-    ],
+            "defaultVersionBranch": {
+                "id": "",
+                "name": ""
+            },
+            "defaultVersionSpecific": {
+                "id": "",
+                "name": ""
+            },
+            "defaultVersionTags": {
+                "id": "",
+                "name": ""
+            },
+            "defaultVersionType": {
+                "id": "selectDuringReleaseCreationType",
+                "name": "Specify at the time of release creation"
+            },
+            "definition": {
+                "id": "AZURE_DEVOPS_WORKFLOW_BUILD_ID_VAR_VAL",
+                "name": "aks-ri-ci-workflow"
+            },
+            "definitions": {
+                "id": "",
+                "name": ""
+            },
+            "IsMultiDefinitionType": {
+                "id": "False",
+                "name": "False"
+            },
+            "project": {
+                "id": "AZURE_DEVOPS_PROJECT_ID_VAR_VAL",
+                "name": "roadmap"
+            },
+            "repository": {
+                "id": "AZURE_DEVOPS_REPOS_ID_VAR_VALL",
+                "name": "roadmap"
+            }
+        },
+        "isPrimary": true,
+        "isRetained": false
+    }],
+    "triggers": [{
+        "artifactAlias": "ci-workflow",
+        "triggerConditions": [{
+            "sourceBranch": "release/$(REPO_NAME)/v*",
+            "tags": [],
+            "useBuildDefinitionBranch": false,
+            "createReleaseOnBuildTagging": false
+        }],
+        "triggerType": 1
+    }],
     "releaseNameFormat": "release-$(rev:r)",
     "tags": [],
     "pipelineProcess": {
@@ -1634,7 +1582,6 @@
             "$value": "ReleaseImport"
         }
     },
-    "id": 17,
     "name": "workflow-cd",
     "path": null,
     "projectReference": null,

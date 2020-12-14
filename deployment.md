@@ -9,8 +9,8 @@
 - [JQ](https://stedolan.github.io/jq/download/)
 
 > Note: in linux systems, it is possible to run the docker command without prefacing
->       with sudo. For more information, please refer to [the Post-installation steps
->       for linux](https://docs.docker.com/install/linux/linux-postinstall/)
+> with sudo. For more information, please refer to [the Post-installation steps
+> for linux](https://docs.docker.com/install/linux/linux-postinstall/)
 
 Clone or download this repo locally.
 
@@ -27,6 +27,7 @@ The deployment steps shown here use Bash shell commands. On Windows, you can use
 ## Generate a SSH rsa public/private key pair
 
 the SSH rsa key pair can be generated using ssh-keygen, among other tools, on Linux, Mac, or Windows. If you already have an ~/.ssh/id_rsa.pub file, you could provide the same later on. If you need to create an SSH key pair, see [How to create and use an SSH key pair](https://docs.microsoft.com/en-us/azure/virtual-machines/linux/mac-create-ssh-keys).
+
 > Note: the SSH rsa public key will be requested when deploying your Kubernetes cluster in Azure.
 
 ## Azure Resources Provisioning
@@ -123,6 +124,7 @@ az group deployment create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --temp
 ```
 
 Get outputs from Azure Deploy
+
 ```bash
 # Shared
 export ACR_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.acrName.value -o tsv) && \
@@ -131,6 +133,7 @@ export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n $DEV_DEPLOY
 ```
 
 Download kubectl and create a k8s namespace
+
 ```bash
 #  Install kubectl
 az aks install-cli
@@ -185,11 +188,11 @@ kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-fl
 ## Deploy the ingress controller
 
 > :warning: WARNING
- >
- > Do not use the certificates created by these scripts for production. The
- > certificates are provided for demonstration purposes only.
- > For your production cluster, use your
- > security best practices for digital certificates creation and lifetime management.
+>
+> Do not use the certificates created by these scripts for production. The
+> certificates are provided for demonstration purposes only.
+> For your production cluster, use your
+> security best practices for digital certificates creation and lifetime management.
 
 ```bash
 # Deploy the ngnix ingress controller
@@ -476,6 +479,7 @@ docker push $ACR_SERVER/dronescheduler:0.1.0
 ```
 
 Deploy the dronescheduler service:
+
 ```bash
 # Deploy the service
 helm install $HELM_CHARTS/dronescheduler/ \
@@ -499,6 +503,7 @@ helm install $HELM_CHARTS/dronescheduler/ \
 # Verify the pod is created
 helm status dronescheduler-v0.1.0-dev
 ```
+
 
 ## Validate the application is running
 
@@ -527,6 +532,7 @@ curl -X POST "https://$EXTERNAL_INGEST_FQDN/api/deliveryrequests" --header 'Cont
 ```
 
 ### Check the request status
+
 ```bash
 DELIVERY_ID=$(cat deliveryresponse.json | jq -r .deliveryId)
 curl "https://$EXTERNAL_INGEST_FQDN/api/deliveries/$DELIVERY_ID" --header 'Accept: application/json' -k

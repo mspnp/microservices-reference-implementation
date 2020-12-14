@@ -23,7 +23,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
         public async Task<ReadOnlyCollection<DeliveryTrackingEvent>> GetByDeliveryIdAsync(string deliveryId)
         {
             var inflightDeliveryTrackingEvents = await RedisCache<DeliveryTrackingEvent>.GetItemsAsync(Enum.GetNames(typeof(DeliveryStage)).Select(n => $"{deliveryId}_{n}")).ConfigureAwait(continueOnCapturedContext: false);
-            /// TODO: filter just the important events/milestones 
+            /// TODO: filter just the important events/milestones
             return new ReadOnlyCollection<DeliveryTrackingEvent>(inflightDeliveryTrackingEvents.ToList());
         }
     }
