@@ -174,7 +174,7 @@ echo "Installing Helm..."
 
 # install helm client side
 curl -L https://git.io/get_helm.sh | bash -s -- -v v2.14.2
-helm init --wait
+helm init --stable-repo-url https://charts.helm.sh/stable --wait
 helm repo update
 
 # setup tiller in your cluster
@@ -184,7 +184,7 @@ echo "Installing Tiller..."
 
 sleep 60s
 
-helm init --service-account tiller --override spec.selector.matchLabels.'name'='tiller',spec.selector.matchLabels.'app'='helm' --output yaml | sed 's@apiVersion: extensions/v1beta1@apiVersion: apps/v1@' | kubectl apply -f -
+helm init --stable-repo-url https://charts.helm.sh/stable --service-account tiller --override spec.selector.matchLabels.'name'='tiller',spec.selector.matchLabels.'app'='helm' --output yaml | sed 's@apiVersion: extensions/v1beta1@apiVersion: apps/v1@' | kubectl apply -f -
 
 sleep 60s
 
