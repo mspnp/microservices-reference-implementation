@@ -3,6 +3,8 @@ Microsoft patterns & practices
 
 This reference implementation shows a set of best practices for building and running a microservices architecture on Microsoft Azure, using Kubernetes.
 
+> :heavy_exclamation_mark: The previous advanced Microservices Reference Implementation is now known as the [AKS Fabrikam Drone Delivery reference implementation](https://github.com/mspnp/aks-fabrikam-dronedelivery). The AKS Frabrikam Drone Delivery reference implementation is built on top the guidance forming the [AKS Baseline Cluster](https://github.com/mspnp/aks-secure-baseline). This basic Microservices Reference Implementation will remain here for your reference but we recommend you to consider basing your work on the [AKS Fabrikam Drone Delivery reference implementation](https://github.com/mspnp/aks-fabrikam-dronedelivery).
+
 ## Guidance
 
 This project has a companion set of articles that describe challenges, design patterns, and best practices for building microservices architecture. You can find these articles on the Azure Architecture Center:
