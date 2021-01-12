@@ -194,6 +194,8 @@ kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-fl
 > For your production cluster, use your
 > security best practices for digital certificates creation and lifetime management.
 
+> :heavy_exclamation_mark: In the following instructions you will proceed using a public container registry to install NGINX. But please take into account that public registries may be subject to faults such as outages (no SLA) or request throttling. Interruptions like these can be crippling for an application that needs to pull an image _right now_. To minimize the risks of using public registries, store all applicable container images in a registry that you control, such as the SLA-backed Azure Container Registry.
+
 ```bash
 # Deploy the ngnix ingress controller
 helm install stable/nginx-ingress --name nginx-ingress-dev --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-dev --version 1.24.7
