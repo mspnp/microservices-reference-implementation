@@ -537,33 +537,3 @@ curl -X POST "https://$EXTERNAL_INGEST_FQDN/api/deliveryrequests" --header 'Cont
 DELIVERY_ID=$(cat deliveryresponse.json | jq -r .deliveryId)
 curl "https://$EXTERNAL_INGEST_FQDN/api/deliveries/$DELIVERY_ID" --header 'Accept: application/json' -k
 ```
-
-## Optional steps
-
-### Fluentd and Elastic Search
-
-Follow these steps to add logging and monitoring capabilities to the solution.
-
-Deploy Elasticsearch. For more information, see https://github.com/kubernetes/examples/tree/master/staging/elasticsearch
-
-```bash
-kubectl --namespace kube-system apply -f https://raw.githubusercontent.com/kubernetes/examples/master/staging/elasticsearch/service-account.yaml && \
-kubectl --namespace kube-system apply -f https://raw.githubusercontent.com/kubernetes/examples/master/staging/elasticsearch/es-svc.yaml && \
-kubectl --namespace kube-system apply -f https://raw.githubusercontent.com/kubernetes/examples/master/staging/elasticsearch/es-rc.yaml
-```
-
-Deploy Fluentd. For more information, see https://docs.fluentd.org/v0.12/articles/kubernetes-fluentd
-
-```bash
-# The example elasticsearch yaml files deploy a service named "elasticsearch"
-wget https://raw.githubusercontent.com/fluent/fluentd-kubernetes-daemonset/master/fluentd-daemonset-elasticsearch.yaml && \
-sed -i "s/elasticsearch-logging/elasticsearch/" fluentd-daemonset-elasticsearch.yaml
-
-# Commenting out X-Pack credentials for demo purposes.
-# Make sure to configure X-Pack in elasticsearch and provide credentials here for production workloads
-sed -i "s/- name: FLUENT_ELASTICSEARCH_USER/#- name: FLUENT_ELASTICSEARCH_USER/" fluentd-daemonset-elasticsearch.yaml && \
-sed -i 's/  value: "elastic"/#  value: "elastic"/' fluentd-daemonset-elasticsearch.yaml && \
-sed -i "s/- name: FLUENT_ELASTICSEARCH_PASSWORD/#- name: FLUENT_ELASTICSEARCH_PASSWORD/" fluentd-daemonset-elasticsearch.yaml && \
-sed -i 's/  value: "changeme"/#  value: "changeme"/' fluentd-daemonset-elasticsearch.yaml && \
-kubectl --namespace kube-system apply -f fluentd-daemonset-elasticsearch.yaml
-```
