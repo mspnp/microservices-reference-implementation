@@ -15,6 +15,8 @@ serviceuri:
   delivery: http://delivery/api/Deliveries/
   drone: http://dronescheduler/api/DroneDeliveries/
   package: http://package/api/packages/
+  simulator: https://dronesimulator.azurewebsites.net/api/Simulator?/
+  tracking: https://divyesh-cntchaos-rg-ingest-dev.eastus.cloudapp.azure.com/
 servicerequest:
   maxretries: 3
   circuitbreakerthreshold: 0.5

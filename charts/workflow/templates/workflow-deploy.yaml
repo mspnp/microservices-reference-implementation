@@ -104,6 +104,10 @@ spec:
           value: {{ .Values.serviceuri.drone }}
         - name: SERVICE_URI_PACKAGE
           value: {{ .Values.serviceuri.package }}
+        - name: SERVICE_URI_SIMULATOR
+          value: {{ .Values.serviceuri.simulator }}
+        - name: DeliveryTrackingUrl
+          value: {{ .Values.serviceuri.tracking }}
         - name: SERVICEREQUEST__MAXRETRIES
           value: "{{ .Values.servicerequest.maxretries }}"
         - name: SERVICEREQUEST__CIRCUITBREAKERTHRESHOLD
