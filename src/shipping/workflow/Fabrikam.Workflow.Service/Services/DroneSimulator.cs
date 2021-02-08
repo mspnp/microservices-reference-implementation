@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Fabrikam.Workflow.Service.Models;
 using Fabrikam.Workflow.Service.Utils;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Fabrikam.Workflow.Service.Services
 {
@@ -17,11 +18,13 @@ namespace Fabrikam.Workflow.Service.Services
     {
         private readonly HttpClient _httpClient;
         private readonly string trackingUrl;//= "";
+        private readonly ILogger<DroneSimulator> _logger;
 
-        public DroneSimulator(HttpClient httpClient, IConfiguration configuration)
+        public DroneSimulator(HttpClient httpClient, IConfiguration configuration, ILogger<DroneSimulator> logger)
         {
             _httpClient = httpClient;
             trackingUrl = configuration.GetValue<string>("DeliveryTrackingUrl");
+            _logger = logger;
         }
 
         public async Task Simulate(string deliveryId)
@@ -32,19 +35,23 @@ namespace Fabrikam.Workflow.Service.Services
                 var response = await _httpClient.PutAsync($"?trackingUrl={trackingUrl}&deliveryId={deliveryId}", null);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
-                    await response.Content.ReadAsStringAsync();
+                    var result = await response.Content.ReadAsStringAsync();
+                    _logger.LogInformation($" Respone from Simulator for deliveryId: {deliveryId} is {result}");
                 }
                 else
                 {
+                    _logger.LogInformation($" Exception thrown from else block for deliveryId {deliveryId } ");
                     throw new BackendServiceCallFailedException(response.ReasonPhrase);
                 }
             }
             catch (BackendServiceCallFailedException)
             {
+                _logger.LogInformation($" Exception thrown from non General catch block for deliveryId {deliveryId } ");
                 throw;
             }
             catch (Exception e)
             {
+                _logger.LogInformation($" Exception thrown from  General catch block for deliveryId {deliveryId } ");
                 throw new BackendServiceCallFailedException(e.Message, e);
             }
         }
