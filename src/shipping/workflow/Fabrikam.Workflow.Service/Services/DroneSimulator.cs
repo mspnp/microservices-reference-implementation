@@ -34,8 +34,10 @@ namespace Fabrikam.Workflow.Service.Services
                 {
                     await response.Content.ReadAsStringAsync();
                 }
-
-                throw new BackendServiceCallFailedException(response.ReasonPhrase);
+                else
+                {
+                    throw new BackendServiceCallFailedException(response.ReasonPhrase);
+                }
             }
             catch (BackendServiceCallFailedException)
             {
