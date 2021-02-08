@@ -40,9 +40,9 @@ namespace Fabrikam.Workflow.Service
                 double.TryParse(configuredDelay, out double delay))
             {
                 services.Configure<HealthCheckPublisherOptions>(options =>
-                    {
-                        options.Delay = TimeSpan.FromMilliseconds(delay);
-                    });
+                {
+                    options.Delay = TimeSpan.FromMilliseconds(delay);
+                });
             }
 
             services
@@ -65,6 +65,13 @@ namespace Fabrikam.Workflow.Service
                     c.BaseAddress = new Uri(context.Configuration["SERVICE_URI_DELIVERY"]);
                 })
                 .AddResiliencyPolicies(context.Configuration);
+
+            services
+               .AddHttpClient<IDroneSimulator, DroneSimulator>(c =>
+               {
+                   c.BaseAddress = new Uri(context.Configuration["SERVICE_URI_SIMULATOR"]);
+               })
+               .AddResiliencyPolicies(context.Configuration);
 
             // workaround .NET Core 2.2: for more info https://github.com/aspnet/AspNetCore.Docs/blob/master/aspnetcore/host-and-deploy/health-checks/samples/2.x/HealthChecksSample/LivenessProbeStartup.cs#L51
             services.TryAddEnumerable(
