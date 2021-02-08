@@ -68,6 +68,7 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
             }
             catch (Exception e)
             {
+                _logger.LogError(e, $"Error processing delivery request {deliveryRequest.DeliveryId} . Message Details {e.Message}");
                 _logger.LogError(e, "Error processing delivery request {deliveryId}", deliveryRequest.DeliveryId);
             }
 
