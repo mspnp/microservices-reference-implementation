@@ -54,9 +54,17 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
                         if (deliverySchedule != null)
                         {
                             _logger.LogInformation("Completed delivery {deliveryId}", deliveryRequest.DeliveryId);
-                            _logger.LogInformation("Starting Delivery Simulation {deliveryId}", deliveryRequest.DeliveryId);
-                            await _droneSimulator.Simulate(deliveryRequest.DeliveryId);
-                            _logger.LogInformation("Started Delivery Simulation {deliveryId}", deliveryRequest.DeliveryId);
+                            try
+                            {
+                                _logger.LogInformation("Starting Delivery Simulation {deliveryId}", deliveryRequest.DeliveryId);
+                                await _droneSimulator.Simulate(deliveryRequest.DeliveryId);
+                                _logger.LogInformation("Started Delivery Simulation {deliveryId}", deliveryRequest.DeliveryId);
+                            }
+                            catch(Exception ex)
+                            {
+                                _logger.LogError("Failed delivery for request {deliveryId}. Message : {Message}", deliveryRequest.DeliveryId, ex.Message);
+                                throw;
+                            }
                             return true;
                         }
                         else

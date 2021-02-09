@@ -11,6 +11,7 @@ using Fabrikam.Workflow.Service.Models;
 using Fabrikam.Workflow.Service.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Fabrikam.Workflow.Service.Services
 {
@@ -32,7 +33,9 @@ namespace Fabrikam.Workflow.Service.Services
             try
             {
                 _logger.LogInformation($" Making Request to Simulator for deliveryId: {deliveryId}");
-                var response = await _httpClient.PutAsync($"?trackingUrl={trackingUrl}&deliveryId={deliveryId}", null);
+                StringContent queryString = new StringContent($"?trackingUrl={trackingUrl}&deliveryId={deliveryId}");
+
+                var response = await _httpClient.PutAsync(_httpClient.BaseAddress, queryString);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     _logger.LogInformation($" Reading respone from Simulator for deliveryId: {deliveryId}");
@@ -47,12 +50,12 @@ namespace Fabrikam.Workflow.Service.Services
             }
             catch (BackendServiceCallFailedException)
             {
-                _logger.LogInformation($" Exception thrown from non General catch block for deliveryId {deliveryId } ");
+                _logger.LogError($" Exception thrown from non General catch block for deliveryId {deliveryId } ");
                 throw;
             }
             catch (Exception e)
             {
-                _logger.LogInformation($" Exception thrown from  General catch block for deliveryId {deliveryId } ");
+                _logger.LogError($" Exception thrown from  General catch block for deliveryId {deliveryId } ");
                 throw new BackendServiceCallFailedException(e.Message, e);
             }
         }
