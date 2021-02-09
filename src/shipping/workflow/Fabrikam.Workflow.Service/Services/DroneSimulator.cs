@@ -31,12 +31,13 @@ namespace Fabrikam.Workflow.Service.Services
         {
             try
             {
-
+                _logger.LogInformation($" Making Request to Simulator for deliveryId: {deliveryId}");
                 var response = await _httpClient.PutAsync($"?trackingUrl={trackingUrl}&deliveryId={deliveryId}", null);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
+                    _logger.LogInformation($" Reading respone from Simulator for deliveryId: {deliveryId}");
                     var result = await response.Content.ReadAsStringAsync();
-                    _logger.LogInformation($" Respone from Simulator for deliveryId: {deliveryId} is {result}");
+                    _logger.LogInformation($" Response from Simulator for deliveryId: {deliveryId} is {result}");
                 }
                 else
                 {
