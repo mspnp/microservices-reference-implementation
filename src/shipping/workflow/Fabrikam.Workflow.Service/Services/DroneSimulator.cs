@@ -45,18 +45,23 @@ namespace Fabrikam.Workflow.Service.Services
                 else
                 {
                     _logger.LogInformation($" Exception thrown from else block for deliveryId {deliveryId } ");
-                    //throw new BackendServiceCallFailedException(response.ReasonPhrase);
+                    throw new BackendServiceCallFailedException(response.ReasonPhrase);
                 }
             }
-            //catch (BackendServiceCallFailedException)
-            //{
-            //    //_logger.LogError($" Exception thrown from non General catch block for deliveryId {deliveryId } ");
-            //    throw;
-            //}
+            catch (AggregateException ex)
+            {
+                _logger.LogError(ex, ex.Message + $" Exception thrown from non General catch block for deliveryId {deliveryId } ");
+                throw;
+            }
+            catch (BackendServiceCallFailedException)
+            {
+                _logger.LogError($" Exception thrown from non General catch block for deliveryId {deliveryId } ");
+                throw;
+            }
             catch (Exception e)
             {
                 _logger.LogError($" Exception thrown from  General catch block for deliveryId {deliveryId } ");
-               // throw new BackendServiceCallFailedException(e.Message, e);
+                throw new BackendServiceCallFailedException(e.Message, e);
             }
         }
     }
