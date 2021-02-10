@@ -11,5 +11,6 @@ namespace Fabrikam.Workflow.Service.Services
     public interface IDroneSchedulerServiceCaller
     {
         Task<string> GetDroneIdAsync(Delivery deliveryRequest);
+        Task<DeliverySchedule> ScheduleDeliveryAsync(Delivery deliveryRequest, string droneId);
     }
 }

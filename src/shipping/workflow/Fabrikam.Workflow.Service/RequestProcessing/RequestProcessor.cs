@@ -50,7 +50,7 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
                     {
                         _logger.LogInformation("Assigned drone {droneId} for delivery {deliveryId}", droneId, deliveryRequest.DeliveryId);
 
-                        var deliverySchedule = await _deliveryServiceCaller.ScheduleDeliveryAsync(deliveryRequest, droneId);
+                        var deliverySchedule = await _droneSchedulerServiceCaller.ScheduleDeliveryAsync(deliveryRequest, droneId);
                         if (deliverySchedule != null)
                         {
                             _logger.LogInformation("Completed delivery {deliveryId}", deliveryRequest.DeliveryId);
