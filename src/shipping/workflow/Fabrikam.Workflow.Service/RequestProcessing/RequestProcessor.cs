@@ -60,10 +60,15 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
                                 await _droneSimulator.Simulate(deliveryRequest.DeliveryId);
                                 _logger.LogInformation("Started Delivery Simulation {deliveryId}", deliveryRequest.DeliveryId);
                             }
-                            catch(Exception ex)
+                            catch (AggregateException ex)
+                            {
+                                _logger.LogError(ex, "Failed delivery for request {deliveryId}. Message : {Message}", deliveryRequest.DeliveryId, ex.Message);
+                                throw;
+                            }
+                            catch (Exception ex)
                             {
                                 _logger.LogError("Failed delivery for request {deliveryId}. Message : {Message}", deliveryRequest.DeliveryId, ex.Message);
-                               // throw;
+                                throw;
                             }
                             return true;
                         }
