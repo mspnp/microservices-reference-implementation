@@ -79,7 +79,7 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
                 _logger.LogError("Some Error Occured.Failed delivery for request {deliveryId}. Message : {Message}", deliveryRequest.DeliveryId, e.Message);
                 _logger.LogError(e, "Error processing delivery request {deliveryId}", deliveryRequest.DeliveryId);
             }
-            _logger.LogError(e, "Error processing delivery request {deliveryId} before returning false", deliveryRequest.DeliveryId);
+            //_logger.LogError(e, "Error processing delivery request {deliveryId} before returning false", deliveryRequest.DeliveryId);
             return false;
         }
     }
