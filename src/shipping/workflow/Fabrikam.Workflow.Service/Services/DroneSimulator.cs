@@ -37,7 +37,7 @@ namespace Fabrikam.Workflow.Service.Services
                 _logger.LogInformation($" Making Request to Simulator for deliveryId: {deliveryId}");
                 var content = new StringContent(string.Empty, Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PutAsync($"deliveryId={deliveryId}" , content);
+                var response = await _httpClient.PutAsync($"?deliveryId={deliveryId}" , content);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     _logger.LogInformation($" Reading respone from Simulator for deliveryId: {deliveryId}");
