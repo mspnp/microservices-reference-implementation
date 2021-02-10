@@ -6,6 +6,7 @@
 using System;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Fabrikam.Workflow.Service.Models;
 using Fabrikam.Workflow.Service.Utils;
@@ -23,7 +24,7 @@ namespace Fabrikam.Workflow.Service.Services
 
         public DroneSimulator(HttpClient httpClient, IConfiguration configuration, ILogger<DroneSimulator> logger)
         {
-            _httpClient = httpClient;
+            _httpClient = httpClient;            
             trackingUrl = configuration.GetValue<string>("DeliveryTrackingUrl");
             _logger = logger;
         }
@@ -32,10 +33,11 @@ namespace Fabrikam.Workflow.Service.Services
         {
             try
             {
+                
                 _logger.LogInformation($" Making Request to Simulator for deliveryId: {deliveryId}");
-                StringContent queryString = new StringContent($"?trackingUrl={trackingUrl}&deliveryId={deliveryId}");
+                var content = new StringContent(string.Empty, Encoding.UTF8, "application/json");
 
-                var response = await _httpClient.PutAsync(_httpClient.BaseAddress, queryString);
+                var response = await _httpClient.PutAsync($"trackingUrl={trackingUrl}&deliveryId={deliveryId}" , content);
                 if (response.StatusCode == HttpStatusCode.OK)
                 {
                     _logger.LogInformation($" Reading respone from Simulator for deliveryId: {deliveryId}");
