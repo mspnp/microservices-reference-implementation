@@ -44,24 +44,24 @@ namespace DroneSimulator.Controllers
                     catch (AggregateException ex)
                     {
                         _logger.LogError(ex.Message);
-                        _telemetry.TrackEvent($"SimulationException");
+                        _telemetry.TrackEvent($"SimulationException.Inner.Aggregate");
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex.Message);
-                        _telemetry.TrackEvent($"SimulationException");
+                        _telemetry.TrackEvent($"SimulationException.Inner.General");
                     }
                 });
             }
             catch (AggregateException ex)
             {
                 _logger.LogError(ex.Message);
-                _telemetry.TrackEvent($"SimulationException");
+                _telemetry.TrackEvent($"SimulationException.Outer.Aggregate");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                _telemetry.TrackEvent($"SimulationException");
+                _telemetry.TrackEvent($"SimulationException.Outer.Global");
             }
 
             return Ok();
