@@ -16,9 +16,9 @@ cosmosdb:
 keyvault:
   uri:
 redis:
-  connectretry: 6
-  connecttimeout: 10000
-  exponentialretry: true
+  connectretry: "6"
+  connecttimeout: "10000"
+  exponentialretry: "true"
 readinessProbe:
   httpGet:
     path: /healthz

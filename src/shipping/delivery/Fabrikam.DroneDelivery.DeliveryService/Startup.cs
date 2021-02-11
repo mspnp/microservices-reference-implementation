@@ -137,9 +137,9 @@ namespace Fabrikam.DroneDelivery.DeliveryService
 
             //TODO look into creating a factory of DocDBRepos/RedisCache/EventHubMessenger
             DocumentDBRepository<InternalNotifyMeRequest>.Configure(Configuration["CosmosDB-Endpoint"], Configuration["CosmosDB-Key"], Configuration["DOCDB_DATABASEID"], Configuration["DOCDB_COLLECTIONID"], loggerFactory);
-            var exponential = Configuration["RedisExponentialRetry"] != null ? bool.Parse(Configuration["RedisExponentialRetry"]) : false;
-            var timeout = Configuration["RedisConnectTimeOut"] != null ? int.Parse(Configuration["RedisConnectTimeOut"]) : 5000;
-            var retry = Configuration["RedisConnectRetry"] != null ? int.Parse(Configuration["RedisConnectRetry"]) : 3;
+            var exponential = Configuration["REDIS_EXPONENTIAL_RETRY"] != null ? bool.Parse(Configuration["REDIS_EXPONENTIAL_RETRY"]) : false;
+            var timeout = Configuration["REDIS_CONNECT_TIMEOUT"] != null ? int.Parse(Configuration["REDIS_CONNECT_TIMEOUT"]) : 5000;
+            var retry = Configuration["REDIS_CONNECT_RETRY"] != null ? int.Parse(Configuration["REDIS_CONNECT_RETRY"]) : 3;
 
             RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory, exponential, timeout, retry);
             RedisCache<DeliveryTrackingEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory, exponential, timeout, retry);

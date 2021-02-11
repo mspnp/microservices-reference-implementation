@@ -86,12 +86,6 @@ spec:
             cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
             memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}
         env:
-        - name: RedisExponentialRetry
-          value: {{ .Values.redis.exponentialretry }}
-        - name: RedisConnectTimeOut
-          value: {{ .Values.redis.connecttimeout }}
-        - name: RedisConnectRetry
-          value: {{ .Values.redis.connectretry }}
         - name: DOCDB_DATABASEID
           value: {{ .Values.cosmosdb.id }}
         - name: DOCDB_COLLECTIONID
@@ -102,6 +96,12 @@ spec:
           value: {{ default "Error" .Values.telemetry.level | quote }}
         - name: no_proxy
           value: 169.254.169.254
+        - name: REDIS_EXPONENTIAL_RETRY
+          value: {{ .Values.redis.exponentialretry }}
+        - name: REDIS_CONNECT_TIMEOUT
+          value: {{ .Values.redis.connecttimeout }}
+        - name: REDIS_CONNECT_RETRY
+          value: {{ .Values.redis.connectretry }}
         - name: APPINSIGHTS_INSTRUMENTATIONKEY
           valueFrom:
             secretKeyRef:
