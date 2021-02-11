@@ -23,6 +23,7 @@ namespace Fabrikam.Workflow.Service.Tests
         private readonly Mock<IDeliveryServiceCaller> _deliveryServiceCallerMock;
         private readonly Mock<IDroneSimulator> _droneSimulatorMock;
         private readonly RequestProcessor _processor;
+        private readonly Mock<IDroneDeliveryRequestServiceCaller> _droneDeliveryRequestMock;
 
         public RequestProcessorTests()
         {
@@ -34,6 +35,7 @@ namespace Fabrikam.Workflow.Service.Tests
             _droneSchedulerServiceCallerMock = new Mock<IDroneSchedulerServiceCaller>();
             _deliveryServiceCallerMock = new Mock<IDeliveryServiceCaller>();
             _droneSimulatorMock = new Mock<IDroneSimulator>();
+            _droneDeliveryRequestMock = new Mock<IDroneDeliveryRequestServiceCaller>();
 
             _processor =
                 new RequestProcessor(
@@ -41,7 +43,8 @@ namespace Fabrikam.Workflow.Service.Tests
                     _packageServiceCallerMock.Object,
                     _droneSchedulerServiceCallerMock.Object,
                     _deliveryServiceCallerMock.Object,
-                    _droneSimulatorMock.Object);
+                    _droneSimulatorMock.Object,
+                    _droneDeliveryRequestMock.Object);
         }
 
         [Fact]

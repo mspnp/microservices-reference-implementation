@@ -66,6 +66,15 @@ namespace Fabrikam.Workflow.Service
                 })
                 .AddResiliencyPolicies(context.Configuration);
 
+
+            services
+                .AddHttpClient<IDroneDeliveryRequestServiceCaller, DroneDeliveryRequestServiceCaller>(c =>
+                {
+                    c.BaseAddress = new Uri(context.Configuration["SERVICE_URI_SCHEDULEDELIVERY"]);
+                })
+                .AddResiliencyPolicies(context.Configuration);
+
+
             services
                .AddHttpClient<IDroneSimulator, DroneSimulator>(c =>
                {

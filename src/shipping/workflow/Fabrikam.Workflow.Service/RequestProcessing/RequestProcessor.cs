@@ -19,20 +19,23 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
         private readonly IDroneSchedulerServiceCaller _droneSchedulerServiceCaller;
         private readonly IDeliveryServiceCaller _deliveryServiceCaller;
         private readonly IDroneSimulator _droneSimulator;
+        private readonly IDroneDeliveryRequestServiceCaller _deliveryRequestServiceCaller;
 
         public RequestProcessor(
             ILogger<RequestProcessor> logger,
             IPackageServiceCaller packageServiceCaller,
             IDroneSchedulerServiceCaller droneSchedulerServiceCaller,
             IDeliveryServiceCaller deliveryServiceCaller,
-            IDroneSimulator droneSimulator)
+            IDroneSimulator droneSimulator,
+            IDroneDeliveryRequestServiceCaller deliveryRequestServiceCaller)
         {
             _logger = logger;
             _packageServiceCaller = packageServiceCaller;
             _droneSchedulerServiceCaller = droneSchedulerServiceCaller;
             _deliveryServiceCaller = deliveryServiceCaller;
             _droneSimulator = droneSimulator;
-        }
+            _deliveryRequestServiceCaller = deliveryRequestServiceCaller;
+    }
 
         public async Task<bool> ProcessDeliveryRequestAsync(Delivery deliveryRequest, IReadOnlyDictionary<string, object> properties)
         {
@@ -50,7 +53,7 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
                     {
                         _logger.LogInformation("Assigned drone {droneId} for delivery {deliveryId}", droneId, deliveryRequest.DeliveryId);
 
-                        var deliverySchedule = await _droneSchedulerServiceCaller.ScheduleDeliveryAsync(deliveryRequest, droneId);
+                        var deliverySchedule = await _deliveryRequestServiceCaller.ScheduleDeliveryAsync(deliveryRequest, droneId);
                         if (deliverySchedule != null)
                         {
                             _logger.LogInformation("Completed delivery {deliveryId}", deliveryRequest.DeliveryId);
