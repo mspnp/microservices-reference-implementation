@@ -49,7 +49,7 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
             }
         }
 
-        public static void Configure(int db, string endPoint, string key, ILoggerFactory loggerFactory)
+        public static void Configure(int db, string endPoint, string key, ILoggerFactory loggerFactory, bool changeToExponential = false, int timeout = 5000, int retry = 3)
         {
             DB = db;
             ConfigOptions = new ConfigurationOptions
@@ -59,6 +59,18 @@ namespace Fabrikam.DroneDelivery.DeliveryService.Services
                 Ssl = true,
                 AbortOnConnectFail = false
             };
+            if (changeToExponential)
+            {
+                ConfigOptions.ReconnectRetryPolicy = new ExponentialRetry(timeout);
+            }
+            if (retry != 3)
+            {
+                ConfigOptions.ConnectRetry = retry;
+            }
+            if (timeout != 5000)
+            {
+                ConfigOptions.ConnectTimeout = timeout;
+            }
             logger = loggerFactory.CreateLogger(nameof(RedisCache<T>));
         }
 

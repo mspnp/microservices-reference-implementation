@@ -86,6 +86,12 @@ spec:
             cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
             memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}
         env:
+        - name: RedisExponentialRetry
+          value: {{ .Values.redis.exponentialretry }}
+        - name: RedisConnectTimeOut
+          value: {{ .Values.redis.connecttimeout }}
+        - name: RedisConnectRetry
+          value: {{ .Values.redis.connectretry }}
         - name: DOCDB_DATABASEID
           value: {{ .Values.cosmosdb.id }}
         - name: DOCDB_COLLECTIONID
