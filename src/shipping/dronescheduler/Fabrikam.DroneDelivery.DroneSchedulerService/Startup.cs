@@ -58,6 +58,9 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
             services
                 .AddCosmosRepository<
                 InternalDroneUtilization>(Configuration);
+
+            services.AddSingleton<IDeliveryRepository, DeliveryRepository>();            
+            services.AddSingleton<IDeliveryTrackingEventRepository, DeliveryTrackingRepository>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -69,6 +72,12 @@ namespace Fabrikam.DroneDelivery.DroneSchedulerService
               .CreateLogger();
 
             app.UseRouting();
+
+            RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
+            RedisCache<DeliveryTrackingEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
+            RedisCache<DeliveryTrackingIds>.Configure(Constants.RedisCacheDBId_DeliveryKeys, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
+
+
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapHealthChecks("/healthz");
