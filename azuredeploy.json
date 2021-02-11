@@ -155,7 +155,7 @@
         "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
         "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
         "workflowServiceAccessKey": "WorkflowServiceAccessKey",
-        "agentCount": 2,
+        "agentCount": 6,
         "agentVMSize": "Standard_D2_v2",
         "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
         "workspaceSku": "Free",

@@ -2,7 +2,7 @@
 nameOverride: delivery
 exports:
   data:
-    replicaCount: 1
+    replicaCount: 5
     image:
       pullPolicy: Always
     telemetry:
@@ -13,8 +13,8 @@ exports:
       class: "nginx-dev"
     resources:
       requests:
-        cpu: 91m
-        memory: 350Mi
+        cpu: 300m
+        memory: 450Mi
       limits:
-        cpu: 130m
-        memory: 500Mi
+        cpu: 530m
+        memory: 800Mi
