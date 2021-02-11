@@ -696,6 +696,30 @@
         },
         {
           "type": "secrets",
+          "name": "Redis-Endpoint",
+          "apiVersion": "2015-06-01",
+          "properties": {
+            "value": "[reference(resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)).hostName]"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]",
+            "[resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)]"
+          ]
+        },
+        {
+          "type": "secrets",
+          "name": "Redis-AccessKey",
+          "apiVersion": "2015-06-01",
+          "properties": {
+            "value": "[listKeys(resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName), '2016-04-01').primaryKey]"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]",
+            "[resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)]"
+          ]
+        },
+        {
+          "type": "secrets",
           "name": "CosmosDBEndpoint",
           "apiVersion": "2015-06-01",
           "properties": {
