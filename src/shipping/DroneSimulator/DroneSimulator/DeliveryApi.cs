@@ -1,8 +1,10 @@
 ﻿using DroneSimulator.Model;
+using Microsoft.ApplicationInsights;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
@@ -14,15 +16,17 @@ namespace DroneSimulator
     {
         public string apiUrl = null;
         private ILogger<DeliveryApi> _logger;
-        public DeliveryApi(ILogger<DeliveryApi> logger, IConfiguration configuration)
+        private TelemetryClient _telemetry;
+        public DeliveryApi(ILogger<DeliveryApi> logger, IConfiguration configuration, TelemetryClient telemetry)
         {
             apiUrl = configuration.GetValue<string>("ApiUrl");
+            _telemetry = telemetry;
             _logger = logger;
         }
 
         public async Task<Delivery> GetDroneDelivery(string deliveryId)
         {
-            
+
             try
             {
                 var response = await Client.GetAsync($"{this.apiUrl}/api/Deliveries/{deliveryId}");
@@ -33,7 +37,9 @@ namespace DroneSimulator
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Exception in {nameof(GetDroneDelivery)} for delivery Id : {deliveryId} . Exception Message : {ex.Message}");                
+                var props = new Dictionary<string, string>() { { "deliveryId", deliveryId } };
+                _telemetry.TrackEvent($"{nameof(GetDroneDelivery)}Exception", props);
+                _logger.LogError(ex, $"Exception in {nameof(GetDroneDelivery)} for delivery Id : {deliveryId} . Exception Message : {ex.Message}");
                 throw;
             }
         }
@@ -50,6 +56,8 @@ namespace DroneSimulator
             }
             catch (Exception ex)
             {
+                var props = new Dictionary<string, string>() { { "deliveryId", deliveryId } };
+                _telemetry.TrackEvent($"{nameof(GetDroneLocation)}Exception", props);
                 _logger.LogError(ex, $"Exception in {nameof(GetDroneLocation)} for delivery Id : {deliveryId} . Exception Message : {ex.Message}");
                 return new DroneLocation()
                 {
@@ -83,15 +91,14 @@ namespace DroneSimulator
                 };
 
                 var json = JsonConvert.SerializeObject(deliveryTracking);
-
                 var content = new StringContent(json.ToString(), Encoding.UTF8, "application/json");
                 var response = await Client.PutAsync($"{this.apiUrl}/api/Drone/{deliveryId}", content);
-
-                Console.WriteLine($"Status: {response.StatusCode}");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                var props = new Dictionary<string, string>() { { "deliveryId", deliveryId } };
+                _telemetry.TrackEvent($"{nameof(GetDroneLocation)}Exception", props);
+                _logger.LogError(ex, $"Exception in {nameof(UpdateDroneLocation)} for delivery Id : {deliveryId} . Exception Message : {ex.Message}");
             }
         }
 
