@@ -22,17 +22,18 @@ namespace DroneSimulator
 
         public async Task<Delivery> GetDroneDelivery(string deliveryId)
         {
-            var response = await Client.GetAsync($"{this.apiUrl}/api/Deliveries/{deliveryId}");
-            response.EnsureSuccessStatusCode();
-            var json = await response.Content.ReadAsStringAsync();
+            
             try
             {
+                var response = await Client.GetAsync($"{this.apiUrl}/api/Deliveries/{deliveryId}");
+                response.EnsureSuccessStatusCode();
+                var json = await response.Content.ReadAsStringAsync();
                 var delivery = JsonConvert.DeserializeObject<Delivery>(json);
                 return delivery;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, json + " Message : " + ex.Message);
+                _logger.LogError(ex, $"Exception in {nameof(GetDroneDelivery)} for delivery Id : {deliveryId} . Exception Message : {ex.Message}");                
                 throw;
             }
         }
@@ -49,7 +50,7 @@ namespace DroneSimulator
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Exception in GetDroneLocation for {deliveryId}");
+                _logger.LogError(ex, $"Exception in {nameof(GetDroneLocation)} for delivery Id : {deliveryId} . Exception Message : {ex.Message}");
                 return new DroneLocation()
                 {
                     LastKnownLocation = new LastKnownLocation()
