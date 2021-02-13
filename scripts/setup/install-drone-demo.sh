@@ -115,6 +115,7 @@ printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESO
 
 export EXIST_SSH_PUBLIC_KEY=$(az aks list --resource-group chaosdrone --query [0].linuxProfile.ssh.publicKeys[0].keyData -o tsv)
 if [ $EXIST_SSH_PUBLIC_KEY != "" ]; then
+   echo "SSH Key Already Exists..."
    export SSH_PUBLIC_KEY_FILE=$EXIST_SSH_PUBLIC_KEY
 fi
 
