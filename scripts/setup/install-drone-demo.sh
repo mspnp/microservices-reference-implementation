@@ -115,14 +115,12 @@ printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESO
 
 export EXIST_SSH_PUBLIC_KEY=$(az aks list --resource-group $RESOURCE_GROUP --query [0].linuxProfile.ssh.publicKeys[0].keyData -o tsv)
 
-echo $EXIST_SSH_PUBLIC_KEY
-
 if [ ! -z "$EXIST_SSH_PUBLIC_KEY" ]; then
    echo "SSH Key Already Exists..."
-   export SSH_PUBLIC_KEY_FILE=$EXIST_SSH_PUBLIC_KEY
+   export SSH_PUBLIC_KEY_FILE=~/.ssh/id_rsa_$RESOURCE_GROUP.pub
+   echo $SSH_PUBLIC_KEY_FILE
+   printf $EXIST_SSH_PUBLIC_KEY >> $SSH_PUBLIC_KEY_FILE
 fi
-
-break
 
 for i in 1 2 3; 
 do
