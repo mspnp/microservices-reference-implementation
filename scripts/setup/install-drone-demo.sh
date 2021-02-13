@@ -119,7 +119,7 @@ if [ ! -z "$EXIST_SSH_PUBLIC_KEY" ]; then
    echo "SSH Key Already Exists..."
    export SSH_PUBLIC_KEY_FILE=~/.ssh/id_rsa_$RESOURCE_GROUP.pub
    echo $SSH_PUBLIC_KEY_FILE
-   printf $EXIST_SSH_PUBLIC_KEY >> $SSH_PUBLIC_KEY_FILE
+   echo $EXIST_SSH_PUBLIC_KEY > $SSH_PUBLIC_KEY_FILE
 fi
 
 for i in 1 2 3; 
