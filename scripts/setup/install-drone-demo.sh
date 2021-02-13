@@ -114,7 +114,7 @@ export DEV_DEPLOYMENT_NAME=azuredeploy-${DEPLOYMENT_SUFFIX}-dev
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
 export EXIST_SSH_PUBLIC_KEY=$(az aks list --resource-group $RESOURCE_GROUP --query [0].linuxProfile.ssh.publicKeys[0].keyData -o tsv)
-if [ $EXIST_SSH_PUBLIC_KEY != "" ]; then
+if [ ! -z "$EXIST_SSH_PUBLIC_KEY" ]; then
    echo "SSH Key Already Exists..."
    export SSH_PUBLIC_KEY_FILE=$EXIST_SSH_PUBLIC_KEY
 fi
