@@ -113,6 +113,11 @@ export DEV_DEPLOYMENT_NAME=azuredeploy-${DEPLOYMENT_SUFFIX}-dev
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
+export EXIST_SSH_PUBLIC_KEY=$(az aks list --resource-group chaosdrone --query [0].linuxProfile.ssh.publicKeys[0].keyData -o tsv)
+if [ $EXIST_SSH_PUBLIC_KEY != "" ]; then
+   export SSH_PUBLIC_KEY_FILE=$EXIST_SSH_PUBLIC_KEY
+fi
+
 for i in 1 2 3; 
 do
      echo "Deploying resources..."
