@@ -875,7 +875,7 @@
     },
     {
       "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
-      "name": "[concat(variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName,'/Microsoft.Authorization/',guid(concat('kv-delivery',parameters('environmentName')), resourceGroup().id))]",
+      "name": "[concat(variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName,'/Microsoft.Authorization/',uniqueString('kv-delivery',parameters('environmentName'), resourceGroup().id))]",
       "apiVersion": "2017-05-01",
       "tags": {
         "displayName": "Delivery app RBAC Reader for Key Vault",
@@ -899,7 +899,7 @@
     },
     {
       "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
-      "name": "[concat(variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName,'/Microsoft.Authorization/',guid(concat('kv-dronescheduler',parameters('environmentName')), resourceGroup().id))]",
+      "name": "[concat(variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName,'/Microsoft.Authorization/',uniqueString('kv-dronescheduler',parameters('environmentName'), resourceGroup().id))]",
       "apiVersion": "2017-05-01",
       "tags": {
         "displayName": "DroneScheduler app RBAC Reader for Key Vault",
@@ -923,7 +923,7 @@
     },
     {
       "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
-      "name": "[concat(variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName,'/Microsoft.Authorization/',guid(concat('kv-workflow',parameters('environmentName')), resourceGroup().id))]",
+      "name": "[concat(variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName,'/Microsoft.Authorization/',uniqueString('kv-workflow',parameters('environmentName'), resourceGroup().id))]",
       "apiVersion": "2017-05-01",
       "tags": {
         "displayName": "Workflow app RBAC Reader for Key Vault",
@@ -948,7 +948,7 @@
     {
       "type": "Microsoft.ContainerService/managedClusters/providers/roleAssignments",
       "apiVersion": "2018-09-01-preview",
-      "name": "[concat(variables('environmentSettings')[parameters('environmentName')].aksClusterName, '/Microsoft.Authorization/', guid(concat(resourceGroup().id), variables('monitoringMetricsPublisherRole')))]",
+      "name": "[concat(variables('environmentSettings')[parameters('environmentName')].aksClusterName, '/Microsoft.Authorization/', uniqueString(resourceGroup().id, variables('monitoringMetricsPublisherRole')))]",
       "dependsOn": [
         "[resourceId('Microsoft.ContainerService/managedClusters', variables('environmentSettings')[parameters('environmentName')].aksClusterName)]"
       ],
@@ -960,7 +960,7 @@
     },
     {
       "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
-      "name": "[concat(parameters('deliveryIdName'), '/Microsoft.Authorization/', guid(concat('msi-delivery',parameters('environmentName')), resourceGroup().id))]",
+      "name": "[concat(parameters('deliveryIdName'), '/Microsoft.Authorization/', uniqueString('msi-delivery',parameters('environmentName'), resourceGroup().id))]",
       "apiVersion": "2017-05-01",
       "comments": "Grant the AKS cluster Managed Identity access to the delivery managed id",
       "properties": {
@@ -972,7 +972,7 @@
     },
     {
       "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
-      "name": "[concat(parameters('websiteIdName'), '/Microsoft.Authorization/', guid(concat('msi-website',parameters('environmentName')), resourceGroup().id))]",
+      "name": "[concat(parameters('websiteIdName'), '/Microsoft.Authorization/', uniqueString('msi-website',parameters('environmentName'), resourceGroup().id))]",
       "apiVersion": "2017-05-01",
       "comments": "Grant the AKS cluster Managed Identity access to the website managed id",
       "properties": {
@@ -984,7 +984,7 @@
     },
     {
       "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
-      "name": "[concat(parameters('workflowIdName'), '/Microsoft.Authorization/', guid(concat('msi-workflow',parameters('environmentName')), resourceGroup().id))]",
+      "name": "[concat(parameters('workflowIdName'), '/Microsoft.Authorization/', uniqueString('msi-workflow',parameters('environmentName'), resourceGroup().id))]",
       "apiVersion": "2017-05-01",
       "comments": "Grant the AKS cluster Managed Identity access to the workflow managed id",
       "properties": {
@@ -996,7 +996,7 @@
     },
     {
       "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
-      "name": "[concat(parameters('droneSchedulerIdName'), '/Microsoft.Authorization/', guid(concat('msi-dronescheduler',parameters('environmentName')), resourceGroup().id))]",
+      "name": "[concat(parameters('droneSchedulerIdName'), '/Microsoft.Authorization/', uniqueString('msi-dronescheduler',parameters('environmentName'), resourceGroup().id))]",
       "apiVersion": "2017-05-01",
       "comments": "Grant the AKS cluster Managed Identity access to the drone scheduler managed id",
       "properties": {
