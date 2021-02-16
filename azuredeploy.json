@@ -1011,7 +1011,7 @@
     },
     {
       "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
-      "name": "[concat(parameters('droneSchedulerIdName'), '/Microsoft.Authorization/', guid(concat('msi-dronescheduler',parameters('environmentName')), resourceGroup().id))]"
+      "name": "[concat(parameters('droneSchedulerIdName'), '/Microsoft.Authorization/', guid(concat('msi-dronescheduler',parameters('environmentName')), resourceGroup().id))]",
       "apiVersion": "2017-05-01",
       "comments": "Grant the AKS cluster Managed Identity access to the drone scheduler managed id",
       "properties": {
