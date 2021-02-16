@@ -130,7 +130,7 @@
       "type": "string"
     },
     "monMetricsPubRoleAssignNameGuid": {
-      "defaultValue": "[guid(concat(resourceGroup().id), variables('monitoringMetricsPublisherRole'))]",
+      "defaultValue": "[guid(concat(resourceGroup().id), concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/3913510d-42f4-4e42-8a64-420c390055eb'))]",
       "type": "string"
     },
     "deliveryIdNameRoleAssignNameGuid": {
