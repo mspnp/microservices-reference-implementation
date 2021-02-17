@@ -143,6 +143,13 @@ if [ ! -z "$EXIST_SSH_PUBLIC_KEY" ]; then
    echo $EXIST_SSH_PUBLIC_KEY > $SSH_PUBLIC_KEY_FILE
 fi
 
+# Create service principal for AKS
+export SP_NAME="http://Drone-Demo-${$RESOURCE_GROUP}"
+export SP_DETAILS=$(az ad sp create-for-rbac --name $SP_NAME --role="Contributor" -o json) && \
+export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
+export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
+export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
+
 for i in 1 2 3; 
 do
 
@@ -151,6 +158,8 @@ do
           az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
           --parameters kubernetesVersion=${KUBERNETES_VERSION} \
                     sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
+                    servicePrincipalClientId=${SP_APP_ID} \
+                    servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
                     deliveryIdName=${DELIVERY_ID_NAME} \
                     deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
                     droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \

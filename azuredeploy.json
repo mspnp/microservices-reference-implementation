@@ -148,6 +148,18 @@
     "msidroneschedulerRoleAssignNameGuid": {
       "defaultValue": "[guid(concat('msi-dronescheduler',parameters('environmentName')), resourceGroup().id)]",
       "type": "string"
+    },
+    "servicePrincipalClientId": {
+      "metadata": {
+        "description": "Client ID (used by cloudprovider)"
+      },
+      "type": "string"
+    },
+    "servicePrincipalClientSecret": {
+      "metadata": {
+        "description": "The Service Principal Client Secret."
+      },
+      "type": "securestring"
     }
   },
   "variables": {
@@ -374,8 +386,8 @@
         },
         "enablePodSecurityPolicy": false,
         "servicePrincipalProfile": {
-          "clientId": "msi",
-          "secret": null
+          "clientId": "[parameters('servicePrincipalClientId')]",
+          "secret": "[parameters('servicePrincipalClientSecret')]"
         },
         "dnsPrefix": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
         "agentPoolProfiles": [
