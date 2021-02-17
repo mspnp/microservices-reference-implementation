@@ -110,15 +110,17 @@ done
 
 echo $MAIN_DEPLOYMENT_NAME
 
-export WORKFLOW_TO_KV_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.workFlowToKvNameGuid.value -o tsv)
-export DELIVERY_TO_KV_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.deliveryToKvNameGuid.value -o tsv)
-export DRONESCHED_TO_KV_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.droneschedulerToKvNameGuid.value -o tsv)
+if [ ! -z "$MAIN_DEPLOYMENT_NAME" ]; then
+  export WORKFLOW_TO_KV_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.workFlowToKvNameGuid.value -o tsv)
+  export DELIVERY_TO_KV_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.deliveryToKvNameGuid.value -o tsv)
+  export DRONESCHED_TO_KV_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.droneschedulerToKvNameGuid.value -o tsv)
 
-export MON_METRICS_PUBROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.monMetricsPubRoleAssignNameGuid.value -o tsv)
-export DELIVERYID_NAME_ROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.deliveryIdNameRoleAssignNameGuid.value -o tsv)
-export MSI_WEBSITE_ROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.msiwebsiteRoleAssignNameGuid.value -o tsv)
-export MSI_WORKFLOW_ROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.msiworkflowRoleAssignNameGuid.value -o tsv)
-export MSI_DRONESCHEDULER_ROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.msidroneschedulerRoleAssignNameGuid.value -o tsv)
+  export MON_METRICS_PUBROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.monMetricsPubRoleAssignNameGuid.value -o tsv)
+  export DELIVERYID_NAME_ROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.deliveryIdNameRoleAssignNameGuid.value -o tsv)
+  export MSI_WEBSITE_ROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.msiwebsiteRoleAssignNameGuid.value -o tsv)
+  export MSI_WORKFLOW_ROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.msiworkflowRoleAssignNameGuid.value -o tsv)
+  export MSI_DRONESCHEDULER_ROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.msidroneschedulerRoleAssignNameGuid.value -o tsv)
+fi
 
 # Wait for AAD propagation
 until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
