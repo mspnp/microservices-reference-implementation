@@ -147,7 +147,7 @@ fi
 
 for name in $(az keyvault list -g $RESOURCE_GROUP --query "[].name" -o tsv)
 do
-   if grep -q "-d-" <<< "$name"; then
+   if grep -q "\-d-" <<< "$name"; then
       export DEPLOYMENT_KV_NAME=$name
    fi
 done
