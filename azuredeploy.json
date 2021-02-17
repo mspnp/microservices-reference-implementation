@@ -622,6 +622,19 @@
         "environment": "[parameters('environmentName')]"
       },
       "properties": {
+        "copy": [
+          {
+            "name": "accessPolicies",
+            "count": "[length(parameters('clusterAdminGroupObjectIds'))]",
+            "input": {
+              "tenantId": "[subscription().tenantId]",
+              "objectId": "[parameters('clusterAdminGroupObjectIds')[copyIndex('accessPolicies')]]",
+              "permissions": {
+                "secrets": ["get", "list"]
+              }
+            }
+          }
+        ],
         "sku": {
           "family": "A",
           "name": "standard"
@@ -645,6 +658,28 @@
         ]
       },
       "resources": [
+        {
+          "type": "secrets",
+          "name": "AKS-ClientId",
+          "apiVersion": "2015-06-01",
+          "properties": {
+            "value": "[parameters('servicePrincipalClientId')]"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName)]"
+          ]
+        },
+        {
+          "type": "secrets",
+          "name": "AKS-ClientSecret",
+          "apiVersion": "2015-06-01",
+          "properties": {
+            "value": "[parameters('servicePrincipalClientSecret')]"
+          },
+          "dependsOn": [
+            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName)]"
+          ]
+        },
         {
           "type": "secrets",
           "name": "CosmosDB-Endpoint",
@@ -718,6 +753,19 @@
         "environment": "[parameters('environmentName')]"
       },
       "properties": {
+        "copy": [
+          {
+            "name": "accessPolicies",
+            "count": "[length(parameters('clusterAdminGroupObjectIds'))]",
+            "input": {
+              "tenantId": "[subscription().tenantId]",
+              "objectId": "[parameters('clusterAdminGroupObjectIds')[copyIndex('accessPolicies')]]",
+              "permissions": {
+                "secrets": ["get", "list"]
+              }
+            }
+          }
+        ],
         "sku": {
           "family": "A",
           "name": "standard"
@@ -849,6 +897,19 @@
         "environment": "[parameters('environmentName')]"
       },
       "properties": {
+        "copy": [
+          {
+            "name": "accessPolicies",
+            "count": "[length(parameters('clusterAdminGroupObjectIds'))]",
+            "input": {
+              "tenantId": "[subscription().tenantId]",
+              "objectId": "[parameters('clusterAdminGroupObjectIds')[copyIndex('accessPolicies')]]",
+              "permissions": {
+                "secrets": ["get", "list"]
+              }
+            }
+          }
+        ],
         "sku": {
           "family": "A",
           "name": "standard"
