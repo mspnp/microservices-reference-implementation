@@ -160,6 +160,12 @@
         "description": "The Service Principal Client Secret."
       },
       "type": "securestring"
+    },
+    "userObjectId": {
+      "metadata": {
+        "description": "ObjectID of User"
+      },
+      "type": "string"
     }
   },
   "variables": {
@@ -617,19 +623,6 @@
         "environment": "[parameters('environmentName')]"
       },
       "properties": {
-        "copy": [
-          {
-            "name": "accessPolicies",
-            "count": "[length(parameters('clusterAdminGroupObjectIds'))]",
-            "input": {
-              "tenantId": "[subscription().tenantId]",
-              "objectId": "[parameters('clusterAdminGroupObjectIds')[copyIndex('accessPolicies')]]",
-              "permissions": {
-                "secrets": ["get", "list"]
-              }
-            }
-          }
-        ],
         "sku": {
           "family": "A",
           "name": "standard"
@@ -646,6 +639,20 @@
           {
             "tenantId": "[subscription().tenantId]",
             "objectId": "[variables('readerRoleObjectId')]",
+            "permissions": {
+              "secrets": ["get", "list"]
+            }
+          },
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[parameters('clusterAdminGroupObjectIds')[0]]",
+            "permissions": {
+              "secrets": ["get", "list"]
+            }
+          },
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[parameters('userObjectId')]",
             "permissions": {
               "secrets": ["get", "list"]
             }
@@ -748,19 +755,6 @@
         "environment": "[parameters('environmentName')]"
       },
       "properties": {
-        "copy": [
-          {
-            "name": "accessPolicies",
-            "count": "[length(parameters('clusterAdminGroupObjectIds'))]",
-            "input": {
-              "tenantId": "[subscription().tenantId]",
-              "objectId": "[parameters('clusterAdminGroupObjectIds')[copyIndex('accessPolicies')]]",
-              "permissions": {
-                "secrets": ["get", "list"]
-              }
-            }
-          }
-        ],
         "sku": {
           "family": "A",
           "name": "standard"
@@ -770,6 +764,20 @@
           {
             "tenantId": "[subscription().tenantId]",
             "objectId": "[parameters('droneSchedulerPrincipalId')]",
+            "permissions": {
+              "secrets": ["get", "list"]
+            }
+          },
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[parameters('clusterAdminGroupObjectIds')[0]]",
+            "permissions": {
+              "secrets": ["get", "list"]
+            }
+          },
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[parameters('userObjectId')]",
             "permissions": {
               "secrets": ["get", "list"]
             }
@@ -892,19 +900,6 @@
         "environment": "[parameters('environmentName')]"
       },
       "properties": {
-        "copy": [
-          {
-            "name": "accessPolicies",
-            "count": "[length(parameters('clusterAdminGroupObjectIds'))]",
-            "input": {
-              "tenantId": "[subscription().tenantId]",
-              "objectId": "[parameters('clusterAdminGroupObjectIds')[copyIndex('accessPolicies')]]",
-              "permissions": {
-                "secrets": ["get", "list"]
-              }
-            }
-          }
-        ],
         "sku": {
           "family": "A",
           "name": "standard"
@@ -914,6 +909,20 @@
           {
             "tenantId": "[subscription().tenantId]",
             "objectId": "[parameters('workflowPrincipalId')]",
+            "permissions": {
+              "secrets": ["get", "list"]
+            }
+          },
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[parameters('clusterAdminGroupObjectIds')[0]]",
+            "permissions": {
+              "secrets": ["get", "list"]
+            }
+          },
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[parameters('userObjectId')]",
             "permissions": {
               "secrets": ["get", "list"]
             }

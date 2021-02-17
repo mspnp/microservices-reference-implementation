@@ -152,6 +152,8 @@ export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
 export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
 export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
 
+export CURRENT_USE_OBJECT_ID=$(az ad signed-in-user show --query objectId -o tsv)
+
 for i in 1 2 3; 
 do
 
@@ -162,6 +164,7 @@ do
                     sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
                     servicePrincipalClientId=${SP_APP_ID} \
                     servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
+                    userObjectId=${CURRENT_USE_OBJECT_ID} \
                     deliveryIdName=${DELIVERY_ID_NAME} \
                     deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
                     droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
@@ -185,6 +188,9 @@ do
           az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
           --parameters kubernetesVersion=${KUBERNETES_VERSION} \
                     sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
+                    servicePrincipalClientId=${SP_APP_ID} \
+                    servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
+                    userObjectId=${CURRENT_USE_OBJECT_ID} \
                     deliveryIdName=${DELIVERY_ID_NAME} \
                     deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
                     droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
