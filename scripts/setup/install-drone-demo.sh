@@ -99,7 +99,7 @@ export WEBSITE_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTIT
 export WEBSITE_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WEBSITE_ID_NAME --query principalId -o tsv)
 export RESOURCE_GROUP_ACR=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
 
-for name in $(az deployment group list -g chaosdronedemo12 --query "[].name" -o tsv)
+for name in $(az deployment group list -g $RESOURCE_GROUP --query "[].name" -o tsv)
 do
    if grep -q "azuredeploy-" <<< "$name"; then
       if [[ ${name} != *"prereqs"* ]];then
