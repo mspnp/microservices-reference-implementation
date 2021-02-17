@@ -145,12 +145,32 @@ if [ ! -z "$EXIST_SSH_PUBLIC_KEY" ]; then
    echo $EXIST_SSH_PUBLIC_KEY > $SSH_PUBLIC_KEY_FILE
 fi
 
-# Create service principal for AKS
-export SP_NAME="Drone-Demo-${RESOURCE_GROUP}"
-export SP_DETAILS=$(az ad sp create-for-rbac --name $SP_NAME --role="Contributor" -o json) && \
-export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
-export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
-export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
+for name in $(az keyvault list -g $RESOURCE_GROUP --query "[].name" -o tsv)
+do
+   if grep -q "-d-" <<< "$name"; then
+      export DEPLOYMENT_KV_NAME=$name
+   fi
+done
+
+if [ ! -z "$DEPLOYMENT_KV_NAME" ]; then
+   export EXIST_SP_APP_ID=$(az keyvault secret show --name "AKS-ClientId" --vault-name $DEPLOYMENT_KV_NAME --query "value" -o tsv)
+   export EXIST_SP_CLIENT_SECRET=$(az keyvault secret show --name "AKS-ClientSecret" --vault-name $DEPLOYMENT_KV_NAME --query "value" -o tsv)
+   echo "Existing AppID: $EXIST_SP_APP_ID"
+fi
+
+if [ ! -z "$EXIST_SP_APP_ID" -a ! -z "$EXIST_SP_CLIENT_SECRET" ]; then
+     export SP_APP_ID=$EXIST_SP_APP_ID
+     export SP_CLIENT_SECRET=$EXIST_SP_CLIENT_SECRET
+else
+     echo "Creating service principal for AKS..."
+
+     # Create service principal for AKS
+     export SP_NAME="Drone-Demo-${RESOURCE_GROUP}"
+     export SP_DETAILS=$(az ad sp create-for-rbac --name $SP_NAME --role="Contributor" -o json) && \
+     export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
+     export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
+     export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
+fi
 
 export CURRENT_USE_OBJECT_ID=$(az ad signed-in-user show --query objectId -o tsv)
 
