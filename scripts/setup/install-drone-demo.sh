@@ -99,6 +99,29 @@ export WEBSITE_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTIT
 export WEBSITE_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WEBSITE_ID_NAME --query principalId -o tsv)
 export RESOURCE_GROUP_ACR=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
 
+for name in $(az deployment group list -g $RESOURCE_GROUP --query "[].name" -o tsv)
+do
+   if grep -q "azuredeploy-" <<< "$name"; then
+      if [[ ${name} != *"prereqs"* ]];then
+         export MAIN_DEPLOYMENT_NAME=$name
+      fi
+   fi
+done
+
+echo $MAIN_DEPLOYMENT_NAME
+
+if [ ! -z "$MAIN_DEPLOYMENT_NAME" ]; then
+  export WORKFLOW_TO_KV_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.workFlowToKvNameGuid.value -o tsv)
+  export DELIVERY_TO_KV_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.deliveryToKvNameGuid.value -o tsv)
+  export DRONESCHED_TO_KV_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.droneschedulerToKvNameGuid.value -o tsv)
+
+  export MON_METRICS_PUBROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.monMetricsPubRoleAssignNameGuid.value -o tsv)
+  export DELIVERYID_NAME_ROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.deliveryIdNameRoleAssignNameGuid.value -o tsv)
+  export MSI_WEBSITE_ROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.msiwebsiteRoleAssignNameGuid.value -o tsv)
+  export MSI_WORKFLOW_ROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.msiworkflowRoleAssignNameGuid.value -o tsv)
+  export MSI_DRONESCHEDULER_ROLE_ASSIGN_NAME_GUID=$(az deployment group show -g $RESOURCE_GROUP -n $MAIN_DEPLOYMENT_NAME --query properties.parameters.msidroneschedulerRoleAssignNameGuid.value -o tsv)
+fi
+
 # Wait for AAD propagation
 until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
@@ -113,22 +136,93 @@ export DEV_DEPLOYMENT_NAME=azuredeploy-${DEPLOYMENT_SUFFIX}-dev
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
+export EXIST_SSH_PUBLIC_KEY=$(az aks list --resource-group $RESOURCE_GROUP --query [0].linuxProfile.ssh.publicKeys[0].keyData -o tsv)
+
+if [ ! -z "$EXIST_SSH_PUBLIC_KEY" ]; then
+   echo "SSH Key Already Exists..."
+   export SSH_PUBLIC_KEY_FILE=~/.ssh/id_rsa_$RESOURCE_GROUP.pub
+   echo $SSH_PUBLIC_KEY_FILE
+   echo $EXIST_SSH_PUBLIC_KEY > $SSH_PUBLIC_KEY_FILE
+fi
+
+for name in $(az keyvault list -g $RESOURCE_GROUP --query "[].name" -o tsv)
+do
+   if grep -q "\-d-" <<< "$name"; then
+      export DEPLOYMENT_KV_NAME=$name
+   fi
+done
+
+if [ ! -z "$DEPLOYMENT_KV_NAME" ]; then
+   export EXIST_SP_APP_ID=$(az keyvault secret show --name "AKS-ClientId" --vault-name $DEPLOYMENT_KV_NAME --query "value" -o tsv)
+   export EXIST_SP_CLIENT_SECRET=$(az keyvault secret show --name "AKS-ClientSecret" --vault-name $DEPLOYMENT_KV_NAME --query "value" -o tsv)
+   echo "Existing AppID: $EXIST_SP_APP_ID"
+fi
+
+if [ ! -z "$EXIST_SP_APP_ID" -a ! -z "$EXIST_SP_CLIENT_SECRET" ]; then
+     export SP_APP_ID=$EXIST_SP_APP_ID
+     export SP_CLIENT_SECRET=$EXIST_SP_CLIENT_SECRET
+else
+     echo "Creating service principal for AKS..."
+
+     # Create service principal for AKS
+     export SP_NAME="Drone-Demo-${RESOURCE_GROUP}"
+     export SP_DETAILS=$(az ad sp create-for-rbac --name $SP_NAME --role="Contributor" -o json) && \
+     export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
+     export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
+     export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
+fi
+
+export CURRENT_USE_OBJECT_ID=$(az ad signed-in-user show --query objectId -o tsv)
+
 for i in 1 2 3; 
 do
-     echo "Deploying resources..."
-     az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
-     --parameters kubernetesVersion=${KUBERNETES_VERSION} \
-               sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
-               deliveryIdName=${DELIVERY_ID_NAME} \
-               deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
-               droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
-               droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
-               workflowIdName=${WORKFLOW_ID_NAME} \
-               workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
-               websiteIdName=${WEBSITE_ID_NAME} \
-               websitePrincipalId=${WEBSITE_ID_PRINCIPAL_ID} \
-               clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
-               acrResourceGroupName=${RESOURCE_GROUP_ACR} 2>&1 1>/dev/null 
+
+     if [ ! -z "$WORKFLOW_TO_KV_NAME_GUID" -a ! -z "$DELIVERY_TO_KV_NAME_GUID" -a ! -z "$DRONESCHED_TO_KV_NAME_GUID" -a ! -z "$MON_METRICS_PUBROLE_ASSIGN_NAME_GUID" -a ! -z "$DELIVERYID_NAME_ROLE_ASSIGN_NAME_GUID" -a ! -z "$MSI_WEBSITE_ROLE_ASSIGN_NAME_GUID" -a ! -z "$MSI_WORKFLOW_ROLE_ASSIGN_NAME_GUID" -a ! -z "$MSI_DRONESCHEDULER_ROLE_ASSIGN_NAME_GUID" ]; then
+          echo "ReDeploying resources..."
+          az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
+          --parameters kubernetesVersion=${KUBERNETES_VERSION} \
+                    sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
+                    servicePrincipalClientId=${SP_APP_ID} \
+                    servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
+                    userObjectId=${CURRENT_USE_OBJECT_ID} \
+                    deliveryIdName=${DELIVERY_ID_NAME} \
+                    deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
+                    droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
+                    droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
+                    workflowIdName=${WORKFLOW_ID_NAME} \
+                    workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
+                    websiteIdName=${WEBSITE_ID_NAME} \
+                    websitePrincipalId=${WEBSITE_ID_PRINCIPAL_ID} \
+                    clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
+                    workFlowToKvNameGuid=${WORKFLOW_TO_KV_NAME_GUID} \
+                    deliveryToKvNameGuid=${DELIVERY_TO_KV_NAME_GUID} \
+                    droneschedulerToKvNameGuid=${DRONESCHED_TO_KV_NAME_GUID} \
+                    monMetricsPubRoleAssignNameGuid=${MON_METRICS_PUBROLE_ASSIGN_NAME_GUID} \
+                    deliveryIdNameRoleAssignNameGuid=${DELIVERYID_NAME_ROLE_ASSIGN_NAME_GUID} \
+                    msiwebsiteRoleAssignNameGuid=${MSI_WEBSITE_ROLE_ASSIGN_NAME_GUID} \
+                    msiworkflowRoleAssignNameGuid=${MSI_WORKFLOW_ROLE_ASSIGN_NAME_GUID} \
+                    msidroneschedulerRoleAssignNameGuid=${MSI_DRONESCHEDULER_ROLE_ASSIGN_NAME_GUID} \
+                    acrResourceGroupName=${RESOURCE_GROUP_ACR} 2>&1 1>/dev/null 
+     else
+          echo "Deploying resources..."
+          az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
+          --parameters kubernetesVersion=${KUBERNETES_VERSION} \
+                    sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
+                    servicePrincipalClientId=${SP_APP_ID} \
+                    servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
+                    userObjectId=${CURRENT_USE_OBJECT_ID} \
+                    deliveryIdName=${DELIVERY_ID_NAME} \
+                    deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
+                    droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
+                    droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
+                    workflowIdName=${WORKFLOW_ID_NAME} \
+                    workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
+                    websiteIdName=${WEBSITE_ID_NAME} \
+                    websitePrincipalId=${WEBSITE_ID_PRINCIPAL_ID} \
+                    clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
+                    acrResourceGroupName=${RESOURCE_GROUP_ACR} 2>&1 1>/dev/null 
+     fi
+
      if [[ $? = 0 ]] 
      then
        az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.acrName.value -o tsv 2>&1 1>/dev/null
