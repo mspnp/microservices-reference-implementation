@@ -146,7 +146,7 @@ if [ ! -z "$EXIST_SSH_PUBLIC_KEY" ]; then
 fi
 
 # Create service principal for AKS
-export SP_NAME="Drone-Demo-${$RESOURCE_GROUP}"
+export SP_NAME="Drone-Demo-${RESOURCE_GROUP}"
 export SP_DETAILS=$(az ad sp create-for-rbac --name $SP_NAME --role="Contributor" -o json) && \
 export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
 export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
