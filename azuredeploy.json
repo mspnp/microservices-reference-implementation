@@ -379,11 +379,6 @@
         "kubernetesVersion": "[parameters('kubernetesVersion')]",
         "enableRBAC": true,
         "nodeResourceGroup": "[variables('nodeResourceGroupName')]",
-        "aadProfile": {
-          "managed": true,
-          "adminGroupObjectIds": "[parameters('clusterAdminGroupObjectIds')]",
-          "tenantId": "[subscription().tenantId]"
-        },
         "enablePodSecurityPolicy": false,
         "servicePrincipalProfile": {
           "clientId": "[parameters('servicePrincipalClientId')]",
