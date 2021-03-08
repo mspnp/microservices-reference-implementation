@@ -97,7 +97,7 @@ namespace DroneSimulator
             catch (Exception ex)
             {
                 var props = new Dictionary<string, string>() { { "deliveryId", deliveryId } };
-                _telemetry.TrackEvent($"{nameof(GetDroneLocation)}Exception", props);
+                _telemetry.TrackEvent($"{nameof(UpdateDroneLocation)}Exception", props);
                 _logger.LogError(ex, $"Exception in {nameof(UpdateDroneLocation)} for delivery Id : {deliveryId} . Exception Message : {ex.Message}");
             }
         }
