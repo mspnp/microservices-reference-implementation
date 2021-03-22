@@ -166,7 +166,14 @@ else
 
      # Create service principal for AKS
      export SP_NAME="Drone-Demo-${RESOURCE_GROUP}"
-     export SP_DETAILS=$(az ad sp create-for-rbac --name $SP_NAME --role="Contributor" -o json) && \
+     export SP_DETAILS=$(az ad sp create-for-rbac --name $SP_NAME --role="Contributor" -o json) 
+     if [[ $? = 0 ]] 
+     then
+        echo "Service principal for AKS Created"
+     else 
+        exit 1;
+     fi
+
      export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
      export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
      export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
@@ -310,12 +317,19 @@ do
      echo "Deploy the ngnix ingress controller..."
 
      # Deploy the ngnix ingress controller
-     helm install stable/nginx-ingress --name nginx-ingress-dev --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-dev --version 1.41.3
+     helm install stable/nginx-ingress --name nginx-ingress-dev --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-dev --version 1.41.3 &> nginx.txt
+     err=$?
+     cmdoutput=$(cat nginx.txt)
 
-     if [[ $? = 0 ]] 
+     if [[ $err = 0 ]] 
      then
          break;
      else 
+         if grep -q "already exists" <<< "$cmdoutput"; then
+            break;
+         else 
+            echo $cmdoutput
+         fi
          if [[ $i -ge 3 ]]; then exit 1; fi
          sleep 30s
      fi
@@ -365,7 +379,7 @@ export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
-for i in 1 2 3; 
+for i in 1 2 3;
 do
      # Deploy the service
      helm install $HELM_CHARTS/delivery/ \
@@ -391,14 +405,25 @@ do
           --name delivery-v0.1.0-dev \
           --dep-up
 
-     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=delivery-v0.1.0-dev --timeout=120s
+     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=delivery-v0.1.0-dev --timeout=120s &> delivery.log
+     err=$?
 
-     if [[ $? = 0 ]] 
+     cmdoutput=$(cat delivery.log)
+     rm delivery.log
+
+     if [[ $err = 0 ]]
      then
+         echo "All Good"
          break;
-     else 
+     else
+         if grep -q "already exists" <<< "$cmdoutput"; then
+            echo "Already Exists"
+            break;
+         else
+            echo $cmdoutput
+         fi
          if [[ $i -ge 3 ]]; then exit 1; fi
-         sleep 10s
+         sleep 30s
      fi
 done
 
@@ -443,14 +468,25 @@ do
           --name package-v0.1.0-dev \
           --dep-up
 
-     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=package-v0.1.0-dev --timeout=120s
+     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=package-v0.1.0-dev --timeout=120s &> package.log
+     err=$?
 
-     if [[ $? = 0 ]] 
+     cmdoutput=$(cat package.log)
+     rm package.log
+
+     if [[ $err = 0 ]]
      then
+         echo "All Good"
          break;
-     else 
+     else
+         if grep -q "already exists" <<< "$cmdoutput"; then
+            echo "Already Exists"
+            break;
+         else
+            echo $cmdoutput
+         fi
          if [[ $i -ge 3 ]]; then exit 1; fi
-         sleep 10s
+         sleep 30s
      fi
 done
 
@@ -494,15 +530,27 @@ do
           --name workflow-v0.1.0-dev \
           --dep-up
 
-     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=workflow-v0.1.0-dev --timeout=120s
+     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=workflow-v0.1.0-dev --timeout=120s &> workflow.log
+     err=$?
 
-     if [[ $? = 0 ]] 
+     cmdoutput=$(cat workflow.log)
+     rm workflow.log
+
+     if [[ $err = 0 ]]
      then
+         echo "All Good"
          break;
-     else 
+     else
+         if grep -q "already exists" <<< "$cmdoutput"; then
+            echo "Already Exists"
+            break;
+         else
+            echo $cmdoutput
+         fi
          if [[ $i -ge 3 ]]; then exit 1; fi
-         sleep 10s
+         sleep 30s
      fi
+
 done
 
 #########################################################################################
@@ -553,14 +601,25 @@ do
           --name ingestion-v0.1.0-dev \
           --dep-up
 
-     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=ingestion-v0.1.0-dev --timeout=120s
+     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=ingestion-v0.1.0-dev --timeout=120s &> ingestion.log
+     err=$?
 
-     if [[ $? = 0 ]] 
+     cmdoutput=$(cat ingestion.log)
+     rm ingestion.log
+
+     if [[ $err = 0 ]]
      then
+         echo "All Good"
          break;
-     else 
+     else
+         if grep -q "already exists" <<< "$cmdoutput"; then
+            echo "Already Exists"
+            break;
+         else
+            echo $cmdoutput
+         fi
          if [[ $i -ge 3 ]]; then exit 1; fi
-         sleep 10s
+         sleep 30s
      fi
 done
 
@@ -610,14 +669,25 @@ do
           --name dronescheduler-v0.1.0-dev \
           --dep-up
 
-     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=dronescheduler-v0.1.0-dev --timeout=120s
+     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=dronescheduler-v0.1.0-dev --timeout=120s &> dronescheduler.log
+     err=$?
 
-     if [[ $? = 0 ]] 
+     cmdoutput=$(cat dronescheduler.log)
+     rm dronescheduler.log
+
+     if [[ $err = 0 ]]
      then
+         echo "All Good"
          break;
-     else 
+     else
+         if grep -q "already exists" <<< "$cmdoutput"; then
+            echo "Already Exists"
+            break;
+         else
+            echo $cmdoutput
+         fi
          if [[ $i -ge 3 ]]; then exit 1; fi
-         sleep 10s
+         sleep 30s
      fi
 done
 
@@ -664,14 +734,25 @@ do
           --name website-v0.1.0-dev \
           --dep-up
 
-     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=website-v0.1.0-dev --timeout=120s
+     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=website-v0.1.0-dev --timeout=120s &> website.log
+     err=$?
 
-     if [[ $? = 0 ]] 
+     cmdoutput=$(cat website.log)
+     rm website.log
+
+     if [[ $err = 0 ]]
      then
+         echo "All Good"
          break;
-     else 
+     else
+         if grep -q "already exists" <<< "$cmdoutput"; then
+            echo "Already Exists"
+            break;
+         else
+            echo $cmdoutput
+         fi
          if [[ $i -ge 3 ]]; then exit 1; fi
-         sleep 10s
+         sleep 30s
      fi
 done
 
