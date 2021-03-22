@@ -756,6 +756,12 @@ do
      fi
 done
 
+#Make Request to prime system
+export requestData="{\"confirmationRequired\":\"None\",\"deadline\":\"\",\"dropOffLocation\":\"555 110th Ave NE, Bellevue, WA 98004\",\"expedited\":true,\"ownerId\":\"myowner\",\"packageInfo\":{\"packageId\":\"mypackage\",\"size\":\"Large\",\"tag\":\"mytag\",\"weight\":10},\"pickupLocation\":\"1 Microsoft Way, Redmond, WA 98052\",\"pickupTime\":\"2019-05-08T20:00:00.000Z\"}"
+curl -X POST -H "Content-Type: application/json" -d "$requestData" --insecure  "https://$EXTERNAL_INGEST_FQDN/api/DroneSite/deliveryrequest"
+
+sleep 15s
+
 echo "az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME --admin" >> import-$RESOURCE_GROUP-envs.sh
 echo
 echo "##############################################################################"
