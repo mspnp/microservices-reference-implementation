@@ -405,6 +405,8 @@ do
           --name delivery-v0.1.0-dev \
           --dep-up
 
+     sleep 30s
+
      kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=delivery-v0.1.0-dev --timeout=120s &> delivery.log
      err=$?
 
@@ -468,6 +470,8 @@ do
           --name package-v0.1.0-dev \
           --dep-up
 
+     sleep 30s
+
      kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=package-v0.1.0-dev --timeout=120s &> package.log
      err=$?
 
@@ -529,6 +533,8 @@ do
           --namespace backend-dev \
           --name workflow-v0.1.0-dev \
           --dep-up
+
+     sleep 30s
 
      kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=workflow-v0.1.0-dev --timeout=120s &> workflow.log
      err=$?
@@ -601,6 +607,8 @@ do
           --name ingestion-v0.1.0-dev \
           --dep-up
 
+     sleep 30s
+
      kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=ingestion-v0.1.0-dev --timeout=120s &> ingestion.log
      err=$?
 
@@ -669,6 +677,8 @@ do
           --name dronescheduler-v0.1.0-dev \
           --dep-up
 
+     sleep 30s
+
      kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=dronescheduler-v0.1.0-dev --timeout=120s &> dronescheduler.log
      err=$?
 
@@ -733,6 +743,8 @@ do
           --namespace backend-dev \
           --name website-v0.1.0-dev \
           --dep-up
+
+     sleep 30s
 
      kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=website-v0.1.0-dev --timeout=120s &> website.log
      err=$?
