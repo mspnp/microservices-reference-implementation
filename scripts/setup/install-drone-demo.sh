@@ -630,10 +630,11 @@ helm install $HELM_CHARTS/website/ \
            echo "$svc service good"
         else 
           if grep -q "already exists" <<< "$cmdoutput"; then
-               echo "$svc service already exists"
+             echo "$svc service already exists"
           else 
              echo $cmdoutput
              statusGood=$false
+             break;
           fi
         fi
 
