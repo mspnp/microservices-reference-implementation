@@ -356,6 +356,9 @@ kubectl apply -f $K8S/k8s-resource-quotas-dev.yaml
 
 #########################################################################################
 
+for i in 1 2 3; 
+do
+
 echo "Deploying Delivery Service..."
 
 export COSMOSDB_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.deliveryCosmosDbName.value -o tsv)
@@ -379,55 +382,29 @@ export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
-for i in 1 2 3;
-do
-     # Deploy the service
-     helm install $HELM_CHARTS/delivery/ \
-          --set image.tag=0.1.0 \
-          --set image.repository=delivery \
-          --set dockerregistry=$ACR_SERVER \
-          --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
-          --set ingress.hosts[0].serviceName=delivery \
-          --set ingress.hosts[0].tls=true \
-          --set ingress.hosts[0].tlsSecretName=$DELIVERY_INGRESS_TLS_SECRET_NAME \
-          --set ingress.tls.secrets[0].name=$DELIVERY_INGRESS_TLS_SECRET_NAME \
-          --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
-          --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
-          --set identity.clientid=$DELIVERY_PRINCIPAL_CLIENT_ID \
-          --set identity.resourceid=$DELIVERY_PRINCIPAL_RESOURCE_ID \
-          --set cosmosdb.id=$DATABASE_NAME \
-          --set cosmosdb.collectionid=$COLLECTION_NAME \
-          --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
-          --set secrets.appinsights.ikey=$AI_IKEY \
-          --set reason="Initial deployment" \
-          --set tags.dev=true \
-          --namespace backend-dev \
-          --name delivery-v0.1.0-dev \
-          --dep-up
-
-     sleep 30s
-
-     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=delivery-v0.1.0-dev --timeout=120s &> delivery.log
-     err=$?
-
-     cmdoutput=$(cat delivery.log)
-     rm delivery.log
-
-     if [[ $err = 0 ]]
-     then
-         echo "All Good"
-         break;
-     else
-         if grep -q "already exists" <<< "$cmdoutput"; then
-            echo "Already Exists"
-            break;
-         else
-            echo $cmdoutput
-         fi
-         if [[ $i -ge 3 ]]; then exit 1; fi
-         sleep 30s
-     fi
-done
+# Deploy the service
+helm install $HELM_CHARTS/delivery/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=delivery \
+     --set dockerregistry=$ACR_SERVER \
+     --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
+     --set ingress.hosts[0].serviceName=delivery \
+     --set ingress.hosts[0].tls=true \
+     --set ingress.hosts[0].tlsSecretName=$DELIVERY_INGRESS_TLS_SECRET_NAME \
+     --set ingress.tls.secrets[0].name=$DELIVERY_INGRESS_TLS_SECRET_NAME \
+     --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
+     --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
+     --set identity.clientid=$DELIVERY_PRINCIPAL_CLIENT_ID \
+     --set identity.resourceid=$DELIVERY_PRINCIPAL_RESOURCE_ID \
+     --set cosmosdb.id=$DATABASE_NAME \
+     --set cosmosdb.collectionid=$COLLECTION_NAME \
+     --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
+     --set secrets.appinsights.ikey=$AI_IKEY \
+     --set reason="Initial deployment" \
+     --set tags.dev=true \
+     --namespace backend-dev \
+     --name delivery-v0.1.0-dev \
+     --dep-up
 
 #########################################################################################
 
@@ -451,49 +428,22 @@ export COSMOSDB_COL_NAME=packages
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
-for i in 1 2 3; 
-do
-     # Deploy service
-     helm install $HELM_CHARTS/package/ \
-          --set image.tag=0.1.0 \
-          --set image.repository=package \
-          --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
-          --set ingress.hosts[0].serviceName=package \
-          --set ingress.hosts[0].tls=false \
-          --set secrets.appinsights.ikey=$AI_IKEY \
-          --set secrets.mongo.pwd=$COSMOSDB_CONNECTION \
-          --set cosmosDb.collectionName=$COSMOSDB_COL_NAME \
-          --set dockerregistry=$ACR_SERVER \
-          --set reason="Initial deployment" \
-          --set tags.dev=true \
-          --namespace backend-dev \
-          --name package-v0.1.0-dev \
-          --dep-up
-
-     sleep 30s
-
-     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=package-v0.1.0-dev --timeout=120s &> package.log
-     err=$?
-
-     cmdoutput=$(cat package.log)
-     rm package.log
-
-     if [[ $err = 0 ]]
-     then
-         echo "All Good"
-         break;
-     else
-         if grep -q "already exists" <<< "$cmdoutput"; then
-            echo "Already Exists"
-            break;
-         else
-            echo $cmdoutput
-         fi
-         if [[ $i -ge 3 ]]; then exit 1; fi
-         sleep 30s
-     fi
-done
-
+# Deploy service
+helm install $HELM_CHARTS/package/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=package \
+     --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
+     --set ingress.hosts[0].serviceName=package \
+     --set ingress.hosts[0].tls=false \
+     --set secrets.appinsights.ikey=$AI_IKEY \
+     --set secrets.mongo.pwd=$COSMOSDB_CONNECTION \
+     --set cosmosDb.collectionName=$COSMOSDB_COL_NAME \
+     --set dockerregistry=$ACR_SERVER \
+     --set reason="Initial deployment" \
+     --set tags.dev=true \
+     --namespace backend-dev \
+     --name package-v0.1.0-dev \
+     --dep-up
 
 #########################################################################################
 
@@ -515,49 +465,22 @@ export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $WO
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
-for i in 1 2 3; 
-do
-     # Deploy the service
-     helm install $HELM_CHARTS/workflow/ \
-          --set image.tag=0.1.0 \
-          --set image.repository=workflow \
-          --set dockerregistry=$ACR_SERVER \
-          --set identity.clientid=$WORKFLOW_PRINCIPAL_CLIENT_ID \
-          --set identity.resourceid=$WORKFLOW_PRINCIPAL_RESOURCE_ID \
-          --set keyvault.name=$WORKFLOW_KEYVAULT_NAME \
-          --set keyvault.resourcegroup=$RESOURCE_GROUP \
-          --set keyvault.subscriptionid=$SUBSCRIPTION_ID \
-          --set keyvault.tenantid=$TENANT_ID \
-          --set reason="Initial deployment" \
-          --set tags.dev=true \
-          --namespace backend-dev \
-          --name workflow-v0.1.0-dev \
-          --dep-up
-
-     sleep 30s
-
-     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=workflow-v0.1.0-dev --timeout=120s &> workflow.log
-     err=$?
-
-     cmdoutput=$(cat workflow.log)
-     rm workflow.log
-
-     if [[ $err = 0 ]]
-     then
-         echo "All Good"
-         break;
-     else
-         if grep -q "already exists" <<< "$cmdoutput"; then
-            echo "Already Exists"
-            break;
-         else
-            echo $cmdoutput
-         fi
-         if [[ $i -ge 3 ]]; then exit 1; fi
-         sleep 30s
-     fi
-
-done
+# Deploy the service
+helm install $HELM_CHARTS/workflow/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=workflow \
+     --set dockerregistry=$ACR_SERVER \
+     --set identity.clientid=$WORKFLOW_PRINCIPAL_CLIENT_ID \
+     --set identity.resourceid=$WORKFLOW_PRINCIPAL_RESOURCE_ID \
+     --set keyvault.name=$WORKFLOW_KEYVAULT_NAME \
+     --set keyvault.resourcegroup=$RESOURCE_GROUP \
+     --set keyvault.subscriptionid=$SUBSCRIPTION_ID \
+     --set keyvault.tenantid=$TENANT_ID \
+     --set reason="Initial deployment" \
+     --set tags.dev=true \
+     --namespace backend-dev \
+     --name workflow-v0.1.0-dev \
+     --dep-up
 
 #########################################################################################
 
@@ -582,54 +505,28 @@ export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
-for i in 1 2 3; 
-do
-     # Deploy service
-     helm install $HELM_CHARTS/ingestion/ \
-          --set image.tag=0.1.0 \
-          --set image.repository=ingestion \
-          --set dockerregistry=$ACR_SERVER \
-          --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
-          --set ingress.hosts[0].serviceName=ingestion \
-          --set ingress.hosts[0].tls=true \
-          --set ingress.hosts[0].tlsSecretName=$INGRESS_TLS_SECRET_NAME \
-          --set ingress.tls.secrets[0].name=$INGRESS_TLS_SECRET_NAME \
-          --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
-          --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
-          --set secrets.appinsights.ikey=${AI_IKEY} \
-          --set secrets.queue.keyname=IngestionServiceAccessKey \
-          --set secrets.queue.keyvalue=${INGESTION_ACCESS_KEY_VALUE} \
-          --set secrets.queue.name=${INGESTION_QUEUE_NAME} \
-          --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
-          --set reason="Initial deployment" \
-          --set tags.dev=true \
-          --namespace backend-dev \
-          --name ingestion-v0.1.0-dev \
-          --dep-up
-
-     sleep 30s
-
-     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=ingestion-v0.1.0-dev --timeout=120s &> ingestion.log
-     err=$?
-
-     cmdoutput=$(cat ingestion.log)
-     rm ingestion.log
-
-     if [[ $err = 0 ]]
-     then
-         echo "All Good"
-         break;
-     else
-         if grep -q "already exists" <<< "$cmdoutput"; then
-            echo "Already Exists"
-            break;
-         else
-            echo $cmdoutput
-         fi
-         if [[ $i -ge 3 ]]; then exit 1; fi
-         sleep 30s
-     fi
-done
+# Deploy service
+helm install $HELM_CHARTS/ingestion/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=ingestion \
+     --set dockerregistry=$ACR_SERVER \
+     --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
+     --set ingress.hosts[0].serviceName=ingestion \
+     --set ingress.hosts[0].tls=true \
+     --set ingress.hosts[0].tlsSecretName=$INGRESS_TLS_SECRET_NAME \
+     --set ingress.tls.secrets[0].name=$INGRESS_TLS_SECRET_NAME \
+     --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
+     --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
+     --set secrets.appinsights.ikey=${AI_IKEY} \
+     --set secrets.queue.keyname=IngestionServiceAccessKey \
+     --set secrets.queue.keyvalue=${INGESTION_ACCESS_KEY_VALUE} \
+     --set secrets.queue.name=${INGESTION_QUEUE_NAME} \
+     --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
+     --set reason="Initial deployment" \
+     --set tags.dev=true \
+     --namespace backend-dev \
+     --name ingestion-v0.1.0-dev \
+     --dep-up
 
 #########################################################################################
 
@@ -656,50 +553,24 @@ docker push $ACR_SERVER/dronescheduler:0.1.0
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
-for i in 1 2 3; 
-do
-     # Deploy the service
-     helm install $HELM_CHARTS/dronescheduler/ \
-          --set image.tag=0.1.0 \
-          --set image.repository=dronescheduler \
-          --set dockerregistry=$ACR_SERVER \
-          --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
-          --set ingress.hosts[0].serviceName=dronescheduler \
-          --set ingress.hosts[0].tls=false \
-          --set identity.clientid=$DRONESCHEDULER_PRINCIPAL_CLIENT_ID \
-          --set identity.resourceid=$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID \
-          --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
-          --set cosmosdb.id=$DATABASE_NAME \
-          --set cosmosdb.collectionid=$COLLECTION_NAME \
-          --set reason="Initial deployment" \
-          --set tags.dev=true \
-          --namespace backend-dev \
-          --name dronescheduler-v0.1.0-dev \
-          --dep-up
-
-     sleep 30s
-
-     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=dronescheduler-v0.1.0-dev --timeout=120s &> dronescheduler.log
-     err=$?
-
-     cmdoutput=$(cat dronescheduler.log)
-     rm dronescheduler.log
-
-     if [[ $err = 0 ]]
-     then
-         echo "All Good"
-         break;
-     else
-         if grep -q "already exists" <<< "$cmdoutput"; then
-            echo "Already Exists"
-            break;
-         else
-            echo $cmdoutput
-         fi
-         if [[ $i -ge 3 ]]; then exit 1; fi
-         sleep 30s
-     fi
-done
+# Deploy the service
+helm install $HELM_CHARTS/dronescheduler/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=dronescheduler \
+     --set dockerregistry=$ACR_SERVER \
+     --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
+     --set ingress.hosts[0].serviceName=dronescheduler \
+     --set ingress.hosts[0].tls=false \
+     --set identity.clientid=$DRONESCHEDULER_PRINCIPAL_CLIENT_ID \
+     --set identity.resourceid=$DRONESCHEDULER_PRINCIPAL_RESOURCE_ID \
+     --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
+     --set cosmosdb.id=$DATABASE_NAME \
+     --set cosmosdb.collectionid=$COLLECTION_NAME \
+     --set reason="Initial deployment" \
+     --set tags.dev=true \
+     --namespace backend-dev \
+     --name dronescheduler-v0.1.0-dev \
+     --dep-up
 
 #########################################################################################
 
@@ -718,54 +589,64 @@ export WEBSITE_INGRESS_TLS_SECRET_NAME=website-ingress-tls
 
 printenv > import-$RESOURCE_GROUP-envs.sh; sed -i -e 's/^/export /' import-$RESOURCE_GROUP-envs.sh
 
-for i in 1 2 3; 
-do
-     # Deploy the service
-     helm install $HELM_CHARTS/website/ \
-          --set image.tag=0.1.0 \
-          --set image.repository=website \
-          --set dockerregistry=$ACR_SERVER \
-          --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
-          --set ingress.hosts[0].serviceName=website \
-          --set ingress.hosts[0].tls=true \
-          --set ingress.hosts[0].tlsSecretName=$DELIVERY_INGRESS_TLS_SECRET_NAME \
-          --set ingress.tls.secrets[0].name=$DELIVERY_INGRESS_TLS_SECRET_NAME \
-          --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
-          --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
-          --set identity.clientid=$WEBSITE_PRINCIPAL_CLIENT_ID \
-          --set identity.resourceid=$WEBSITE_PRINCIPAL_RESOURCE_ID \
-          --set bingmap.key=$BING_MAP_API_KEY \
-          --set api.url=https://$EXTERNAL_INGEST_FQDN \
-          --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
-          --set secrets.appinsights.ikey=$AI_IKEY \
-          --set reason="Initial deployment" \
-          --set tags.dev=true \
-          --namespace backend-dev \
-          --name website-v0.1.0-dev \
-          --dep-up
+# Deploy the service
+helm install $HELM_CHARTS/website/ \
+     --set image.tag=0.1.0 \
+     --set image.repository=website \
+     --set dockerregistry=$ACR_SERVER \
+     --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
+     --set ingress.hosts[0].serviceName=website \
+     --set ingress.hosts[0].tls=true \
+     --set ingress.hosts[0].tlsSecretName=$DELIVERY_INGRESS_TLS_SECRET_NAME \
+     --set ingress.tls.secrets[0].name=$DELIVERY_INGRESS_TLS_SECRET_NAME \
+     --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
+     --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
+     --set identity.clientid=$WEBSITE_PRINCIPAL_CLIENT_ID \
+     --set identity.resourceid=$WEBSITE_PRINCIPAL_RESOURCE_ID \
+     --set bingmap.key=$BING_MAP_API_KEY \
+     --set api.url=https://$EXTERNAL_INGEST_FQDN \
+     --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
+     --set secrets.appinsights.ikey=$AI_IKEY \
+     --set reason="Initial deployment" \
+     --set tags.dev=true \
+     --namespace backend-dev \
+     --name website-v0.1.0-dev \
+     --dep-up
 
-     sleep 30s
+     sleep 120s
 
-     kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=website-v0.1.0-dev --timeout=120s &> website.log
-     err=$?
+     declare -a StringArray=("delivery" "package" "workflow" "ingestion" "dronescheduler" "website" )
+     
+     statusGood=$true
+     for svc in ${StringArray[@]}; do
+      
+        kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=$svc-v0.1.0-dev --timeout=30s &> status.log
+        err=$?
+        cmdoutput=$(cat status.log)
+        rm status.log
 
-     cmdoutput=$(cat website.log)
-     rm website.log
+        if [[ $err = 0 ]] 
+        then
+           echo "$svc service good"
+        else 
+          if grep -q "already exists" <<< "$cmdoutput"; then
+               echo "$svc service already exists"
+          else 
+             echo $cmdoutput
+             statusGood=$false
+          fi
+        fi
 
-     if [[ $err = 0 ]]
+        sleep 1s
+     done
+
+     if [[ $statusGood = $true ]] 
      then
-         echo "All Good"
-         break;
-     else
-         if grep -q "already exists" <<< "$cmdoutput"; then
-            echo "Already Exists"
-            break;
-         else
-            echo $cmdoutput
-         fi
-         if [[ $i -ge 3 ]]; then exit 1; fi
-         sleep 30s
+        break;
      fi
+
+     if [[ $i -ge 3 ]]; then exit 1; fi
+     sleep 30s
 done
 
 #Make Request to prime system
