@@ -85,7 +85,11 @@ do
      --location $LOCATION \
      --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
      --parameters resourceGroupName=$RESOURCE_GROUP \
-                    resourceGroupLocation=$LOCATION &> /dev/null && break; || sleep 15; 
+                    resourceGroupLocation=$LOCATION &> /dev/null
+     if [[ $? = 0 ]] 
+     then
+        break;
+     fi
 done
 
 export IDENTITIES_DEPLOYMENT_NAME=$(az deployment sub show -n $DEV_PREREQ_DEPLOYMENT_NAME --query properties.outputs.identitiesDeploymentName.value -o tsv)
