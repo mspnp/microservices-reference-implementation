@@ -613,13 +613,23 @@ helm install $HELM_CHARTS/website/ \
      --name website-v0.1.0-dev \
      --dep-up
 
-     sleep 120s
+     echo -n "Waiting for Service Deployments to complete"
+
+     for i in {0..20}
+     do
+         echo -n "."
+         sleep 6s
+     done
+
+     echo 
+     echo
 
      declare -a StringArray=("delivery" "package" "workflow" "ingestion" "dronescheduler" "website" )
      
      statusGood=$true
      for svc in ${StringArray[@]}; do
-      
+        echo -n "Checking $svc service: "
+
         kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=$svc-v0.1.0-dev --timeout=30s &> status.log
         err=$?
         cmdoutput=$(cat status.log)
@@ -627,11 +637,13 @@ helm install $HELM_CHARTS/website/ \
 
         if [[ $err = 0 ]] 
         then
-           echo "$svc service good"
+           echo "GOOD"
         else 
           if grep -q "already exists" <<< "$cmdoutput"; then
-             echo "$svc service already exists"
+             echo "ALREADY EXISTS"
           else 
+             echo "ERROR"
+             echo
              echo $cmdoutput
              statusGood=$false
              break;
