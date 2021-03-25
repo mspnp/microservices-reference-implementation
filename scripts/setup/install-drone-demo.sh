@@ -110,7 +110,7 @@ do
          export MAIN_DEPLOYMENT_NAME=$name
       fi
    fi
-
+done
 
 echo $MAIN_DEPLOYMENT_NAME
 
