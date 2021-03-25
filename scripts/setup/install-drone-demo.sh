@@ -52,14 +52,14 @@ pushd ./microservices-reference-implementation && \
 git checkout basic-valorem && \
 popd
 
-export SSH_PUBLIC_KEY_FILE=/root/.ssh/id_rsa.pub
+export SSH_PUBLIC_KEY_FILE=~/.ssh/id_rsa.pub
 
 if [ -f "$SSH_PUBLIC_KEY_FILE" ]; then
     export TEST=SSH_PUBLIC_KEY_FILE
 else
-    mkdir /root/.ssh
-    cp /id_rsa.pub /root/.ssh/id_rsa.pub
-    cp /id_rsa /root/.ssh/id_rsa
+    mkdir ~/.ssh
+    cp /id_rsa.pub ~/.ssh/id_rsa.pub
+    cp /id_rsa ~/.ssh/id_rsa
 fi
 
 #########################################################################################
@@ -106,7 +106,7 @@ do
          export MAIN_DEPLOYMENT_NAME=$name
       fi
    fi
-done
+
 
 echo $MAIN_DEPLOYMENT_NAME
 
