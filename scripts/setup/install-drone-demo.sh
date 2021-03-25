@@ -47,10 +47,10 @@ export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 export SUBSCRIPTION_NAME=$(az account show --query name --output tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
 
-git clone https://github.com/mspnp/microservices-reference-implementation.git && \
-pushd ./microservices-reference-implementation && \
-git checkout basic-valorem && \
-popd
+#git clone https://github.com/mspnp/microservices-reference-implementation.git && \
+#pushd ./microservices-reference-implementation && \
+#git checkout basic-valorem && \
+#popd
 
 export SSH_PUBLIC_KEY_FILE=~/.ssh/id_rsa.pub
 
