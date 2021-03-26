@@ -10,7 +10,10 @@ Param(
 )
 
 $userObjectId=$(az ad signed-in-user show --query objectId -o tsv)
-if (!$userObjectId) { az login | Out-Null }
+if (!$userObjectId) { 
+    az login | Out-Null 
+    $userObjectId=$(az ad signed-in-user show --query objectId -o tsv)
+}
 
 Write-Host "Starting Setup in Subscription: $Subscription..."
 az account set --subscription $Subscription | Out-Null
