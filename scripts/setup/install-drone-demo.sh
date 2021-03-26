@@ -5,12 +5,15 @@ function print_help { echo $'Usage\n\n' \
                            $'-l Location\n' \
                            $'-r Resource Group\n' \
                            $'-b Bing API KEY\n' \
-                           $'-g Azure AD Group ID\n' \
+                           $'-a AppId\n' \
+                           $'-p Password\n' \
+                           $'-t TenantId\n' \
+                           $'-u CurrentUser\n' \
                            $'-? Show Usage' \
                            >&2;
                     }
 
-while getopts s:l:r:b:g:? option
+while getopts s:l:r:b:g:a:p:t:u:? option
 do
 case "${option}"
 in
@@ -18,12 +21,15 @@ s) SUBSCRIPTION=${OPTARG};;
 l) LOCATION=${OPTARG};;
 r) RESOURCEGROUP=${OPTARG};;
 b) BINGKEY=${OPTARG};;
-g) ADGROUPID=${OPTARG};;
+a) APPID=${OPTARG};;
+p) PASSWORD=${OPTARG};;
+t) TENANTID=${OPTARG};;
+u) CURRENTUSER=${OPTARG};;
 ?) print_help; exit 0;;
 esac
 done
 
-if [[ -z "$SUBSCRIPTION" || -z "$LOCATION" || -z "$RESOURCEGROUP" || -z "$RESOURCEGROUP" || -z "$BINGKEY" || -z "$ADGROUPID" ]]
+if [[ -z "$SUBSCRIPTION" || -z "$LOCATION" || -z "$RESOURCEGROUP" || -z "$RESOURCEGROUP" || -z "$BINGKEY" || -z "$APPID" || -z "$PASSWORD" || -z "$TENANTID"  || -z "$CURRENTUSER" ]]
 then
 print_help;
 exit 2
@@ -33,24 +39,21 @@ export SUBSCRIPTIONID=$SUBSCRIPTION
 export LOCATION=$LOCATION
 export RESOURCE_GROUP=$RESOURCEGROUP
 export BING_MAP_API_KEY=$BINGKEY
-export AD_GROUP_ID=$ADGROUPID
+export CURRENT_USE_OBJECT_ID=$CURRENTUSER
+export SP_APP_ID=$APPID
+export SP_CLIENT_SECRET=$PASSWORD
 
-userObjectId=$(az ad signed-in-user show --query objectId -o tsv)
-
-if [ -z "$userObjectId" ];then
-   az login > /dev/null
-fi
-
+az login --service-principal --username $APPID --password $PASSWORD --tenant $TENANTID
 az account set --subscription=$SUBSCRIPTIONID
 
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
 export SUBSCRIPTION_NAME=$(az account show --query name --output tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
 
-#git clone https://github.com/mspnp/microservices-reference-implementation.git && \
-#pushd ./microservices-reference-implementation && \
-#git checkout basic-valorem && \
-#popd
+git clone https://github.com/mspnp/microservices-reference-implementation.git && \
+pushd ./microservices-reference-implementation && \
+git checkout russ/fix-deployment-error && \
+popd
 
 export SSH_PUBLIC_KEY_FILE=~/.ssh/id_rsa.pub
 
@@ -127,10 +130,12 @@ if [ ! -z "$MAIN_DEPLOYMENT_NAME" ]; then
 fi
 
 # Wait for AAD propagation
-until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${WEBSITE_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+sleep 60s
+
+# until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 30; done
+# until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 30; done
+# until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 30; done
+# until az ad sp show --id ${WEBSITE_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 30; done
 
 # Export the kubernetes cluster version
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv)
@@ -156,38 +161,8 @@ do
    fi
 done
 
-if [ ! -z "$DEPLOYMENT_KV_NAME" ]; then
-   export EXIST_SP_APP_ID=$(az keyvault secret show --name "AKS-ClientId" --vault-name $DEPLOYMENT_KV_NAME --query "value" -o tsv)
-   export EXIST_SP_CLIENT_SECRET=$(az keyvault secret show --name "AKS-ClientSecret" --vault-name $DEPLOYMENT_KV_NAME --query "value" -o tsv)
-   echo "Existing AppID: $EXIST_SP_APP_ID"
-fi
-
-if [ ! -z "$EXIST_SP_APP_ID" -a ! -z "$EXIST_SP_CLIENT_SECRET" ]; then
-     export SP_APP_ID=$EXIST_SP_APP_ID
-     export SP_CLIENT_SECRET=$EXIST_SP_CLIENT_SECRET
-else
-     echo "Creating service principal for AKS..."
-
-     # Create service principal for AKS
-     export SP_NAME="Drone-Demo-${RESOURCE_GROUP}"
-     export SP_DETAILS=$(az ad sp create-for-rbac --name $SP_NAME --role="Contributor" -o json) 
-     if [[ $? = 0 ]] 
-     then
-        echo "Service principal for AKS Created"
-     else 
-        exit 1;
-     fi
-
-     export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
-     export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
-     export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
-fi
-
-export CURRENT_USE_OBJECT_ID=$(az ad signed-in-user show --query objectId -o tsv)
-
 for i in 1 2 3; 
 do
-
      if [ ! -z "$WORKFLOW_TO_KV_NAME_GUID" -a ! -z "$DELIVERY_TO_KV_NAME_GUID" -a ! -z "$DRONESCHED_TO_KV_NAME_GUID" -a ! -z "$MON_METRICS_PUBROLE_ASSIGN_NAME_GUID" -a ! -z "$DELIVERYID_NAME_ROLE_ASSIGN_NAME_GUID" -a ! -z "$MSI_WEBSITE_ROLE_ASSIGN_NAME_GUID" -a ! -z "$MSI_WORKFLOW_ROLE_ASSIGN_NAME_GUID" -a ! -z "$MSI_DRONESCHEDULER_ROLE_ASSIGN_NAME_GUID" ]; then
           echo "ReDeploying resources..."
           az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
@@ -204,7 +179,6 @@ do
                     workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
                     websiteIdName=${WEBSITE_ID_NAME} \
                     websitePrincipalId=${WEBSITE_ID_PRINCIPAL_ID} \
-                    clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
                     workFlowToKvNameGuid=${WORKFLOW_TO_KV_NAME_GUID} \
                     deliveryToKvNameGuid=${DELIVERY_TO_KV_NAME_GUID} \
                     droneschedulerToKvNameGuid=${DRONESCHED_TO_KV_NAME_GUID} \
@@ -230,7 +204,6 @@ do
                     workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
                     websiteIdName=${WEBSITE_ID_NAME} \
                     websitePrincipalId=${WEBSITE_ID_PRINCIPAL_ID} \
-                    clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
                     acrResourceGroupName=${RESOURCE_GROUP_ACR} 2>&1 1>/dev/null 
      fi
 
@@ -280,10 +253,13 @@ curl -L https://git.io/get_helm.sh | bash -s -- -v v2.14.2
 helm init --stable-repo-url https://charts.helm.sh/stable --wait
 helm repo update
 
+#helm repo add stable https://charts.helm.sh/stable
+#helm repo update
+
 # setup tiller in your cluster
 kubectl apply -f $K8S/tiller-rbac.yaml
 
-echo "Installing Tiller..."
+#echo "Installing Tiller..."
 
 sleep 60s
 
@@ -315,6 +291,8 @@ kubectl create -f $PROJECT_ROOT/k8s/deployment-rbac.yaml
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 
 #########################################################################################
+
+kubectl create namespace ingress-controllers
 
 for i in 1 2 3; 
 do

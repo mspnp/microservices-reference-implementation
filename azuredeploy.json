@@ -110,13 +110,6 @@
         "description": "A value that indicates whether diagnostics should be saved to the specified storage account."
       }
     },
-    "clusterAdminGroupObjectIds": {
-      "defaultValue": [],
-      "type": "array",
-      "metadata": {
-        "description": "Array of Azure AD Group object Ids to use for cluster administrators."
-      }
-    },
     "workFlowToKvNameGuid": {
       "defaultValue": "[guid(concat('kv-workflow',parameters('environmentName')), resourceGroup().id)]",
       "type": "string"
@@ -645,13 +638,6 @@
           },
           {
             "tenantId": "[subscription().tenantId]",
-            "objectId": "[parameters('clusterAdminGroupObjectIds')[0]]",
-            "permissions": {
-              "secrets": ["get", "list"]
-            }
-          },
-          {
-            "tenantId": "[subscription().tenantId]",
             "objectId": "[parameters('userObjectId')]",
             "permissions": {
               "secrets": ["get", "list"]
@@ -764,13 +750,6 @@
           {
             "tenantId": "[subscription().tenantId]",
             "objectId": "[parameters('droneSchedulerPrincipalId')]",
-            "permissions": {
-              "secrets": ["get", "list"]
-            }
-          },
-          {
-            "tenantId": "[subscription().tenantId]",
-            "objectId": "[parameters('clusterAdminGroupObjectIds')[0]]",
             "permissions": {
               "secrets": ["get", "list"]
             }
@@ -909,13 +888,6 @@
           {
             "tenantId": "[subscription().tenantId]",
             "objectId": "[parameters('workflowPrincipalId')]",
-            "permissions": {
-              "secrets": ["get", "list"]
-            }
-          },
-          {
-            "tenantId": "[subscription().tenantId]",
-            "objectId": "[parameters('clusterAdminGroupObjectIds')[0]]",
             "permissions": {
               "secrets": ["get", "list"]
             }
