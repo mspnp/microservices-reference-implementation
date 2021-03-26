@@ -607,8 +607,9 @@ helm install $HELM_CHARTS/website/ \
      echo
 
      declare -a StringArray=("delivery" "package" "workflow" "ingestion" "dronescheduler" "website" )
-     
-     statusGood=$true
+     l=${#StringArray[@]}
+     cnt=0
+
      for svc in ${StringArray[@]}; do
         echo -n "Checking $svc service: "
 
@@ -620,14 +621,15 @@ helm install $HELM_CHARTS/website/ \
         if [[ $err = 0 ]] 
         then
            echo "GOOD"
+           cnt=$((cnt+1))
         else 
           if grep -q "already exists" <<< "$cmdoutput"; then
              echo "ALREADY EXISTS"
+             cnt=$((cnt+1))
           else 
              echo "ERROR"
              echo
              echo $cmdoutput
-             statusGood=$false
              break;
           fi
         fi
@@ -635,7 +637,7 @@ helm install $HELM_CHARTS/website/ \
         sleep 1s
      done
 
-     if [[ $statusGood = $true ]] 
+     if [[ $cnt = $l ]] 
      then
         break;
      fi
