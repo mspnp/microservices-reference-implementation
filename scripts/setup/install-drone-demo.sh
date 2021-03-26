@@ -52,7 +52,7 @@ export TENANT_ID=$(az account show --query tenantId --output tsv)
 
 git clone https://github.com/mspnp/microservices-reference-implementation.git && \
 pushd ./microservices-reference-implementation && \
-git checkout russ/fix-deployment-error && \
+git checkout basic-valorem && \
 popd
 
 export SSH_PUBLIC_KEY_FILE=~/.ssh/id_rsa.pub
