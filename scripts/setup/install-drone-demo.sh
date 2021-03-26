@@ -611,7 +611,7 @@ helm install $HELM_CHARTS/website/ \
      cnt=0
 
      for svc in ${StringArray[@]}; do
-        echo -n "Checking $svc service: "
+        echo -n "Checking $svc Service: "
 
         kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=$svc-v0.1.0-dev --timeout=30s &> status.log
         err=$?
@@ -646,17 +646,28 @@ helm install $HELM_CHARTS/website/ \
      sleep 30s
 done
 
+echo
+
 #Make Request to prime system
 export requestData="{\"confirmationRequired\":\"None\",\"deadline\":\"\",\"dropOffLocation\":\"555 110th Ave NE, Bellevue, WA 98004\",\"expedited\":true,\"ownerId\":\"myowner\",\"packageInfo\":{\"packageId\":\"mypackage\",\"size\":\"Large\",\"tag\":\"mytag\",\"weight\":10},\"pickupLocation\":\"1 Microsoft Way, Redmond, WA 98052\",\"pickupTime\":\"2019-05-08T20:00:00.000Z\"}"
 curl -X POST -H "Content-Type: application/json" -d "$requestData" --insecure  "https://$EXTERNAL_INGEST_FQDN/api/DroneSite/deliveryrequest"
 
+echo
+
 sleep 15s
 
-echo "az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME --admin" >> import-$RESOURCE_GROUP-envs.sh
+kubectl get pod -n backend-dev
+
 echo
+echo "az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME --admin" >> import-$RESOURCE_GROUP-envs.sh
+echo 
 echo "##############################################################################"
 echo "To Access the Drone Demo Site run the following URL from your browser"
 echo
 echo "https://$EXTERNAL_INGEST_FQDN"
+echo
+echo "Run the command below to configure the session to manage the environment"
+echo 
+echo ". import-$RESOURCE_GROUP-envs.sh" 
 echo
 echo "##############################################################################"
