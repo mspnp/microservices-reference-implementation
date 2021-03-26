@@ -5,12 +5,15 @@ function print_help { echo $'Usage\n\n' \
                            $'-l Location\n' \
                            $'-r Resource Group\n' \
                            $'-b Bing API KEY\n' \
-                           $'-g Azure AD Group ID\n' \
+                           $'-a AppId\n' \
+                           $'-p Password\n' \
+                           $'-t TenantId\n' \
+                           $'-u CurrentUser\n' \
                            $'-? Show Usage' \
                            >&2;
                     }
 
-while getopts s:l:r:b:g:? option
+while getopts s:l:r:b:g:a:p:t:u:? option
 do
 case "${option}"
 in
@@ -18,12 +21,15 @@ s) SUBSCRIPTION=${OPTARG};;
 l) LOCATION=${OPTARG};;
 r) RESOURCEGROUP=${OPTARG};;
 b) BINGKEY=${OPTARG};;
-g) ADGROUPID=${OPTARG};;
+a) APPID=${OPTARG};;
+p) PASSWORD=${OPTARG};;
+t) TENANTID=${OPTARG};;
+u) CURRENTUSER=${OPTARG};;
 ?) print_help; exit 0;;
 esac
 done
 
-if [[ -z "$SUBSCRIPTION" || -z "$LOCATION" || -z "$RESOURCEGROUP" || -z "$RESOURCEGROUP" || -z "$BINGKEY" || -z "$ADGROUPID" ]]
+if [[ -z "$SUBSCRIPTION" || -z "$LOCATION" || -z "$RESOURCEGROUP" || -z "$RESOURCEGROUP" || -z "$BINGKEY" || -z "$APPID" || -z "$PASSWORD" || -z "$TENANTID"  || -z "$CURRENTUSER" ]]
 then
 print_help;
 exit 2
@@ -33,14 +39,11 @@ export SUBSCRIPTIONID=$SUBSCRIPTION
 export LOCATION=$LOCATION
 export RESOURCE_GROUP=$RESOURCEGROUP
 export BING_MAP_API_KEY=$BINGKEY
-export AD_GROUP_ID=$ADGROUPID
+export CURRENT_USE_OBJECT_ID=$CURRENTUSER
+export SP_APP_ID=$APPID
+export SP_CLIENT_SECRET=$PASSWORD
 
-userObjectId=$(az ad signed-in-user show --query objectId -o tsv)
-
-if [ -z "$userObjectId" ];then
-   az login > /dev/null
-fi
-
+az login --service-principal --username $APPID --password $PASSWORD --tenant $TENANTID
 az account set --subscription=$SUBSCRIPTIONID
 
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
@@ -52,14 +55,14 @@ pushd ./microservices-reference-implementation && \
 git checkout basic-valorem && \
 popd
 
-export SSH_PUBLIC_KEY_FILE=/root/.ssh/id_rsa.pub
+export SSH_PUBLIC_KEY_FILE=~/.ssh/id_rsa.pub
 
 if [ -f "$SSH_PUBLIC_KEY_FILE" ]; then
     export TEST=SSH_PUBLIC_KEY_FILE
 else
-    mkdir /root/.ssh
-    cp /id_rsa.pub /root/.ssh/id_rsa.pub
-    cp /id_rsa /root/.ssh/id_rsa
+    mkdir ~/.ssh
+    cp /id_rsa.pub ~/.ssh/id_rsa.pub
+    cp /id_rsa ~/.ssh/id_rsa
 fi
 
 #########################################################################################
@@ -85,7 +88,11 @@ do
      --location $LOCATION \
      --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
      --parameters resourceGroupName=$RESOURCE_GROUP \
-                    resourceGroupLocation=$LOCATION &> /dev/null && break || sleep 15; 
+                    resourceGroupLocation=$LOCATION &> /dev/null
+     if [[ $? = 0 ]] 
+     then
+        break;
+     fi
 done
 
 export IDENTITIES_DEPLOYMENT_NAME=$(az deployment sub show -n $DEV_PREREQ_DEPLOYMENT_NAME --query properties.outputs.identitiesDeploymentName.value -o tsv)
@@ -123,10 +130,12 @@ if [ ! -z "$MAIN_DEPLOYMENT_NAME" ]; then
 fi
 
 # Wait for AAD propagation
-until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${WEBSITE_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+sleep 60s
+
+# until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 30; done
+# until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 30; done
+# until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 30; done
+# until az ad sp show --id ${WEBSITE_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 30; done
 
 # Export the kubernetes cluster version
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv)
@@ -152,31 +161,8 @@ do
    fi
 done
 
-if [ ! -z "$DEPLOYMENT_KV_NAME" ]; then
-   export EXIST_SP_APP_ID=$(az keyvault secret show --name "AKS-ClientId" --vault-name $DEPLOYMENT_KV_NAME --query "value" -o tsv)
-   export EXIST_SP_CLIENT_SECRET=$(az keyvault secret show --name "AKS-ClientSecret" --vault-name $DEPLOYMENT_KV_NAME --query "value" -o tsv)
-   echo "Existing AppID: $EXIST_SP_APP_ID"
-fi
-
-if [ ! -z "$EXIST_SP_APP_ID" -a ! -z "$EXIST_SP_CLIENT_SECRET" ]; then
-     export SP_APP_ID=$EXIST_SP_APP_ID
-     export SP_CLIENT_SECRET=$EXIST_SP_CLIENT_SECRET
-else
-     echo "Creating service principal for AKS..."
-
-     # Create service principal for AKS
-     export SP_NAME="Drone-Demo-${RESOURCE_GROUP}"
-     export SP_DETAILS=$(az ad sp create-for-rbac --name $SP_NAME --role="Contributor" -o json) && \
-     export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
-     export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
-     export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
-fi
-
-export CURRENT_USE_OBJECT_ID=$(az ad signed-in-user show --query objectId -o tsv)
-
 for i in 1 2 3; 
 do
-
      if [ ! -z "$WORKFLOW_TO_KV_NAME_GUID" -a ! -z "$DELIVERY_TO_KV_NAME_GUID" -a ! -z "$DRONESCHED_TO_KV_NAME_GUID" -a ! -z "$MON_METRICS_PUBROLE_ASSIGN_NAME_GUID" -a ! -z "$DELIVERYID_NAME_ROLE_ASSIGN_NAME_GUID" -a ! -z "$MSI_WEBSITE_ROLE_ASSIGN_NAME_GUID" -a ! -z "$MSI_WORKFLOW_ROLE_ASSIGN_NAME_GUID" -a ! -z "$MSI_DRONESCHEDULER_ROLE_ASSIGN_NAME_GUID" ]; then
           echo "ReDeploying resources..."
           az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
@@ -193,7 +179,6 @@ do
                     workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
                     websiteIdName=${WEBSITE_ID_NAME} \
                     websitePrincipalId=${WEBSITE_ID_PRINCIPAL_ID} \
-                    clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
                     workFlowToKvNameGuid=${WORKFLOW_TO_KV_NAME_GUID} \
                     deliveryToKvNameGuid=${DELIVERY_TO_KV_NAME_GUID} \
                     droneschedulerToKvNameGuid=${DRONESCHED_TO_KV_NAME_GUID} \
@@ -219,7 +204,6 @@ do
                     workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
                     websiteIdName=${WEBSITE_ID_NAME} \
                     websitePrincipalId=${WEBSITE_ID_PRINCIPAL_ID} \
-                    clusterAdminGroupObjectIds="['${AD_GROUP_ID}']" \
                     acrResourceGroupName=${RESOURCE_GROUP_ACR} 2>&1 1>/dev/null 
      fi
 
@@ -239,8 +223,6 @@ do
        sleep 15
      fi
 done
-
-
 
 #########################################################################################
 
@@ -271,10 +253,13 @@ curl -L https://git.io/get_helm.sh | bash -s -- -v v2.14.2
 helm init --stable-repo-url https://charts.helm.sh/stable --wait
 helm repo update
 
+#helm repo add stable https://charts.helm.sh/stable
+#helm repo update
+
 # setup tiller in your cluster
 kubectl apply -f $K8S/tiller-rbac.yaml
 
-echo "Installing Tiller..."
+#echo "Installing Tiller..."
 
 sleep 60s
 
@@ -307,10 +292,30 @@ kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-fl
 
 #########################################################################################
 
-echo "Deploy the ngnix ingress controller..."
+kubectl create namespace ingress-controllers
 
-# Deploy the ngnix ingress controller
-helm install stable/nginx-ingress --name nginx-ingress-dev --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-dev --version 1.24.7
+for i in 1 2 3; 
+do
+     echo "Deploy the ngnix ingress controller..."
+
+     # Deploy the ngnix ingress controller
+     helm install stable/nginx-ingress --name nginx-ingress-dev --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-dev --version 1.41.3 &> nginx.txt
+     err=$?
+     cmdoutput=$(cat nginx.txt)
+
+     if [[ $err = 0 ]] 
+     then
+         break;
+     else 
+         if grep -q "already exists" <<< "$cmdoutput"; then
+            break;
+         else 
+            echo $cmdoutput
+         fi
+         if [[ $i -ge 3 ]]; then exit 1; fi
+         sleep 30s
+     fi
+done
 
 # Obtain the load balancer ip address and assign a domain name
 until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-dev-controller -n ingress-controllers -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
@@ -332,6 +337,9 @@ fi
 kubectl apply -f $K8S/k8s-resource-quotas-dev.yaml
 
 #########################################################################################
+
+for i in 1 2 3; 
+do
 
 echo "Deploying Delivery Service..."
 
@@ -587,11 +595,79 @@ helm install $HELM_CHARTS/website/ \
      --name website-v0.1.0-dev \
      --dep-up
 
-echo "az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME --admin" >> import-$RESOURCE_GROUP-envs.sh
+     echo -n "Waiting for Service Deployments to complete"
+
+     for i in {0..20}
+     do
+         echo -n "."
+         sleep 6s
+     done
+
+     echo 
+     echo
+
+     declare -a StringArray=("delivery" "package" "workflow" "ingestion" "dronescheduler" "website" )
+     l=${#StringArray[@]}
+     cnt=0
+
+     for svc in ${StringArray[@]}; do
+        echo -n "Checking $svc Service: "
+
+        kubectl wait --namespace backend-dev --for=condition=ready pod --selector=app.kubernetes.io/instance=$svc-v0.1.0-dev --timeout=30s &> status.log
+        err=$?
+        cmdoutput=$(cat status.log)
+        rm status.log
+
+        if [[ $err = 0 ]] 
+        then
+           echo "GOOD"
+           cnt=$((cnt+1))
+        else 
+          if grep -q "already exists" <<< "$cmdoutput"; then
+             echo "ALREADY EXISTS"
+             cnt=$((cnt+1))
+          else 
+             echo "ERROR"
+             echo
+             echo $cmdoutput
+             break;
+          fi
+        fi
+
+        sleep 1s
+     done
+
+     if [[ $cnt = $l ]] 
+     then
+        break;
+     fi
+
+     if [[ $i -ge 3 ]]; then exit 1; fi
+     sleep 30s
+done
+
 echo
+
+#Make Request to prime system
+export requestData="{\"confirmationRequired\":\"None\",\"deadline\":\"\",\"dropOffLocation\":\"555 110th Ave NE, Bellevue, WA 98004\",\"expedited\":true,\"ownerId\":\"myowner\",\"packageInfo\":{\"packageId\":\"mypackage\",\"size\":\"Large\",\"tag\":\"mytag\",\"weight\":10},\"pickupLocation\":\"1 Microsoft Way, Redmond, WA 98052\",\"pickupTime\":\"2019-05-08T20:00:00.000Z\"}"
+curl -X POST -H "Content-Type: application/json" -d "$requestData" --insecure  "https://$EXTERNAL_INGEST_FQDN/api/DroneSite/deliveryrequest"
+
+echo
+
+sleep 15s
+
+kubectl get pod -n backend-dev
+
+echo
+echo "az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME --admin" >> import-$RESOURCE_GROUP-envs.sh
+echo 
 echo "##############################################################################"
 echo "To Access the Drone Demo Site run the following URL from your browser"
 echo
 echo "https://$EXTERNAL_INGEST_FQDN"
+echo
+echo "Run the command below to configure the session to manage the environment"
+echo 
+echo ". import-$RESOURCE_GROUP-envs.sh" 
 echo
 echo "##############################################################################"
