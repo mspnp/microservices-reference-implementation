@@ -324,6 +324,7 @@
       ],
       "properties": {
         "kubernetesVersion": "[parameters('kubernetesVersion')]",
+        "nodeResourceGroup": "[variables('nodeResourceGroupName')]",
         "dnsPrefix": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
         "agentPoolProfiles": [
           {
@@ -332,7 +333,8 @@
             "count": "[variables('environmentSettings')[parameters('environmentName')].agentCount]",
             "vmSize": "[variables('environmentSettings')[parameters('environmentName')].agentVMSize]",
             "osType": "[parameters('osType')]",
-            "storageProfile": "ManagedDisks"
+            "storageProfile": "ManagedDisks",
+            "mode": "System"
           }
         ],
         "linuxProfile": {
