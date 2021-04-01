@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Fabrikam.Workflow.Service.Models;
 using Fabrikam.Workflow.Service.Services;
+using Microsoft.ApplicationInsights;
 
 namespace Fabrikam.Workflow.Service.RequestProcessing
 {
@@ -18,23 +19,32 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
         private readonly IPackageServiceCaller _packageServiceCaller;
         private readonly IDroneSchedulerServiceCaller _droneSchedulerServiceCaller;
         private readonly IDeliveryServiceCaller _deliveryServiceCaller;
-
+        private readonly IDroneSimulator _droneSimulator;
+        private readonly IDroneDeliveryRequestServiceCaller _deliveryRequestServiceCaller;
+        private TelemetryClient _telemetry;
         public RequestProcessor(
             ILogger<RequestProcessor> logger,
             IPackageServiceCaller packageServiceCaller,
             IDroneSchedulerServiceCaller droneSchedulerServiceCaller,
-            IDeliveryServiceCaller deliveryServiceCaller)
+            IDeliveryServiceCaller deliveryServiceCaller,
+            IDroneSimulator droneSimulator,
+            IDroneDeliveryRequestServiceCaller deliveryRequestServiceCaller,
+             TelemetryClient telemetry            
+            )
         {
             _logger = logger;
             _packageServiceCaller = packageServiceCaller;
             _droneSchedulerServiceCaller = droneSchedulerServiceCaller;
             _deliveryServiceCaller = deliveryServiceCaller;
+            _droneSimulator = droneSimulator;
+            _deliveryRequestServiceCaller = deliveryRequestServiceCaller;
+            _telemetry = telemetry;
         }
 
         public async Task<bool> ProcessDeliveryRequestAsync(Delivery deliveryRequest, IReadOnlyDictionary<string, object> properties)
         {
             _logger.LogInformation("Processing delivery request {deliveryId}", deliveryRequest.DeliveryId);
-
+            _telemetry.TrackEvent($"DeliveryRequest.Received");
             try
             {
                 var packageGen = await _packageServiceCaller.UpsertPackageAsync(deliveryRequest.PackageInfo).ConfigureAwait(false);
@@ -47,14 +57,36 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
                     {
                         _logger.LogInformation("Assigned drone {droneId} for delivery {deliveryId}", droneId, deliveryRequest.DeliveryId);
 
-                        var deliverySchedule = await _deliveryServiceCaller.ScheduleDeliveryAsync(deliveryRequest, droneId);
+                        var deliverySchedule = await _deliveryRequestServiceCaller.ScheduleDeliveryAsync(deliveryRequest, droneId);
                         if (deliverySchedule != null)
                         {
                             _logger.LogInformation("Completed delivery {deliveryId}", deliveryRequest.DeliveryId);
+                            try
+                            {
+                                _telemetry.TrackEvent($"DeliveryRequestSimulation.Starting");
+                                _logger.LogInformation("Starting Delivery Simulation {deliveryId}", deliveryRequest.DeliveryId);
+                                await _droneSimulator.Simulate(deliveryRequest.DeliveryId);
+                                _logger.LogInformation("Started Delivery Simulation {deliveryId}", deliveryRequest.DeliveryId);
+                                _telemetry.TrackEvent($"DeliveryRequestSimulation.Started");
+                            }
+                            catch (AggregateException ex)
+                            {
+                                _telemetry.TrackEvent($"DeliveryRequestException.InSimulationAggregate");
+                                _logger.LogError(ex, "Failed delivery for request {deliveryId}. Message : {Message}", deliveryRequest.DeliveryId, ex.Message);
+                                throw;
+                            }
+                            catch (Exception ex)
+                            {
+                                _telemetry.TrackEvent($"DeliveryRequestException.InSimulationGlobal");
+                                _logger.LogError("Failed delivery for request {deliveryId}. Message : {Message}", deliveryRequest.DeliveryId, ex.Message);
+                                throw;
+                            }
+                            _telemetry.TrackEvent($"DeliveryRequest.Processed");
                             return true;
                         }
                         else
                         {
+                            _telemetry.TrackEvent($"DeliveryRequestException.AfterSuccessfulDeliveryPlaced");
                             _logger.LogError("Failed delivery for request {deliveryId}", deliveryRequest.DeliveryId);
                         }
                     }
@@ -62,9 +94,10 @@ namespace Fabrikam.Workflow.Service.RequestProcessing
             }
             catch (Exception e)
             {
+                _telemetry.TrackEvent($"DeliveryRequestException.Main");
+                _logger.LogError("Some Error Occured.Failed delivery for request {deliveryId}. Message : {Message}", deliveryRequest.DeliveryId, e.Message);
                 _logger.LogError(e, "Error processing delivery request {deliveryId}", deliveryRequest.DeliveryId);
-            }
-
+            }            
             return false;
         }
     }

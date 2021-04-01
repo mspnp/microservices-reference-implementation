@@ -1,6 +1,6 @@
 # Default values for delivery.
 nameOverride: delivery
-replicaCount: 1
+replicaCount: 5
 identity:
   clientid:
   resourceid:
@@ -15,6 +15,10 @@ cosmosdb:
   collectionid:
 keyvault:
   uri:
+redis:
+  connectretry: "6"
+  connecttimeout: "10000"
+  exponentialretry: "true"
 readinessProbe:
   httpGet:
     path: /healthz

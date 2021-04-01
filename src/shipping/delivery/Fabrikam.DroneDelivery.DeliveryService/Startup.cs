@@ -59,9 +59,9 @@ namespace Fabrikam.DroneDelivery.DeliveryService
                 .AllowAnyHeader()
                 .AllowCredentials());
             });
-           
+
             services.AddSignalR()
-                 .AddHubOptions<DroneHub>(options => 
+                 .AddHubOptions<DroneHub>(options =>
                  {
                      options.EnableDetailedErrors = true;
                      options.KeepAliveInterval = TimeSpan.FromSeconds(15);
@@ -123,8 +123,8 @@ namespace Fabrikam.DroneDelivery.DeliveryService
             app.UseAuthorization();
 
             // Enable middleware to serve generated Swagger as a JSON endpoint.
-            app.UseSwagger(c => 
-            { 
+            app.UseSwagger(c =>
+            {
                 c.RouteTemplate = "deliveries/swagger/{documentname}/swagger.json";
             });
 
@@ -137,9 +137,13 @@ namespace Fabrikam.DroneDelivery.DeliveryService
 
             //TODO look into creating a factory of DocDBRepos/RedisCache/EventHubMessenger
             DocumentDBRepository<InternalNotifyMeRequest>.Configure(Configuration["CosmosDB-Endpoint"], Configuration["CosmosDB-Key"], Configuration["DOCDB_DATABASEID"], Configuration["DOCDB_COLLECTIONID"], loggerFactory);
-            RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
-            RedisCache<DeliveryTrackingEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
-            RedisCache<DeliveryTrackingIds>.Configure(Constants.RedisCacheDBId_DeliveryKeys, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory);
+            var exponential = Configuration["REDIS_EXPONENTIAL_RETRY"] != null ? bool.Parse(Configuration["REDIS_EXPONENTIAL_RETRY"]) : false;
+            var timeout = Configuration["REDIS_CONNECT_TIMEOUT"] != null ? int.Parse(Configuration["REDIS_CONNECT_TIMEOUT"]) : 5000;
+            var retry = Configuration["REDIS_CONNECT_RETRY"] != null ? int.Parse(Configuration["REDIS_CONNECT_RETRY"]) : 3;
+
+            RedisCache<InternalDelivery>.Configure(Constants.RedisCacheDBId_Delivery, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory, exponential, timeout, retry);
+            RedisCache<DeliveryTrackingEvent>.Configure(Constants.RedisCacheDBId_DeliveryStatus, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory, exponential, timeout, retry);
+            RedisCache<DeliveryTrackingIds>.Configure(Constants.RedisCacheDBId_DeliveryKeys, Configuration["Redis-Endpoint"], Configuration["Redis-AccessKey"], loggerFactory, exponential, timeout, retry);
 
             app.UseEndpoints(endpoints =>
             {

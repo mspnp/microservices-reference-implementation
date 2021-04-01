@@ -96,6 +96,12 @@ spec:
           value: {{ default "Error" .Values.telemetry.level | quote }}
         - name: no_proxy
           value: 169.254.169.254
+        - name: REDIS_EXPONENTIAL_RETRY
+          value: {{ .Values.redis.exponentialretry }}
+        - name: REDIS_CONNECT_TIMEOUT
+          value: {{ .Values.redis.connecttimeout }}
+        - name: REDIS_CONNECT_RETRY
+          value: {{ .Values.redis.connectretry }}
         - name: APPINSIGHTS_INSTRUMENTATIONKEY
           valueFrom:
             secretKeyRef:
