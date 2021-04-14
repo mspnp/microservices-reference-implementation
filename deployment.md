@@ -148,7 +148,7 @@ Setup Helm
 
 ```bash
 # install helm client side
- curl -L https://git.io/get_helm.sh | bash -s -- -v v2.14.2
+ curl -L https://git.io/get_helm.sh | bash -s -- -v v2.17.0
 
 # setup tiller in your cluster
 kubectl apply -f $K8S/tiller-rbac.yaml
