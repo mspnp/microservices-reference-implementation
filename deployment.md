@@ -32,9 +32,9 @@ the SSH rsa key pair can be generated using ssh-keygen, among other tools, on Li
 Set environment variables.
 
 ```bash
-export SSH_PUBLIC_KEY_FILE="/Users/neilpeterson/.ssh/id_rsa.pub"
-export LOCATION=eastus
-export RESOURCE_GROUP=test-niner-001
+export SSH_PUBLIC_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PUBLIC_KEY_FILE_HERE]
+export LOCATION=[YOUR_LOCATION_HERE]
+export RESOURCE_GROUP=[YOUR_RESOURCE_GROUP_HERE]
 ```
 
 Gather infrastructure Prerequisites.
