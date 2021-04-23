@@ -16,10 +16,7 @@ Clone or download this repo locally.
 
 ```bash
 git clone https://github.com/mspnp/microservices-reference-implementation.git && \
-pushd ./microservices-reference-implementation && \
-git checkout basic && \
-popd
-
+cd microservices-reference-implementation/
 ```
 
 The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
@@ -36,23 +33,11 @@ Set environment variables.
 
 ```bash
 export SSH_PUBLIC_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PUBLIC_KEY_FILE_HERE]
-
 export LOCATION=[YOUR_LOCATION_HERE]
-
 export RESOURCE_GROUP=[YOUR_RESOURCE_GROUP_HERE]
-
-export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
-export SUBSCRIPTION_NAME=$(az account show --query name --output tsv)
-export TENANT_ID=$(az account show --query tenantId --output tsv)
-
-export DEPLOYMENT_SUFFIX=$(date +%S%N)
-
-export PROJECT_ROOT=./microservices-reference-implementation
-export K8S=$PROJECT_ROOT/k8s
-export HELM_CHARTS=$PROJECT_ROOT/charts
 ```
 
-Infrastructure Prerequisites
+Gather infrastructure Prerequisites.
 
 ```bash
 # Log in to Azure
@@ -84,7 +69,7 @@ export DEV_PREREQ_DEPLOYMENT_NAME=azuredeploy-prereqs-${DEPLOYMENT_SUFFIX}-dev
 az deployment sub create \
    --name $DEV_PREREQ_DEPLOYMENT_NAME \
    --location $LOCATION \
-   --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
+   --template-file azuredeploy-prereqs.json \
    --parameters resourceGroupName=$RESOURCE_GROUP \
                 resourceGroupLocation=$LOCATION
 
@@ -98,40 +83,39 @@ export WORKFLOW_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFL
 export RESOURCE_GROUP_ACR=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
 
 # Wait for AAD propagation
-until az ad sp show --id ${DELIVERY_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${DRONESCHEDULER_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
-until az ad sp show --id ${WORKFLOW_ID_PRINCIPAL_ID} &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id $DELIVERY_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id $DRONESCHEDULER_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id $WORKFLOW_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 
 # Export the kubernetes cluster version
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv)
 
 # Deploy all other resources
-export DEV_DEPLOYMENT_NAME=azuredeploy-${DEPLOYMENT_SUFFIX}-dev
-az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file ${PROJECT_ROOT}/azuredeploy.json \
---parameters servicePrincipalClientId=${SP_APP_ID} \
-            servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
-            servicePrincipalId=${SP_OBJECT_ID} \
-            kubernetesVersion=${KUBERNETES_VERSION} \
-            sshRSAPublicKey="$(cat ${SSH_PUBLIC_KEY_FILE})" \
-            deliveryIdName=${DELIVERY_ID_NAME} \
-            deliveryPrincipalId=${DELIVERY_ID_PRINCIPAL_ID} \
-            droneSchedulerIdName=${DRONESCHEDULER_ID_NAME} \
-            droneSchedulerPrincipalId=${DRONESCHEDULER_ID_PRINCIPAL_ID} \
-            workflowIdName=${WORKFLOW_ID_NAME} \
-            workflowPrincipalId=${WORKFLOW_ID_PRINCIPAL_ID} \
-            acrResourceGroupName=${RESOURCE_GROUP_ACR}
+export DEV_DEPLOYMENT_NAME=azuredeploy-$DEPLOYMENT_SUFFIX-dev
+az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file azuredeploy.json \
+--parameters servicePrincipalClientId=$SP_APP_ID \
+            servicePrincipalClientSecret=$SP_CLIENT_SECRET \
+            servicePrincipalId=$SP_OBJECT_ID \
+            kubernetesVersion=$KUBERNETES_VERSION \
+            sshRSAPublicKey="$(cat $SSH_PUBLIC_KEY_FILE)" \
+            deliveryIdName=$DELIVERY_ID_NAME \
+            deliveryPrincipalId=$DELIVERY_ID_PRINCIPAL_ID \
+            droneSchedulerIdName=$DRONESCHEDULER_ID_NAME \
+            droneSchedulerPrincipalId=$DRONESCHEDULER_ID_PRINCIPAL_ID \
+            workflowIdName=$WORKFLOW_ID_NAME \
+            workflowPrincipalId=$WORKFLOW_ID_PRINCIPAL_ID \
+            acrResourceGroupName=$RESOURCE_GROUP_ACR
 ```
 
-Get outputs from Azure Deploy
+Get outputs from Azure Deploy.
 
 ```bash
-# Shared
 export ACR_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.acrName.value -o tsv) && \
 export ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv) && \
 export CLUSTER_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.aksClusterName.value -o tsv)
 ```
 
-Download kubectl and create a k8s namespace
+Download kubectl and create a Kubernetes namespace.
 
 ```bash
 #  Install kubectl
@@ -144,18 +128,18 @@ az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 kubectl create namespace backend-dev
 ```
 
-Setup Helm
+Install and initialize Helm.
 
 ```bash
 # install helm client side
 curl -L https://git.io/get_helm.sh | bash -s -- -v v2.17.0
 
 # setup tiller in your cluster
-kubectl apply -f $K8S/tiller-rbac.yaml
+kubectl apply -f k8s/tiller-rbac.yaml
 helm init --service-account tiller
 ```
 
-Integrate Application Insights instance
+Integrate Application Insights instance.
 
 ```bash
 # Acquire Instrumentation Key
@@ -168,7 +152,7 @@ export AI_IKEY=$(az resource show \
                     -o tsv)
 
 # add RBAC for AppInsights
-kubectl apply -f $K8S/k8s-rbac-ai.yaml
+kubectl apply -f k8s/k8s-rbac-ai.yaml
 ```
 
 ## Setup AAD pod identity and key vault flexvol infrastructure
@@ -215,12 +199,12 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 ## Setup cluster resource quota
 
 ```bash
-kubectl apply -f $K8S/k8s-resource-quotas-dev.yaml
+kubectl apply -f k8s/k8s-resource-quotas-dev.yaml
 ```
 
 ## Deploy the Delivery service
 
-Extract resource details from deployment
+Extract resource details from deployment.
 
 ```bash
 export COSMOSDB_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.deliveryCosmosDbName.value -o tsv) && \
@@ -229,24 +213,13 @@ export COLLECTION_NAME="${DATABASE_NAME}-col" && \
 export DELIVERY_KEYVAULT_URI=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.deliveryKeyVaultUri.value -o tsv)
 ```
 
-Build the Delivery service
+Build and publish the Delivery service container image.
 
 ```bash
-export DELIVERY_PATH=$PROJECT_ROOT/src/shipping/delivery
+az acr build -r $ACR_NAME -t $ACR_SERVER/delivery:0.1.0 ./src/shipping/delivery/.
 ```
 
-Build and publish the container image
-
-```bash
-# Build the Docker image
-docker build --pull --compress -t $ACR_SERVER/delivery:0.1.0 $DELIVERY_PATH/.
-
-# Push the image to ACR
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/delivery:0.1.0
-```
-
-Deploy the Delivery service:
+Deploy the Delivery service.
 
 ```bash
 # Extract pod identity outputs from deployment
@@ -255,7 +228,7 @@ export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DE
 export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
 # Deploy the service
-helm install $HELM_CHARTS/delivery/ \
+helm install charts/delivery/ \
      --set image.tag=0.1.0 \
      --set image.repository=delivery \
      --set dockerregistry=$ACR_SERVER \
@@ -283,26 +256,19 @@ helm status delivery-v0.1.0-dev
 
 ## Deploy the Package service
 
-Extract resource details from deployment
+Extract resource details from deployment.
 
 ```bash
 export COSMOSDB_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.packageMongoDbName.value -o tsv)
 ```
 
-Build the Package service
+Build the Package service.
 
 ```bash
-export PACKAGE_PATH=$PROJECT_ROOT/src/shipping/package
-
-# Build the docker image
-docker build -f $PACKAGE_PATH/Dockerfile -t $ACR_SERVER/package:0.1.0 $PACKAGE_PATH
-
-# Push the docker image to ACR
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/package:0.1.0
+az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./src/shipping/package/.
 ```
 
-Deploy the Package service
+Deploy the Package service.
 
 ```bash
 # Create secret
@@ -311,7 +277,7 @@ export COSMOSDB_CONNECTION=$(az cosmosdb keys list --type connection-strings --n
 export COSMOSDB_COL_NAME=packages
 
 # Deploy service
-helm install $HELM_CHARTS/package/ \
+helm install charts/package/ \
      --set image.tag=0.1.0 \
      --set image.repository=package \
      --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
@@ -333,38 +299,33 @@ helm status package-v0.1.0-dev
 
 ## Deploy the Workflow service
 
-Extract resource details from deployment
+Extract resource details from deployment.
 
 ```bash
 export WORKFLOW_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.workflowKeyVaultName.value -o tsv)
 ```
 
-Build the workflow service
+Build the workflow service.
 
 ```bash
-export WORKFLOW_PATH=$PROJECT_ROOT/src/shipping/workflow
-
-# Build the Docker image
-docker build --pull --compress -t $ACR_SERVER/workflow:0.1.0 $WORKFLOW_PATH/.
-
-# Push the image to ACR
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/workflow:0.1.0
+az acr build -r $ACR_NAME -t $ACR_SERVER/workflow:0.1.0 ./src/shipping/workflow/.
 ```
 
-Create and set up pod identity
+Create and set up pod identity.
 
 ```bash
-# Extract outputs from deployment
+# Extract outputs from deployment and get Azure account details
 export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.workflowPrincipalResourceId.value -o tsv) && \
 export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query clientId -o tsv)
+export SUBSCRIPTION_ID=$(az account show --query id --output tsv)
+export TENANT_ID=$(az account show --query tenantId --output tsv)
 ```
 
-Deploy the Workflow service:
+Deploy the Workflow service.
 
 ```bash
 # Deploy the service
-helm install $HELM_CHARTS/workflow/ \
+helm install charts/workflow/ \
      --set image.tag=0.1.0 \
      --set image.repository=workflow \
      --set dockerregistry=$ACR_SERVER \
@@ -386,7 +347,7 @@ helm status workflow-v0.1.0-dev
 
 ## Deploy the Ingestion service
 
-Extract resource details from deployment
+Extract resource details from deployment.
 
 ```bash
 export INGESTION_QUEUE_NAMESPACE=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.ingestionQueueNamespace.value -o tsv) && \
@@ -395,27 +356,20 @@ export INGESTION_ACCESS_KEY_NAME=$(az deployment group show -g $RESOURCE_GROUP -
 export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_ACCESS_KEY_NAME --query primaryKey -o tsv)
 ```
 
-Build the Ingestion service
+Build the Ingestion service.
 
 ```bash
-export INGESTION_PATH=$PROJECT_ROOT/src/shipping/ingestion
-
-# Build the docker image
-docker build -f $INGESTION_PATH/Dockerfile -t $ACR_SERVER/ingestion:0.1.0 $INGESTION_PATH
-
-# Push the docker image to ACR
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/ingestion:0.1.0
+az acr build -r $ACR_NAME -t $ACR_SERVER/ingestion:0.1.0 ./src/shipping/ingestion/.
 ```
 
-Deploy the Ingestion service
+Deploy the Ingestion service.
 
 ```bash
 # Set secreat name
 export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
 
 # Deploy service
-helm install $HELM_CHARTS/ingestion/ \
+helm install charts/ingestion/ \
      --set image.tag=0.1.0 \
      --set image.repository=ingestion \
      --set dockerregistry=$ACR_SERVER \
@@ -443,7 +397,7 @@ helm status ingestion-v0.1.0-dev
 
 ## Deploy DroneScheduler service
 
-Extract resource details from deployment
+Extract resource details from deployment.
 
 ```bash
 export DRONESCHEDULER_KEYVAULT_URI=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
@@ -454,13 +408,7 @@ export DATABASE_NAME="invoicing" && \
 export COLLECTION_NAME="utilization"
 ```
 
-Build the dronescheduler services
-
-```bash
-export DRONE_PATH=$PROJECT_ROOT/src/shipping/dronescheduler
-```
-
-Create and set up pod identity
+Create and set up pod identity.
 
 ```bash
 # Extract outputs from deployment
@@ -468,22 +416,17 @@ export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOU
 export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query clientId -o tsv)
 ```
 
-Build and publish the container image
+Build and publish the container image.
 
 ```bash
-# Build the Docker image
-docker build -f $DRONE_PATH/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 $DRONE_PATH/../
-
-# Push the images to ACR
-az acr login --name $ACR_NAME
-docker push $ACR_SERVER/dronescheduler:0.1.0
+az acr build -r $ACR_NAME -f ./src/shipping/dronescheduler/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 ./src/shipping/.
 ```
 
-Deploy the dronescheduler service:
+Deploy the dronescheduler service.
 
 ```bash
 # Deploy the service
-helm install $HELM_CHARTS/dronescheduler/ \
+helm install charts/dronescheduler/ \
      --set image.tag=0.1.0 \
      --set image.repository=dronescheduler \
      --set dockerregistry=$ACR_SERVER \
@@ -504,7 +447,6 @@ helm install $HELM_CHARTS/dronescheduler/ \
 # Verify the pod is created
 helm status dronescheduler-v0.1.0-dev
 ```
-
 
 ## Validate the application is running
 
