@@ -65,6 +65,7 @@ Infrastructure
 ```bash
 # Deploy the resource groups and managed identities
 # These are deployed first in a separate template to avoid propagation delays with AAD
+export DEPLOYMENT_SUFFIX=$(date +%S%N)
 export DEV_PREREQ_DEPLOYMENT_NAME=azuredeploy-prereqs-${DEPLOYMENT_SUFFIX}-dev
 az deployment sub create \
    --name $DEV_PREREQ_DEPLOYMENT_NAME \
@@ -163,6 +164,10 @@ Note: the tested nmi version was 1.4. It enables namespaced pod identity.
 
 ```bash
 # setup AAD pod identity
+helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts
+
+helm repo update
+
 helm install aad-pod-identity/aad-pod-identity --set=installCRDs=true --set nmi.allowNetworkPluginKubenet=true --name aad-pod-identity --namespace kube-system --version 3.0.3
 
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
