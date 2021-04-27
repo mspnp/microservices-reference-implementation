@@ -50,7 +50,7 @@
       "name": "[parameters('resourceGroupName')]",
       "location": "[parameters('resourceGroupLocation')]",
       "type": "Microsoft.Resources/resourceGroups",
-      "apiVersion": "2018-05-01",
+      "apiVersion": "2020-06-01",
       "tags": {
         "displayName": "Resource Group for general purpose"
       }
@@ -58,7 +58,7 @@
     {
       "name": "[variables('environmentSettings')[parameters('environmentName')].acrResourceGroupName]",
       "type": "Microsoft.Resources/resourceGroups",
-      "apiVersion": "2018-05-01",
+      "apiVersion": "2020-06-01",
       "location": "[parameters('resourceGroupLocation')]",
       "tags": {
         "displayName": "Container Registry Resource Group"
@@ -66,7 +66,7 @@
     },
     {
       "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2018-05-01",
+      "apiVersion": "2020-10-01",
       "name": "[variables('nestedIdDeploymentName')]",
       "resourceGroup": "[parameters('resourceGroupName')]",
       "dependsOn": [
@@ -81,7 +81,7 @@
             {
               "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
               "name": "[variables('environmentSettings')[parameters('environmentName')].workflowIdName]",
-              "apiVersion": "2015-08-31-preview",
+              "apiVersion": "2018-11-30",
               "location": "[parameters('resourceGroupLocation')]",
               "tags": {
                 "displayName": "workflow managed identity",
@@ -94,7 +94,7 @@
             {
               "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
               "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryIdName]",
-              "apiVersion": "2015-08-31-preview",
+              "apiVersion": "2018-11-30",
               "location": "[parameters('resourceGroupLocation')]",
               "tags": {
                 "displayName": "delivery managed identity",
@@ -107,7 +107,7 @@
             {
               "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
               "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerIdName]",
-              "apiVersion": "2015-08-31-preview",
+              "apiVersion": "2018-11-30",
               "location": "[parameters('resourceGroupLocation')]",
               "tags": {
                 "displayName": "dronescheduler managed identity",
