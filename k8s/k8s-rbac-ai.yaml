@@ -3,30 +3,29 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: appinsights-k8s-property-reader
 rules:
-- apiGroups: ["","extensions"]
-  resources: ["pods","nodes", "replicasets","deployments"]
-  verbs: ["get", "watch", "list"]
+  - apiGroups: ["", "extensions"]
+    resources: ["pods", "nodes", "replicasets", "deployments"]
+    verbs: ["get", "watch", "list"]
 ---
 # actual binding to the role
 kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: appinsights-k8s-property-reader-binding
 subjects:
-- kind: ServiceAccount
-  name: default
-  namespace: backend
-- kind: ServiceAccount
-  name: default
-  namespace: backend-dev
-- kind: ServiceAccount
-  name: default
-  namespace: backend-qa
-- kind: ServiceAccount
-  name: default
-  namespace: backend-staging
+  - kind: ServiceAccount
+    name: default
+    namespace: backend
+  - kind: ServiceAccount
+    name: default
+    namespace: backend-dev
+  - kind: ServiceAccount
+    name: default
+    namespace: backend-qa
+  - kind: ServiceAccount
+    name: default
+    namespace: backend-staging
 roleRef:
   kind: ClusterRole
   name: appinsights-k8s-property-reader
   apiGroup: rbac.authorization.k8s.io
-
