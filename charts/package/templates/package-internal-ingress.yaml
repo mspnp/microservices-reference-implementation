@@ -10,7 +10,7 @@
 {{- $appversion := .Chart.AppVersion }}
 {{- $defaultversionedpath := printf "/%s/" $appversion }}
 {{- $relname := .Release.Name }}
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ $relname }}-internal-ingress
@@ -27,16 +27,23 @@ spec:
       paths:
       {{- if .path }}
       - path: {{ printf "%s/%s/" .path $appversion }}api/internal/package(.*)
+        pathType: ImplementationSpecific
       {{- else }}
       - path: {{ $defaultversionedpath }}api/internal/package(.*)
+        pathType: ImplementationSpecific
       {{- end }}
         backend:
-          serviceName: "{{ .serviceName }}-{{ $svcversion }}"
-          servicePort: http
+          service:
+            name: "{{ .serviceName }}-{{ $svcversion }}"
+            port:
+              name: http
       {{- if (eq $appversion "v0.1.0") }}
       - path: {{ default "/" .path }}api/internal/package(.*)
+        pathType: ImplementationSpecific
         backend:
-          serviceName: "{{ .serviceName }}"
-          servicePort: http
+          service:
+            name: "{{ .serviceName }}"
+            port:
+              name: http
       {{- end }}
   {{ end }}
