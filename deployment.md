@@ -4,7 +4,7 @@
 
 - Azure subscription
   > Important: The user initiating the deployment process must have access to the **Microsoft.Authorization/roleAssignments/write** permission. For more information, see [the Container Insights doc](https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-troubleshoot#authorization-error-during-onboarding-or-update-operation)
-- [Azure CLI 2.0.49 or later](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+- [Azure CLI 2.0.49 or later](https://docs.microsoft.com/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
 - [JQ](https://stedolan.github.io/jq/download/)
 
@@ -171,7 +171,7 @@ helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-i
 
 helm repo update
 
-helm install aad-pod-identity aad-pod-identity/aad-pod-identity --set installCRDs=true --set nmi.allowNetworkPluginKubenet=true  --namespace kube-system --version 3.0.3
+helm install aad-pod-identity aad-pod-identity/aad-pod-identity --set installCRDs=true --set nmi.allowNetworkPluginKubenet=true  --namespace kube-system --version 4.0.0
 
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
