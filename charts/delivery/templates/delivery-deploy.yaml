@@ -96,6 +96,6 @@ spec:
           value: {{ default "Error" .Values.telemetry.level | quote }}
         - name: no_proxy
           value: 169.254.169.254
-      ports:
+        ports:
         - name: service
           containerPort: 8080

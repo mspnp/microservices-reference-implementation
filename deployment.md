@@ -4,7 +4,7 @@
 
 - Azure subscription
   > Important: The user initiating the deployment process must have access to the **Microsoft.Authorization/roleAssignments/write** permission. For more information, see [the Container Insights doc](https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-troubleshoot#authorization-error-during-onboarding-or-update-operation)
-- [Azure CLI 2.0](https://docs.microsoft.com/cli/azure/install-azure-cli)
+- [Azure CLI 2.0.49 or later](https://docs.microsoft.com/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
 - [JQ](https://stedolan.github.io/jq/download/)
 
@@ -43,11 +43,17 @@ Gather infrastructure Prerequisites.
 # Log in to Azure
 az login
 
+# if you have several subscriptions, select one 
+# az account set -s <subscription id>
+
 # Create service principal for AKS
 export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor" -o json) && \
 export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
 export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
 export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
+
+# It is needed later on in the two paths
+export DEPLOYMENT_SUFFIX=$(date +%S%N)
 ```
 
 ## Optional: Set up automated CI/CD for dev, test, qa and production with Azure DevOps
@@ -65,7 +71,6 @@ Infrastructure
 ```bash
 # Deploy the resource groups and managed identities
 # These are deployed first in a separate template to avoid propagation delays with AAD
-export DEPLOYMENT_SUFFIX=$(date +%S%N)
 export DEV_PREREQ_DEPLOYMENT_NAME=azuredeploy-prereqs-${DEPLOYMENT_SUFFIX}-dev
 az deployment sub create \
    --name $DEV_PREREQ_DEPLOYMENT_NAME \
@@ -133,11 +138,9 @@ Install and initialize Helm.
 
 ```bash
 # install helm client side
-curl -L https://git.io/get_helm.sh | bash -s -- -v v2.17.0
-
-# setup tiller in your cluster
-kubectl apply -f k8s/tiller-rbac.yaml
-helm init --service-account tiller
+curl -L https://git.io/get_helm.sh | bash -s -- -v v3.5.4
+helm repo add stable https://charts.helm.sh/stable
+helm repo update
 ```
 
 Integrate Application Insights instance.
@@ -168,7 +171,7 @@ helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-i
 
 helm repo update
 
-helm install aad-pod-identity/aad-pod-identity --set=installCRDs=true --set nmi.allowNetworkPluginKubenet=true --name aad-pod-identity --namespace kube-system --version 3.0.3
+helm install aad-pod-identity aad-pod-identity/aad-pod-identity --set installCRDs=true --set nmi.allowNetworkPluginKubenet=true  --namespace kube-system --version 4.0.0
 
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
@@ -186,7 +189,8 @@ kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-fl
 
 ```bash
 # Deploy the ngnix ingress controller
-helm install stable/nginx-ingress --name nginx-ingress-dev --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-dev --version 1.24.7
+kubectl create namespace ingress-controllers
+helm install nginx-ingress-dev stable/nginx-ingress --namespace ingress-controllers --version 1.24.7 --set rbac.create=true --set controller.ingressClass=nginx-dev
 
 # Obtain the load balancer ip address and assign a domain name
 until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-dev-controller -n ingress-controllers -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
@@ -234,7 +238,7 @@ export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DE
 export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
 # Deploy the service
-helm install charts/delivery/ \
+helm install delivery-v0.1.0-dev charts/delivery/ \
      --set image.tag=0.1.0 \
      --set image.repository=delivery \
      --set dockerregistry=$ACR_SERVER \
@@ -253,11 +257,10 @@ helm install charts/delivery/ \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \
-     --name delivery-v0.1.0-dev \
-     --dep-up
+     --dependency-update
 
 # Verify the pod is created
-helm status delivery-v0.1.0-dev
+helm status delivery-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Deploy the Package service
@@ -283,7 +286,7 @@ export COSMOSDB_CONNECTION=$(az cosmosdb keys list --type connection-strings --n
 export COSMOSDB_COL_NAME=packages
 
 # Deploy service
-helm install charts/package/ \
+helm install package-v0.1.0-dev charts/package/ \
      --set image.tag=0.1.0 \
      --set image.repository=package \
      --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
@@ -296,11 +299,10 @@ helm install charts/package/ \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \
-     --name package-v0.1.0-dev \
-     --dep-up
+     --dependency-update
 
 # Verify the pod is created
-helm status package-v0.1.0-dev
+helm status package-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Deploy the Workflow service
@@ -331,7 +333,7 @@ Deploy the Workflow service.
 
 ```bash
 # Deploy the service
-helm install charts/workflow/ \
+helm install workflow-v0.1.0-dev charts/workflow/ \
      --set image.tag=0.1.0 \
      --set image.repository=workflow \
      --set dockerregistry=$ACR_SERVER \
@@ -344,11 +346,10 @@ helm install charts/workflow/ \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \
-     --name workflow-v0.1.0-dev \
-     --dep-up
+     --dependency-update
 
 # Verify the pod is created
-helm status workflow-v0.1.0-dev
+helm status workflow-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Deploy the Ingestion service
@@ -375,7 +376,7 @@ Deploy the Ingestion service.
 export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
 
 # Deploy service
-helm install charts/ingestion/ \
+helm install ingestion-v0.1.0-dev charts/ingestion/ \
      --set image.tag=0.1.0 \
      --set image.repository=ingestion \
      --set dockerregistry=$ACR_SERVER \
@@ -394,11 +395,10 @@ helm install charts/ingestion/ \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \
-     --name ingestion-v0.1.0-dev \
-     --dep-up
+     --dependency-update
 
 # Verify the pod is created
-helm status ingestion-v0.1.0-dev
+helm status ingestion-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Deploy DroneScheduler service
@@ -432,7 +432,7 @@ Deploy the dronescheduler service.
 
 ```bash
 # Deploy the service
-helm install charts/dronescheduler/ \
+helm install dronescheduler-v0.1.0-dev charts/dronescheduler/ \
      --set image.tag=0.1.0 \
      --set image.repository=dronescheduler \
      --set dockerregistry=$ACR_SERVER \
@@ -447,11 +447,10 @@ helm install charts/dronescheduler/ \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \
-     --name dronescheduler-v0.1.0-dev \
-     --dep-up
+     --dependency-update
 
 # Verify the pod is created
-helm status dronescheduler-v0.1.0-dev
+helm status dronescheduler-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Validate the application is running
