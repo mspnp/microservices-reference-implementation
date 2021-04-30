@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Azure subscription
-- [Azure CLI 2.0.49 or later](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+- [Azure CLI 2.0.49 or later](https://docs.microsoft.com/cli/azure/install-azure-cli)
 - [Azure DevOps account](https://azure.microsoft.com/services/devops)
 - [Values from deployment instructions](./deployment.md)
 
@@ -12,33 +12,34 @@
 ```bash
 # Export the kubernetes cluster version and deploy
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv) && \
-export PREREQ_DEPLOYMENT_NAME=azuredeploy-prereqs-${DEPLOYMENT_SUFFIX}
+export PREREQ_DEPLOYMENT_NAME=azuredeploy-prereqs-${DEPLOYMENT_SUFFIX} && \
 export DEPLOYMENT_NAME=azuredeploy-${DEPLOYMENT_SUFFIX}
+
 for env in dev qa staging prod; do
 ENV=${env^^}
-az deployment create \
+az deployment sub create \
    --name $PREREQ_DEPLOYMENT_NAME-${env} \
    --location $LOCATION \
-   --template-file ${PROJECT_ROOT}/azuredeploy-prereqs.json \
+   --template-file azuredeploy-prereqs.json \
    --parameters resourceGroupName=$RESOURCE_GROUP \
                 resourceGroupLocation=$LOCATION \
                 environmentName=${env}
 
-export {${ENV}_IDENTITIES_DEPLOYMENT_NAME,IDENTITIES_DEPLOYMENT_NAME}=$(az deployment show -n $PREREQ_DEPLOYMENT_NAME-${env} --query properties.outputs.identitiesDeploymentName.value -o tsv) && \
-export {${ENV}_DELIVERY_ID_NAME,DELIVERY_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.deliveryIdName.value -o tsv)
+export {${ENV}_IDENTITIES_DEPLOYMENT_NAME,IDENTITIES_DEPLOYMENT_NAME}=$(az deployment sub show -n $PREREQ_DEPLOYMENT_NAME-${env} --query properties.outputs.identitiesDeploymentName.value -o tsv) && \
+export {${ENV}_DELIVERY_ID_NAME,DELIVERY_ID_NAME}=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.deliveryIdName.value -o tsv)
 export DELIVERY_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DELIVERY_ID_NAME --query principalId -o tsv)
-export {${ENV}_DRONESCHEDULER_ID_NAME,DRONESCHEDULER_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerIdName.value -o tsv)
+export {${ENV}_DRONESCHEDULER_ID_NAME,DRONESCHEDULER_ID_NAME}=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerIdName.value -o tsv)
 export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query principalId -o tsv)
-export {${ENV}_WORKFLOW_ID_NAME,WORKFLOW_ID_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.workflowIdName.value -o tsv)
+export {${ENV}_WORKFLOW_ID_NAME,WORKFLOW_ID_NAME}=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.workflowIdName.value -o tsv)
 export WORKFLOW_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query principalId -o tsv)
-export RESOURCE_GROUP_ACR=$(az group deployment show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
+export RESOURCE_GROUP_ACR=$(az deployment group show -g $RESOURCE_GROUP -n $IDENTITIES_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
 
 # Wait for AAD propagation
 until az ad sp show --id $DELIVERY_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id $DRONESCHEDULER_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id $WORKFLOW_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 
-az group deployment create -g $RESOURCE_GROUP --name $DEPLOYMENT_NAME-${env} --template-file ${PROJECT_ROOT}/azuredeploy.json \
+az deployment group create -g $RESOURCE_GROUP --name $DEPLOYMENT_NAME-${env} --template-file azuredeploy.json \
    --parameters servicePrincipalClientId=${SP_APP_ID} \
                servicePrincipalClientSecret=${SP_CLIENT_SECRET} \
                servicePrincipalId=${SP_OBJECT_ID} \
@@ -51,12 +52,11 @@ az group deployment create -g $RESOURCE_GROUP --name $DEPLOYMENT_NAME-${env} --t
                workflowIdName=$WORKFLOW_ID_NAME \
                workflowPrincipalId=$WORKFLOW_ID_PRINCIPAL_ID \
                acrResourceGroupName=${RESOURCE_GROUP_ACR} \
-               acrResourceGroupLocation=$LOCATION \
                environmentName=${env}
 
-export {${ENV}_AI_NAME,AI_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.appInsightsName.value -o tsv)
+export {${ENV}_AI_NAME,AI_NAME}=$(az deployment group show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.appInsightsName.value -o tsv)
 export ${ENV}_AI_IKEY=$(az resource show -g $RESOURCE_GROUP -n $AI_NAME --resource-type "Microsoft.Insights/components" --query properties.InstrumentationKey -o tsv)
-export {${ENV}_ACR_NAME,ACR_NAME}=$(az group deployment show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.acrName.value -o tsv)
+export {${ENV}_ACR_NAME,ACR_NAME}=$(az deployment group show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-${env} --query properties.outputs.acrName.value -o tsv)
 export ${ENV}_ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
 
 done
@@ -65,7 +65,7 @@ done
 Get outputs from Azure Deploy
 ```bash
 # Shared
-export CLUSTER_NAME=$(az group deployment show -g $RESOURCE_GROUP -n azuredeploy-dev --query properties.outputs.aksClusterName.value -o tsv) && \
+export CLUSTER_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME-dev --query properties.outputs.aksClusterName.value -o tsv)
 ```
 
 Download kubectl and create a k8s namespace
@@ -77,6 +77,7 @@ sudo az aks install-cli
 az aks get-credentials --resource-group=$RESOURCE_GROUP --name=$CLUSTER_NAME
 
 # Create namespaces
+kubectl create namespace backend-dev && \
 kubectl create namespace backend-qa && \
 kubectl create namespace backend-staging && \
 kubectl create namespace backend
@@ -86,18 +87,16 @@ Setup Helm
 
 ```bash
 # install helm client side
-DESIRED_VERSION=v2.14.2;curl -L https://git.io/get_helm.sh | bash
-
-# setup tiller in your cluster
-kubectl apply -f $K8S/tiller-rbac.yaml
-helm init --service-account tiller
+curl -L https://git.io/get_helm.sh | bash -s -- -v v3.5.4
+helm repo add stable https://charts.helm.sh/stable
+helm repo update
 ```
 
 ## Integrate Application Insights instance
 
 ```bash
 # add RBAC for AppInsights
-kubectl apply -f $K8S/k8s-rbac-ai.yaml
+kubectl apply -f ./K8s/k8s-rbac-ai.yaml
 ```
 
 ## Setup AAD pod identity and key vault flexvol infrastructure
@@ -108,7 +107,11 @@ Note: the tested nmi version was 1.4. It enables namespaced pod identity.
 
 ```bash
 # setup AAD pod identity
-helm install aad-pod-identity/aad-pod-identity --set=installCRDs=true --set nmi.allowNetworkPluginKubenet=true --name aad-pod-identity --namespace kube-system
+helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-identity/master/charts
+
+helm repo update
+
+helm install aad-pod-identity aad-pod-identity/aad-pod-identity --set installCRDs=true --set nmi.allowNetworkPluginKubenet=true  --namespace kube-system --version 4.0.0
 
 kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
@@ -116,7 +119,7 @@ kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-fl
 ## Setup cluster resource quota
 
 ```bash
-kubectl apply -f $K8S/k8s-resource-quotas-dev.yaml -f $K8S/k8s-resource-quotas-qa-stg-prod.yaml
+kubectl apply -f ./K8s/k8s-resource-quotas-dev.yaml -f ./K8s/k8s-resource-quotas-qa-stg-prod.yaml
 ```
 
 ## Setup Azure DevOps
@@ -222,7 +225,8 @@ export ${ENV}_EXTERNAL_INGEST_FQDN=${EXTERNAL_INGEST_FQDN}
 export ${ENV}_INGRESS_LOAD_BALANCER_IP=$(az network public-ip show --name ${EXTERNAL_INGEST_DNS_NAME}-${env}-pip --query "ipAddress" -g $RESOURCE_GROUP_NODE --output tsv)
 
 # Deploy the ngnix ingress controller
-helm install stable/nginx-ingress --name nginx-ingress-${env} --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-${env} --set controller.service.loadBalancerIP=${ENV}_INGRESS_LOAD_BALANCER_IP --version 1.24.7
+kubectl create namespace ingress-controllers
+helm install nginx-ingress-${env} stable/nginx-ingress --namespace ingress-controllers --set rbac.create=true --set controller.ingressClass=nginx-${env} --set controller.service.loadBalancerIP=${ENV}_INGRESS_LOAD_BALANCER_IP --version 1.24.7
 
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -out ingestion-ingress-tls-${env}.crt \
@@ -233,11 +237,11 @@ export "${ENV}_INGRESS_TLS_SECRET_KEY=$(echo $(cat ingestion-ingress-tls-${env}.
 done
 
 # export app paths
-export DELIVERY_PATH=$PROJECT_ROOT/src/shipping/delivery && \
-export PACKAGE_PATH=$PROJECT_ROOT/src/shipping/package && \
-export WORKFLOW_PATH=$PROJECT_ROOT/src/shipping/workflow && \
-export INGESTION_PATH=$PROJECT_ROOT/src/shipping/ingestion && \
-export DRONE_PATH=$PROJECT_ROOT/src/shipping/dronescheduler
+export DELIVERY_PATH=./src/shipping/delivery && \
+export PACKAGE_PATH=./src/shipping/package && \
+export WORKFLOW_PATH=./src/shipping/workflow && \
+export INGESTION_PATH=./src/shipping/ingestion && \
+export DRONE_PATH=./src/shipping/dronescheduler
 
 # configure build YAML definitions
 for pipelinePath in $DELIVERY_PATH $PACKAGE_PATH $WORKFLOW_PATH $INGESTION_PATH $DRONE_PATH; do
@@ -249,7 +253,6 @@ sed -i \
 done
 
 # push changes to the repo
-cd $PROJECT_ROOT && \
 git add -u && \
 git commit -m "set build pipelines variables" && \
 git push newremote master && \
@@ -364,7 +367,7 @@ git push newremote release/delivery/v0.1.0
 Verify delivery was deployed
 
 ```bash
-helm status delivery-v0.1.0
+helm status delivery-v0.1.0 --namespace backend-dev
 ```
 
 ## Add Package CI/CD
@@ -447,7 +450,7 @@ git push newremote release/package/v0.1.0
 Verify package was deployed
 
 ```bash
-helm status package-v0.1.0
+helm status package-v0.1.0 --namespace backend-dev
 ```
 
 ## Add Workflow CI/CD
@@ -543,7 +546,7 @@ git push newremote release/workflow/v0.1.0
 Verify workflow was deployed
 
 ```bash
-helm status workflow-v0.1.0
+helm status workflow-v0.1.0 --namespace backend-dev
 ```
 
 ## Add Ingestion CI/CD
@@ -650,7 +653,7 @@ git push newremote release/ingestion/v0.1.0
 Verify ingestion was deployed
 
 ```bash
-helm status ingestion-v0.1.0
+helm status ingestion-v0.1.0 --namespace backend-dev
 ```
 
 ## Add DroneScheduler CI/CD
@@ -735,7 +738,7 @@ git push newremote release/dronescheduler/v0.1.0
 Verify dronescheduler was deployed
 
 ```bash
-helm status dronescheduler-v0.1.0
+helm status dronescheduler-v0.1.0 --namespace backend-dev
 ```
 
 ## Validate the application is running
