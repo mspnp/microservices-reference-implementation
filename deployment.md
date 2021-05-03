@@ -52,16 +52,7 @@ export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
 export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r) && \
 export SP_OBJECT_ID=$(az ad sp show --id $SP_APP_ID -o tsv --query objectId)
 
-# It is needed later on in the two paths
-export DEPLOYMENT_SUFFIX=$(date +%S%N)
 ```
-
-## Optional: Set up automated CI/CD for dev, test, qa and production with Azure DevOps
-
-Add [CI/CD to Drone Delivery using Azure Pipelines with YAML](./deploymentCICD.md).
-
-> Important: If you don't want to set up the CI/CD pipelines, you can manually deploy the application for development as follows.
-
 ## Manual deployment for dev
 
 > Note: this deployment might take up to 20 minutes
@@ -71,6 +62,7 @@ Infrastructure
 ```bash
 # Deploy the resource groups and managed identities
 # These are deployed first in a separate template to avoid propagation delays with AAD
+export DEPLOYMENT_SUFFIX=$(date +%S%N)
 export DEV_PREREQ_DEPLOYMENT_NAME=azuredeploy-prereqs-${DEPLOYMENT_SUFFIX}-dev
 az deployment sub create \
    --name $DEV_PREREQ_DEPLOYMENT_NAME \
