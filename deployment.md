@@ -12,7 +12,11 @@
 > with sudo. For more information, please refer to [the Post-installation steps
 > for linux](https://docs.docker.com/install/linux/linux-postinstall/)
 
-Clone or download this repo locally.
+Clone or download these two repos locally.
+
+```bash
+git clone https://github.com/mspnp/aks-fabrikam-dronedelivery-workload.git
+```
 
 ```bash
 git clone https://github.com/mspnp/microservices-reference-implementation.git && \
@@ -226,7 +230,7 @@ export DELIVERY_KEYVAULT_URI=$(az deployment group show -g $RESOURCE_GROUP -n $D
 Build and publish the Delivery service container image.
 
 ```bash
-az acr build -r $ACR_NAME -t $ACR_SERVER/delivery:0.1.0 ./src/shipping/delivery/.
+az acr build -r $ACR_NAME -t $ACR_SERVER/delivery:0.1.0 ../aks-fabrikam-dronedelivery-workload/src/shipping/delivery/.
 ```
 
 Deploy the Delivery service.
@@ -274,7 +278,7 @@ export COSMOSDB_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLO
 Build the Package service.
 
 ```bash
-az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./src/shipping/package/.
+az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ../aks-fabrikam-dronedelivery-workload/src/shipping/package/.
 ```
 
 Deploy the Package service.
@@ -316,7 +320,7 @@ export WORKFLOW_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $
 Build the workflow service.
 
 ```bash
-az acr build -r $ACR_NAME -t $ACR_SERVER/workflow:0.1.0 ./src/shipping/workflow/.
+az acr build -r $ACR_NAME -t $ACR_SERVER/workflow:0.1.0 ../aks-fabrikam-dronedelivery-workload/src/shipping/workflow/.
 ```
 
 Create and set up pod identity.
@@ -366,7 +370,7 @@ export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule k
 Build the Ingestion service.
 
 ```bash
-az acr build -r $ACR_NAME -t $ACR_SERVER/ingestion:0.1.0 ./src/shipping/ingestion/.
+az acr build -r $ACR_NAME -t $ACR_SERVER/ingestion:0.1.0 ../aks-fabrikam-dronedelivery-workload/src/shipping/ingestion/.
 ```
 
 Deploy the Ingestion service.
@@ -425,7 +429,7 @@ export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP 
 Build and publish the container image.
 
 ```bash
-az acr build -r $ACR_NAME -f ./src/shipping/dronescheduler/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 ./src/shipping/.
+az acr build -r $ACR_NAME -f ../aks-fabrikam-dronedelivery-workload/src/shipping/dronescheduler/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 ../aks-fabrikam-dronedelivery-workload/src/shipping/.
 ```
 
 Deploy the dronescheduler service.
