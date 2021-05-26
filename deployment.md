@@ -15,14 +15,8 @@
 Clone or download this repo locally.
 
 ```bash
-git clone https://github.com/mspnp/microservices-reference-implementation.git && \
+git clone --recurse-submodules https://github.com/mspnp/microservices-reference-implementation.git && \
 cd microservices-reference-implementation/
-```
-
-Add the Workload repository as a submodule of your main repo.
-
-```bash
-git submodule add https://github.com/mspnp/aks-fabrikam-dronedelivery-workload.git workload
 ```
 
 The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
