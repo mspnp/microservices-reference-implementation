@@ -10,15 +10,12 @@
     "acrResourceGroupName": {
       "type": "string"
     },
+    "acrName": {
+      "type": "string"
+    },
     "deliveryIdName": {
       "metadata": {
         "description": "Name of the delivery managed identity"
-      },
-      "type": "string"
-    },
-    "deliveryPrincipalId": {
-      "metadata": {
-        "description": "Principal id for the delivery managed identity"
       },
       "type": "string"
     },
@@ -28,21 +25,9 @@
       },
       "type": "string"
     },
-    "droneSchedulerPrincipalId": {
-      "metadata": {
-        "description": "Principal id for the drone scheduler managed identity"
-      },
-      "type": "string"
-    },
     "workflowIdName": {
       "metadata": {
         "description": "Name of the workflow managed identity"
-      },
-      "type": "string"
-    },
-    "workflowPrincipalId": {
-      "metadata": {
-        "description": "Principal id for the workflow managed identity"
       },
       "type": "string"
     },
@@ -63,12 +48,6 @@
             "description": "The Service Principal Client Secret."
         },
         "type": "securestring"
-    },
-    "servicePrincipalId": {
-        "metadata": {
-            "description": "Principal ID (used by cloudprovider)"
-        },
-        "type": "string"
     },
     "osType": {
       "type": "string",
@@ -107,24 +86,12 @@
       "metadata": {
         "description": "Type of the storage account that will store Redis Cache."
       }
-    },
-    "deliveryRedisDiagnosticsEnabled": {
-      "type": "bool",
-      "allowedValues": [false, true],
-      "defaultValue": false,
-      "metadata": {
-        "description": "A value that indicates whether diagnostics should be saved to the specified storage account."
-      }
     }
   },
   "variables": {
     "clusterNamePrefix": "aks",
-    "acrNamePrefix": "acr",
-    "aiNamePrefix": "ai",
-    "acrName": "[uniqueString(variables('acrNamePrefix'),resourceGroup().id)]",
-    "readerRoleObjectId": "acdd72a7-3385-48ef-bd42-f606fba81ae7",
+    "acrName": "[parameters('acrName')]",
     "managedIdentityOperatorRoleObjectId": "f1a07417-d97a-45cb-824c-7a7467783830",
-    "readerRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('readerRoleObjectId'))]",
     "managedIdentityOperatorRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('managedIdentityOperatorRoleObjectId'))]",
     "deliveryRedisStorageName": "[concat(parameters('environmentName'),'rsto',uniqueString(resourceGroup().id))]",
     "nestedACRDeploymentName": "[concat('azuredeploy-acr-',parameters('acrResourceGroupName'),parameters('environmentName'))]",
@@ -137,7 +104,6 @@
       "dev": {
         "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
         "acrName": "[variables('acrName')]",
-        "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
         "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
         "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
         "deliveryRedisCacheSKU": "Basic",
@@ -163,7 +129,6 @@
       "qa": {
         "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
         "acrName": "[variables('acrName')]",
-        "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
         "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
         "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
         "deliveryRedisCacheSKU": "Basic",
@@ -189,7 +154,6 @@
       "staging": {
         "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
         "acrName": "[variables('acrName')]",
-        "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
         "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
         "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
         "deliveryRedisCacheSKU": "Standard",
@@ -215,7 +179,6 @@
       "prod": {
         "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
         "acrName": "[concat(parameters('environmentName'),variables('acrName'))]",
-        "appInsightsName": "[concat(parameters('environmentName'),uniqueString(variables('aiNamePrefix'),resourceGroup().id))]",
         "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
         "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
         "deliveryRedisCacheSKU": "Standard",
@@ -256,29 +219,10 @@
           "contentVersion": "1.0.0.0",
           "resources": [
             {
-              "name": "[variables('environmentSettings')[parameters('environmentName')].acrName]",
-              "type": "Microsoft.ContainerRegistry/registries",
-              "apiVersion": "2019-05-01",
-              "sku": {
-                "name": "Basic",
-                "tier": "Basic"
-              },
-              "location": "[resourceGroup().location]",
-              "tags": {
-                "displayName": "Container Registry",
-                "container.registry": "[variables('environmentSettings')[parameters('environmentName')].acrName]",
-                "clusterName": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]"
-              },
-              "properties": {
-                "adminUserEnabled": false
-              }
-            },
-            {
               "type": "Microsoft.ContainerRegistry/registries/providers/roleAssignments",
               "apiVersion": "2018-09-01-preview",
               "name": "[concat(variables('acrName'), '/Microsoft.Authorization/', guid(concat(resourceGroup().id), variables('acrPullRole')))]",
               "dependsOn": [
-                "[concat(subscription().id, '/resourceGroups/',parameters('acrResourceGroupName'),'/providers/Microsoft.ContainerRegistry/registries/',variables('environmentSettings')[parameters('environmentName')].acrName)]"
               ],
               "properties": {
                 "roleDefinitionId": "[variables('acrPullRole')]",
@@ -288,10 +232,6 @@
             }
           ],
           "outputs": {
-            "acrId": {
-              "value": "[resourceId('Microsoft.ContainerRegistry/registries', variables('environmentSettings')[parameters('environmentName')].acrName)]",
-              "type": "string"
-            }
           }
         }
       }
@@ -365,20 +305,6 @@
       }
     },
     {
-      "name": "[variables('environmentSettings')[parameters('environmentName')].appInsightsName]",
-      "type": "Microsoft.Insights/components",
-      "apiVersion": "2020-02-02-preview",
-      "kind": "other",
-      "location": "[resourceGroup().location]",
-      "tags": {
-        "displayName": "App Insights instance - Distributed Tracing",
-        "environment": "[parameters('environmentName')]"
-      },
-      "properties": {
-        "Application_Type": "other"
-      }
-    },
-    {
       "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisStorageName]",
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2019-06-01",
@@ -393,549 +319,6 @@
         "app": "fabrikam-delivery",
         "environment": "[parameters('environmentName')]"
       }
-    },
-    {
-      "apiVersion": "2020-06-01",
-      "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisName]",
-      "type": "Microsoft.Cache/Redis",
-      "location": "[resourceGroup().location]",
-      "tags": {
-        "displayName": "Redis Cache for inflight deliveries",
-        "app": "fabrikam-delivery",
-        "environment": "[parameters('environmentName')]"
-      },
-      "dependsOn": [
-        "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisStorageId]"
-      ],
-      "properties": {
-        "redisEnableNonSslPort": "false",
-        "sku": {
-          "capacity": "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisCacheCapacity]",
-          "family": "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisCacheFamily]",
-          "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisCacheSKU]"
-        }
-      },
-      "resources": [
-        {
-          "apiVersion": "2017-05-01-preview",
-          "type": "Microsoft.Cache/redis/providers/diagnosticsettings",
-          "name": "[concat(variables('environmentSettings')[parameters('environmentName')].deliveryRedisName, '/Microsoft.Insights/', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)]",
-          "location": "[resourceGroup().location]",
-          "dependsOn": [
-            "[resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)]"
-          ],
-          "properties": {
-            "storageAccountId": "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisStorageId]",
-            "logs": [],
-            "metrics": [
-              {
-                "timeGrain": "AllMetrics",
-                "enabled": "[parameters('deliveryRedisDiagnosticsEnabled')]",
-                "retentionPolicy": {
-                  "days": 90,
-                  "enabled": "[parameters('deliveryRedisDiagnosticsEnabled')]"
-                }
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "type": "Microsoft.DocumentDB/databaseAccounts",
-      "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryCosmosDbName]",
-      "apiVersion": "2021-03-01-preview",
-      "location": "[resourceGroup().location]",
-      "tags": {
-        "displayName": "Delivery Cosmos Db",
-        "app": "fabrikam-delivery",
-        "environment": "[parameters('environmentName')]"
-      },
-      "properties": {
-        "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryCosmosDbName]",
-        "databaseAccountOfferType": "Standard",
-        "locations": [
-          {
-            "locationName": "[resourceGroup().location]",
-            "failoverPriority": 0
-          }
-        ]
-      }
-    },
-    {
-      "apiVersion": "2021-03-01-preview",
-      "type": "Microsoft.DocumentDB/databaseAccounts",
-      "kind": "MongoDB",
-      "name": "[variables('environmentSettings')[parameters('environmentName')].packageMongoDbName]",
-      "location": "[resourceGroup().location]",
-      "tags": {
-        "displayName": "Package Cosmos Db",
-        "app": "fabrikam-package",
-        "environment": "[parameters('environmentName')]"
-      },
-      "properties": {
-        "databaseAccountOfferType": "Standard",
-        "name": "[variables('environmentSettings')[parameters('environmentName')].packageMongoDbName]"
-      }
-    },
-    {
-      "type": "Microsoft.DocumentDB/databaseAccounts",
-      "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName]",
-      "apiVersion": "2021-03-01-preview",
-      "location": "[resourceGroup().location]",
-      "properties": {
-        "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName]",
-        "databaseAccountOfferType": "Standard",
-        "locations": [
-          {
-            "locationName": "[resourceGroup().location]",
-            "failoverPriority": 0
-          }
-        ]
-      }
-    },
-    {
-      "type": "Microsoft.ServiceBus/namespaces",
-      "name": "[variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespace]",
-      "apiVersion": "2018-01-01-preview",
-      "location": "[resourceGroup().location]",
-      "sku": {
-        "name": "Standard",
-        "tier": "Standard"
-      },
-      "tags": {
-        "displayName": "Ingestion and Workflow Service Bus",
-        "app": "fabrikam-ingestion",
-        "app-producer": "fabrikam-ingestion",
-        "app-consumer": "fabrikam-workflow",
-        "environment": "[parameters('environmentName')]"
-      },
-      "resources": [
-        {
-          "name": "[variables('environmentSettings')[parameters('environmentName')].ingestionSBName]",
-          "type": "queues",
-          "apiVersion": "2017-04-01",
-          "dependsOn": [
-            "[resourceId('Microsoft.ServiceBus/namespaces', variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespace)]"
-          ],
-          "properties": {
-            "lockDuration": "PT5M",
-            "maxSizeInMegabytes": "1024",
-            "enablePartitioning": "true"
-          }
-        },
-        {
-          "name": "[variables('environmentSettings')[parameters('environmentName')].ingestionServiceAccessKey]",
-          "type": "AuthorizationRules",
-          "apiVersion": "2017-04-01",
-          "properties": {
-            "rights": ["Send"]
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.ServiceBus/namespaces', variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespace)]"
-          ]
-        },
-        {
-          "name": "[variables('environmentSettings')[parameters('environmentName')].workflowServiceAccessKey]",
-          "type": "AuthorizationRules",
-          "apiVersion": "2017-04-01",
-          "properties": {
-            "rights": ["Listen"]
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.ServiceBus/namespaces', variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespace)]"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults",
-      "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName]",
-      "apiVersion": "2019-09-01",
-      "location": "[resourceGroup().location]",
-      "dependsOn": [
-        "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisStorageId]"
-      ],
-      "tags": {
-        "displayName": "Delivery Key Vault",
-        "app": "fabrikam-delivery",
-        "environment": "[parameters('environmentName')]"
-      },
-      "properties": {
-        "sku": {
-          "family": "A",
-          "name": "standard"
-        },
-        "tenantId": "[subscription().tenantId]",
-        "accessPolicies": [
-          {
-            "tenantId": "[subscription().tenantId]",
-            "objectId": "[parameters('deliveryPrincipalId')]",
-            "permissions": {
-              "secrets": ["get", "list"]
-            }
-          },
-          {
-            "tenantId": "[subscription().tenantId]",
-            "objectId": "[variables('readerRoleObjectId')]",
-            "permissions": {
-              "secrets": ["get", "list"]
-            }
-          }
-        ]
-      },
-      "resources": [
-        {
-          "type": "secrets",
-          "name": "CosmosDB-Endpoint",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].deliveryCosmosDbName)).documentEndpoint]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName)]",
-            "[resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "CosmosDB-Key",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].deliveryCosmosDbName), '2016-03-31').primaryMasterKey]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName)]",
-            "[resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "Redis-Endpoint",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[reference(resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)).hostName]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName)]",
-            "[resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "Redis-AccessKey",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[listKeys(resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName), '2016-04-01').primaryKey]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName)]",
-            "[resourceId('Microsoft.Cache/Redis', variables('environmentSettings')[parameters('environmentName')].deliveryRedisName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "ApplicationInsights--InstrumentationKey",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[reference(resourceId('Microsoft.Insights/components', variables('environmentSettings')[parameters('environmentName')].appInsightsName),'2015-05-01').InstrumentationKey]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName)]",
-            "[resourceId('Microsoft.Insights/components', variables('environmentSettings')[parameters('environmentName')].appInsightsName)]"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults",
-      "name": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName]",
-      "apiVersion": "2019-09-01",
-      "location": "[resourceGroup().location]",
-      "tags": {
-        "displayName": "DroneScheduler Key Vault",
-        "app": "fabrikam-dronescheduler",
-        "environment": "[parameters('environmentName')]"
-      },
-      "properties": {
-        "sku": {
-          "family": "A",
-          "name": "standard"
-        },
-        "tenantId": "[subscription().tenantId]",
-        "accessPolicies": [
-          {
-            "tenantId": "[subscription().tenantId]",
-            "objectId": "[parameters('droneSchedulerPrincipalId')]",
-            "permissions": {
-              "secrets": ["get", "list"]
-            }
-          }
-        ]
-      },
-      "resources": [
-        {
-          "type": "secrets",
-          "name": "ApplicationInsights--InstrumentationKey",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[reference(resourceId('Microsoft.Insights/components', variables('environmentSettings')[parameters('environmentName')].appInsightsName),'2015-05-01').InstrumentationKey]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]",
-            "[resourceId('Microsoft.Insights/components', variables('environmentSettings')[parameters('environmentName')].appInsightsName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "CosmosDBEndpoint",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[reference(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName)).documentEndpoint]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]",
-            "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "CosmosDBKey",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[listKeys(resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName), '2016-03-31').primaryMasterKey]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]",
-            "[resourceId('Microsoft.DocumentDB/databaseAccounts', variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "CosmosDBConnectionMode",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "Gateway"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "CosmosDBConnectionProtocol",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "Https"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "CosmosDBMaxConnectionsLimit",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "50"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "CosmosDBMaxParallelism",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "-1"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "CosmosDBMaxBufferedItemCount",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "0"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "FeatureManagement--UsePartitionKey",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "false"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults",
-      "name": "[variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName]",
-      "apiVersion": "2019-09-01",
-      "location": "[resourceGroup().location]",
-      "tags": {
-        "displayName": "Workflow Key Vault",
-        "app": "fabrikam-workflow",
-        "environment": "[parameters('environmentName')]"
-      },
-      "properties": {
-        "sku": {
-          "family": "A",
-          "name": "standard"
-        },
-        "tenantId": "[subscription().tenantId]",
-        "accessPolicies": [
-          {
-            "tenantId": "[subscription().tenantId]",
-            "objectId": "[parameters('workflowPrincipalId')]",
-            "permissions": {
-              "secrets": ["get", "list"]
-            }
-          }
-        ]
-      },
-      "resources": [
-        {
-          "type": "secrets",
-          "name": "QueueName",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[variables('environmentSettings')[parameters('environmentName')].ingestionSBName]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "QueueEndpoint",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[reference(resourceId('Microsoft.ServiceBus/namespaces', variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespace)).serviceBusEndpoint]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName)]",
-            "[resourceId('Microsoft.ServiceBus/namespaces', variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespace)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "QueueAccessPolicyName",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[variables('environmentSettings')[parameters('environmentName')].workflowServiceAccessKey]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "QueueAccessPolicyKey",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespace, variables('environmentSettings')[parameters('environmentName')].workflowServiceAccessKey), '2017-04-01').primaryKey]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName)]",
-            "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespace, variables('environmentSettings')[parameters('environmentName')].workflowServiceAccessKey)]"
-          ]
-        },
-        {
-          "type": "secrets",
-          "name": "ApplicationInsights-InstrumentationKey",
-          "apiVersion": "2019-09-01",
-          "properties": {
-            "value": "[reference(resourceId('Microsoft.Insights/components', variables('environmentSettings')[parameters('environmentName')].appInsightsName),'2015-05-01').InstrumentationKey]"
-          },
-          "dependsOn": [
-            "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName)]",
-            "[resourceId('Microsoft.Insights/components', variables('environmentSettings')[parameters('environmentName')].appInsightsName)]"
-          ]
-        }
-      ]
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
-      "name": "[concat(variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName,'/Microsoft.Authorization/',guid(concat('kv-delivery',parameters('environmentName')), resourceGroup().id))]",
-      "apiVersion": "2021-04-01-preview",
-      "tags": {
-        "displayName": "Delivery app RBAC Reader for Key Vault",
-        "what": "rbac",
-        "to": "pod",
-        "identity-type": "msi",
-        "access": "keyvault",
-        "reason": "aad-pod-identity",
-        "flex-vol": "no",
-        "app": "fabrikam-delivery",
-        "environment": "[parameters('environmentName')]"
-      },
-      "properties": {
-        "roleDefinitionId": "[variables('readerRoleId')]",
-        "principalId": "[parameters('deliveryPrincipalId')]",
-        "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName)]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName)]"
-      ]
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
-      "name": "[concat(variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName,'/Microsoft.Authorization/',guid(concat('kv-dronescheduler',parameters('environmentName')), resourceGroup().id))]",
-      "apiVersion": "2021-04-01-preview",
-      "tags": {
-        "displayName": "DroneScheduler app RBAC Reader for Key Vault",
-        "what": "rbac",
-        "to": "pod",
-        "identity-type": "msi",
-        "access": "keyvault",
-        "reason": "aad-pod-identity",
-        "flex-vol": "no",
-        "app": "fabrikam-dronescheduler",
-        "environment": "[parameters('environmentName')]"
-      },
-      "properties": {
-        "roleDefinitionId": "[variables('readerRoleId')]",
-        "principalId": "[parameters('droneSchedulerPrincipalId')]",
-        "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)]"
-      ]
-    },
-    {
-      "type": "Microsoft.KeyVault/vaults/providers/roleAssignments",
-      "name": "[concat(variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName,'/Microsoft.Authorization/',guid(concat('kv-workflow',parameters('environmentName')), resourceGroup().id))]",
-      "apiVersion": "2021-04-01-preview",
-      "tags": {
-        "displayName": "Workflow app RBAC Reader for Key Vault",
-        "what": "rbac",
-        "to": "pod",
-        "identity-type": "msi",
-        "access": "keyvault",
-        "reason": "aad-pod-identity",
-        "flex-vol": "yes",
-        "app": "fabrikam-workflow",
-        "environment": "[parameters('environmentName')]"
-      },
-      "properties": {
-        "roleDefinitionId": "[variables('readerRoleId')]",
-        "principalId": "[parameters('workflowPrincipalId')]",
-        "scope": "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName)]"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName)]"
-      ]
     },
     {
       "type": "Microsoft.ContainerService/managedClusters/providers/roleAssignments",
@@ -1017,61 +400,25 @@
     }
   ],
   "outputs": {
-    "acrName": {
-      "value": "[variables('environmentSettings')[parameters('environmentName')].acrName]",
-      "type": "string"
-    },
     "aksClusterName": {
       "value": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
-      "type": "string"
-    },
-    "appInsightsName": {
-      "value": "[variables('environmentSettings')[parameters('environmentName')].appInsightsName]",
-      "type": "string"
-    },
-    "deliveryKeyVaultUri": {
-      "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].deliveryKeyVaultName)).vaultUri]",
-      "type": "string"
-    },
-    "deliveryCosmosDbName": {
-      "value": "[variables('environmentSettings')[parameters('environmentName')].deliveryCosmosDbName]",
-      "type": "string"
-    },
-    "droneSchedulerKeyVaultName": {
-      "value": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName]",
-      "type": "string"
-    },
-    "droneSchedulerKeyVaultUri": {
-      "value": "[reference(resourceId('Microsoft.KeyVault/vaults', variables('environmentSettings')[parameters('environmentName')].droneSchedulerKeyVaultName)).vaultUri]",
-      "type": "string"
-    },
-    "droneSchedulerCosmosDbName": {
-      "value": "[variables('environmentSettings')[parameters('environmentName')].droneSchedulerCosmosDbName]",
-      "type": "string"
-    },
-    "packageMongoDbName": {
-      "value": "[variables('environmentSettings')[parameters('environmentName')].packageMongoDbName]",
-      "type": "string"
-    },
-    "workflowKeyVaultName": {
-      "value": "[variables('environmentSettings')[parameters('environmentName')].workflowKeyVaultName]",
-      "type": "string"
-    },
-    "ingestionQueueNamespace": {
-      "value": "[variables('environmentSettings')[parameters('environmentName')].ingestionSBNamespace]",
-      "type": "string"
-    },
-    "ingestionQueueName": {
-      "value": "[variables('environmentSettings')[parameters('environmentName')].ingestionSBName]",
-      "type": "string"
-    },
-    "ingestionServiceAccessKeyName": {
-      "value": "[variables('environmentSettings')[parameters('environmentName')].ingestionServiceAccessKey]",
       "type": "string"
     },
     "acrDeploymentName": {
       "value": "[variables('nestedACRDeploymentName')]",
       "type": "string"
-    }
+    },
+    "deliveryPrincipalResourceId": {
+      "value": "[concat(subscription().id, '/resourceGroups/',resourceGroup().name,'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',parameters('deliveryIdName'))]",
+      "type": "string"
+  },
+  "workflowPrincipalResourceId": {
+      "value": "[concat(subscription().id, '/resourceGroups/',resourceGroup().name,'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',parameters('workflowIdName'))]",
+      "type": "string"
+  },
+  "droneSchedulerPrincipalResourceId": {
+      "value": "[concat(subscription().id, '/resourceGroups/',resourceGroup().name,'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',parameters('droneSchedulerIdName'))]",
+      "type": "string"
+  }
   }
 }
