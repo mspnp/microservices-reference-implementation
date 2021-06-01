@@ -2,11 +2,6 @@
   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
   "contentVersion": "0.0.0.3",
   "parameters": {
-    "environmentName": {
-      "type": "string",
-      "defaultValue": "dev",
-      "allowedValues": ["dev", "qa", "staging", "prod"]
-    },
     "acrResourceGroupName": {
       "type": "string"
     },
@@ -93,115 +88,34 @@
     "acrName": "[parameters('acrName')]",
     "managedIdentityOperatorRoleObjectId": "f1a07417-d97a-45cb-824c-7a7467783830",
     "managedIdentityOperatorRoleId": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/', variables('managedIdentityOperatorRoleObjectId'))]",
-    "deliveryRedisStorageName": "[concat(parameters('environmentName'),'rsto',uniqueString(resourceGroup().id))]",
-    "nestedACRDeploymentName": "[concat('azuredeploy-acr-',parameters('acrResourceGroupName'),parameters('environmentName'))]",
+    "deliveryRedisStorageName": "[concat('rsto',uniqueString(resourceGroup().id))]",
+    "nestedACRDeploymentName": "[concat('azuredeploy-acr-',parameters('acrResourceGroupName'))]",
     "aksLogAnalyticsNamePrefix": "logsAnalytics",
     "monitoringMetricsPublisherRole": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/3913510d-42f4-4e42-8a64-420c390055eb')]",
     "acrPullRole": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/7f951dda-4ed3-4680-a7ca-43fe172d538d')]",
     "virtualMachineContributorRole": "[concat(subscription().Id, '/providers/Microsoft.Authorization/roleDefinitions/9980e02c-c2be-4d73-94e8-173b1dc7cf3c')]",
-    "nodeResourceGroupName": "[concat('rg-', variables('environmentSettings')[parameters('environmentName')].aksClusterName, '-nodepools')]",
-    "environmentSettings": {
-      "dev": {
-        "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
-        "acrName": "[variables('acrName')]",
-        "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
-        "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
-        "deliveryRedisCacheSKU": "Basic",
-        "deliveryRedisCacheFamily": "C",
-        "deliveryRedisCacheCapacity": 0,
-        "deliveryCosmosDbName": "[concat(parameters('environmentName'),'-d-', uniqueString(resourceGroup().id))]",
-        "deliveryRedisName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
-        "deliveryKeyVaultName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
-        "packageMongoDbName": "[concat(parameters('environmentName'),'-p-',uniqueString(resourceGroup().id))]",
-        "ingestionSBNamespace": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
-        "ingestionSBName": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
-        "ingestionServiceAccessKey": "IngestionServiceAccessKey",
-        "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
-        "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
-        "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
-        "workflowServiceAccessKey": "WorkflowServiceAccessKey",
-        "agentCount": 2,
-        "agentVMSize": "Standard_D2_v2",
-        "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
-        "workspaceSku": "Free",
-        "workspaceRetentionInDays": null
-      },
-      "qa": {
-        "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
-        "acrName": "[variables('acrName')]",
-        "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
-        "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
-        "deliveryRedisCacheSKU": "Basic",
-        "deliveryRedisCacheFamily": "C",
-        "deliveryRedisCacheCapacity": 0,
-        "deliveryCosmosDbName": "[concat(parameters('environmentName'),'-d-', uniqueString(resourceGroup().id))]",
-        "deliveryRedisName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
-        "deliveryKeyVaultName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
-        "packageMongoDbName": "[concat(parameters('environmentName'),'-p-',uniqueString(resourceGroup().id))]",
-        "ingestionSBNamespace": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
-        "ingestionSBName": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
-        "ingestionServiceAccessKey": "IngestionServiceAccessKey",
-        "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
-        "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
-        "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
-        "workflowServiceAccessKey": "WorkflowServiceAccessKey",
-        "agentCount": 3,
-        "agentVMSize": "Standard_D2_v2",
-        "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
-        "workspaceSku": "Free",
-        "workspaceRetentionInDays": null
-      },
-      "staging": {
-        "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
-        "acrName": "[variables('acrName')]",
-        "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
-        "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
-        "deliveryRedisCacheSKU": "Standard",
-        "deliveryRedisCacheFamily": "C",
-        "deliveryRedisCacheCapacity": 1,
-        "deliveryCosmosDbName": "[concat(parameters('environmentName'),'-d-', uniqueString(resourceGroup().id))]",
-        "deliveryRedisName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
-        "deliveryKeyVaultName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
-        "packageMongoDbName": "[concat(parameters('environmentName'),'-p-',uniqueString(resourceGroup().id))]",
-        "ingestionSBNamespace": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
-        "ingestionSBName": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
-        "ingestionServiceAccessKey": "IngestionServiceAccessKey",
-        "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
-        "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
-        "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
-        "workflowServiceAccessKey": "WorkflowServiceAccessKey",
-        "agentCount": 3,
-        "agentVMSize": "Standard_D2_v2",
-        "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
-        "workspaceSku": "PerGB2018",
-        "workspaceRetentionInDays": 730
-      },
-      "prod": {
-        "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
-        "acrName": "[concat(parameters('environmentName'),variables('acrName'))]",
-        "deliveryRedisStorageName": "[variables('deliveryRedisStorageName')]",
-        "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
-        "deliveryRedisCacheSKU": "Standard",
-        "deliveryRedisCacheFamily": "C",
-        "deliveryRedisCacheCapacity": 1,
-        "deliveryCosmosDbName": "[concat(parameters('environmentName'),'-d-', uniqueString(resourceGroup().id))]",
-        "deliveryRedisName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
-        "deliveryKeyVaultName": "[concat(parameters('environmentName'),'-d-',uniqueString(resourceGroup().id))]",
-        "packageMongoDbName": "[concat(parameters('environmentName'),'-p-',uniqueString(resourceGroup().id))]",
-        "ingestionSBNamespace": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
-        "ingestionSBName": "[concat(parameters('environmentName'),'-i-',uniqueString(resourceGroup().id))]",
-        "ingestionServiceAccessKey": "IngestionServiceAccessKey",
-        "droneSchedulerKeyVaultName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
-        "droneSchedulerCosmosDbName": "[concat(parameters('environmentName'),'-ds-',uniqueString(resourceGroup().id))]",
-        "workflowKeyVaultName": "[concat(parameters('environmentName'),'-wf-',uniqueString(resourceGroup().id))]",
-        "workflowServiceAccessKey": "WorkflowServiceAccessKey",
-        "agentCount": 3,
-        "agentVMSize": "Standard_D2_v2",
-        "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
-        "workspaceSku": "PerGB2018",
-        "workspaceRetentionInDays": 730
-      }
-    }
+    "nodeResourceGroupName": "[concat('rg-', variables('aksClusterName'), '-nodepools')]",
+    "aksClusterName": "[uniqueString(variables('clusterNamePrefix'), resourceGroup().id)]",
+    "deliveryRedisStorageId": "[resourceId('Microsoft.Storage/storageAccounts',variables('deliveryRedisStorageName'))]",
+    "deliveryRedisCacheSKU": "Basic",
+    "deliveryRedisCacheFamily": "C",
+    "deliveryRedisCacheCapacity": 0,
+    "deliveryCosmosDbName": "[concat('d-', uniqueString(resourceGroup().id))]",
+    "deliveryRedisName": "[concat('d-',uniqueString(resourceGroup().id))]",
+    "deliveryKeyVaultName": "[concat('d-',uniqueString(resourceGroup().id))]",
+    "packageMongoDbName": "[concat('p-',uniqueString(resourceGroup().id))]",
+    "ingestionSBNamespace": "[concat('i-',uniqueString(resourceGroup().id))]",
+    "ingestionSBName": "[concat('i-',uniqueString(resourceGroup().id))]",
+    "ingestionServiceAccessKey": "IngestionServiceAccessKey",
+    "droneSchedulerKeyVaultName": "[concat('ds-',uniqueString(resourceGroup().id))]",
+    "droneSchedulerCosmosDbName": "[concat('ds-',uniqueString(resourceGroup().id))]",
+    "workflowKeyVaultName": "[concat('wf-',uniqueString(resourceGroup().id))]",
+    "workflowServiceAccessKey": "WorkflowServiceAccessKey",
+    "agentCount": 2,
+    "agentVMSize": "Standard_D2_v2",
+    "workspaceName": "[concat('la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
+    "workspaceSku": "Free",
+    "workspaceRetentionInDays": 7
   },
   "resources": [
     {
@@ -210,7 +124,7 @@
       "apiVersion": "2020-10-01",
       "resourceGroup": "[parameters('acrResourceGroupName')]",
       "dependsOn": [
-        "[resourceId('Microsoft.ContainerService/managedClusters', variables('environmentSettings')[parameters('environmentName')].aksClusterName)]"
+        "[resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName'))]"
       ],
       "properties": {
         "mode": "Incremental",
@@ -226,7 +140,7 @@
               ],
               "properties": {
                 "roleDefinitionId": "[variables('acrPullRole')]",
-                "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('environmentSettings')[parameters('environmentName')].aksClusterName), '2020-03-01').identityProfile.kubeletidentity.objectId]",
+                "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName')), '2020-03-01').identityProfile.kubeletidentity.objectId]",
                 "principalType": "ServicePrincipal"
               }
             }
@@ -238,13 +152,13 @@
     },
     {
       "type": "Microsoft.OperationalInsights/workspaces",
-      "name": "[variables('environmentSettings')[parameters('environmentName')].workspaceName]",
+      "name": "[variables('workspaceName')]",
       "apiVersion": "2020-08-01",
       "location": "[resourceGroup().location]",
       "properties": {
-        "retentionInDays": "[variables('environmentSettings')[parameters('environmentName')].workspaceRetentionInDays]",
+        "retentionInDays": "[variables('workspaceRetentionInDays')]",
         "sku": {
-          "Name": "[variables('environmentSettings')[parameters('environmentName')].workspaceSku]"
+          "Name": "[variables('workspaceSku')]"
         },
         "features": {
           "searchVersion": 1
@@ -252,7 +166,7 @@
       }
     },
     {
-      "name": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
+      "name": "[variables('aksClusterName')]",
       "type": "Microsoft.ContainerService/managedClusters",
       "apiVersion": "2021-03-01",
       "location": "[resourceGroup().location]",
@@ -260,18 +174,18 @@
         "environment": "shared cluster"
       },
       "dependsOn": [
-        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('environmentSettings')[parameters('environmentName')].workspaceName)]"
+        "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
       ],
       "properties": {
         "kubernetesVersion": "[parameters('kubernetesVersion')]",
         "nodeResourceGroup": "[variables('nodeResourceGroupName')]",
-        "dnsPrefix": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
+        "dnsPrefix": "[variables('aksClusterName')]",
         "agentPoolProfiles": [
           {
             "name": "agentpool",
             "osDiskSizeGB": "[parameters('osDiskSizeGB')]",
-            "count": "[variables('environmentSettings')[parameters('environmentName')].agentCount]",
-            "vmSize": "[variables('environmentSettings')[parameters('environmentName')].agentVMSize]",
+            "count": "[variables('agentCount')]",
+            "vmSize": "[variables('agentVMSize')]",
             "osType": "[parameters('osType')]",
             "storageProfile": "ManagedDisks",
             "mode": "System"
@@ -294,7 +208,7 @@
         "addonProfiles": {
           "omsagent": {
             "config": {
-              "logAnalyticsWorkspaceResourceID": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('environmentSettings')[parameters('environmentName')].workspaceName)]"
+              "logAnalyticsWorkspaceResourceID": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
             },
             "enabled": true
           }
@@ -305,7 +219,7 @@
       }
     },
     {
-      "name": "[variables('environmentSettings')[parameters('environmentName')].deliveryRedisStorageName]",
+      "name": "[variables('deliveryRedisStorageName')]",
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2019-06-01",
       "sku": {
@@ -316,55 +230,54 @@
       "comments": "This storage account is used by Delivery Redis",
       "tags": {
         "displayName": "Storage account for inflight deliveries",
-        "app": "fabrikam-delivery",
-        "environment": "[parameters('environmentName')]"
+        "app": "fabrikam-delivery"
       }
     },
     {
       "type": "Microsoft.ContainerService/managedClusters/providers/roleAssignments",
       "apiVersion": "2021-04-01-preview",
-      "name": "[concat(variables('environmentSettings')[parameters('environmentName')].aksClusterName, '/Microsoft.Authorization/', guid(concat(resourceGroup().id), variables('monitoringMetricsPublisherRole')))]",
+      "name": "[concat(variables('aksClusterName'), '/Microsoft.Authorization/', guid(concat(resourceGroup().id), variables('monitoringMetricsPublisherRole')))]",
       "dependsOn": [
-        "[resourceId('Microsoft.ContainerService/managedClusters', variables('environmentSettings')[parameters('environmentName')].aksClusterName)]"
+        "[resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName'))]"
       ],
       "properties": {
         "roleDefinitionId": "[variables('monitoringMetricsPublisherRole')]",
-        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('environmentSettings')[parameters('environmentName')].aksClusterName), '2020-03-01').identityProfile.kubeletidentity.objectId]",
+        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName')), '2020-03-01').identityProfile.kubeletidentity.objectId]",
         "principalType": "ServicePrincipal"
       }
     },
     {
       "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
-      "name": "[concat(parameters('deliveryIdName'), '/Microsoft.Authorization/', guid(concat('msi-delivery',parameters('environmentName')), resourceGroup().id))]",
+      "name": "[concat(parameters('deliveryIdName'), '/Microsoft.Authorization/', guid('msi-delivery', resourceGroup().id))]",
       "apiVersion": "2021-04-01-preview",
       "comments": "Grant the AKS cluster Managed Identity access to the delivery managed id",
       "properties": {
         "roleDefinitionId": "[variables('managedIdentityOperatorRoleId')]",
-        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('environmentSettings')[parameters('environmentName')].aksClusterName), '2020-03-01').identityProfile.kubeletidentity.objectId]",
+        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName')), '2020-03-01').identityProfile.kubeletidentity.objectId]",
         "principalType": "ServicePrincipal",
         "scope": "[concat(subscription().id, '/resourceGroups/',  resourceGroup().name, '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',parameters('deliveryIdName'))]"
       }
     },
     {
       "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
-      "name": "[concat(parameters('workflowIdName'), '/Microsoft.Authorization/', guid(concat('msi-workflow',parameters('environmentName')), resourceGroup().id))]",
+      "name": "[concat(parameters('workflowIdName'), '/Microsoft.Authorization/', guid('msi-workflow', resourceGroup().id))]",
       "apiVersion": "2021-04-01-preview",
       "comments": "Grant the AKS cluster Managed Identity access to the workflow managed id",
       "properties": {
         "roleDefinitionId": "[variables('managedIdentityOperatorRoleId')]",
-        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('environmentSettings')[parameters('environmentName')].aksClusterName), '2020-03-01').identityProfile.kubeletidentity.objectId]",
+        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName')), '2020-03-01').identityProfile.kubeletidentity.objectId]",
         "principalType": "ServicePrincipal",
         "scope": "[concat(subscription().id, '/resourceGroups/',  resourceGroup().name, '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',parameters('workflowIdName'))]"
       }
     },
     {
       "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
-      "name": "[concat(parameters('droneSchedulerIdName'), '/Microsoft.Authorization/', guid(concat('msi-dronescheduler',parameters('environmentName')), resourceGroup().id))]",
+      "name": "[concat(parameters('droneSchedulerIdName'), '/Microsoft.Authorization/', guid('msi-dronescheduler', resourceGroup().id))]",
       "apiVersion": "2021-04-01-preview",
       "comments": "Grant the AKS cluster Managed Identity access to the drone scheduler managed id",
       "properties": {
         "roleDefinitionId": "[variables('managedIdentityOperatorRoleId')]",
-        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('environmentSettings')[parameters('environmentName')].aksClusterName), '2020-03-01').identityProfile.kubeletidentity.objectId]",
+        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName')), '2020-03-01').identityProfile.kubeletidentity.objectId]",
         "principalType": "ServicePrincipal",
         "scope": "[concat(subscription().id, '/resourceGroups/',  resourceGroup().name, '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',parameters('droneSchedulerIdName'))]"
       }
@@ -374,7 +287,7 @@
       "name": "EnsureClusterUserAssignedHasRbacToManageVMSS",
       "apiVersion": "2020-10-01",
       "dependsOn": [
-        "[resourceId('Microsoft.ContainerService/managedClusters', variables('environmentSettings')[parameters('environmentName')].aksClusterName)]"
+        "[resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName'))]"
       ],
       "resourceGroup": "[variables('nodeResourceGroupName')]",
       "properties": {
@@ -390,7 +303,7 @@
               "comments": "It is required to grant the AKS cluster with Virtual Machine Contributor role permissions over the cluster infrastructure resource group to work with Managed Identities and aad-pod-identity. Otherwise MIC component fails while attempting to update MSI on VMSS cluster nodes",
               "properties": {
                 "roleDefinitionId": "[variables('virtualMachineContributorRole')]",
-                "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('environmentSettings')[parameters('environmentName')].aksClusterName), '2020-03-01').identityProfile.kubeletidentity.objectId]",
+                "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName')), '2020-03-01').identityProfile.kubeletidentity.objectId]",
                 "principalType": "ServicePrincipal"
               }
             }
@@ -401,7 +314,7 @@
   ],
   "outputs": {
     "aksClusterName": {
-      "value": "[variables('environmentSettings')[parameters('environmentName')].aksClusterName]",
+      "value": "[variables('aksClusterName')]",
       "type": "string"
     },
     "acrDeploymentName": {
