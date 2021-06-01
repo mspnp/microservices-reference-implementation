@@ -1,0 +1,3 @@
+[submodule "workload"]
+	path = workload
+	url = https://github.com/mspnp/aks-fabrikam-dronedelivery-workload.git
