@@ -51,11 +51,10 @@ export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor" -o json) && \
 export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
 export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r)
 
-# It is needed later on in the two paths
 export DEPLOYMENT_SUFFIX=$(date +%S%N)
 ```
 
-## Deployment for dev
+## Deployment
 
 > Note: this deployment might take up to 20 minutes
 
@@ -95,8 +94,8 @@ export ACR_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp 
 export ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
 
 # Deploy the managed cluster and all related resources (This step takes about 15 minutes)
-export DEV_DEPLOYMENT_NAME=azuredeploy-$DEPLOYMENT_SUFFIX-dev
-az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --template-file azuredeploy.json \
+export DEPLOYMENT_NAME=azuredeploy-$DEPLOYMENT_SUFFIX
+az deployment group create -g $RESOURCE_GROUP --name $DEPLOYMENT_NAME --template-file azuredeploy.json \
 --parameters servicePrincipalClientId=$SP_APP_ID \
             servicePrincipalClientSecret=$SP_CLIENT_SECRET \
             kubernetesVersion=$KUBERNETES_VERSION \
@@ -111,7 +110,7 @@ az deployment group create -g $RESOURCE_GROUP --name $DEV_DEPLOYMENT_NAME --temp
 Get the cluster name output from Azure Deploy.
 
 ```bash
-export CLUSTER_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.aksClusterName.value -o tsv)
+export CLUSTER_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME --query properties.outputs.aksClusterName.value -o tsv)
 ```
 
 Download kubectl and create a Kubernetes namespace.
@@ -221,7 +220,7 @@ Deploy the Delivery service.
 
 ```bash
 # Extract pod identity outputs from deployment
-export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
+export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
 export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DELIVERY_ID_NAME --query clientId -o tsv) && \
 export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
@@ -311,7 +310,7 @@ Create and set up pod identity.
 
 ```bash
 # Extract outputs from deployment and get Azure account details
-export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.workflowPrincipalResourceId.value -o tsv) && \
+export WORKFLOW_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME --query properties.outputs.workflowPrincipalResourceId.value -o tsv) && \
 export WORKFLOW_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query clientId -o tsv) && \
 export SUBSCRIPTION_ID=$(az account show --query id --output tsv) && \
 export TENANT_ID=$(az account show --query tenantId --output tsv)
@@ -406,7 +405,7 @@ Create and set up pod identity.
 
 ```bash
 # Extract outputs from deployment
-export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $DEV_DEPLOYMENT_NAME --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
+export DRONESCHEDULER_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME --query properties.outputs.droneSchedulerPrincipalResourceId.value -o tsv) && \
 export DRONESCHEDULER_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query clientId -o tsv)
 ```
 
