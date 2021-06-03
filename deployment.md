@@ -61,7 +61,7 @@ export DEPLOYMENT_SUFFIX=$(date +%S%N)
 Infrastructure
 
 ```bash
-#Deploy the managed identities (This takes less than two  minutes.)
+# Deploy the managed identities (This takes less than two  minutes.)
 
 export PREREQS_DEPLOYMENT_NAME=workload-stamp-prereqs-main
 
@@ -89,11 +89,40 @@ export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrat
 # Deploy all the workload related resources  (This step takes about 10 minutes)
 az deployment group create -f ./workload/workload-stamp.json -g $RESOURCE_GROUP -p droneSchedulerPrincipalId=$DRONESCHEDULER_ID_PRINCIPAL_ID -p workflowPrincipalId=$WORKFLOW_ID_PRINCIPAL_ID -p deliveryPrincipalId=$DELIVERY_ID_PRINCIPAL_ID -p acrResourceGroupName=$RESOURCE_GROUP_ACR
 
-#Get outputs from workload deploy
+# Get outputs from workload deploy
 export ACR_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.acrName.value -o tsv) && \
 export ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
+```
 
-# Deploy the managed cluster and all related resources (This step takes about 15 minutes)
+The Secrets Store CSI Driver for Kubernetes allows for the integration of Azure Key Vault as a secrets store with a Kubernetes cluster via a CSI volume. Before creating a managed AKS cluster that can use the Secrets Store CSI Driver, you must enable the AKS-AzureKeyVaultSecretsProvider feature flag on your subscription.
+
+```bash
+# Register the AKS-AzureKeyVaultSecretsProvider feature flag by using the az feature register command
+
+az feature register --namespace "Microsoft.ContainerService" --name "AKS-AzureKeyVaultSecretsProvider"
+
+# It may take a almost 30 minutes for the status to show Registered. Verify the registration status by using the az feature list command:
+
+az feature list -o table --query "[?contains(name, 'Microsoft.ContainerService/AKS-AzureKeyVaultSecretsProvider')].{Name:name,State:properties.state}"
+
+# When ready, refresh the registration of the Microsoft.ContainerService resource provider by using the az provider register command:
+
+az provider register --namespace Microsoft.ContainerService
+```
+
+You also need the aks-preview Azure CLI extension version 0.5.9 or later. Install the aks-preview Azure CLI extension by using the az extension add command.
+
+```bash
+# Install the aks-preview extension
+az extension add --name aks-preview
+
+# Update the extension to make sure you have the latest version installed
+az extension update --name aks-preview
+```
+
+Deploy the managed cluster and all related resources (This step takes about 15 minutes)
+
+```bash
 export DEPLOYMENT_NAME=azuredeploy-$DEPLOYMENT_SUFFIX
 az deployment group create -g $RESOURCE_GROUP --name $DEPLOYMENT_NAME --template-file azuredeploy.json \
 --parameters servicePrincipalClientId=$SP_APP_ID \
@@ -146,11 +175,66 @@ export AI_IKEY=$(az resource show -g $RESOURCE_GROUP -n $AI_NAME --resource-type
 kubectl apply -f k8s/k8s-rbac-ai.yaml
 ```
 
-## Setup AAD pod identity and key vault flexvol infrastructure
+## Create a SecretProviderClass custom resource
 
-Complete instructions can be found at https://github.com/Azure/kubernetes-keyvault-flexvol
+Verify that the secrets-store pods are running in the kube-system namespace
 
-Note: the tested nmi version was 1.4. It enables namespaced pod identity.
+```bash
+kubectl get pods -n kube-system
+```
+
+You should see an output similar to this:
+
+```bash
+NAME                                     READY   STATUS    RESTARTS   AGE
+aks-secrets-store-csi-driver-4bjzx       3/3     Running   2          28m
+aks-secrets-store-csi-driver-b22bj       3/3     Running   1          28m
+aks-secrets-store-provider-azure-2k5mx   1/1     Running   0          28m
+aks-secrets-store-provider-azure-l5w98   1/1     Running   0          28m
+```
+
+To use and configure the Secrets Store CSI driver for your AKS cluster, create a SecretProviderClass custom resource.
+
+```bash
+export WORKFLOW_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.workflowKeyVaultName.value -o tsv)
+export TENANT_ID=$(az account show --query tenantId --output tsv)
+
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: workflow-secrets-csi-akv
+  namespace: backend-dev
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "true"
+    keyvaultName: "${WORKFLOW_KEYVAULT_NAME}"
+    objects:  |
+      array:
+        - |
+          objectName: QueueName
+          objectAlias: QueueName
+          objectType: secret
+        - |
+          objectName: QueueEndpoint
+          objectAlias: QueueEndpoint
+          objectType: secret
+        - |
+          objectName: QueueAccessPolicyName
+          objectAlias: QueueAccessPolicyName
+          objectType: secret
+        - |
+          objectName: QueueAccessPolicyKey
+          objectAlias: QueueAccessPolicyKey
+          objectType: secret
+        - |
+          objectName: ApplicationInsights--InstrumentationKey
+          objectAlias: ApplicationInsights--InstrumentationKey
+          objectType: secret
+    tenantId: "${TENANT_ID}"
+EOF
+```
 
 ```bash
 # setup AAD pod identity
@@ -159,8 +243,6 @@ helm repo add aad-pod-identity https://raw.githubusercontent.com/Azure/aad-pod-i
 helm repo update
 
 helm install aad-pod-identity aad-pod-identity/aad-pod-identity --set installCRDs=true --set nmi.allowNetworkPluginKubenet=true  --namespace kube-system --version 4.0.0
-
-kubectl create -f https://raw.githubusercontent.com/Azure/kubernetes-keyvault-flexvol/master/deployment/kv-flexvol-installer.yaml
 ```
 
 ## Deploy the ingress controller
@@ -183,7 +265,7 @@ helm install nginx-ingress-dev stable/nginx-ingress --namespace ingress-controll
 until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-dev-controller -n ingress-controllers -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
 
 export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv) && \
-export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-ingest-dev" && \
+export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-$RANDOM-ing" && \
 export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
 
 # Create a self-signed certificate for TLS

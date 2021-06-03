@@ -123,15 +123,9 @@ spec:
         - name: no_proxy
           value: 169.254.169.254
       volumes:
-      - name: workflow
-        flexVolume:
-          driver: "azure/kv"
-          options:
-            usepodidentity: "true"
-            keyvaultname: {{ .Values.keyvault.name }}
-            keyvaultobjectnames: QueueName;QueueEndpoint;QueueAccessPolicyName;QueueAccessPolicyKey;ApplicationInsights--InstrumentationKey
-            keyvaultobjecttypes: secret;secret;secret;secret;secret
-            keyvaultobjectversions: ""
-            resourcegroup: {{ .Values.keyvault.resourcegroup }}
-            subscriptionid: {{ .Values.keyvault.subscriptionid }}
-            tenantid: {{ .Values.keyvault.tenantid }}
+        - name: workflow
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: workflow-secrets-csi-akv
