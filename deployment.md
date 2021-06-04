@@ -101,23 +101,13 @@ The Secrets Store CSI Driver for Kubernetes allows for the integration of Azure 
 
 az feature register --namespace "Microsoft.ContainerService" --name "AKS-AzureKeyVaultSecretsProvider"
 
-# It may take a almost 30 minutes for the status to show Registered. Verify the registration status by using the az feature list command:
+# It may take almost 30 minutes for the status to show Registered. Verify the registration status by using the az feature list command:
 
 az feature list -o table --query "[?contains(name, 'Microsoft.ContainerService/AKS-AzureKeyVaultSecretsProvider')].{Name:name,State:properties.state}"
 
 # When ready, refresh the registration of the Microsoft.ContainerService resource provider by using the az provider register command:
 
 az provider register --namespace Microsoft.ContainerService
-```
-
-You also need the aks-preview Azure CLI extension version 0.5.9 or later. Install the aks-preview Azure CLI extension by using the az extension add command.
-
-```bash
-# Install the aks-preview extension
-az extension add --name aks-preview
-
-# Update the extension to make sure you have the latest version installed
-az extension update --name aks-preview
 ```
 
 Deploy the managed cluster and all related resources (This step takes about 15 minutes)
@@ -265,7 +255,7 @@ helm install nginx-ingress-dev stable/nginx-ingress --namespace ingress-controll
 until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services/nginx-ingress-dev-controller -n ingress-controllers -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
 
 export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv) && \
-export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-$RANDOM-ing" && \
+export EXTERNAL_INGEST_DNS_NAME="${RESOURCE_GROUP}-${RANDOM}-ing" && \
 export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
 
 # Create a self-signed certificate for TLS
