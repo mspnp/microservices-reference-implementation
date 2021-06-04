@@ -211,6 +211,12 @@
               "logAnalyticsWorkspaceResourceID": "[resourceId('Microsoft.OperationalInsights/workspaces', variables('workspaceName'))]"
             },
             "enabled": true
+          },
+          "azureKeyvaultSecretsProvider": {
+            "enabled": true,
+            "config": {
+                "enableSecretRotation": "false"
+            }
           }
         }
       },
