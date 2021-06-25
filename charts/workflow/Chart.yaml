@@ -1,4 +1,13 @@
+apiVersion: v2
 name: workflow
 version: v0.1.0
 appVersion: v0.1.0
 description: Fabrikam Drone Delivery Workflow Service
+dependencies:
+  - name: workflow-dev
+    repository: "file://envs/workflow-dev"
+    version: ">= 0.0.1"
+    tags:
+      - dev
+    import-values:
+      - data

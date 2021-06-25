@@ -1,4 +1,13 @@
+apiVersion: v2
 name: ingestion
 version: v0.1.0
 appVersion: v0.1.0
 description: Fabrikam Drone Ingestion Service
+dependencies:
+- name: ingestion-dev
+  repository: "file://envs/ingestion-dev"
+  version: ">= 0.0.1"
+  tags:
+    - dev
+  import-values:
+    - data

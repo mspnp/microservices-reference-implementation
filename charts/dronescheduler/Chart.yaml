@@ -1,4 +1,13 @@
+apiVersion: v2
 name: dronescheduler
 version: v0.1.0
 appVersion: v0.1.0
 description: Fabrikam Drone Scheduler Service
+dependencies:
+  - name: dronescheduler-dev
+    repository: "file://envs/dronescheduler-dev"
+    version: ">= 0.0.1"
+    tags:
+      - dev
+    import-values:
+      - data
