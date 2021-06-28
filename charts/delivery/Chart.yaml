@@ -6,7 +6,8 @@ description: Fabrikam Drone Delivery Service
 dependencies:
   - name: delivery-dev
     repository: "file://envs/delivery-dev"
-    version: ">= 0.0.1"
+    version: "v0.1.0"
+    condition: envs.dev
     tags:
       - dev
     import-values:
