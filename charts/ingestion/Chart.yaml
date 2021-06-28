@@ -3,6 +3,10 @@ name: ingestion
 version: v0.1.0
 appVersion: v0.1.0
 description: Fabrikam Drone Ingestion Service
+type: application
+home: https://docs.microsoft.com/azure/architecture/reference-architectures/microservices/aks
+sources:
+  - https://github.com/mspnp/microservices-reference-implementation
 dependencies:
 - name: ingestion-dev
   repository: "file://envs/ingestion-dev"
