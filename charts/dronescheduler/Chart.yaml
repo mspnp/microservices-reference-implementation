@@ -10,7 +10,7 @@ sources:
 dependencies:
   - name: dronescheduler-dev
     repository: "file://envs/dronescheduler-dev"
-    version: ">= 0.0.1"
+    version: "v0.1.0"
     tags:
       - dev
     import-values:
