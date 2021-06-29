@@ -295,7 +295,7 @@ export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DE
 export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
 # Deploy the service
-helm package delivery-v0.1.0-dev charts/delivery/ -u && \
+helm package charts/delivery/ -u && \
 helm install delivery-v0.1.0-dev delivery-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=delivery \
@@ -344,7 +344,7 @@ export COSMOSDB_CONNECTION=$(az cosmosdb keys list --type connection-strings --n
 export COSMOSDB_COL_NAME=packages
 
 # Deploy service
-helm package package-v0.1.0-dev charts/package/ -u && \
+helm package charts/package/ -u && \
 helm install package-v0.1.0-dev package-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=package \
@@ -392,7 +392,7 @@ Deploy the Workflow service.
 
 ```bash
 # Deploy the service
-helm package workflow-v0.1.0-dev charts/workflow/ -u && \
+helm package charts/workflow/ -u && \
 helm install workflow-v0.1.0-dev workflow-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=workflow \
@@ -436,7 +436,7 @@ Deploy the Ingestion service.
 export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
 
 # Deploy service
-helm package ingestion-v0.1.0-dev charts/ingestion/ -u && \
+helm package charts/ingestion/ -u && \
 helm install ingestion-v0.1.0-dev ingestion-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=ingestion \
@@ -493,7 +493,7 @@ Deploy the dronescheduler service.
 
 ```bash
 # Deploy the service
-helm package dronescheduler-v0.1.0-dev charts/dronescheduler/ -u && \
+helm package charts/dronescheduler/ -u && \
 helm install dronescheduler-v0.1.0-dev dronescheduler-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=dronescheduler \
