@@ -148,10 +148,8 @@ kubectl create namespace backend-dev
 Install and initialize Helm.
 
 ```bash
-# install helm client side
-curl -L https://git.io/get_helm.sh | bash -s -- -v v3.5.4
-helm repo add stable https://charts.helm.sh/stable
-helm repo update
+# install helm 3
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 ```
 
 Integrate Application Insights instance.
@@ -297,7 +295,8 @@ export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DE
 export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
 # Deploy the service
-helm install delivery-v0.1.0-dev charts/delivery/ \
+helm package charts/delivery/ -u && \
+helm install delivery-v0.1.0-dev delivery-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=delivery \
      --set dockerregistry=$ACR_SERVER \
@@ -345,7 +344,8 @@ export COSMOSDB_CONNECTION=$(az cosmosdb keys list --type connection-strings --n
 export COSMOSDB_COL_NAME=packages
 
 # Deploy service
-helm install package-v0.1.0-dev charts/package/ \
+helm package charts/package/ -u && \
+helm install package-v0.1.0-dev package-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=package \
      --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
@@ -392,7 +392,8 @@ Deploy the Workflow service.
 
 ```bash
 # Deploy the service
-helm install workflow-v0.1.0-dev charts/workflow/ \
+helm package charts/workflow/ -u && \
+helm install workflow-v0.1.0-dev workflow-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=workflow \
      --set dockerregistry=$ACR_SERVER \
@@ -435,7 +436,8 @@ Deploy the Ingestion service.
 export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
 
 # Deploy service
-helm install ingestion-v0.1.0-dev charts/ingestion/ \
+helm package charts/ingestion/ -u && \
+helm install ingestion-v0.1.0-dev ingestion-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=ingestion \
      --set dockerregistry=$ACR_SERVER \
@@ -491,7 +493,8 @@ Deploy the dronescheduler service.
 
 ```bash
 # Deploy the service
-helm install dronescheduler-v0.1.0-dev charts/dronescheduler/ \
+helm package charts/dronescheduler/ -u && \
+helm install dronescheduler-v0.1.0-dev dronescheduler-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=dronescheduler \
      --set dockerregistry=$ACR_SERVER \

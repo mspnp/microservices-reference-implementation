@@ -1,4 +1,18 @@
+apiVersion: v2
 name: workflow
 version: v0.1.0
 appVersion: v0.1.0
 description: Fabrikam Drone Delivery Workflow Service
+type: application
+home: https://docs.microsoft.com/azure/architecture/reference-architectures/microservices/aks
+sources:
+  - https://github.com/mspnp/microservices-reference-implementation
+dependencies:
+  - name: workflow-dev
+    repository: "file://envs/workflow-dev"
+    version: "v0.1.0"
+    condition: envs.dev
+    tags:
+      - dev
+    import-values:
+      - data
