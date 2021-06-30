@@ -11,6 +11,7 @@ dependencies:
   - name: package-dev
     repository: "file://envs/package-dev"
     version: "v0.1.0"
+    condition: envs.dev
     tags:
       - dev
     import-values:
