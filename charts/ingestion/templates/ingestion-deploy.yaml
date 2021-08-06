@@ -6,10 +6,11 @@
 ##################################################################################################
 # Ingestion
 ##################################################################################################
+{{- $fullname := include "ingestion.fullname" . | replace "." "" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "ingestion.fullname" . | replace "." "" }}
+  name: {{ $fullname  }}
   labels:
     app.kubernetes.io/name: {{ include "ingestion.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -18,6 +19,7 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
     helm.sh/chart: {{ include "ingestion.chart" . }}
+    aadpodidbinding: {{ $fullname  }}
   annotations:
     kubernetes.io/change-cause: {{ .Values.reason }}
 spec:
@@ -36,6 +38,7 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: dronedelivery
         helm.sh/chart: {{ include "ingestion.chart" . }}
+        aadpodidbinding: {{ $fullname  }}
     spec:
       containers:
       - name: &ingestion-container_name fabrikam-ingestion
@@ -80,6 +83,10 @@ spec:
           limits:
             cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
             memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}
+        volumeMounts:
+        - name: ingestion
+          mountPath: /kvmnt-ing
+          readOnly: true
         env:
         - name: QUEUE_NAMESPACE
           valueFrom:
@@ -99,14 +106,21 @@ spec:
         - name: QUEUE_KEYVALUE
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-secrets
-              key: queue_keyvalue
+              name: ingestion-secrets
+              key: queue-keyvalue
         - name: APPINSIGHTS_INSTRUMENTATIONKEY
           valueFrom:
             secretKeyRef:
-              name: {{ .Release.Name }}-secrets
+              name: ingestion-secrets
               key: appinsights-ikey
         - name: APPINSIGHTS_LOGGERLEVEL
           value: {{ default "error" .Values.telemetry.level | quote }}
         - name: CONTAINER_NAME
           value: *ingestion-container_name
+      volumes:
+        - name: ingestion
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: ingestion-secrets-csi-akv
