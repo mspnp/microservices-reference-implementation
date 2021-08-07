@@ -303,7 +303,7 @@
         "roleDefinitionId": "[variables('managedIdentityOperatorRoleId')]",
         "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName')), '2020-03-01').identityProfile.kubeletidentity.objectId]",
         "principalType": "ServicePrincipal",
-        "scope": "[concat(subscription().id, '/resourceGroups/',  resourceGroup().name, '/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',parameters('ingestionIdName'))]"
+        "scope": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('ingestionIdName'))]"
       }
     },
     {
