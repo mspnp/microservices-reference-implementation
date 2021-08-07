@@ -354,7 +354,7 @@
       "type": "string"
     },
     "ingestionPrincipalResourceId": {
-      "value": "[concat(subscription().id, '/resourceGroups/',resourceGroup().name,'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',parameters('ingestionIdName'))]",
+      "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('ingestionIdName'))]",
       "type": "string"
     },
     "droneSchedulerPrincipalResourceId": {
