@@ -76,18 +76,24 @@ export DRONESCHEDULER_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $
 export DRONESCHEDULER_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $DRONESCHEDULER_ID_NAME --query principalId -o tsv) && \
 export WORKFLOW_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $WORKLOAD_PREREQS_DEPLOYMENT_NAME --query properties.outputs.workflowIdName.value -o tsv) && \
 export WORKFLOW_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $WORKFLOW_ID_NAME --query principalId -o tsv) && \
+export PACKAGE_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $WORKLOAD_PREREQS_DEPLOYMENT_NAME --query properties.outputs.packageIdName.value -o tsv) && \
+export PACKAGE_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $PACKAGE_ID_NAME --query principalId -o tsv) && \
+export INGESTION_ID_NAME=$(az deployment group show -g $RESOURCE_GROUP -n $WORKLOAD_PREREQS_DEPLOYMENT_NAME --query properties.outputs.ingestionIdName.value -o tsv) && \
+export INGESTION_ID_PRINCIPAL_ID=$(az identity show -g $RESOURCE_GROUP -n $INGESTION_ID_NAME --query principalId -o tsv) && \
 export RESOURCE_GROUP_ACR=$(az deployment sub show -n $PREREQS_DEPLOYMENT_NAME --query properties.outputs.acrResourceGroupName.value -o tsv)
 
 # Wait for AAD propagation
 until az ad sp show --id $DELIVERY_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id $DRONESCHEDULER_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 until az ad sp show --id $WORKFLOW_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id $INGESTION_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
+until az ad sp show --id $PACKAGE_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for AAD propagation" && sleep 5; done
 
 # Export the kubernetes cluster version
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "orchestrators[?default!=null].orchestratorVersion" -o tsv)
 
 # Deploy all the workload related resources  (This step takes about 10 minutes)
-az deployment group create -f ./workload/workload-stamp.json -g $RESOURCE_GROUP -p droneSchedulerPrincipalId=$DRONESCHEDULER_ID_PRINCIPAL_ID -p workflowPrincipalId=$WORKFLOW_ID_PRINCIPAL_ID -p deliveryPrincipalId=$DELIVERY_ID_PRINCIPAL_ID -p acrResourceGroupName=$RESOURCE_GROUP_ACR
+az deployment group create -f ./workload/workload-stamp.json -g $RESOURCE_GROUP -p droneSchedulerPrincipalId=$DRONESCHEDULER_ID_PRINCIPAL_ID -p workflowPrincipalId=$WORKFLOW_ID_PRINCIPAL_ID -p deliveryPrincipalId=$DELIVERY_ID_PRINCIPAL_ID -p ingestionPrincipalId=$INGESTION_ID_PRINCIPAL_ID -p packagePrincipalId=$PACKAGE_ID_PRINCIPAL_ID -p acrResourceGroupName=$RESOURCE_GROUP_ACR
 
 # Get outputs from workload deploy
 export ACR_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.acrName.value -o tsv) && \
@@ -120,6 +126,7 @@ az deployment group create -g $RESOURCE_GROUP --name $DEPLOYMENT_NAME --template
             kubernetesVersion=$KUBERNETES_VERSION \
             sshRSAPublicKey="$(cat $SSH_PUBLIC_KEY_FILE)" \
             deliveryIdName=$DELIVERY_ID_NAME \
+            ingestionIdName=$INGESTION_ID_NAME \
             droneSchedulerIdName=$DRONESCHEDULER_ID_NAME \
             workflowIdName=$WORKFLOW_ID_NAME \
             acrResourceGroupName=$RESOURCE_GROUP_ACR \
@@ -181,10 +188,11 @@ aks-secrets-store-provider-azure-2k5mx   1/1     Running   0          28m
 aks-secrets-store-provider-azure-l5w98   1/1     Running   0          28m
 ```
 
-To use and configure the Secrets Store CSI driver for your AKS cluster, create a SecretProviderClass custom resource.
+To use and configure the Secrets Store CSI driver for your AKS cluster, create a SecretProviderClass custom resource for the Workflow and the Ingestion service.
 
 ```bash
 export WORKFLOW_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.workflowKeyVaultName.value -o tsv)
+export INGESTION_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.ingestionKeyVaultName.value -o tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
 
 cat <<EOF | kubectl apply -f -
@@ -222,6 +230,39 @@ spec:
           objectType: secret
     tenantId: "${TENANT_ID}"
 EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: ingestion-secrets-csi-akv
+  namespace: backend-dev
+spec:
+  provider: azure
+  secretObjects:
+  - secretName: ingestion-secrets
+    type: Opaque
+    data: 
+    - objectName: Queue--Key
+      key: queue-keyvalue
+    - objectName: ApplicationInsights--InstrumentationKey
+      key: appinsights-ikey
+  parameters:
+    usePodIdentity: "true"
+    keyvaultName: "${INGESTION_KEYVAULT_NAME}"
+    objects:  |
+      array:
+        - |
+          objectName: Queue--Key
+          objectAlias: Queue--Key
+          objectType: secret
+        - |
+          objectName: ApplicationInsights--InstrumentationKey
+          objectAlias: ApplicationInsights--InstrumentationKey
+          objectType: secret
+    tenantId: "${TENANT_ID}"
+EOF
+
 ```
 
 ```bash
@@ -414,13 +455,13 @@ helm status workflow-v0.1.0-dev --namespace backend-dev
 
 ## Deploy the Ingestion service
 
-Extract resource details from deployment.
+Extract resource details and pod identity outputs from deployment.
 
 ```bash
 export INGESTION_QUEUE_NAMESPACE=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.ingestionQueueNamespace.value -o tsv) && \
-export INGESTION_QUEUE_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.ingestionQueueName.value -o tsv) && \
-export INGESTION_ACCESS_KEY_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.ingestionServiceAccessKeyName.value -o tsv) && \
-export INGESTION_ACCESS_KEY_VALUE=$(az servicebus namespace authorization-rule keys list --resource-group $RESOURCE_GROUP --namespace-name $INGESTION_QUEUE_NAMESPACE --name $INGESTION_ACCESS_KEY_NAME --query primaryKey -o tsv)
+export INGESTION_QUEUE_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.ingestionQueueName.value -o tsv)
+export INGESTION_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME --query properties.outputs.ingestionPrincipalResourceId.value -o tsv) && \
+export INGESTION_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $INGESTION_ID_NAME --query clientId -o tsv)
 ```
 
 Build the Ingestion service.
@@ -441,6 +482,8 @@ helm install ingestion-v0.1.0-dev ingestion-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=ingestion \
      --set dockerregistry=$ACR_SERVER \
+     --set identity.clientid=$INGESTION_PRINCIPAL_CLIENT_ID \
+     --set identity.resourceid=$INGESTION_PRINCIPAL_RESOURCE_ID \
      --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
      --set ingress.hosts[0].serviceName=ingestion \
      --set ingress.hosts[0].tls=true \
@@ -448,9 +491,7 @@ helm install ingestion-v0.1.0-dev ingestion-v0.1.0.tgz \
      --set ingress.tls.secrets[0].name=$INGRESS_TLS_SECRET_NAME \
      --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
      --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
-     --set secrets.appinsights.ikey=${AI_IKEY} \
      --set secrets.queue.keyname=IngestionServiceAccessKey \
-     --set secrets.queue.keyvalue=${INGESTION_ACCESS_KEY_VALUE} \
      --set secrets.queue.name=${INGESTION_QUEUE_NAME} \
      --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
      --set reason="Initial deployment" \

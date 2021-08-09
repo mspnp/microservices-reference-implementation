@@ -26,6 +26,12 @@
       },
       "type": "string"
     },
+    "ingestionIdName": {
+      "metadata": {
+        "description": "Name of the ingestion managed identity"
+      },
+      "type": "string"
+    },
     "sshRSAPublicKey": {
       "type": "string",
       "metadata": {
@@ -289,6 +295,18 @@
       }
     },
     {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
+      "name": "[concat(parameters('ingestionIdName'), '/Microsoft.Authorization/', guid('msi-ingestion', resourceGroup().id))]",
+      "apiVersion": "2021-04-01-preview",
+      "comments": "Grant the AKS cluster Managed Identity access to the ingestion managed id",
+      "properties": {
+        "roleDefinitionId": "[variables('managedIdentityOperatorRoleId')]",
+        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName')), '2020-03-01').identityProfile.kubeletidentity.objectId]",
+        "principalType": "ServicePrincipal",
+        "scope": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('ingestionIdName'))]"
+      }
+    },
+    {
       "type": "Microsoft.Resources/deployments",
       "name": "EnsureClusterUserAssignedHasRbacToManageVMSS",
       "apiVersion": "2020-10-01",
@@ -330,14 +348,18 @@
     "deliveryPrincipalResourceId": {
       "value": "[concat(subscription().id, '/resourceGroups/',resourceGroup().name,'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',parameters('deliveryIdName'))]",
       "type": "string"
-  },
-  "workflowPrincipalResourceId": {
+    },
+    "workflowPrincipalResourceId": {
       "value": "[concat(subscription().id, '/resourceGroups/',resourceGroup().name,'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',parameters('workflowIdName'))]",
       "type": "string"
-  },
-  "droneSchedulerPrincipalResourceId": {
+    },
+    "ingestionPrincipalResourceId": {
+      "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('ingestionIdName'))]",
+      "type": "string"
+    },
+    "droneSchedulerPrincipalResourceId": {
       "value": "[concat(subscription().id, '/resourceGroups/',resourceGroup().name,'/providers/Microsoft.ManagedIdentity/userAssignedIdentities/',parameters('droneSchedulerIdName'))]",
       "type": "string"
-  }
+     }
   }
 }
