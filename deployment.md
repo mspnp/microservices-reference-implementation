@@ -283,7 +283,7 @@ spec:
       key: appinsights-ikey
   parameters:
     usePodIdentity: "true"
-    keyvaultName: "${INGESTION_KEYVAULT_NAME}"
+    keyvaultName: "${PACKAGE_KEYVAULT_NAME}"
     objects:  |
       array:
         - |
