@@ -127,6 +127,7 @@ az deployment group create -g $RESOURCE_GROUP --name $DEPLOYMENT_NAME --template
             sshRSAPublicKey="$(cat $SSH_PUBLIC_KEY_FILE)" \
             deliveryIdName=$DELIVERY_ID_NAME \
             ingestionIdName=$INGESTION_ID_NAME \
+            packageIdName=$PACKAGE_ID_NAME \
             droneSchedulerIdName=$DRONESCHEDULER_ID_NAME \
             workflowIdName=$WORKFLOW_ID_NAME \
             acrResourceGroupName=$RESOURCE_GROUP_ACR \
