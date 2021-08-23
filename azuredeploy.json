@@ -32,6 +32,12 @@
       },
       "type": "string"
     },
+    "packageIdName": {
+      "metadata": {
+        "description": "Name of the package managed identity"
+      },
+      "type": "string"
+    },
     "sshRSAPublicKey": {
       "type": "string",
       "metadata": {
@@ -307,6 +313,18 @@
       }
     },
     {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities/providers/roleAssignments",
+      "name": "[concat(parameters('packageIdName'), '/Microsoft.Authorization/', guid('msi-package', resourceGroup().id))]",
+      "apiVersion": "2021-04-01-preview",
+      "comments": "Grant the AKS cluster Managed Identity access to the package managed id",
+      "properties": {
+        "roleDefinitionId": "[variables('managedIdentityOperatorRoleId')]",
+        "principalId": "[reference(resourceId('Microsoft.ContainerService/managedClusters', variables('aksClusterName')), '2020-03-01').identityProfile.kubeletidentity.objectId]",
+        "principalType": "ServicePrincipal",
+        "scope": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('packageIdName'))]"
+      }
+    },
+    {
       "type": "Microsoft.Resources/deployments",
       "name": "EnsureClusterUserAssignedHasRbacToManageVMSS",
       "apiVersion": "2020-10-01",
@@ -355,6 +373,10 @@
     },
     "ingestionPrincipalResourceId": {
       "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('ingestionIdName'))]",
+      "type": "string"
+    },
+    "packagePrincipalResourceId": {
+      "value": "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', parameters('packageIdName'))]",
       "type": "string"
     },
     "droneSchedulerPrincipalResourceId": {

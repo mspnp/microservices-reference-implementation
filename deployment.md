@@ -193,6 +193,7 @@ To use and configure the Secrets Store CSI driver for your AKS cluster, create a
 ```bash
 export WORKFLOW_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.workflowKeyVaultName.value -o tsv)
 export INGESTION_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.ingestionKeyVaultName.value -o tsv)
+export PACKAGE_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.packageKeyVaultName.value -o tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
 
 cat <<EOF | kubectl apply -f -
@@ -255,6 +256,38 @@ spec:
         - |
           objectName: Queue--Key
           objectAlias: Queue--Key
+          objectType: secret
+        - |
+          objectName: ApplicationInsights--InstrumentationKey
+          objectAlias: ApplicationInsights--InstrumentationKey
+          objectType: secret
+    tenantId: "${TENANT_ID}"
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: package-secrets-csi-akv
+  namespace: backend-dev
+spec:
+  provider: azure
+  secretObjects:
+  - secretName: package-secrets
+    type: Opaque
+    data: 
+    - objectName: CosmosDb--ConnectionString
+      key: cosmosdb-connstr
+    - objectName: ApplicationInsights--InstrumentationKey
+      key: appinsights-ikey
+  parameters:
+    usePodIdentity: "true"
+    keyvaultName: "${INGESTION_KEYVAULT_NAME}"
+    objects:  |
+      array:
+        - |
+          objectName: CosmosDb--ConnectionString
+          objectAlias: CosmosDb--ConnectionString
           objectType: secret
         - |
           objectName: ApplicationInsights--InstrumentationKey
@@ -368,6 +401,8 @@ Extract resource details from deployment.
 
 ```bash
 export COSMOSDB_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.packageMongoDbName.value -o tsv)
+export PACKAGE_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME --query properties.outputs.packagePrincipalResourceId.value -o tsv) && \
+export PACKAGE_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $PACKAGE_ID_NAME --query clientId -o tsv)
 ```
 
 Build the Package service.
@@ -383,17 +418,18 @@ Deploy the Package service.
 # Note: Connection strings cannot be exported as outputs in ARM deployments
 export COSMOSDB_CONNECTION=$(az cosmosdb keys list --type connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g') && \
 export COSMOSDB_COL_NAME=packages
+az keyvault secret set --name CosmosDb--ConnectionString --vault-name $PACKAGE_KEYVAULT_NAME --value $COSMOSDB_CONNECTION
 
 # Deploy service
 helm package charts/package/ -u && \
 helm install package-v0.1.0-dev package-v0.1.0.tgz \
      --set image.tag=0.1.0 \
      --set image.repository=package \
+     --set identity.clientid=$PACKAGE_PRINCIPAL_CLIENT_ID \
+     --set identity.resourceid=$PACKAGE_PRINCIPAL_RESOURCE_ID \
      --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
      --set ingress.hosts[0].serviceName=package \
      --set ingress.hosts[0].tls=false \
-     --set secrets.appinsights.ikey=$AI_IKEY \
-     --set secrets.mongo.pwd=$COSMOSDB_CONNECTION \
      --set cosmosDb.collectionName=$COSMOSDB_COL_NAME \
      --set dockerregistry=$ACR_SERVER \
      --set reason="Initial deployment" \
