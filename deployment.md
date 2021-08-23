@@ -417,9 +417,17 @@ Deploy the Package service.
 ```bash
 # Create secret
 # Note: Connection strings cannot be exported as outputs in ARM deployments
+# So we create an access policy to allow the secret to be creative imperatively.
+# The policy is deleted right after the secret creation command is executed
 export COSMOSDB_CONNECTION=$(az cosmosdb keys list --type connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g') && \
-export COSMOSDB_COL_NAME=packages
+export COSMOSDB_COL_NAME=packages && \
+export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'objectId' -o tsv)
+
+az keyvault set-policy --secret-permissions set --object-id $SIGNED_IN_OBJECT_ID -n $PACKAGE_KEYVAULT_NAME
+
 az keyvault secret set --name CosmosDb--ConnectionString --vault-name $PACKAGE_KEYVAULT_NAME --value $COSMOSDB_CONNECTION
+
+az keyvault delete-policy --object-id $SIGNED_IN_OBJECT_ID -n $PACKAGE_KEYVAULT_NAME
 
 # Deploy service
 helm package charts/package/ -u && \
