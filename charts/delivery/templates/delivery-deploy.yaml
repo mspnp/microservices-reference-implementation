@@ -89,17 +89,6 @@ spec:
         - name: delivery
           mountPath: /kvmnt-del
           readOnly: true
-        env:
-        - name: INGRESS_TLS_KEY
-          valueFrom:
-            secretKeyRef:
-              name: delivery-secrets
-              key: ingress-tls-key
-        - name: INGRESS_TLS_CRT
-          valueFrom:
-            secretKeyRef:
-              name: delivery-secrets
-              key: ingress-tls-crt
         - name: DOCDB_DATABASEID
           value: {{ .Values.cosmosdb.id }}
         - name: DOCDB_COLLECTIONID
