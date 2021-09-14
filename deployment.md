@@ -252,9 +252,9 @@ spec:
     - objectName: ApplicationInsights--InstrumentationKey
       key: appinsights-ikey
     - objectName: Ingestion-Ingress-Tls-Key
-      key: ingestion-ingress-tls.key
+      key: tls.key
     - objectName: Ingestion-Ingress-Tls-Crt
-      key: ingestion-ingress-tls.crt
+      key: tls.crt
   parameters:
     usePodIdentity: "true"
     keyvaultName: "${INGESTION_KEYVAULT_NAME}"
@@ -324,9 +324,9 @@ spec:
     type: Opaque
     data: 
     - objectName: Delivery-Ingress-Tls-Key
-      key: delivery-ingress-tls.key
+      key: tls.key
     - objectName: Delivery-Ingress-Tls-Crt
-      key: delivery-ingress-tls.crt
+      key: tls.crt
   parameters:
     usePodIdentity: "true"
     keyvaultName: "${DELIVERY_KEYVAULT_NAME}"

@@ -89,6 +89,7 @@ spec:
         - name: delivery
           mountPath: /kvmnt-del
           readOnly: true
+        env:
         - name: DOCDB_DATABASEID
           value: {{ .Values.cosmosdb.id }}
         - name: DOCDB_COLLECTIONID
