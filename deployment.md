@@ -198,6 +198,7 @@ export PACKAGE_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n wo
 export DELIVERY_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.deliveryKeyVaultName.value -o tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
 export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
+export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 
 # Create secrets
 # Note: Ingress TLS key and certificate secrets cannot be exported as outputs in ARM deployments
@@ -331,7 +332,7 @@ metadata:
 spec:
   provider: azure
   secretObjects:
-  - secretName: "${INGRESS_TLS_SECRET_NAME}"
+  - secretName: "${DELIVERY_INGRESS_TLS_SECRET_NAME}"
     type: Opaque
     data: 
     - objectName: Delivery-Ingress-Tls-Key
@@ -445,7 +446,7 @@ helm install delivery-v0.1.0-dev delivery-v0.1.0.tgz \
      --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
      --set ingress.hosts[0].serviceName=delivery \
      --set ingress.hosts[0].tls=true \
-     --set ingress.hosts[0].tlsSecretName=$INGRESS_TLS_SECRET_NAME \
+     --set ingress.hosts[0].tlsSecretName=$DELIVERY_INGRESS_TLS_SECRET_NAME \
      --set identity.clientid=$DELIVERY_PRINCIPAL_CLIENT_ID \
      --set identity.resourceid=$DELIVERY_PRINCIPAL_RESOURCE_ID \
      --set cosmosdb.id=$DATABASE_NAME \
