@@ -259,14 +259,17 @@ spec:
   - secretName: "${INGRESS_TLS_SECRET_NAME}"
     type: Opaque
     data: 
-    - objectName: Queue--Key
-      key: queue-keyvalue
-    - objectName: ApplicationInsights--InstrumentationKey
-      key: appinsights-ikey
     - objectName: Ingestion-Ingress-Tls-Key
       key: tls.key
     - objectName: Ingestion-Ingress-Tls-Crt
       key: tls.crt
+  - secretName: ingestion-secrets
+    type: Opaque
+    data: 
+    - objectName: Queue--Key
+      key: queue-keyvalue
+    - objectName: ApplicationInsights--InstrumentationKey
+      key: appinsights-ikey
   parameters:
     usePodIdentity: "true"
     keyvaultName: "${INGESTION_KEYVAULT_NAME}"
@@ -332,7 +335,7 @@ metadata:
 spec:
   provider: azure
   secretObjects:
-  - secretName: "${DELIVERY_INGRESS_TLS_SECRET_NAME}"
+  - secretName: "${INGRESS_TLS_SECRET_NAME}"
     type: Opaque
     data: 
     - objectName: Delivery-Ingress-Tls-Key
@@ -446,7 +449,7 @@ helm install delivery-v0.1.0-dev delivery-v0.1.0.tgz \
      --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
      --set ingress.hosts[0].serviceName=delivery \
      --set ingress.hosts[0].tls=true \
-     --set ingress.hosts[0].tlsSecretName=$DELIVERY_INGRESS_TLS_SECRET_NAME \
+     --set ingress.hosts[0].tlsSecretName=$INGRESS_TLS_SECRET_NAME \
      --set identity.clientid=$DELIVERY_PRINCIPAL_CLIENT_ID \
      --set identity.resourceid=$DELIVERY_PRINCIPAL_RESOURCE_ID \
      --set cosmosdb.id=$DATABASE_NAME \
