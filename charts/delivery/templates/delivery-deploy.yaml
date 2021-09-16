@@ -85,6 +85,10 @@ spec:
           limits:
             cpu:   {{ required "A valid .Values.resources.limits.cpu entry required!" .Values.resources.limits.cpu }}
             memory: {{ required "A valid .Values.resources.limits.memory entry required!" .Values.resources.limits.memory }}
+        volumeMounts:
+        - name: delivery
+          mountPath: /kvmnt-del
+          readOnly: true
         env:
         - name: DOCDB_DATABASEID
           value: {{ .Values.cosmosdb.id }}
@@ -99,3 +103,10 @@ spec:
         ports:
         - name: service
           containerPort: 8080
+      volumes:
+        - name: delivery
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: delivery-secrets-csi-akv

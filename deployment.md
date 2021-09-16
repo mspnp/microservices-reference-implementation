@@ -195,7 +195,21 @@ To use and configure the Secrets Store CSI driver for your AKS cluster, create a
 export WORKFLOW_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.workflowKeyVaultName.value -o tsv)
 export INGESTION_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.ingestionKeyVaultName.value -o tsv)
 export PACKAGE_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.packageKeyVaultName.value -o tsv)
+export DELIVERY_KEYVAULT_NAME=$(az deployment group show -g $RESOURCE_GROUP -n workload-stamp --query properties.outputs.deliveryKeyVaultName.value -o tsv)
 export TENANT_ID=$(az account show --query tenantId --output tsv)
+export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
+export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
+
+# Create secrets
+# Note: Ingress TLS key and certificate secrets cannot be exported as outputs in ARM deployments
+# So we create an access policy to allow these secrets to be created imperatively.
+# The policy is deleted right after the secret creation commands are executed
+export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'objectId' -o tsv)
+
+az keyvault set-policy --secret-permissions set --object-id $SIGNED_IN_OBJECT_ID -n $INGESTION_KEYVAULT_NAME
+az keyvault secret set --name Ingestion-Ingress-Tls-Key --vault-name $INGESTION_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
+az keyvault secret set --name Ingestion-Ingress-Tls-Crt --vault-name $INGESTION_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.crt)"
+az keyvault delete-policy --object-id $SIGNED_IN_OBJECT_ID -n $INGESTION_KEYVAULT_NAME
 
 cat <<EOF | kubectl apply -f -
 apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
@@ -242,6 +256,13 @@ metadata:
 spec:
   provider: azure
   secretObjects:
+  - secretName: "${INGRESS_TLS_SECRET_NAME}"
+    type: Opaque
+    data: 
+    - objectName: Ingestion-Ingress-Tls-Key
+      key: tls.key
+    - objectName: Ingestion-Ingress-Tls-Crt
+      key: tls.crt
   - secretName: ingestion-secrets
     type: Opaque
     data: 
@@ -261,6 +282,14 @@ spec:
         - |
           objectName: ApplicationInsights--InstrumentationKey
           objectAlias: ApplicationInsights--InstrumentationKey
+          objectType: secret
+        - |
+          objectName: Ingestion-Ingress-Tls-Key
+          objectAlias: Ingestion-Ingress-Tls-Key
+          objectType: secret
+        - |
+          objectName: Ingestion-Ingress-Tls-Crt
+          objectAlias: Ingestion-Ingress-Tls-Crt
           objectType: secret
     tenantId: "${TENANT_ID}"
 EOF
@@ -293,6 +322,38 @@ spec:
         - |
           objectName: ApplicationInsights--InstrumentationKey
           objectAlias: ApplicationInsights--InstrumentationKey
+          objectType: secret
+    tenantId: "${TENANT_ID}"
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: secrets-store.csi.x-k8s.io/v1alpha1
+kind: SecretProviderClass
+metadata:
+  name: delivery-secrets-csi-akv
+  namespace: backend-dev
+spec:
+  provider: azure
+  secretObjects:
+  - secretName: "${INGRESS_TLS_SECRET_NAME}"
+    type: Opaque
+    data: 
+    - objectName: Delivery-Ingress-Tls-Key
+      key: tls.key
+    - objectName: Delivery-Ingress-Tls-Crt
+      key: tls.crt
+  parameters:
+    usePodIdentity: "true"
+    keyvaultName: "${DELIVERY_KEYVAULT_NAME}"
+    objects:  |
+      array:
+        - |
+          objectName: Delivery-Ingress-Tls-Key
+          objectAlias: Delivery-Ingress-Tls-Key
+          objectType: secret
+        - |
+          objectName: Delivery-Ingress-Tls-Crt
+          objectAlias: Delivery-Ingress-Tls-Crt
           objectType: secret
     tenantId: "${TENANT_ID}"
 EOF
@@ -366,8 +427,18 @@ Deploy the Delivery service.
 ```bash
 # Extract pod identity outputs from deployment
 export DELIVERY_PRINCIPAL_RESOURCE_ID=$(az deployment group show -g $RESOURCE_GROUP -n $DEPLOYMENT_NAME --query properties.outputs.deliveryPrincipalResourceId.value -o tsv) && \
-export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DELIVERY_ID_NAME --query clientId -o tsv) && \
-export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
+export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DELIVERY_ID_NAME --query clientId -o tsv)
+
+# Create secrets
+# Note: Ingress TLS key and certificate secrets cannot be exported as outputs in ARM deployments
+# So we create an access policy to allow these secrets to be created imperatively.
+# The policy is deleted right after the secret creation commands are executed
+export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'objectId' -o tsv)
+
+az keyvault set-policy --secret-permissions set --object-id $SIGNED_IN_OBJECT_ID -n $DELIVERY_KEYVAULT_NAME
+az keyvault secret set --name Delivery-Ingress-Tls-Key --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
+az keyvault secret set --name Delivery-Ingress-Tls-Crt --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.crt)"
+az keyvault delete-policy --object-id $SIGNED_IN_OBJECT_ID -n $DELIVERY_KEYVAULT_NAME
 
 # Deploy the service
 helm package charts/delivery/ -u && \
@@ -378,10 +449,7 @@ helm install delivery-v0.1.0-dev delivery-v0.1.0.tgz \
      --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
      --set ingress.hosts[0].serviceName=delivery \
      --set ingress.hosts[0].tls=true \
-     --set ingress.hosts[0].tlsSecretName=$DELIVERY_INGRESS_TLS_SECRET_NAME \
-     --set ingress.tls.secrets[0].name=$DELIVERY_INGRESS_TLS_SECRET_NAME \
-     --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
-     --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
+     --set ingress.hosts[0].tlsSecretName=$INGRESS_TLS_SECRET_NAME \
      --set identity.clientid=$DELIVERY_PRINCIPAL_CLIENT_ID \
      --set identity.resourceid=$DELIVERY_PRINCIPAL_RESOURCE_ID \
      --set cosmosdb.id=$DATABASE_NAME \
@@ -417,11 +485,10 @@ Deploy the Package service.
 ```bash
 # Create secret
 # Note: Connection strings cannot be exported as outputs in ARM deployments
-# So we create an access policy to allow the secret to be creative imperatively.
+# So we create an access policy to allow the secret to be created imperatively.
 # The policy is deleted right after the secret creation command is executed
 export COSMOSDB_CONNECTION=$(az cosmosdb keys list --type connection-strings --name $COSMOSDB_NAME --resource-group $RESOURCE_GROUP --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g') && \
 export COSMOSDB_COL_NAME=packages && \
-export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'objectId' -o tsv)
 
 az keyvault set-policy --secret-permissions set --object-id $SIGNED_IN_OBJECT_ID -n $PACKAGE_KEYVAULT_NAME
 
@@ -515,11 +582,9 @@ Build the Ingestion service.
 az acr build -r $ACR_NAME -t $ACR_SERVER/ingestion:0.1.0 ./workload/src/shipping/ingestion/.
 ```
 
-Deploy the Ingestion service.
+## Deploy the Ingestion service
 
 ```bash
-# Set secreat name
-export INGRESS_TLS_SECRET_NAME=ingestion-ingress-tls
 
 # Deploy service
 helm package charts/ingestion/ -u && \
@@ -533,9 +598,6 @@ helm install ingestion-v0.1.0-dev ingestion-v0.1.0.tgz \
      --set ingress.hosts[0].serviceName=ingestion \
      --set ingress.hosts[0].tls=true \
      --set ingress.hosts[0].tlsSecretName=$INGRESS_TLS_SECRET_NAME \
-     --set ingress.tls.secrets[0].name=$INGRESS_TLS_SECRET_NAME \
-     --set ingress.tls.secrets[0].key="$(cat ingestion-ingress-tls.key)" \
-     --set ingress.tls.secrets[0].certificate="$(cat ingestion-ingress-tls.crt)" \
      --set secrets.queue.keyname=IngestionServiceAccessKey \
      --set secrets.queue.name=${INGESTION_QUEUE_NAME} \
      --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
