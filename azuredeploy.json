@@ -121,7 +121,7 @@
     "agentCount": 2,
     "agentVMSize": "Standard_D2_v2",
     "workspaceName": "[concat('la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
-    "workspaceSku": "Free",
+    "workspaceSku": "pergb2018",
     "workspaceRetentionInDays": 7
   },
   "resources": [
