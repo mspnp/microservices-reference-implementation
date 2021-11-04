@@ -209,7 +209,7 @@
         "agentCount": 2,
         "agentVMSize": "Standard_D2_v2",
         "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
-        "workspaceSku": "Free",
+        "workspaceSku": "Standalone",
         "workspaceRetentionInDays": null
       },
       "qa": {
@@ -235,7 +235,7 @@
         "agentCount": 3,
         "agentVMSize": "Standard_D2_v2",
         "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
-        "workspaceSku": "Free",
+        "workspaceSku": "Standalone",
         "workspaceRetentionInDays": null
       },
       "staging": {
@@ -261,7 +261,7 @@
         "agentCount": 3,
         "agentVMSize": "Standard_D2_v2",
         "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
-        "workspaceSku": "PerGB2018",
+        "workspaceSku": "Standalone",
         "workspaceRetentionInDays": 730
       },
       "prod": {
@@ -287,7 +287,7 @@
         "agentCount": 3,
         "agentVMSize": "Standard_D2_v2",
         "workspaceName": "[concat(parameters('environmentName'),'-la-', uniqueString(variables('aksLogAnalyticsNamePrefix'), resourceGroup().id))]",
-        "workspaceSku": "PerGB2018",
+        "workspaceSku": "Standalone",
         "workspaceRetentionInDays": 730
       }
     }
