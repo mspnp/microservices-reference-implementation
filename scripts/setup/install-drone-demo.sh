@@ -263,7 +263,7 @@ kubectl apply -f $K8S/tiller-rbac.yaml
 
 sleep 60s
 
-helm init --stable-repo-url https://charts.helm.sh/stable --service-account tiller --override spec.selector.matchLabels.'name'='tiller',spec.selector.matchLabels.'app'='helm' --output yaml | sed 's@apiVersion: extensions/v1beta1@apiVersion: apps/v1@' | kubectl apply -f -
+helm init --stable-repo-url https://charts.helm.sh/stable --service-account tiller --override spec.selector.matchLabels.'name'='tiller',spec.selector.matchLabels.'app'='helm' --output yaml | sed 's@apiVersion: extensions/v1beta1@apiVersion: apps/v1@' | sed 's@image: gcr.io/kubernetes-helm/tiller:v2.14.2@image: ghcr.io/helm/tiller:v2.14.2@' | kubectl apply -f -
 
 sleep 60s
 

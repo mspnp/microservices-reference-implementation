@@ -50,6 +50,8 @@ if ((!$appId) -or (!$password)) {
     az keyvault secret set --name "DronePassword" --vault-name $keyVaultName --value $password | Out-Null
 }
 
+Start-Sleep -Seconds 60
+
 docker run -t -d --name $ResourceGroup --privileged  replyvalorem/aksdemodeployment:1.1
 
 $imageId=$(docker ps --format "{{.Names}}\t{{.ID}}\t{{.Status}}\t{{.Ports}}" |
