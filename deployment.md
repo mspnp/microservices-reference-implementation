@@ -4,7 +4,7 @@
 
 - Azure subscription
   > Important: The user initiating the deployment process must have access to the **Microsoft.Authorization/roleAssignments/write** permission. For more information, see [the Container Insights doc](https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-troubleshoot#authorization-error-during-onboarding-or-update-operation)
-- [Azure CLI 2.0.49 or later](https://docs.microsoft.com/cli/azure/install-azure-cli)
+- [Azure CLI 2.37.0 or newer](https://docs.microsoft.com/cli/azure/install-azure-cli)
 - [Docker](https://docs.docker.com/)
 - [JQ](https://stedolan.github.io/jq/download/)
 
@@ -204,7 +204,7 @@ export DELIVERY_INGRESS_TLS_SECRET_NAME=delivery-ingress-tls
 # Note: Ingress TLS key and certificate secrets cannot be exported as outputs in ARM deployments
 # So we create an access policy to allow these secrets to be created imperatively.
 # The policy is deleted right after the secret creation commands are executed
-export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'objectId' -o tsv)
+export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
 
 az keyvault set-policy --secret-permissions set --object-id $SIGNED_IN_OBJECT_ID -n $INGESTION_KEYVAULT_NAME
 az keyvault secret set --name Ingestion-Ingress-Tls-Key --vault-name $INGESTION_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
@@ -433,7 +433,7 @@ export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g $RESOURCE_GROUP -n $DE
 # Note: Ingress TLS key and certificate secrets cannot be exported as outputs in ARM deployments
 # So we create an access policy to allow these secrets to be created imperatively.
 # The policy is deleted right after the secret creation commands are executed
-export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'objectId' -o tsv)
+export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
 
 az keyvault set-policy --secret-permissions set --object-id $SIGNED_IN_OBJECT_ID -n $DELIVERY_KEYVAULT_NAME
 az keyvault secret set --name Delivery-Ingress-Tls-Key --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
