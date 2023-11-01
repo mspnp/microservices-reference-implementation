@@ -6,6 +6,7 @@
 ##################################################################################################
 # Ingestion
 ##################################################################################################
+{{- $svcversion := .Chart.AppVersion | replace "." "" }}
 {{- $fullname := include "ingestion.fullname" . | replace "." "" }}
 apiVersion: apps/v1
 kind: Deployment
@@ -19,7 +20,6 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
     helm.sh/chart: {{ include "ingestion.chart" . }}
-    aadpodidbinding: {{ $fullname  }}
   annotations:
     kubernetes.io/change-cause: {{ .Values.reason }}
 spec:
@@ -38,8 +38,9 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: dronedelivery
         helm.sh/chart: {{ include "ingestion.chart" . }}
-        aadpodidbinding: {{ $fullname  }}
+        azure.workload.identity/use: "true"
     spec:
+      serviceAccountName: {{ .Values.identity.serviceAccountName }}
       containers:
       - name: &ingestion-container_name fabrikam-ingestion
         image: {{ .Values.dockerregistry }}{{ .Values.dockerregistrynamespace }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -123,4 +124,4 @@ spec:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: ingestion-secrets-csi-akv
+              secretProviderClass: ingestion-secrets-csi-akv-{{ $svcversion }}

@@ -15,16 +15,18 @@ kind: Ingress
 metadata:
   name: {{ $relname }}-ingress
   annotations:
-    kubernetes.io/ingress.class: {{ required "ingress.class is required" .Values.ingress.class | quote }}
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /api/deliveryrequests$1
 spec:
+  ingressClassName: {{ required "ingress.class is required" .Values.ingress.class | quote }}
   {{- if .Values.ingress.tls }}
   tls:
   {{- range .Values.ingress.hosts }}
   {{- if .tls }}
   - hosts:
     - {{ .name }}
-    secretName: {{ $relname }}-{{ .tlsSecretName }}
+    secretName: {{ .tlsSecretName }}
   {{- end }}
   {{- end }}
   {{- end }}
@@ -32,7 +34,7 @@ spec:
   {{- range .Values.ingress.hosts }}
   - host: {{ .name }}
     http:
-      paths:
+      paths:    
       {{ if .path }}
       - path: {{ printf "%s/%s/" .path $appversion }}api/deliveryrequests(.*)
         pathType: ImplementationSpecific
@@ -45,13 +47,4 @@ spec:
             name: "{{ .serviceName }}-{{ $svcversion }}"
             port:
               name: http
-      {{ if (eq $appversion "v0.1.0") }}
-      - path: {{ default "/" .path }}api/deliveryrequests(.*)
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: "{{ .serviceName }}"
-            port: 
-              name: http
-      {{ end }}
   {{ end }}

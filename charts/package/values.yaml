@@ -1,6 +1,11 @@
 # Default values for package service.
 nameOverride: package
 replicaCount: 1
+identity:
+  clientid:
+  serviceAccountName:
+  tenantId:
+keyVaultName:
 dockerregistrynamespace:
 dockerregistry:
 image:

@@ -2,6 +2,11 @@
 replicaCount: 1
 dockerregistrynamespace:
 dockerregistry:
+identity:
+  clientid:
+  serviceAccountName:
+  tenantId:
+keyVaultName:
 image:
   repository:
   tag:

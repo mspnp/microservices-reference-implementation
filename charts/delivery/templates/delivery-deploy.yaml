@@ -6,6 +6,7 @@
 ###################################################################################################
 # Delivery
 ###################################################################################################
+{{- $svcversion := .Chart.AppVersion | replace "." "" }}
 {{- $fullname := include "delivery.fullname" . | replace "." "" }}
 apiVersion: apps/v1
 kind: Deployment
@@ -19,7 +20,6 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
     helm.sh/chart: {{ include "delivery.chart" . }}
-    aadpodidbinding: {{ $fullname }}
   annotations:
     kubernetes.io/change-cause: {{ .Values.reason }}
 spec:
@@ -38,8 +38,9 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: dronedelivery
         helm.sh/chart: {{ include "delivery.chart" . }}
-        aadpodidbinding: {{ $fullname }}
+        azure.workload.identity/use: "true"
     spec:
+      serviceAccountName: {{ .Values.identity.serviceAccountName }}
       securityContext:
         fsGroup: 1
       containers:
@@ -109,4 +110,4 @@ spec:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: delivery-secrets-csi-akv
+              secretProviderClass: delivery-secrets-csi-akv-{{ $svcversion }}

@@ -6,6 +6,7 @@
 ###################################################################################################
 # Workflow
 ###################################################################################################
+{{- $svcversion := .Chart.AppVersion | replace "." "" }}
 {{- $fullname := include "workflow.fullname" . | replace "." "" }}
 apiVersion: apps/v1
 kind: Deployment
@@ -19,7 +20,6 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
     helm.sh/chart: {{ include "workflow.chart" . }}
-    aadpodidbinding: {{ $fullname  }}
   annotations:
     kubernetes.io/change-cause: {{ .Values.reason }}
 spec:
@@ -38,8 +38,9 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: dronedelivery
         helm.sh/chart: {{ include "workflow.chart" . }}
-        aadpodidbinding: {{ $fullname  }}
+        azure.workload.identity/use: "true"
     spec:
+      serviceAccountName: {{ .Values.identity.serviceAccountName }}
       securityContext:
         fsGroup: 1
       containers:
@@ -128,4 +129,4 @@ spec:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: workflow-secrets-csi-akv
+              secretProviderClass: workflow-secrets-csi-akv-{{ $svcversion }}
