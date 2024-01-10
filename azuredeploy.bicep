@@ -1,6 +1,10 @@
+@description('Name of the Azure Container Registry resource group')
 param acrResourceGroupName string
+
+@description('Name of the Azure Container Registry')
 param acrName string
 
+@description('Resources location.')
 param location string = resourceGroup().location
 
 @description('Name of the delivery managed identity')
@@ -168,7 +172,7 @@ resource deliveryRedisStorage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   }
 }
 
-resource aksClusterName_Microsoft_Authorization_id_monitoringMetricsPublisherRole 'Microsoft.Authorization/roleAssignments@2022-04-01'  = {
+resource clusterIdentityPublisherRoleAssigment 'Microsoft.Authorization/roleAssignments@2022-04-01'  = {
   name: guid(concat(resourceGroup().id), monitoringMetricsPublisherRole)
   scope: aksCluster
   properties: {
@@ -182,7 +186,7 @@ resource deliveryId 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31
   name: deliveryIdName
 }
 
-resource deliveryIdName_Microsoft_Authorization_msi_delivery_id 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource deliveryIdentityOperatorRoleAssigment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid('msi-delivery', resourceGroup().id)
   scope: deliveryId
   properties: {
@@ -196,7 +200,7 @@ resource workflowId 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31
   name: workflowIdName
 }
 
-resource workflowIdName_Microsoft_Authorization_msi_workflow_id 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource workflowIdentityOperatorRoleAssigment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid('msi-workflow', resourceGroup().id)
   scope: workflowId
   properties: {
@@ -210,7 +214,7 @@ resource droneSchedulerId 'Microsoft.ManagedIdentity/userAssignedIdentities@2023
   name: droneSchedulerIdName
 }
 
-resource droneSchedulerIdName_Microsoft_Authorization_msi_dronescheduler_id 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource droneSchedulerIdentityOperatorRoleAssigment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid('msi-dronescheduler', resourceGroup().id)
   scope: droneSchedulerId
   properties: {
@@ -224,7 +228,7 @@ resource ingestionId 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-3
   name: ingestionIdName
 }
 
-resource ingestionIdName_Microsoft_Authorization_msi_ingestion_id 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource ingestionIdentityOperatorRoleAssigment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid('msi-ingestion', resourceGroup().id)
   scope: ingestionId
   properties: {
@@ -238,7 +242,7 @@ resource packageId 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31'
   name: packageIdName
 }
 
-resource packageIdName_Microsoft_Authorization_msi_package_id 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+resource packageIdentityOperatorRoleAssigment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid('msi-package', resourceGroup().id)
   scope: packageId
   properties: {
