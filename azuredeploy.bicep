@@ -22,9 +22,6 @@ param ingestionIdName string
 @description('Name of the package managed identity')
 param packageIdName string
 
-@description('Configure all linux machines with the SSH RSA public key string.  Your key should include three parts, for example \'ssh-rsa AAAAB...snip...UcyupgH azureuser@linuxvm\'')
-param sshRSAPublicKey string
-
 @description('Client ID (used by cloudprovider)')
 param servicePrincipalClientId string
 
@@ -42,9 +39,6 @@ param osType string = 'Linux'
 @minValue(0)
 @maxValue(1023)
 param osDiskSizeGB int = 0
-
-@description('User name for the Linux Virtual Machines.')
-param adminUsername string = 'azureuser'
 
 @description('The version of Kubernetes. It must be supported in the target location.')
 param kubernetesVersion string
@@ -142,6 +136,14 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-07-02-previ
       workloadIdentity: {
         enabled: true
       }
+    }
+    networkProfile: {
+      networkPlugin: 'kubenet'
+      outboundType: 'loadBalancer'
+      loadBalancerSku: 'Standard'
+      podCidr: '10.244.0.0/16'
+      serviceCidr: '10.0.0.0/16'
+      dnsServiceIP:'10.0.0.10'
     }
   }
   identity: {

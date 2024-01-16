@@ -21,18 +21,11 @@ cd microservices-reference-implementation/
 
 The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
 
-## Generate a SSH rsa public/private key pair
-
-the SSH rsa key pair can be generated using ssh-keygen, among other tools, on Linux, Mac, or Windows. If you already have an ~/.ssh/id_rsa.pub file, you could provide the same later on. If you need to create an SSH key pair, see [How to create and use an SSH key pair](https://docs.microsoft.com/azure/virtual-machines/linux/mac-create-ssh-keys).
-
-> Note: the SSH rsa public key will be requested when deploying your Kubernetes cluster in Azure.
-
 ## Azure Resources Provisioning
 
 Set environment variables.
 
 ```bash
-export SSH_PUBLIC_KEY_FILE=[YOUR_RECENTLY_GENERATED_SSH_RSA_PUBLIC_KEY_FILE_HERE]
 export LOCATION=eastus2
 ```
 
@@ -100,7 +93,6 @@ az deployment group create -g rg-shipping-dronedelivery --name $DEPLOYMENT_NAME 
 --parameters servicePrincipalClientId=$SP_APP_ID \
             servicePrincipalClientSecret=$SP_CLIENT_SECRET \
             kubernetesVersion=$KUBERNETES_VERSION \
-            sshRSAPublicKey="$(cat $SSH_PUBLIC_KEY_FILE)" \
             deliveryIdName=uid-delivery \
             ingestionIdName=uid-ingestion \
             packageIdName=uid-package \
