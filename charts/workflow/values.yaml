@@ -13,9 +13,9 @@ image:
   pullPolicy: IfNotPresent
 reason: unknown
 serviceuri:
-  delivery: http://delivery-v010/api/Deliveries/
-  drone: http://dronescheduler-v010/api/DroneDeliveries/
-  package: http://package-v010/api/packages/
+  delivery:
+  drone:
+  package:
 servicerequest:
   maxretries: 3
   circuitbreakerthreshold: 0.5

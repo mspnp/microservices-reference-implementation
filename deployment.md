@@ -368,6 +368,9 @@ helm install workflow-v0.1.0-dev workflow-v0.1.0.tgz \
      --set keyvault.resourcegroup=rg-shipping-dronedelivery \
      --set reason="Initial deployment" \
      --set tags.dev=true \
+     --set serviceuri.delivery="http://delivery-v010/api/Deliveries/" \
+     --set serviceuri.drone="http://dronescheduler-v010/api/DroneDeliveries/" \
+     --set serviceuri.package="http://package-v010/api/packages/" \
      --namespace backend-dev \
      --dependency-update
 

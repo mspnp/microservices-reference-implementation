@@ -34,7 +34,7 @@ spec:
   {{- range .Values.ingress.hosts }}
   - host: {{ .name }}
     http:
-      paths:    
+      paths:
       {{ if .path }}
       - path: {{ printf "%s/%s/" .path $appversion }}api/deliveryrequests(.*)
         pathType: ImplementationSpecific
