@@ -136,9 +136,6 @@ Integrate Application Insights instance.
 export AI_NAME=$(az deployment group show -g rg-shipping-dronedelivery -n workload-stamp --query properties.outputs.appInsightsName.value -o tsv)
 echo $AI_NAME
 
-export AI_IKEY=$(az resource show -g rg-shipping-dronedelivery -n $AI_NAME --resource-type "Microsoft.Insights/components" --query properties.InstrumentationKey -o tsv)
-echo $AI_IKEY
-
 # add RBAC for AppInsights
 kubectl apply -f k8s/k8s-rbac-ai.yaml
 ```
