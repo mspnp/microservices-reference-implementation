@@ -114,16 +114,6 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-07-02-previ
         mode: 'System'
       }
     ]
-    linuxProfile: {
-      adminUsername: adminUsername
-      ssh: {
-        publicKeys: [
-          {
-            keyData: sshRSAPublicKey
-          }
-        ]
-      }
-    }
     servicePrincipalProfile: {
       clientId: servicePrincipalClientId
       secret: servicePrincipalClientSecret
