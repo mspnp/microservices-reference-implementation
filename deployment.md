@@ -419,7 +419,7 @@ helm install ingestion-v0.1.0-dev ingestion-v0.1.0.tgz \
      --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
      --set ingress.hosts[0].serviceName=ingestion \
      --set ingress.hosts[0].tls=true \
-     --set ingress.hosts[0].tlsSecretName=$INGRESS_TLS_SECRET_NAME \
+     --set ingress.hosts[0].tlsSecretName=ingestion-ingress-tls \
      --set ingress.tls=true \
      --set ingress.class=nginx \
      --set secrets.queue.keyname=IngestionServiceAccessKey \
