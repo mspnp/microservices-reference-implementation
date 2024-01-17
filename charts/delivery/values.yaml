@@ -3,7 +3,9 @@ nameOverride: delivery
 replicaCount: 1
 identity:
   clientid:
-  resourceid:
+  serviceAccountName:
+  tenantId:
+keyVaultName:
 dockerregistrynamespace:
 dockerregistry:
 image:

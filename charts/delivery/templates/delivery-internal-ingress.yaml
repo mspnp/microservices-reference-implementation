@@ -15,11 +15,13 @@ kind: Ingress
 metadata:
   name: {{ $relname }}-internal-ingress
   annotations:
-    kubernetes.io/ingress.class: {{ required "ingress.class is required" .Values.ingress.class | quote }}
+    nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    nginx.ingress.kubernetes.io/use-regex: "true"
     nginx.ingress.kubernetes.io/rewrite-target: /api/deliveries$1
     nginx.ingress.kubernetes.io/configuration-snippet: |
       internal;
 spec:
+  ingressClassName: {{ required "ingress.class is required" .Values.ingress.class | quote }}
   rules:
   {{- range .Values.ingress.hosts }}
   - host: {{ .name }}
@@ -37,13 +39,4 @@ spec:
             name: "{{ .serviceName }}-{{ $svcversion }}"
             port:
               name: http
-      {{- if (eq $appversion "v0.1.0") }}
-      - path: {{ default "/" .path }}api/internal/deliveries(.*)
-        pathType: ImplementationSpecific
-        backend:
-         service:
-            name: "{{ .serviceName }}"
-            port:
-              name: http
-      {{- end }}
   {{ end }}

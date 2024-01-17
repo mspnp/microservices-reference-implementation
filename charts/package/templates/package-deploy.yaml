@@ -6,6 +6,7 @@
 ###################################################################################################
 # Package
 ###################################################################################################
+{{- $svcversion := .Chart.AppVersion | replace "." "" }}
 {{- $fullname := include "package.fullname" . | replace "." "" }}
 apiVersion: apps/v1
 kind: Deployment
@@ -19,7 +20,6 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
     helm.sh/chart: {{ include "package.chart" . }}
-    aadpodidbinding: {{ $fullname }}
   annotations:
     kubernetes.io/change-cause: {{ .Values.reason }}
 spec:
@@ -38,8 +38,9 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: dronedelivery
         helm.sh/chart: {{ include "package.chart" . }}
-        aadpodidbinding: {{ $fullname }}
+        azure.workload.identity/use: "true"
     spec:
+      serviceAccountName: {{ .Values.identity.serviceAccountName }}
       containers:
       - name: &package-container_name fabrikam-package
         image: {{ .Values.dockerregistry }}{{ .Values.dockerregistrynamespace }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -113,4 +114,4 @@ spec:
             driver: secrets-store.csi.k8s.io
             readOnly: true
             volumeAttributes:
-              secretProviderClass: package-secrets-csi-akv
+              secretProviderClass: package-secrets-csi-akv-{{ $svcversion }}

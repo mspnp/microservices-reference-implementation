@@ -19,7 +19,6 @@ metadata:
     app.kubernetes.io/component: backend
     app.kubernetes.io/part-of: dronedelivery
     helm.sh/chart: {{ include "dronescheduler.chart" . }}
-    aadpodidbinding: {{ $fullname }}
   annotations:
     kubernetes.io/change-cause: {{ .Values.reason }}
 spec:
@@ -38,10 +37,11 @@ spec:
         app.kubernetes.io/component: backend
         app.kubernetes.io/part-of: dronedelivery
         helm.sh/chart: {{ include "dronescheduler.chart" . }}
-        aadpodidbinding: {{ $fullname }}
+        azure.workload.identity/use: "true"
     spec:
       securityContext:
         fsGroup: 1
+      serviceAccountName: {{ .Values.identity.serviceAccountName }}
       containers:
       - name: fabrikam-dronescheduler
         image: {{ .Values.dockerregistry }}{{ .Values.dockerregistrynamespace }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}
