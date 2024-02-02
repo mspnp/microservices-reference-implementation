@@ -100,12 +100,20 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-07-02-previ
     dnsPrefix: aksClusterName
     agentPoolProfiles: [
       {
-        name: 'agentpool'
+        name: 'npsystem'
         osDiskSizeGB: osDiskSizeGB
         count: agentCount
         vmSize: agentVMSize
         osType: osType
         mode: 'System'
+      }
+      {
+        name: 'npuser01'
+        osDiskSizeGB: osDiskSizeGB
+        count: agentCount
+        vmSize: agentVMSize
+        osType: osType
+        mode: 'User'
       }
     ]
     servicePrincipalProfile: {
