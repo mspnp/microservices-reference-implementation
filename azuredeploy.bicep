@@ -89,7 +89,7 @@ resource workspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
 }
 
 // The control plane identity used by the cluster. Used for networking access (VNET joining and DNS updating)
-resource miClusterControlPlane 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
+resource miClusterControlPlane 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: 'mi-${aksClusterName}-controlplane'
   location: location
 }
