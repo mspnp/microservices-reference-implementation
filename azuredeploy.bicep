@@ -88,6 +88,12 @@ resource workspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   }
 }
 
+// The control plane identity used by the cluster. Used for networking access (VNET joining and DNS updating)
+resource miClusterControlPlane 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
+  name: 'mi-${aksClusterName}-controlplane'
+  location: location
+}
+
 resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-07-02-preview' = {
   name: aksClusterName
   location: location
@@ -155,8 +161,12 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-07-02-previ
     }
   }
   identity: {
-    type: 'SystemAssigned'
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${miClusterControlPlane.id}': {}
+    }
   }
+
 }
 
 resource deliveryRedisStorage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
