@@ -224,8 +224,7 @@ Deploy the Delivery service.
 ```bash
 # Create secrets
 # Note: Ingress TLS key and certificate secrets cannot be exported as outputs in ARM deployments
-# So we create an access policy to allow these secrets to be created imperatively.
-# The policy is deleted right after the secret creation commands are executed
+# Give current user permissions to import secrets and then it is deleted right after the secret creation command is executed
 export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
 
 export DELIVERY_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery  -n $DELIVERY_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
@@ -288,8 +287,7 @@ Deploy the Package service.
 ```bash
 # Create secret
 # Note: Connection strings cannot be exported as outputs in ARM deployments
-# So we create an access policy to allow the secret to be created imperatively.
-# The policy is deleted right after the secret creation command is executed
+# Give current user permissions to import secrets and then it is deleted right after the secret creation command is executed
 export COSMOSDB_CONNECTION_PACKAGE=$(az cosmosdb keys list --type connection-strings --name $COSMOSDB_NAME_PACKAGE --resource-group rg-shipping-dronedelivery --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g') && \
 export COSMOSDB_COL_NAME_PACKAGE=packages
 
@@ -381,6 +379,7 @@ export INGESTION_QUEUE_NAME=$(az deployment group show -g rg-shipping-dronedeliv
 export INGESTION_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery -n workload-stamp --query properties.outputs.ingestionKeyVaultName.value -o tsv)
 export INGESTION_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery -n uid-ingestion --query clientId -o tsv)
 
+# Give current user permissions to import secrets and then it is deleted right after the secret creation command is executed
 export INGESTION_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery  -n $INGESTION_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $INGESTION_KEYVAULT_ID
 
