@@ -287,7 +287,7 @@ Deploy the Package service.
 ```bash
 # Create secret
 # Note: Connection strings cannot be exported as outputs in ARM deployments
-# Give current user permissions to import secrets and then it is deleted right after the secret creation command is executed
+# The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
 export COSMOSDB_CONNECTION_PACKAGE=$(az cosmosdb keys list --type connection-strings --name $COSMOSDB_NAME_PACKAGE --resource-group rg-shipping-dronedelivery --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g') && \
 export COSMOSDB_COL_NAME_PACKAGE=packages
 
