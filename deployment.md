@@ -224,14 +224,16 @@ Deploy the Delivery service.
 ```bash
 # Create secrets
 # Note: Ingress TLS key and certificate secrets cannot be exported as outputs in ARM deployments
-# So we create an access policy to allow these secrets to be created imperatively.
-# The policy is deleted right after the secret creation commands are executed
+# The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
 export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
 
-az keyvault set-policy --secret-permissions set --object-id $SIGNED_IN_OBJECT_ID -n $DELIVERY_KEYVAULT_NAME
+export DELIVERY_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery  -n $DELIVERY_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
+az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $DELIVERY_KEYVAULT_ID
+
 az keyvault secret set --name Delivery-Ingress-Tls-Key --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
 az keyvault secret set --name Delivery-Ingress-Tls-Crt --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.crt)"
-az keyvault delete-policy --object-id $SIGNED_IN_OBJECT_ID -n $DELIVERY_KEYVAULT_NAME
+
+az role assignment delete --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $DELIVERY_KEYVAULT_ID
 
 #Setup your managed identity to trust your Kubernetes service account
 az identity federated-credential create --name credential-for-delivery --identity-name uid-delivery --resource-group rg-shipping-dronedelivery --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:delivery-sa-v0.1.0
@@ -285,16 +287,16 @@ Deploy the Package service.
 ```bash
 # Create secret
 # Note: Connection strings cannot be exported as outputs in ARM deployments
-# So we create an access policy to allow the secret to be created imperatively.
-# The policy is deleted right after the secret creation command is executed
+# The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
 export COSMOSDB_CONNECTION_PACKAGE=$(az cosmosdb keys list --type connection-strings --name $COSMOSDB_NAME_PACKAGE --resource-group rg-shipping-dronedelivery --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g') && \
 export COSMOSDB_COL_NAME_PACKAGE=packages
 
-az keyvault set-policy --secret-permissions set --object-id $SIGNED_IN_OBJECT_ID -n $PACKAGE_KEYVAULT_NAME
+export PACKAGE_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery  -n $PACKAGE_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
+az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $PACKAGE_KEYVAULT_ID
 
 az keyvault secret set --name CosmosDb--ConnectionString --vault-name $PACKAGE_KEYVAULT_NAME --value $COSMOSDB_CONNECTION_PACKAGE
 
-az keyvault delete-policy --object-id $SIGNED_IN_OBJECT_ID -n $PACKAGE_KEYVAULT_NAME
+az role assignment delete --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $PACKAGE_KEYVAULT_ID
 
 # Setup your managed identity to trust your Kubernetes service account
 az identity federated-credential create --name credential-for-package --identity-name uid-package --resource-group rg-shipping-dronedelivery --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:package-sa-v0.1.0
@@ -377,10 +379,14 @@ export INGESTION_QUEUE_NAME=$(az deployment group show -g rg-shipping-dronedeliv
 export INGESTION_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery -n workload-stamp --query properties.outputs.ingestionKeyVaultName.value -o tsv)
 export INGESTION_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery -n uid-ingestion --query clientId -o tsv)
 
-az keyvault set-policy --secret-permissions set --object-id $SIGNED_IN_OBJECT_ID -n $INGESTION_KEYVAULT_NAME
+# The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
+export INGESTION_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery  -n $INGESTION_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
+az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $INGESTION_KEYVAULT_ID
+
 az keyvault secret set --name Ingestion-Ingress-Tls-Key --vault-name $INGESTION_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
 az keyvault secret set --name Ingestion-Ingress-Tls-Crt --vault-name $INGESTION_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.crt)"
-az keyvault delete-policy --object-id $SIGNED_IN_OBJECT_ID -n $INGESTION_KEYVAULT_NAME
+
+az role assignment delete --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $INGESTION_KEYVAULT_ID
 ```
 
 Build the Ingestion service.
