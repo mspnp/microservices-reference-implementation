@@ -224,7 +224,7 @@ Deploy the Delivery service.
 ```bash
 # Create secrets
 # Note: Ingress TLS key and certificate secrets cannot be exported as outputs in ARM deployments
-# Give current user permissions to import secrets and then it is deleted right after the secret creation command is executed
+# The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
 export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
 
 export DELIVERY_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery  -n $DELIVERY_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
