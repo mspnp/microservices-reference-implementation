@@ -379,7 +379,7 @@ export INGESTION_QUEUE_NAME=$(az deployment group show -g rg-shipping-dronedeliv
 export INGESTION_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery -n workload-stamp --query properties.outputs.ingestionKeyVaultName.value -o tsv)
 export INGESTION_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery -n uid-ingestion --query clientId -o tsv)
 
-# Give current user permissions to import secrets and then it is deleted right after the secret creation command is executed
+# The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
 export INGESTION_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery  -n $INGESTION_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $INGESTION_KEYVAULT_ID
 
