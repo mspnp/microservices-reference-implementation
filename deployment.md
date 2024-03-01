@@ -49,14 +49,14 @@ Infrastructure
 
 export PREREQS_DEPLOYMENT_NAME=workload-stamp-prereqs-main
 
-az deployment sub create --name $PREREQS_DEPLOYMENT_NAME --location $LOCATION --template-file ./workload/workload-stamp-prereqs.bicep --parameters resourceGroupLocation=$LOCATION
+az deployment sub create --name $PREREQS_DEPLOYMENT_NAME --location ${LOCATION} --template-file ./workload/workload-stamp-prereqs.bicep --parameters resourceGroupLocation=${LOCATION}
 
 # Get the user identities
-export DELIVERY_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-eastus2 -n uid-delivery --query principalId -o tsv) && \
-export DRONESCHEDULER_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-eastus2 -n uid-dronescheduler --query principalId -o tsv) && \
-export WORKFLOW_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-eastus2 -n uid-workflow --query principalId -o tsv) && \
-export PACKAGE_ID_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-eastus2 -n uid-package --query principalId -o tsv) && \
-export INGESTION_ID_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-eastus2 -n uid-ingestion --query principalId -o tsv)
+export DELIVERY_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-delivery --query principalId -o tsv) && \
+export DRONESCHEDULER_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-dronescheduler --query principalId -o tsv) && \
+export WORKFLOW_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-workflow --query principalId -o tsv) && \
+export PACKAGE_ID_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-package --query principalId -o tsv) && \
+export INGESTION_ID_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-ingestion --query principalId -o tsv)
 
 
 # Wait for Microsoft Entra ID propagation
@@ -67,17 +67,17 @@ until az ad sp show --id $PACKAGE_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waitin
 until az ad sp show --id $INGESTION_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
 
 # Deploy all the workload related resources  (This step takes about 10 minutes)
-az deployment group create -f ./workload/workload-stamp.bicep -g rg-shipping-dronedelivery-eastus2 -p droneSchedulerPrincipalId=$DRONESCHEDULER_PRINCIPAL_ID -p workflowPrincipalId=$WORKFLOW_PRINCIPAL_ID -p deliveryPrincipalId=$DELIVERY_PRINCIPAL_ID -p ingestionPrincipalId=$INGESTION_ID_PRINCIPAL_ID -p packagePrincipalId=$PACKAGE_ID_PRINCIPAL_ID
+az deployment group create -f ./workload/workload-stamp.bicep -g rg-shipping-dronedelivery-${LOCATION} -p droneSchedulerPrincipalId=$DRONESCHEDULER_PRINCIPAL_ID -p workflowPrincipalId=$WORKFLOW_PRINCIPAL_ID -p deliveryPrincipalId=$DELIVERY_PRINCIPAL_ID -p ingestionPrincipalId=$INGESTION_ID_PRINCIPAL_ID -p packagePrincipalId=$PACKAGE_ID_PRINCIPAL_ID
 
 # Get outputs from workload deploy
-export ACR_NAME=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.acrName.value -o tsv)
+export ACR_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.acrName.value -o tsv)
 export ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
 ```
 
 Deploy the managed cluster and all related resources (This step takes about 15 minutes)
 
 ```bash
-export RESOURCE_GROUP_ID=$(az group show --name rg-shipping-dronedelivery-eastus2 --query id --output tsv)
+export RESOURCE_GROUP_ID=$(az group show --name rg-shipping-dronedelivery-${LOCATION} --query id --output tsv)
 
 export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor" --scopes $RESOURCE_GROUP_ID -o json) && \
 export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
@@ -89,7 +89,7 @@ export DEPLOYMENT_SUFFIX=$(date +%S%N)
 export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "values[?isDefault].version" -o tsv)
 
 export DEPLOYMENT_NAME=azuredeploy-$DEPLOYMENT_SUFFIX
-az deployment group create -g rg-shipping-dronedelivery-eastus2 --name $DEPLOYMENT_NAME  --template-file azuredeploy.bicep \
+az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name $DEPLOYMENT_NAME  --template-file azuredeploy.bicep \
 --parameters servicePrincipalClientId=$SP_APP_ID \
             servicePrincipalClientSecret=$SP_CLIENT_SECRET \
             kubernetesVersion=$KUBERNETES_VERSION \
@@ -98,14 +98,14 @@ az deployment group create -g rg-shipping-dronedelivery-eastus2 --name $DEPLOYME
             packageIdName=uid-package \
             droneSchedulerIdName=uid-dronescheduler \
             workflowIdName=uid-workflow \
-            acrResourceGroupName=rg-shipping-dronedelivery-eastus2-acr \
+            acrResourceGroupName=rg-shipping-dronedelivery-${LOCATION}-acr \
             acrName=$ACR_NAME
 ```
 
 Get the cluster name output from Azure Deploy.
 
 ```bash
-export CLUSTER_NAME=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n $DEPLOYMENT_NAME --query properties.outputs.aksClusterName.value -o tsv)
+export CLUSTER_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n $DEPLOYMENT_NAME --query properties.outputs.aksClusterName.value -o tsv)
 echo $CLUSTER_NAME
 ```
 
@@ -116,7 +116,7 @@ Download kubectl and create a Kubernetes namespace.
 az aks install-cli
 
 # Get the Kubernetes cluster credentials
-az aks get-credentials --resource-group=rg-shipping-dronedelivery-eastus2 --name=$CLUSTER_NAME
+az aks get-credentials --resource-group=rg-shipping-dronedelivery-${LOCATION} --name=$CLUSTER_NAME
 
 # Create namespaces
 kubectl create namespace backend-dev
@@ -133,7 +133,7 @@ Integrate Application Insights instance.
 
 ```bash
 # Acquire Instrumentation Key
-export AI_NAME=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.appInsightsName.value -o tsv)
+export AI_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.appInsightsName.value -o tsv)
 echo $AI_NAME
 
 # add RBAC for AppInsights
@@ -197,7 +197,7 @@ kubectl apply -f k8s/k8s-resource-quotas-dev.yaml
 ## Get the OIDC Issuer URL
 
 ```bash
-export AKS_OIDC_ISSUER="$(az aks show -n $CLUSTER_NAME -g rg-shipping-dronedelivery-eastus2 --query "oidcIssuerProfile.issuerUrl" -otsv)"
+export AKS_OIDC_ISSUER="$(az aks show -n $CLUSTER_NAME -g rg-shipping-dronedelivery-${LOCATION} --query "oidcIssuerProfile.issuerUrl" -otsv)"
 ```
 
 ## Deploy the Delivery service
@@ -205,12 +205,12 @@ export AKS_OIDC_ISSUER="$(az aks show -n $CLUSTER_NAME -g rg-shipping-dronedeliv
 Extract resource details from deployment.
 
 ```bash
-export COSMOSDB_NAME=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.deliveryCosmosDbName.value -o tsv) && \
+export COSMOSDB_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.deliveryCosmosDbName.value -o tsv) && \
 export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
 export COLLECTION_NAME="${DATABASE_NAME}-col" && \
-export DELIVERY_KEYVAULT_URI=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.deliveryKeyVaultUri.value -o tsv) && \
-export DELIVERY_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.deliveryKeyVaultName.value -o tsv) && \
-export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-eastus2 -n uid-delivery --query clientId -o tsv)
+export DELIVERY_KEYVAULT_URI=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.deliveryKeyVaultUri.value -o tsv) && \
+export DELIVERY_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.deliveryKeyVaultName.value -o tsv) && \
+export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-delivery --query clientId -o tsv)
 ```
 
 Build and publish the Delivery service container image.
@@ -227,7 +227,7 @@ Deploy the Delivery service.
 # The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
 export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
 
-export DELIVERY_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-eastus2  -n $DELIVERY_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
+export DELIVERY_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LOCATION}  -n $DELIVERY_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $DELIVERY_KEYVAULT_ID
 
 az keyvault secret set --name Delivery-Ingress-Tls-Key --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
@@ -236,7 +236,7 @@ az keyvault secret set --name Delivery-Ingress-Tls-Crt --vault-name $DELIVERY_KE
 az role assignment delete --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $DELIVERY_KEYVAULT_ID
 
 #Setup your managed identity to trust your Kubernetes service account
-az identity federated-credential create --name credential-for-delivery --identity-name uid-delivery --resource-group rg-shipping-dronedelivery-eastus2 --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:delivery-sa-v0.1.0
+az identity federated-credential create --name credential-for-delivery --identity-name uid-delivery --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:delivery-sa-v0.1.0
 
 # Deploy the service
 helm package charts/delivery/ -u && \
@@ -271,9 +271,9 @@ helm status delivery-v0.1.0-dev --namespace backend-dev
 Extract resource details from deployment.
 
 ```bash
-export COSMOSDB_NAME_PACKAGE=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.packageMongoDbName.value -o tsv)
-export PACKAGE_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.packageKeyVaultName.value -o tsv)
-export PACKAGE_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-eastus2 -n uid-package --query clientId -o tsv)
+export COSMOSDB_NAME_PACKAGE=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.packageMongoDbName.value -o tsv)
+export PACKAGE_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.packageKeyVaultName.value -o tsv)
+export PACKAGE_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-package --query clientId -o tsv)
 ```
 
 Build the Package service.
@@ -288,10 +288,10 @@ Deploy the Package service.
 # Create secret
 # Note: Connection strings cannot be exported as outputs in ARM deployments
 # The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
-export COSMOSDB_CONNECTION_PACKAGE=$(az cosmosdb keys list --type connection-strings --name $COSMOSDB_NAME_PACKAGE --resource-group rg-shipping-dronedelivery-eastus2 --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g') && \
+export COSMOSDB_CONNECTION_PACKAGE=$(az cosmosdb keys list --type connection-strings --name $COSMOSDB_NAME_PACKAGE --resource-group rg-shipping-dronedelivery-${LOCATION} --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g') && \
 export COSMOSDB_COL_NAME_PACKAGE=packages
 
-export PACKAGE_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-eastus2  -n $PACKAGE_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
+export PACKAGE_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LOCATION}  -n $PACKAGE_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $PACKAGE_KEYVAULT_ID
 
 az keyvault secret set --name CosmosDb--ConnectionString --vault-name $PACKAGE_KEYVAULT_NAME --value $COSMOSDB_CONNECTION_PACKAGE
@@ -299,7 +299,7 @@ az keyvault secret set --name CosmosDb--ConnectionString --vault-name $PACKAGE_K
 az role assignment delete --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $PACKAGE_KEYVAULT_ID
 
 # Setup your managed identity to trust your Kubernetes service account
-az identity federated-credential create --name credential-for-package --identity-name uid-package --resource-group rg-shipping-dronedelivery-eastus2 --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:package-sa-v0.1.0
+az identity federated-credential create --name credential-for-package --identity-name uid-package --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:package-sa-v0.1.0
 
 # Deploy service
 helm package charts/package/ -u && \
@@ -330,8 +330,8 @@ helm status package-v0.1.0-dev --namespace backend-dev
 Extract resource details from deployment.
 
 ```bash
-export WORKFLOW_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.workflowKeyVaultName.value -o tsv)
-export WORKFLOW_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-eastus2  -n uid-workflow --query clientId -o tsv)
+export WORKFLOW_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.workflowKeyVaultName.value -o tsv)
+export WORKFLOW_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION}  -n uid-workflow --query clientId -o tsv)
 ```
 
 Build the workflow service.
@@ -344,7 +344,7 @@ Deploy the Workflow service.
 
 ```bash
 # Setup your managed identity to trust your Kubernetes service account
-az identity federated-credential create --name credential-for-workflow --identity-name uid-workflow --resource-group rg-shipping-dronedelivery-eastus2 --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:workflow-sa-v0.1.0
+az identity federated-credential create --name credential-for-workflow --identity-name uid-workflow --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:workflow-sa-v0.1.0
 
 # Deploy the service
 helm package charts/workflow/ -u && \
@@ -356,7 +356,7 @@ helm install workflow-v0.1.0-dev workflow-v0.1.0.tgz \
      --set identity.serviceAccountName=workflow-sa-v0.1.0 \
      --set identity.tenantId=$TENANT_ID \
      --set keyvault.name=$WORKFLOW_KEYVAULT_NAME \
-     --set keyvault.resourcegroup=rg-shipping-dronedelivery-eastus2 \
+     --set keyvault.resourcegroup=rg-shipping-dronedelivery-${LOCATION} \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --set serviceuri.delivery="http://delivery-v010/api/Deliveries/" \
@@ -374,13 +374,13 @@ helm status workflow-v0.1.0-dev --namespace backend-dev
 Extract resource details and pod identity outputs from deployment.
 
 ```bash
-export INGESTION_QUEUE_NAMESPACE=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.ingestionQueueNamespace.value -o tsv) && \
-export INGESTION_QUEUE_NAME=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.ingestionQueueName.value -o tsv)
-export INGESTION_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.ingestionKeyVaultName.value -o tsv)
-export INGESTION_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-eastus2 -n uid-ingestion --query clientId -o tsv)
+export INGESTION_QUEUE_NAMESPACE=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.ingestionQueueNamespace.value -o tsv) && \
+export INGESTION_QUEUE_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.ingestionQueueName.value -o tsv)
+export INGESTION_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.ingestionKeyVaultName.value -o tsv)
+export INGESTION_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-ingestion --query clientId -o tsv)
 
 # The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
-export INGESTION_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-eastus2  -n $INGESTION_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
+export INGESTION_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LOCATION}  -n $INGESTION_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $INGESTION_KEYVAULT_ID
 
 az keyvault secret set --name Ingestion-Ingress-Tls-Key --vault-name $INGESTION_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
@@ -399,7 +399,7 @@ Deploy the Ingestion service
 
 ```bash
 # Setup your managed identity to trust your Kubernetes service account
-az identity federated-credential create --name credential-for-ingestion --identity-name uid-ingestion --resource-group rg-shipping-dronedelivery-eastus2 --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:ingestion-sa-v0.1.0
+az identity federated-credential create --name credential-for-ingestion --identity-name uid-ingestion --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:ingestion-sa-v0.1.0
 
 # Deploy service
 helm package charts/ingestion/ -u && \
@@ -434,11 +434,11 @@ helm status ingestion-v0.1.0-dev --namespace backend-dev
 Extract resource details from deployment.
 
 ```bash
-export DRONESCHEDULER_KEYVAULT_URI=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
-export DRONESCHEDULER_COSMOSDB_NAME=$(az deployment group show -g rg-shipping-dronedelivery-eastus2 -n workload-stamp --query properties.outputs.droneSchedulerCosmosDbName.value -o tsv) && \
-export ENDPOINT_URL=$(az cosmosdb show -n $DRONESCHEDULER_COSMOSDB_NAME -g rg-shipping-dronedelivery-eastus2 --query documentEndpoint -o tsv) && \
-export AUTH_KEY=$(az cosmosdb keys list -n $DRONESCHEDULER_COSMOSDB_NAME -g rg-shipping-dronedelivery-eastus2 --query primaryMasterKey -o tsv) && \
-export DRONESCHEDULER_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-eastus2 -n uid-dronescheduler --query clientId -o tsv)  && \
+export DRONESCHEDULER_KEYVAULT_URI=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
+export DRONESCHEDULER_COSMOSDB_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.droneSchedulerCosmosDbName.value -o tsv) && \
+export ENDPOINT_URL=$(az cosmosdb show -n $DRONESCHEDULER_COSMOSDB_NAME -g rg-shipping-dronedelivery-${LOCATION} --query documentEndpoint -o tsv) && \
+export AUTH_KEY=$(az cosmosdb keys list -n $DRONESCHEDULER_COSMOSDB_NAME -g rg-shipping-dronedelivery-${LOCATION} --query primaryMasterKey -o tsv) && \
+export DRONESCHEDULER_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-dronescheduler --query clientId -o tsv)  && \
 export DATABASE_NAME="invoicing" && \
 export COLLECTION_NAME="utilization"
 ```
@@ -453,7 +453,7 @@ Deploy the dronescheduler service.
 
 ```bash
 # Setup your managed identity to trust your Kubernetes service account
-az identity federated-credential create --name credential-for-dronescheduler --identity-name uid-dronescheduler --resource-group rg-shipping-dronedelivery-eastus2 --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:dronescheduler-sa-v0.1.0
+az identity federated-credential create --name credential-for-dronescheduler --identity-name uid-dronescheduler --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:dronescheduler-sa-v0.1.0
 
 # Deploy the service
 helm package charts/dronescheduler/ -u && \
