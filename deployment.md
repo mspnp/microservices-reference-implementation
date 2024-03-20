@@ -332,6 +332,11 @@ Extract resource details from deployment.
 ```bash
 export WORKFLOW_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.workflowKeyVaultName.value -o tsv)
 export WORKFLOW_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION}  -n uid-workflow --query clientId -o tsv)
+export WORKFLOW_QUEUE_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.ingestionQueueName.value -o tsv)
+export WORKFLOW_NAMESPACE_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.ingestionQueueNamespace.value -o tsv)
+export WORKFLOW_NAMESPACE_ENDPOINT=$(az servicebus namespace show -g rg-shipping-dronedelivery-${LOCATION} -n $WORKFLOW_NAMESPACE_NAME --query serviceBusEndpoint -o tsv)
+export WORKFLOW_NAMESPACE_SAS_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.workflowServiceAccessKeyName.value -o tsv)
+
 ```
 
 Build the workflow service.
@@ -355,6 +360,9 @@ helm install workflow-v0.1.0-dev workflow-v0.1.0.tgz \
      --set identity.clientid=$WORKFLOW_ID_CLIENT_ID \
      --set identity.serviceAccountName=workflow-sa-v0.1.0 \
      --set identity.tenantId=$TENANT_ID \
+     --set secrets.queue.name=${WORKFLOW_QUEUE_NAME} \
+     --set secrets.queue.endpoint=${WORKFLOW_NAMESPACE_ENDPOINT} \
+     --set secrets.queue.policyname=${WORKFLOW_NAMESPACE_SAS_NAME} \
      --set keyvault.name=$WORKFLOW_KEYVAULT_NAME \
      --set keyvault.resourcegroup=rg-shipping-dronedelivery-${LOCATION} \
      --set reason="Initial deployment" \
@@ -470,6 +478,7 @@ helm install dronescheduler-v0.1.0-dev dronescheduler-v0.1.0.tgz \
      --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
      --set cosmosdb.id=$DATABASE_NAME \
      --set cosmosdb.collectionid=$COLLECTION_NAME \
+     --set cosmosdb.endpoint=$COLLECTION_NAME \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \
