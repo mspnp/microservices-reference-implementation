@@ -478,7 +478,7 @@ helm install dronescheduler-v0.1.0-dev dronescheduler-v0.1.0.tgz \
      --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
      --set cosmosdb.id=$DATABASE_NAME \
      --set cosmosdb.collectionid=$COLLECTION_NAME \
-     --set cosmosdb.endpoint=$COLLECTION_NAME \
+     --set cosmosdb.endpoint=$ENDPOINT_URL \
      --set reason="Initial deployment" \
      --set tags.dev=true \
      --namespace backend-dev \
