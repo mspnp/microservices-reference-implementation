@@ -96,6 +96,20 @@ spec:
           value: {{ default "Error" .Values.telemetry.level | quote }}
         - name: no_proxy
           value: 169.254.169.254
+        - name: CosmosDBEndpoint
+          value: {{ .Values.cosmosdb.endpoint }}
+        - name: CosmosDBConnectionMode
+          value: Gateway
+        - name: CosmosDBConnectionProtocol
+          value: Https
+        - name: CosmosDBMaxConnectionsLimit
+          value: '50'
+        - name: CosmosDBMaxParallelism
+          value: '-1'
+        - name: CosmosDBMaxBufferedItemCount
+          value: '0'
+        - name: FeatureManagement__UsePartitionKey
+          value: 'false'
         ports:
         - name: service
           containerPort: 8080

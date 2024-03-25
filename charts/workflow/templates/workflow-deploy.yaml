@@ -95,6 +95,21 @@ spec:
           mountPath: /kvmnt
           readOnly: true
         env:
+        - name: QueueName
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-secrets
+              key: queue_name
+        - name: QueueEndpoint
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-secrets
+              key: queue_endpoint
+        - name: QueueAccessPolicyName
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Release.Name }}-secrets
+              key: queue_policyname
         - name: CONFIGURATION_FOLDER
           value: /kvmnt
         - name: HEALTHCHECK_INITIAL_DELAY
