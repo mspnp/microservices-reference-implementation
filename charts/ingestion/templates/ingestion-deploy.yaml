@@ -61,6 +61,9 @@ spec:
 {{- if .Values.readinessProbe.failureThreshold }}
           failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
 {{- end }}
+{{- if .Values.readinessProbe.successThreshold }}
+          successThreshold: {{ .Values.readinessProbe.successThreshold }}
+{{- end }}
         livenessProbe:
           httpGet:
             path: {{ required "livenessProbe.httpGet.path is required" .Values.livenessProbe.httpGet.path }}
@@ -76,6 +79,9 @@ spec:
 {{- end }}
 {{- if .Values.livenessProbe.failureThreshold }}
           failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+{{- end }}
+{{- if .Values.livenessProbe.successThreshold }}
+          successThreshold: {{ .Values.livenessProbe.successThreshold }}
 {{- end }}
         resources:
           requests:
