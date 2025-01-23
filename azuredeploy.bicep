@@ -159,6 +159,14 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-07-02-previ
       serviceCidr: '10.0.0.0/16'
       dnsServiceIP:'10.0.0.10'
     }
+    ingressProfile: {
+       webAppRouting: {
+          enabled: true
+          nginx: {
+              defaultIngressControllerType: 'AnnotationControlled'
+          }
+       }
+    }
   }
   identity: {
     type: 'UserAssigned'
