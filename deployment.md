@@ -158,14 +158,6 @@ aks-secrets-store-provider-azure-l5w98   1/1     Running   0          28m
 
 ## Collect details of managed ingress controller. 
 
-> :warning: WARNING
->
-> Do not use the certificates created by these scripts for production. The
-> certificates are provided for demonstration purposes only.
-> For your production cluster, use your
-> security best practices for digital certificates creation and lifetime management.
-
-> 
 
 ```bash
 
@@ -175,6 +167,20 @@ export INGRESS_LOAD_BALANCER_IP=$(kubectl get service -n app-routing-system ngin
 export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv) && \
 export EXTERNAL_INGEST_DNS_NAME="dronedelivery-${LOCATION}-${RANDOM}-ing" && \
 export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
+
+```
+
+## Create self-signed certificate for TLS
+
+> :warning: WARNING
+>
+> Do not use the certificates created by these scripts for production. The
+> certificates are provided for demonstration purposes only.
+> For your production cluster, use your
+> security best practices for digital certificates creation and lifetime management.
+
+
+```bash
 
 # Create a self-signed certificate for TLS
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
