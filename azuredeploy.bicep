@@ -94,7 +94,7 @@ resource miClusterControlPlane 'Microsoft.ManagedIdentity/userAssignedIdentities
   location: location
 }
 
-resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-07-02-preview' = {
+resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-preview' = {
   name: aksClusterName
   location: location
   tags: {
