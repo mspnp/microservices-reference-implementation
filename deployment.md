@@ -156,7 +156,7 @@ aks-secrets-store-provider-azure-2k5mx   1/1     Running   0          28m
 aks-secrets-store-provider-azure-l5w98   1/1     Running   0          28m
 ```
 
-## Deploy the ingress controller
+## Collect details of managed ingress controller. 
 
 > :warning: WARNING
 >
