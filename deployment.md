@@ -156,7 +156,21 @@ aks-secrets-store-provider-azure-2k5mx   1/1     Running   0          28m
 aks-secrets-store-provider-azure-l5w98   1/1     Running   0          28m
 ```
 
-## Deploy the ingress controller
+## Collect details of managed ingress controller. 
+
+
+```bash
+
+# Obtain the load balancer ip address of managed ingress and assign a domain name
+export INGRESS_LOAD_BALANCER_IP=$(kubectl get service -n app-routing-system nginx -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) 
+
+export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv) && \
+export EXTERNAL_INGEST_DNS_NAME="dronedelivery-${LOCATION}-${RANDOM}-ing" && \
+export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
+
+```
+
+## Create self-signed certificate for TLS
 
 > :warning: WARNING
 >
@@ -165,21 +179,8 @@ aks-secrets-store-provider-azure-l5w98   1/1     Running   0          28m
 > For your production cluster, use your
 > security best practices for digital certificates creation and lifetime management.
 
-> :heavy_exclamation_mark: In the following instructions you will proceed using a public container registry to install NGINX. But please take into account that public registries may be subject to faults such as outages (no SLA) or request throttling. Interruptions like these can be crippling for an application that needs to pull an image \_right now*. To minimize the risks of using public registries, store all applicable container images in a registry that you control, such as the SLA-backed Azure Container Registry.
 
 ```bash
-# Deploy the ngnix ingress controller
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.3.0/deploy/static/provider/cloud/deploy.yaml
-
-# Check the Ingress controller pod is running
-kubectl get pods --namespace ingress-nginx
-
-# Obtain the load balancer ip address and assign a domain name
-until export INGRESS_LOAD_BALANCER_IP=$(kubectl get services ingress-nginx-controller -n ingress-nginx -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) && test -n "$INGRESS_LOAD_BALANCER_IP"; do echo "Waiting for load balancer deployment" && sleep 20; done
-
-export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv) && \
-export EXTERNAL_INGEST_DNS_NAME="dronedelivery-${LOCATION}-${RANDOM}-ing" && \
-export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
 
 # Create a self-signed certificate for TLS
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \

@@ -94,7 +94,7 @@ resource miClusterControlPlane 'Microsoft.ManagedIdentity/userAssignedIdentities
   location: location
 }
 
-resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-07-02-preview' = {
+resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-preview' = {
   name: aksClusterName
   location: location
   tags: {
@@ -158,6 +158,14 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2023-07-02-previ
       podCidr: '10.244.0.0/16'
       serviceCidr: '10.0.0.0/16'
       dnsServiceIP:'10.0.0.10'
+    }
+    ingressProfile: {
+       webAppRouting: {
+          enabled: true
+          nginx: {
+              defaultIngressControllerType: 'AnnotationControlled'
+          }
+       }
     }
   }
   identity: {
