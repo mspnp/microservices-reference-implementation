@@ -299,11 +299,6 @@ export WORKFLOW_NAMESPACE_NAME=$(az deployment group show -g rg-shipping-dronede
 export WORKFLOW_NAMESPACE_ENDPOINT=$(az servicebus namespace show -g rg-shipping-dronedelivery-${LOCATION} -n $WORKFLOW_NAMESPACE_NAME --query serviceBusEndpoint -o tsv)
 export WORKFLOW_NAMESPACE_SAS_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.workflowServiceAccessKeyName.value -o tsv)
 
-```
-
-Deploy the Workflow service.
-
-```bash
 # Setup your managed identity to trust your Kubernetes service account
 az identity federated-credential create --name credential-for-workflow --identity-name uid-workflow --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:workflow-sa-v0.1.0
 
@@ -351,11 +346,7 @@ az keyvault secret set --name Ingestion-Ingress-Tls-Key --vault-name $INGESTION_
 az keyvault secret set --name Ingestion-Ingress-Tls-Crt --vault-name $INGESTION_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.crt)"
 
 az role assignment delete --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $INGESTION_KEYVAULT_ID
-```
 
-Deploy the Ingestion service
-
-```bash
 # Setup your managed identity to trust your Kubernetes service account
 az identity federated-credential create --name credential-for-ingestion --identity-name uid-ingestion --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:ingestion-sa-v0.1.0
 
@@ -399,11 +390,7 @@ export AUTH_KEY=$(az cosmosdb keys list -n $DRONESCHEDULER_COSMOSDB_NAME -g rg-s
 export DRONESCHEDULER_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-dronescheduler --query clientId -o tsv)  && \
 export DATABASE_NAME="invoicing" && \
 export COLLECTION_NAME="utilization"
-```
 
-Deploy the dronescheduler service.
-
-```bash
 # Setup your managed identity to trust your Kubernetes service account
 az identity federated-credential create --name credential-for-dronescheduler --identity-name uid-dronescheduler --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:dronescheduler-sa-v0.1.0
 
