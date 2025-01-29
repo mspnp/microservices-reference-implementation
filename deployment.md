@@ -5,12 +5,17 @@
 - Azure subscription
   > Important: The user initiating the deployment process must have access to the **Microsoft.Authorization/roleAssignments/write** permission. For more information, see [the Container Insights doc](https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-troubleshoot#authorization-error-during-onboarding-or-update-operation)
 - [Azure CLI 2.53.1 or newer](https://docs.microsoft.com/cli/azure/install-azure-cli)
-- [Docker](https://docs.docker.com/)
 - [JQ](https://stedolan.github.io/jq/download/)
-
-> Note: in linux systems, it is possible to run the docker command without prefacing
-> with sudo. For more information, please refer to [the Post-installation steps
-> for linux](https://docs.docker.com/install/linux/linux-postinstall/)
+- Kubectl 
+```bash
+#  Install kubectl
+az aks install-cli
+```
+- Helm
+```bash
+# install helm 3
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+```
 
 Clone or download this repo locally.
 
@@ -142,21 +147,12 @@ echo $CLUSTER_NAME
 Download kubectl and create a Kubernetes namespace.
 
 ```bash
-#  Install kubectl
-az aks install-cli
 
 # Get the Kubernetes cluster credentials
 az aks get-credentials --resource-group=rg-shipping-dronedelivery-${LOCATION} --name=$CLUSTER_NAME
 
 # Create namespaces
 kubectl create namespace backend-dev
-```
-
-Install and initialize Helm.
-
-```bash
-# install helm 3
-curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
 ```
 
 Integrate Application Insights instance.
