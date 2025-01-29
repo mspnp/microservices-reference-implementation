@@ -21,7 +21,7 @@ cd microservices-reference-implementation/
 
 The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
 
-## Azure Resources Provisioning
+## Deploy an Azure Container Registry (ACR)
 
 Set environment variables.
 
@@ -29,49 +29,79 @@ Set environment variables.
 export LOCATION=eastus2
 ```
 
-Log in in to Azure.
+### Log in to Azure CLI
 
 ```bash
 az login
-
-# if you have several subscriptions, select one
-# az account set -s <subscription id>
 ```
 
-## Deployment
-
-> Note: this deployment might take up to 20 minutes
-
-Infrastructure
+### Deploy the workload's prerequisites
 
 ```bash
-# Deploy the managed identities (This takes less than two  minutes.)
+az deployment sub create --name workload-stamp-prereqs --location ${LOCATION} --template-file ./workload-stamp-prereqs.bicep
+```
 
-export PREREQS_DEPLOYMENT_NAME=workload-stamp-prereqs-main
+:book: This pre-flight Bicep template is creating a general purpose resource group  as well as one dedicated for the Azure Container Registry. Additionally five User Identites are provisioned as part of this too that will be later associated to every containerized microservice. This is because they will need Azure RBAC roles over the Azure KeyVault to read secrets in runtime. The resources will be created on the resouce group location and each resource group will contain the region as part of their names
 
-az deployment sub create --name $PREREQS_DEPLOYMENT_NAME --location ${LOCATION} --template-file ./workload/workload-stamp-prereqs.bicep --parameters resourceGroupLocation=${LOCATION}
+### Get the workload user assigned identities
 
-# Get the user identities
-export DELIVERY_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-delivery --query principalId -o tsv) && \
-export DRONESCHEDULER_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-dronescheduler --query principalId -o tsv) && \
-export WORKFLOW_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-workflow --query principalId -o tsv) && \
-export PACKAGE_ID_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-package --query principalId -o tsv) && \
-export INGESTION_ID_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-ingestion --query principalId -o tsv)
+```bash
+DELIVERY_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-delivery --query principalId -o tsv) && \
+DRONESCHEDULER_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-dronescheduler --query principalId -o tsv) && \
+WORKFLOW_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-workflow --query principalId -o tsv) && \
+PACKAGE_ID_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-package --query principalId -o tsv) && \
+INGESTION_ID_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-ingestion --query principalId -o tsv)
+```
 
+### Deploy the workload
 
-# Wait for Microsoft Entra ID propagation
-until az ad sp show --id $DELIVERY_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
-until az ad sp show --id $DRONESCHEDULER_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
-until az ad sp show --id $WORKFLOW_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
-until az ad sp show --id $PACKAGE_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
-until az ad sp show --id $INGESTION_ID_PRINCIPAL_ID &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
+```bash
+az deployment group create -f ./workload-stamp.bicep -g rg-shipping-dronedelivery-${LOCATION} -p droneSchedulerPrincipalId=$DRONESCHEDULER_PRINCIPAL_ID \
+-p workflowPrincipalId=$WORKFLOW_PRINCIPAL_ID \
+-p deliveryPrincipalId=$DELIVERY_PRINCIPAL_ID \
+-p ingestionPrincipalId=$INGESTION_ID_PRINCIPAL_ID \
+-p packagePrincipalId=$PACKAGE_ID_PRINCIPAL_ID
+```
 
-# Deploy all the workload related resources  (This step takes about 10 minutes)
-az deployment group create -f ./workload/workload-stamp.bicep -g rg-shipping-dronedelivery-${LOCATION} -p droneSchedulerPrincipalId=$DRONESCHEDULER_PRINCIPAL_ID -p workflowPrincipalId=$WORKFLOW_PRINCIPAL_ID -p deliveryPrincipalId=$DELIVERY_PRINCIPAL_ID -p ingestionPrincipalId=$INGESTION_ID_PRINCIPAL_ID -p packagePrincipalId=$PACKAGE_ID_PRINCIPAL_ID
+### Assign ACR variables
 
-# Get outputs from workload deploy
-export ACR_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.acrName.value -o tsv)
-export ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
+```bash
+ACR_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.acrName.value -o tsv)
+ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
+```
+
+## Build the microservice images
+
+### Steps
+
+1. Build the Delivery service.
+
+```bash
+az acr build -r $ACR_NAME -t $ACR_SERVER/delivery:0.1.0 ./src/shipping/delivery/.
+```
+
+2. Build the Ingestion service.
+
+```bash
+az acr build -r $ACR_NAME -t $ACR_SERVER/ingestion:0.1.0 ./src/shipping/ingestion/.
+```
+
+3. Build the Workflow service.
+
+```bash
+az acr build -r $ACR_NAME -t $ACR_SERVER/workflow:0.1.0 ./src/shipping/workflow/.
+```
+
+4. Build the DroneScheduler service.
+
+```bash
+az acr build -r $ACR_NAME -f ./src/shipping/dronescheduler/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 ./src/shipping/.
+```
+
+5. Build the Package service.
+
+```bash
+az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./src/shipping/package/.
 ```
 
 Deploy the managed cluster and all related resources (This step takes about 15 minutes)
