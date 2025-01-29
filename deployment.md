@@ -147,8 +147,19 @@ kubectl create namespace backend-dev
 kubectl apply -f k8s/k8s-rbac-ai.yaml
 ```
 
-### Collect details of managed ingress controller. 
+### Set resource quotas for the namespace. 
 
+```bash
+kubectl apply -f k8s/k8s-resource-quotas-dev.yaml
+```
+
+### Get the OIDC Issuer URL
+
+```bash
+export AKS_OIDC_ISSUER="$(az aks show -n $CLUSTER_NAME -g rg-shipping-dronedelivery-${LOCATION} --query "oidcIssuerProfile.issuerUrl" -otsv)"
+```
+
+### Collect details of managed ingress controller. 
 
 ```bash
 
@@ -170,7 +181,6 @@ export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BA
 > For your production cluster, use your
 > security best practices for digital certificates creation and lifetime management.
 
-
 ```bash
 
 # Create a self-signed certificate for TLS
@@ -178,18 +188,6 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -out ingestion-ingress-tls.crt \
     -keyout ingestion-ingress-tls.key \
     -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
-```
-
-### Setup cluster resource quota
-
-```bash
-kubectl apply -f k8s/k8s-resource-quotas-dev.yaml
-```
-
-### Get the OIDC Issuer URL
-
-```bash
-export AKS_OIDC_ISSUER="$(az aks show -n $CLUSTER_NAME -g rg-shipping-dronedelivery-${LOCATION} --query "oidcIssuerProfile.issuerUrl" -otsv)"
 ```
 
 ## Deploy the Delivery service
@@ -203,22 +201,15 @@ export COLLECTION_NAME="${DATABASE_NAME}-col" && \
 export DELIVERY_KEYVAULT_URI=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.deliveryKeyVaultUri.value -o tsv) && \
 export DELIVERY_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.deliveryKeyVaultName.value -o tsv) && \
 export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-delivery --query clientId -o tsv)
-```
 
-Deploy the Delivery service.
-
-```bash
 # Create secrets
-# Note: Ingress TLS key and certificate secrets cannot be exported as outputs in ARM deployments
 # The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
-export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
 
+export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
 export DELIVERY_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LOCATION}  -n $DELIVERY_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $DELIVERY_KEYVAULT_ID
-
 az keyvault secret set --name Delivery-Ingress-Tls-Key --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
 az keyvault secret set --name Delivery-Ingress-Tls-Crt --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.crt)"
-
 az role assignment delete --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $DELIVERY_KEYVAULT_ID
 
 #Setup your managed identity to trust your Kubernetes service account
@@ -248,7 +239,7 @@ helm install delivery-v0.1.0-dev delivery-v0.1.0.tgz \
      --namespace backend-dev \
      --dependency-update
 
-# Verify the pod is created
+# Verify the helm deployment status. 
 helm status delivery-v0.1.0-dev --namespace backend-dev
 ```
 
