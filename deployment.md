@@ -253,26 +253,12 @@ helm status delivery-v0.1.0-dev --namespace backend-dev
 Extract resource details from deployment.
 
 ```bash
-export COSMOSDB_NAME_PACKAGE=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.packageMongoDbName.value -o tsv)
 export PACKAGE_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.packageKeyVaultName.value -o tsv)
 export PACKAGE_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-package --query clientId -o tsv)
-```
 
-Deploy the Package service.
+# Deploy the Package service.
 
-```bash
-# Create secret
-# Note: Connection strings cannot be exported as outputs in ARM deployments
-# The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
-export COSMOSDB_CONNECTION_PACKAGE=$(az cosmosdb keys list --type connection-strings --name $COSMOSDB_NAME_PACKAGE --resource-group rg-shipping-dronedelivery-${LOCATION} --query "connectionStrings[0].connectionString" -o tsv | sed 's/==/%3D%3D/g') && \
 export COSMOSDB_COL_NAME_PACKAGE=packages
-
-export PACKAGE_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LOCATION}  -n $PACKAGE_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
-az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $PACKAGE_KEYVAULT_ID
-
-az keyvault secret set --name CosmosDb--ConnectionString --vault-name $PACKAGE_KEYVAULT_NAME --value $COSMOSDB_CONNECTION_PACKAGE
-
-az role assignment delete --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $PACKAGE_KEYVAULT_ID
 
 # Setup your managed identity to trust your Kubernetes service account
 az identity federated-credential create --name credential-for-package --identity-name uid-package --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:package-sa-v0.1.0
