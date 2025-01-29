@@ -124,14 +124,13 @@ az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name $DEPL
             acrName=$ACR_NAME
 ```
 
-Get the cluster name output from Azure Deploy.
+## Get the cluster name output from Azure Deploy.
 
 ```bash
 export CLUSTER_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n $DEPLOYMENT_NAME --query properties.outputs.aksClusterName.value -o tsv)
-echo $CLUSTER_NAME
 ```
 
-Get the AKS cluster credentials and create a Kubernetes namespace.
+## Get the AKS cluster credentials and create a Kubernetes namespace.
 
 ```bash
 
@@ -142,28 +141,12 @@ az aks get-credentials --resource-group=rg-shipping-dronedelivery-${LOCATION} --
 kubectl create namespace backend-dev
 ```
 
-Integrate Application Insights instance.
+## Add cluster role and role binding for application insights.
 
 ```bash
 
 # add RBAC for AppInsights
 kubectl apply -f k8s/k8s-rbac-ai.yaml
-```
-
-## Verify that the secrets-store pods are running in the kube-system namespace
-
-```bash
-kubectl get pods -n kube-system
-```
-
-You should see an output similar to this:
-
-```bash
-NAME                                     READY   STATUS    RESTARTS   AGE
-aks-secrets-store-csi-driver-4bjzx       3/3     Running   2          28m
-aks-secrets-store-csi-driver-b22bj       3/3     Running   1          28m
-aks-secrets-store-provider-azure-2k5mx   1/1     Running   0          28m
-aks-secrets-store-provider-azure-l5w98   1/1     Running   0          28m
 ```
 
 ## Collect details of managed ingress controller. 
