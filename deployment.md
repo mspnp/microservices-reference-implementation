@@ -111,13 +111,10 @@ export TENANT_ID=$(az account show --query tenantId --output tsv)
 
 export DEPLOYMENT_SUFFIX=$(date +%S%N)
 
-export KUBERNETES_VERSION=$(az aks get-versions -l $LOCATION --query "values[?isDefault].version" -o tsv)
-
 export DEPLOYMENT_NAME=azuredeploy-$DEPLOYMENT_SUFFIX
 az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name $DEPLOYMENT_NAME  --template-file azuredeploy.bicep \
 --parameters servicePrincipalClientId=$SP_APP_ID \
             servicePrincipalClientSecret=$SP_CLIENT_SECRET \
-            kubernetesVersion=$KUBERNETES_VERSION \
             deliveryIdName=uid-delivery \
             ingestionIdName=uid-ingestion \
             packageIdName=uid-package \
@@ -134,7 +131,7 @@ export CLUSTER_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LO
 echo $CLUSTER_NAME
 ```
 
-Download kubectl and create a Kubernetes namespace.
+Get the AKS cluster credentials and create a Kubernetes namespace.
 
 ```bash
 
@@ -148,9 +145,6 @@ kubectl create namespace backend-dev
 Integrate Application Insights instance.
 
 ```bash
-# Acquire Instrumentation Key
-export AI_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.appInsightsName.value -o tsv)
-echo $AI_NAME
 
 # add RBAC for AppInsights
 kubectl apply -f k8s/k8s-rbac-ai.yaml
