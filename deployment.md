@@ -104,7 +104,7 @@ az acr build -r $ACR_NAME -f ./src/shipping/dronescheduler/Dockerfile -t $ACR_SE
 az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./src/shipping/package/.
 ```
 
-Deploy the managed cluster and all related resources (This step takes about 15 minutes)
+## Deploy the managed cluster and all related resources (This step takes about 15 minutes)
 
 ```bash
 export RESOURCE_GROUP_ID=$(az group show --name rg-shipping-dronedelivery-${LOCATION} --query id --output tsv)
