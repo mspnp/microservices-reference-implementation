@@ -120,7 +120,7 @@ az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name $DEPL
             packageIdName=uid-package \
             droneSchedulerIdName=uid-dronescheduler \
             workflowIdName=uid-workflow \
-            acrResourceGroupName=rg-shipping-dronedelivery-${LOCATION} \
+            acrResourceGroupName=rg-shipping-dronedelivery-${LOCATION}-acr \
             acrName=$ACR_NAME
 ```
 
