@@ -20,8 +20,6 @@ cd microservices-reference-implementation/
 
 The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
 
-## Deploy an Azure Container Registry (ACR)
-
 Set environment variables.
 
 ```bash
@@ -99,7 +97,7 @@ az acr build -r $ACR_NAME -f ./workload/src/shipping/dronescheduler/Dockerfile -
 az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./workload/src/shipping/package/.
 ```
 
-## Deploy the managed cluster and all related resources (This step takes about 15 minutes)
+## Deploy the managed cluster and all related resources
 
 ```bash
 export RESOURCE_GROUP_ID=$(az group show --name rg-shipping-dronedelivery-${LOCATION} --query id --output tsv)
@@ -124,13 +122,13 @@ az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name $DEPL
             acrName=$ACR_NAME
 ```
 
-## Get the cluster name output from Azure Deploy.
+### Get the cluster name output from Azure Deploy.
 
 ```bash
 export CLUSTER_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n $DEPLOYMENT_NAME --query properties.outputs.aksClusterName.value -o tsv)
 ```
 
-## Get the AKS cluster credentials and create a Kubernetes namespace.
+### Get the AKS cluster credentials and create a Kubernetes namespace.
 
 ```bash
 
@@ -141,7 +139,7 @@ az aks get-credentials --resource-group=rg-shipping-dronedelivery-${LOCATION} --
 kubectl create namespace backend-dev
 ```
 
-## Add cluster role and role binding for application insights.
+### Configure RBAC permissions for Azure application insights. 
 
 ```bash
 
@@ -149,7 +147,7 @@ kubectl create namespace backend-dev
 kubectl apply -f k8s/k8s-rbac-ai.yaml
 ```
 
-## Collect details of managed ingress controller. 
+### Collect details of managed ingress controller. 
 
 
 ```bash
@@ -163,7 +161,7 @@ export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BA
 
 ```
 
-## Create self-signed certificate for TLS
+### Create self-signed certificate for TLS
 
 > :warning: WARNING
 >
@@ -182,13 +180,13 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -subj "/CN=${EXTERNAL_INGEST_FQDN}/O=fabrikam"
 ```
 
-## Setup cluster resource quota
+### Setup cluster resource quota
 
 ```bash
 kubectl apply -f k8s/k8s-resource-quotas-dev.yaml
 ```
 
-## Get the OIDC Issuer URL
+### Get the OIDC Issuer URL
 
 ```bash
 export AKS_OIDC_ISSUER="$(az aks show -n $CLUSTER_NAME -g rg-shipping-dronedelivery-${LOCATION} --query "oidcIssuerProfile.issuerUrl" -otsv)"
