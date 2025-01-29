@@ -7,17 +7,11 @@
 - [Azure CLI 2.53.1 or newer](https://docs.microsoft.com/cli/azure/install-azure-cli)
 - [JQ](https://stedolan.github.io/jq/download/)
 - Kubectl 
-```bash
-#  Install kubectl
-az aks install-cli
-```
+(az aks install-cli)
 - Helm
-```bash
-# install helm 3
-curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-```
+(curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash)
 
-Clone or download this repo locally.
+## Clone or download this repo locally.
 
 ```bash
 git clone --recurse-submodules https://github.com/mspnp/microservices-reference-implementation.git && \
@@ -46,7 +40,7 @@ az login
 az deployment sub create --name workload-stamp-prereqs --location ${LOCATION} --template-file ./workload-stamp-prereqs.bicep
 ```
 
-:book: This pre-flight Bicep template is creating a general purpose resource group  as well as one dedicated for the Azure Container Registry. Additionally five User Identites are provisioned as part of this too that will be later associated to every containerized microservice. This is because they will need Azure RBAC roles over the Azure KeyVault to read secrets in runtime. The resources will be created on the resouce group location and each resource group will contain the region as part of their names
+:book: This pre-flight Bicep template is creating a general purpose resource group  as well as one dedicated for the Azure Container Registry. Additionally five User Identites are provisioned that will be later associated to every containerized microservice. This is because they will need Azure RBAC roles over the Azure KeyVault to read secrets in runtime. The resources will be created on the resouce group location and each resource group will contain the region as part of their names
 
 ### Get the workload user assigned identities
 
