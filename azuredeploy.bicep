@@ -40,8 +40,8 @@ param osType string = 'Linux'
 @maxValue(1023)
 param osDiskSizeGB int = 0
 
-@description('The version of Kubernetes. It must be supported in the target location.')
-param kubernetesVersion string
+//@description('The version of Kubernetes. It must be supported in the target location.')
+//param kubernetesVersion string
 
 @description('Type of the storage account that will store Redis Cache.')
 @allowed([
@@ -101,7 +101,7 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-previ
     environment: 'shared cluster'
   }
   properties: {
-    kubernetesVersion: kubernetesVersion
+//    kubernetesVersion: kubernetesVersion
     nodeResourceGroup: nodeResourceGroupName
     dnsPrefix: aksClusterName
     agentPoolProfiles: [
