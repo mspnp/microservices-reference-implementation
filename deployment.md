@@ -208,6 +208,11 @@ export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g rg-shipping-dronedeliv
 export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
 export DELIVERY_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LOCATION}  -n $DELIVERY_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $DELIVERY_KEYVAULT_ID
+
+#wait for role assignment to finish.
+sleep 60
+until az ad sp show --id $SIGNED_IN_OBJECT_ID &> /dev/null ; do echo "Waiting for Microsoft Entra ID propagation" && sleep 5; done
+
 az keyvault secret set --name Delivery-Ingress-Tls-Key --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
 az keyvault secret set --name Delivery-Ingress-Tls-Crt --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.crt)"
 az role assignment delete --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $DELIVERY_KEYVAULT_ID
