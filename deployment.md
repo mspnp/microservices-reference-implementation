@@ -244,12 +244,6 @@ export DELIVERY_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedel
 export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-delivery --query clientId -o tsv)
 ```
 
-Build and publish the Delivery service container image.
-
-```bash
-az acr build -r $ACR_NAME -t $ACR_SERVER/delivery:0.1.0 ./workload/src/shipping/delivery/.
-```
-
 Deploy the Delivery service.
 
 ```bash
@@ -305,12 +299,6 @@ Extract resource details from deployment.
 export COSMOSDB_NAME_PACKAGE=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.packageMongoDbName.value -o tsv)
 export PACKAGE_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.packageKeyVaultName.value -o tsv)
 export PACKAGE_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-package --query clientId -o tsv)
-```
-
-Build the Package service.
-
-```bash
-az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./workload/src/shipping/package/.
 ```
 
 Deploy the Package service.
@@ -370,12 +358,6 @@ export WORKFLOW_NAMESPACE_SAS_NAME=$(az deployment group show -g rg-shipping-dro
 
 ```
 
-Build the workflow service.
-
-```bash
-az acr build -r $ACR_NAME -t $ACR_SERVER/workflow:0.1.0 ./workload/src/shipping/workflow/.
-```
-
 Deploy the Workflow service.
 
 ```bash
@@ -428,12 +410,6 @@ az keyvault secret set --name Ingestion-Ingress-Tls-Crt --vault-name $INGESTION_
 az role assignment delete --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $INGESTION_KEYVAULT_ID
 ```
 
-Build the Ingestion service.
-
-```bash
-az acr build -r $ACR_NAME -t $ACR_SERVER/ingestion:0.1.0 ./workload/src/shipping/ingestion/.
-```
-
 Deploy the Ingestion service
 
 ```bash
@@ -480,12 +456,6 @@ export AUTH_KEY=$(az cosmosdb keys list -n $DRONESCHEDULER_COSMOSDB_NAME -g rg-s
 export DRONESCHEDULER_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-dronescheduler --query clientId -o tsv)  && \
 export DATABASE_NAME="invoicing" && \
 export COLLECTION_NAME="utilization"
-```
-
-Build and publish the container image.
-
-```bash
-az acr build -r $ACR_NAME -f ./workload/src/shipping/dronescheduler/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 ./workload/src/shipping/.
 ```
 
 Deploy the dronescheduler service.
