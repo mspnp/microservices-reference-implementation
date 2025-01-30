@@ -186,6 +186,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 Extract resource details from deployment.
 
 ```bash
+export TENANT_ID=$(az account show --query tenantId --output tsv)
 export COSMOSDB_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.deliveryCosmosDbName.value -o tsv) && \
 export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
 export COLLECTION_NAME="${DATABASE_NAME}-col" && \
