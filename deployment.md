@@ -117,7 +117,7 @@ az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name manag
 ### Get the cluster name output from Azure Deploy.
 
 ```bash
-export CLUSTER_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n $DEPLOYMENT_NAME --query properties.outputs.aksClusterName.value -o tsv)
+export CLUSTER_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n managed-cluster-deployment --query properties.outputs.aksClusterName.value -o tsv)
 ```
 
 ### Get the AKS cluster credentials and create a Kubernetes namespace.
