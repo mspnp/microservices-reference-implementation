@@ -22,13 +22,6 @@ param ingestionIdName string
 @description('Name of the package managed identity')
 param packageIdName string
 
-@description('Client ID (used by cloudprovider)')
-param servicePrincipalClientId string
-
-@description('The Service Principal Client Secret.')
-@secure()
-param servicePrincipalClientSecret string
-
 @description('The type of operating system.')
 @allowed([
   'Linux'
@@ -96,7 +89,7 @@ resource miClusterControlPlane 'Microsoft.ManagedIdentity/userAssignedIdentities
 
 //provide contributor role to the RG to AKS managed identity. 
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
-  name: guid(resourceGroup().id, aksServicePrincipal.id)
+  name: guid(resourceGroup().id, miClusterControlPlane.id)
   scope: resourceGroup()
   properties: {
     principalId: miClusterControlPlane.properties.principalId
