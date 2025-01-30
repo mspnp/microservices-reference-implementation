@@ -42,21 +42,22 @@ param osDiskSizeGB int = 0
   'Standard_ZRS'
   'Standard_GRS'
 ])
+
 param deliveryRedisStorageType string = 'Standard_LRS'
+
+param workspaceName string
 
 var clusterNamePrefix = 'aks'
 var managedIdentityOperatorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'f1a07417-d97a-45cb-824c-7a7467783830')
-var deliveryRedisStorageName = 'rsto${uniqueString(resourceGroup().id)}'
+var deliveryRedisStorageName = 'stdelivery${uniqueString(resourceGroup().id)}'
 var nestedACRDeploymentName = 'azuredeploy-acr-${acrResourceGroupName}'
 var aksLogAnalyticsNamePrefix = 'logsAnalytics'
 var monitoringMetricsPublisherRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '3913510d-42f4-4e42-8a64-420c390055eb')
 var nodeResourceGroupName = 'rg-${aksClusterName}-nodepools'
-var aksClusterName = uniqueString(clusterNamePrefix, resourceGroup().id)
+var aksClusterName = aks-${uniqueString(clusterNamePrefix, resourceGroup().id)}
 var agentCount = 2
 var agentVMSize = 'Standard_D2_v2'
-var workspaceName = 'la-${uniqueString(aksLogAnalyticsNamePrefix, resourceGroup().id)}'
-var workspaceSku = 'pergb2018'
-var workspaceRetentionInDays = 0
+
 
 module nestedACRDeployment './azuredeploy_nested_nestedACRDeployment.bicep' = {
   name: nestedACRDeploymentName
@@ -67,18 +68,9 @@ module nestedACRDeployment './azuredeploy_nested_nestedACRDeployment.bicep' = {
   }
 }
 
-resource workspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+//use the log analytics workspace that is already created. 
+resource workspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
   name: workspaceName
-  location: location
-  properties: {
-    retentionInDays: workspaceRetentionInDays
-    sku: {
-      name: workspaceSku
-    }
-    features: {
-      searchVersion: 1
-    }
-  }
 }
 
 // The control plane identity used by the cluster. Used for networking access (VNET joining and DNS updating)
@@ -173,7 +165,6 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-previ
       '${miClusterControlPlane.id}': {}
     }
   }
-
 }
 
 resource deliveryRedisStorage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
