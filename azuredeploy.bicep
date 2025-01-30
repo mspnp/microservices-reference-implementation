@@ -36,22 +36,24 @@ param osDiskSizeGB int = 0
 //@description('The version of Kubernetes. It must be supported in the target location.')
 //param kubernetesVersion string
 
+/*
 @description('Type of the storage account that will store Redis Cache.')
 @allowed([
   'Standard_LRS'
   'Standard_ZRS'
   'Standard_GRS'
 ])
+*/
 
-param deliveryRedisStorageType string = 'Standard_LRS'
+//param deliveryRedisStorageType string = 'Standard_LRS'
 
 param workspaceName string
 
 var clusterNamePrefix = 'aks'
 var managedIdentityOperatorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'f1a07417-d97a-45cb-824c-7a7467783830')
-var deliveryRedisStorageName = 'stdelivery${uniqueString(resourceGroup().id)}'
+//var deliveryRedisStorageName = 'stdelivery${uniqueString(resourceGroup().id)}'
 var nestedACRDeploymentName = 'azuredeploy-acr-${acrResourceGroupName}'
-var aksLogAnalyticsNamePrefix = 'logsAnalytics'
+//var aksLogAnalyticsNamePrefix = 'logsAnalytics'
 var monitoringMetricsPublisherRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '3913510d-42f4-4e42-8a64-420c390055eb')
 var nodeResourceGroupName = 'rg-${aksClusterName}-nodepools'
 var aksClusterName = aks-${uniqueString(clusterNamePrefix, resourceGroup().id)}
@@ -167,6 +169,7 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-previ
   }
 }
 
+/*
 resource deliveryRedisStorage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
   name: deliveryRedisStorageName
   sku: {
@@ -179,6 +182,7 @@ resource deliveryRedisStorage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
     app: 'fabrikam-delivery'
   }
 }
+*/
 
 resource clusterIdentityPublisherRoleAssigment 'Microsoft.Authorization/roleAssignments@2022-04-01'  = {
   name: guid(concat(resourceGroup().id), monitoringMetricsPublisherRole)
