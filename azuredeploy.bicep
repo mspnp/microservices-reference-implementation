@@ -94,6 +94,16 @@ resource miClusterControlPlane 'Microsoft.ManagedIdentity/userAssignedIdentities
   location: location
 }
 
+//provide contributor role to the RG to AKS managed identity. 
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(resourceGroup().id, aksServicePrincipal.id)
+  scope: resourceGroup()
+  properties: {
+    principalId: miClusterControlPlane.properties.principalId
+    roleDefinitionId: 'b24988ac-6180-42a0-ab88-20f7382dd24c'
+  }
+}
+
 resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-preview' = {
   name: aksClusterName
   location: location
@@ -122,10 +132,6 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-previ
         mode: 'User'
       }
     ]
-    servicePrincipalProfile: {
-      clientId: servicePrincipalClientId
-      secret: servicePrincipalClientSecret
-    }
     addonProfiles: {
       omsagent: {
         config: {
