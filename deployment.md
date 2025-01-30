@@ -100,20 +100,12 @@ az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./workload/src/shipping/p
 ## Deploy the managed cluster and all related resources
 
 ```bash
-export RESOURCE_GROUP_ID=$(az group show --name rg-shipping-dronedelivery-${LOCATION} --query id --output tsv)
-
-export SP_DETAILS=$(az ad sp create-for-rbac --role="Contributor" --scopes $RESOURCE_GROUP_ID -o json) && \
-export SP_APP_ID=$(echo $SP_DETAILS | jq ".appId" -r) && \
-export SP_CLIENT_SECRET=$(echo $SP_DETAILS | jq ".password" -r)
-export TENANT_ID=$(az account show --query tenantId --output tsv)
 
 export DEPLOYMENT_SUFFIX=$(date +%S%N)
-
 export DEPLOYMENT_NAME=azuredeploy-$DEPLOYMENT_SUFFIX
+
 az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name $DEPLOYMENT_NAME  --template-file azuredeploy.bicep \
---parameters servicePrincipalClientId=$SP_APP_ID \
-            servicePrincipalClientSecret=$SP_CLIENT_SECRET \
-            deliveryIdName=uid-delivery \
+--parameters deliveryIdName=uid-delivery \
             ingestionIdName=uid-ingestion \
             packageIdName=uid-package \
             droneSchedulerIdName=uid-dronescheduler \
@@ -165,7 +157,6 @@ export AKS_OIDC_ISSUER="$(az aks show -n $CLUSTER_NAME -g rg-shipping-dronedeliv
 
 # Obtain the load balancer ip address of managed ingress and assign a domain name
 export INGRESS_LOAD_BALANCER_IP=$(kubectl get service -n app-routing-system nginx -o jsonpath="{.status.loadBalancer.ingress[0].ip}" 2> /dev/null) 
-
 export INGRESS_LOAD_BALANCER_IP_ID=$(az network public-ip list --query "[?ipAddress!=null]|[?contains(ipAddress, '$INGRESS_LOAD_BALANCER_IP')].[id]" --output tsv) && \
 export EXTERNAL_INGEST_DNS_NAME="dronedelivery-${LOCATION}-${RANDOM}-ing" && \
 export EXTERNAL_INGEST_FQDN=$(az network public-ip update --ids $INGRESS_LOAD_BALANCER_IP_ID --dns-name $EXTERNAL_INGEST_DNS_NAME --query "dnsSettings.fqdn" --output tsv)
