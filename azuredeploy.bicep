@@ -42,7 +42,7 @@ var managedIdentityOperatorRoleId = subscriptionResourceId('Microsoft.Authorizat
 var nestedACRDeploymentName = 'azuredeploy-acr-${acrResourceGroupName}'
 var monitoringMetricsPublisherRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '3913510d-42f4-4e42-8a64-420c390055eb')
 var nodeResourceGroupName = 'rg-${aksClusterName}-nodepools'
-var aksClusterName = aks-${uniqueString(clusterNamePrefix, resourceGroup().id)}
+var aksClusterName = 'aks-${uniqueString(clusterNamePrefix, resourceGroup().id)}'
 var agentCount = 2
 var agentVMSize = 'Standard_D2_v2'
 
