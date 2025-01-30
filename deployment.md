@@ -225,7 +225,7 @@ helm install delivery-v0.1.0-dev delivery-v0.1.0.tgz \
      --set identity.tenantId=$TENANT_ID \
      --set keyVaultName=$DELIVERY_KEYVAULT_NAME \
      --set ingress.tls=true \
-     --set ingress.class=nginx \
+     --set ingress.class=webapprouting.kubernetes.azure.com \
      --set cosmosdb.id=$DATABASE_NAME \
      --set cosmosdb.collectionid=$COLLECTION_NAME \
      --set keyvault.uri=$DELIVERY_KEYVAULT_URI \
@@ -265,7 +265,7 @@ helm install package-v0.1.0-dev package-v0.1.0.tgz \
      --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
      --set ingress.hosts[0].serviceName=package \
      --set ingress.hosts[0].tls=false \
-     --set ingress.class=nginx \
+     --set ingress.class=webapprouting.kubernetes.azure.com \
      --set cosmosDb.collectionName=$COSMOSDB_COL_NAME_PACKAGE \
      --set dockerregistry=$ACR_SERVER \
      --set reason="Initial deployment" \
@@ -356,7 +356,7 @@ helm install ingestion-v0.1.0-dev ingestion-v0.1.0.tgz \
      --set ingress.hosts[0].tls=true \
      --set ingress.hosts[0].tlsSecretName=ingestion-ingress-tls \
      --set ingress.tls=true \
-     --set ingress.class=nginx \
+     --set ingress.class=webapprouting.kubernetes.azure.com \
      --set secrets.queue.keyname=IngestionServiceAccessKey \
      --set secrets.queue.name=${INGESTION_QUEUE_NAME} \
      --set secrets.queue.namespace=${INGESTION_QUEUE_NAMESPACE} \
@@ -394,7 +394,7 @@ helm install dronescheduler-v0.1.0-dev dronescheduler-v0.1.0.tgz \
      --set ingress.hosts[0].name=$EXTERNAL_INGEST_FQDN \
      --set ingress.hosts[0].serviceName=dronescheduler \
      --set ingress.hosts[0].tls=false \
-     --set ingress.class=nginx \
+     --set ingress.class=webapprouting.kubernetes.azure.com \
      --set identity.clientid=$DRONESCHEDULER_CLIENT_ID \
      --set identity.serviceAccountName=dronescheduler-sa-v0.1.0 \
      --set keyvault.uri=$DRONESCHEDULER_KEYVAULT_URI \
