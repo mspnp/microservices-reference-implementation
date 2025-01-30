@@ -101,6 +101,8 @@ az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./workload/src/shipping/p
 
 ```bash
 
+export LOG_ANALYTICS_WORKSPACE_ID=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.laWorkspace.value -o tsv)
+
 az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name managed-cluster-deployment  --template-file azuredeploy.bicep \
 --parameters deliveryIdName=uid-delivery \
             ingestionIdName=uid-ingestion \
@@ -108,7 +110,8 @@ az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name manag
             droneSchedulerIdName=uid-dronescheduler \
             workflowIdName=uid-workflow \
             acrResourceGroupName=rg-shipping-dronedelivery-${LOCATION}-acr \
-            acrName=$ACR_NAME
+            acrName=$ACR_NAME \
+            logAnalyticsWorkspaceID=$LOG_ANALYTICS_WORKSPACE_ID
 ```
 
 ### Get the cluster name output from Azure Deploy.
