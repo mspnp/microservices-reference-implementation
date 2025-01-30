@@ -41,6 +41,7 @@ param logAnalyticsWorkspaceID string
 var managedIdentityOperatorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'f1a07417-d97a-45cb-824c-7a7467783830')
 var nestedACRDeploymentName = 'azuredeploy-acr-${acrResourceGroupName}'
 var monitoringMetricsPublisherRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '3913510d-42f4-4e42-8a64-420c390055eb')
+var contributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')
 var nodeResourceGroupName = 'rg-${aksClusterName}-nodepools'
 var aksClusterName = 'aks-${uniqueString(resourceGroup().id)}'
 var agentCount = 2
@@ -67,7 +68,8 @@ resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-prev
   scope: resourceGroup()
   properties: {
     principalId: miClusterControlPlane.properties.principalId
-    roleDefinitionId: 'b24988ac-6180-42a0-ab88-20f7382dd24c'
+    roleDefinitionId: contributorRoleId
+    principalType: 'ServicePrincipal'
   }
 }
 
