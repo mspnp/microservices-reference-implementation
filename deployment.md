@@ -67,31 +67,31 @@ ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
 
 ### Steps
 
-1. Build the Delivery service.
+1. Build and push the Delivery service container image to ACR.
 
 ```bash
 az acr build -r $ACR_NAME -t $ACR_SERVER/delivery:0.1.0 ./workload/src/shipping/delivery/.
 ```
 
-2. Build the Ingestion service.
+2. Build and push the Ingestion service container image to ACR.
 
 ```bash
 az acr build -r $ACR_NAME -t $ACR_SERVER/ingestion:0.1.0 ./workload/src/shipping/ingestion/.
 ```
 
-3. Build the Workflow service.
+3. Build and push the Workflow service container image to ACR.
 
 ```bash
 az acr build -r $ACR_NAME -t $ACR_SERVER/workflow:0.1.0 ./workload/src/shipping/workflow/.
 ```
 
-4. Build the DroneScheduler service.
+4. Build and push the DroneScheduler service container image to ACR.
 
 ```bash
 az acr build -r $ACR_NAME -f ./workload/src/shipping/dronescheduler/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 ./workload/src/shipping/.
 ```
 
-5. Build the Package service.
+5. Build and push the Package service container image to ACR.
 
 ```bash
 az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./workload/src/shipping/package/.
@@ -101,10 +101,7 @@ az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./workload/src/shipping/p
 
 ```bash
 
-export DEPLOYMENT_SUFFIX=$(date +%S%N)
-export DEPLOYMENT_NAME=azuredeploy-$DEPLOYMENT_SUFFIX
-
-az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name $DEPLOYMENT_NAME  --template-file azuredeploy.bicep \
+az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name managed-cluster-deployment  --template-file azuredeploy.bicep \
 --parameters deliveryIdName=uid-delivery \
             ingestionIdName=uid-ingestion \
             packageIdName=uid-package \
