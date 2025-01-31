@@ -145,10 +145,30 @@ kubectl apply -f k8s/k8s-rbac-ai.yaml
 kubectl apply -f k8s/k8s-resource-quotas-dev.yaml
 ```
 
-### Get the OIDC Issuer URL
+### Get the OIDC Issuer URL & Tenant ID
 
 ```bash
 export AKS_OIDC_ISSUER="$(az aks show -n $CLUSTER_NAME -g rg-shipping-dronedelivery-${LOCATION} --query "oidcIssuerProfile.issuerUrl" -otsv)"
+export TENANT_ID=$(az account show --query tenantId --output tsv)
+```
+
+### Create manage identity federations for microservices. 
+```
+# Setup managed identity for delivery microservice to trust your Kubernetes service account
+az identity federated-credential create --name credential-for-delivery --identity-name uid-delivery --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:delivery-sa-v0.1.0
+
+# Setup managed identity for package microservice to trust your Kubernetes service account
+az identity federated-credential create --name credential-for-package --identity-name uid-package --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:package-sa-v0.1.0
+
+# Setup your managed identity to trust your Kubernetes service account
+az identity federated-credential create --name credential-for-workflow --identity-name uid-workflow --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:workflow-sa-v0.1.0
+
+# Setup your managed identity to trust your Kubernetes service account
+az identity federated-credential create --name credential-for-ingestion --identity-name uid-ingestion --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:ingestion-sa-v0.1.0
+
+# Setup your managed identity to trust your Kubernetes service account
+az identity federated-credential create --name credential-for-dronescheduler --identity-name uid-dronescheduler --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:dronescheduler-sa-v0.1.0
+
 ```
 
 ### Collect details of managed ingress controller. 
@@ -186,7 +206,6 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 Extract resource details from deployment.
 
 ```bash
-export TENANT_ID=$(az account show --query tenantId --output tsv)
 export COSMOSDB_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.deliveryCosmosDbName.value -o tsv) && \
 export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
 export COLLECTION_NAME="${DATABASE_NAME}-col" && \
@@ -202,13 +221,10 @@ export DELIVERY_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LO
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $DELIVERY_KEYVAULT_ID
 
 #wait for role assignment to finish.
-sleep 60
+sleep 30
 az keyvault secret set --name Delivery-Ingress-Tls-Key --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
 az keyvault secret set --name Delivery-Ingress-Tls-Crt --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.crt)"
 az role assignment delete --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $DELIVERY_KEYVAULT_ID
-
-#Setup your managed identity to trust your Kubernetes service account
-az identity federated-credential create --name credential-for-delivery --identity-name uid-delivery --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:delivery-sa-v0.1.0
 
 # Deploy the service
 helm package charts/delivery/ -u && \
@@ -250,9 +266,6 @@ export PACKAGE_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LO
 
 export COSMOSDB_COL_NAME_PACKAGE=packages
 
-# Setup your managed identity to trust your Kubernetes service account
-az identity federated-credential create --name credential-for-package --identity-name uid-package --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:package-sa-v0.1.0
-
 # Deploy service
 helm package charts/package/ -u && \
 helm install package-v0.1.0-dev package-v0.1.0.tgz \
@@ -288,9 +301,6 @@ export WORKFLOW_QUEUE_NAME=$(az deployment group show -g rg-shipping-dronedelive
 export WORKFLOW_NAMESPACE_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.ingestionQueueNamespace.value -o tsv)
 export WORKFLOW_NAMESPACE_ENDPOINT=$(az servicebus namespace show -g rg-shipping-dronedelivery-${LOCATION} -n $WORKFLOW_NAMESPACE_NAME --query serviceBusEndpoint -o tsv)
 export WORKFLOW_NAMESPACE_SAS_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.workflowServiceAccessKeyName.value -o tsv)
-
-# Setup your managed identity to trust your Kubernetes service account
-az identity federated-credential create --name credential-for-workflow --identity-name uid-workflow --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:workflow-sa-v0.1.0
 
 # Deploy the service
 helm package charts/workflow/ -u && \
@@ -332,14 +342,12 @@ export INGESTION_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${
 export INGESTION_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LOCATION}  -n $INGESTION_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $INGESTION_KEYVAULT_ID
 
-sleep 60
+# wait a while for the role propagation to finish. 
+sleep 30
 az keyvault secret set --name Ingestion-Ingress-Tls-Key --vault-name $INGESTION_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
 az keyvault secret set --name Ingestion-Ingress-Tls-Crt --vault-name $INGESTION_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.crt)"
 
 az role assignment delete --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $INGESTION_KEYVAULT_ID
-
-# Setup your managed identity to trust your Kubernetes service account
-az identity federated-credential create --name credential-for-ingestion --identity-name uid-ingestion --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:ingestion-sa-v0.1.0
 
 # Deploy service
 helm package charts/ingestion/ -u && \
@@ -381,9 +389,6 @@ export AUTH_KEY=$(az cosmosdb keys list -n $DRONESCHEDULER_COSMOSDB_NAME -g rg-s
 export DRONESCHEDULER_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-dronescheduler --query clientId -o tsv)  && \
 export DATABASE_NAME="invoicing" && \
 export COLLECTION_NAME="utilization"
-
-# Setup your managed identity to trust your Kubernetes service account
-az identity federated-credential create --name credential-for-dronescheduler --identity-name uid-dronescheduler --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:dronescheduler-sa-v0.1.0
 
 # Deploy the service
 helm package charts/dronescheduler/ -u && \
