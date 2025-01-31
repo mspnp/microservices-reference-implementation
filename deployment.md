@@ -412,6 +412,11 @@ helm install dronescheduler-v0.1.0-dev dronescheduler-v0.1.0.tgz \
 helm status dronescheduler-v0.1.0-dev --namespace backend-dev
 ```
 
+## Verify that all the microservice pods are in running state.
+```
+kubectl get pods -n backend-dev --watch
+```
+
 ## Validate the application is running
 
 You can send delivery requests and check their statuses using curl.
