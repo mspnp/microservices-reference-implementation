@@ -145,11 +145,12 @@ kubectl apply -f k8s/k8s-rbac-ai.yaml
 kubectl apply -f k8s/k8s-resource-quotas-dev.yaml
 ```
 
-### Get the OIDC Issuer URL & Tenant ID
+### Get the OIDC Issuer URL, Tenant ID, and Object ID of the signed-in user. 
 
 ```bash
 export AKS_OIDC_ISSUER="$(az aks show -n $CLUSTER_NAME -g rg-shipping-dronedelivery-${LOCATION} --query "oidcIssuerProfile.issuerUrl" -otsv)"
 export TENANT_ID=$(az account show --query tenantId --output tsv)
+export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
 ```
 
 ### Create manage identity federations for microservices. 
@@ -212,12 +213,11 @@ export COLLECTION_NAME="${DATABASE_NAME}-col" && \
 export DELIVERY_KEYVAULT_URI=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.deliveryKeyVaultUri.value -o tsv) && \
 export DELIVERY_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.deliveryKeyVaultName.value -o tsv) && \
 export DELIVERY_PRINCIPAL_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-delivery --query clientId -o tsv)
+export DELIVERY_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LOCATION}  -n $DELIVERY_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
 
 # Create secrets
 # The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
 
-export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
-export DELIVERY_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LOCATION}  -n $DELIVERY_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $DELIVERY_KEYVAULT_ID
 
 #wait for role assignment to finish.
@@ -261,9 +261,6 @@ Extract resource details from deployment.
 ```bash
 export PACKAGE_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.packageKeyVaultName.value -o tsv)
 export PACKAGE_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-package --query clientId -o tsv)
-
-# Deploy the Package service.
-
 export COSMOSDB_COL_NAME_PACKAGE=packages
 
 # Deploy service
@@ -337,9 +334,9 @@ export INGESTION_QUEUE_NAMESPACE=$(az deployment group show -g rg-shipping-drone
 export INGESTION_QUEUE_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.ingestionQueueName.value -o tsv)
 export INGESTION_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.ingestionKeyVaultName.value -o tsv)
 export INGESTION_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-ingestion --query clientId -o tsv)
+export INGESTION_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LOCATION}  -n $INGESTION_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
 
 # The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
-export INGESTION_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LOCATION}  -n $INGESTION_KEYVAULT_NAME --resource-type 'Microsoft.KeyVault/vaults' --query id --output tsv)
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $INGESTION_KEYVAULT_ID
 
 # wait a while for the role propagation to finish. 
