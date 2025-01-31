@@ -97,7 +97,7 @@ az acr build -r $ACR_NAME -f ./workload/src/shipping/dronescheduler/Dockerfile -
 az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./workload/src/shipping/package/.
 ```
 
-## Deploy the managed cluster and all related resources
+## Deploy the managed cluster and related resources
 
 ```bash
 
