@@ -109,8 +109,8 @@ az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./workload/src/shipping/p
 ## Deploy the managed cluster and related resources
 
 ```bash
-az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name managed-cluster-deployment  --template-file azuredeploy.bicep \
---parameters deliveryIdName=uid-delivery \
+az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name managed-cluster-deployment  --template-file azuredeploy.bicep --parameters \
+            deliveryIdName=uid-delivery \
             ingestionIdName=uid-ingestion \
             packageIdName=uid-package \
             droneSchedulerIdName=uid-dronescheduler \
