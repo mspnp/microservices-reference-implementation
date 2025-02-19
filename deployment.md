@@ -138,7 +138,7 @@ kubectl create namespace backend-dev
 kubectl apply -f k8s/k8s-rbac-ai.yaml
 ```
 
-### Set resource quotas for the namespace. 
+### Set resource quotas for the namespace
 
 ```bash
 kubectl apply -f k8s/k8s-resource-quotas-dev.yaml
