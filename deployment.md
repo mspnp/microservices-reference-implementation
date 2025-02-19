@@ -144,7 +144,7 @@ kubectl apply -f k8s/k8s-rbac-ai.yaml
 kubectl apply -f k8s/k8s-resource-quotas-dev.yaml
 ```
 
-### Get the OIDC Issuer URL, Tenant ID, and Object ID of the signed-in user. 
+### Get the cluster OpenID Connect issuer URL, and the tenant ID and object ID of the signed-in user
 
 ```bash
 export AKS_OIDC_ISSUER="$(az aks show -n $CLUSTER_NAME -g rg-shipping-dronedelivery-${LOCATION} --query "oidcIssuerProfile.issuerUrl" -otsv)"
