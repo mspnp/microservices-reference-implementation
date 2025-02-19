@@ -9,11 +9,11 @@
 - Kubectl
 ```bash
 az aks install-cli
-````
+```
 - Helm
 ```bash
 curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-````
+```
 
 ## Clone or download this repo locally.
 
@@ -66,6 +66,11 @@ az deployment group create -f ./workload/workload-stamp.bicep -g rg-shipping-dro
 ACR_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.acrName.value -o tsv)
 ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
 ```
+### Assign Log Analytics Workspace variables
+
+```bash
+export LOG_ANALYTICS_WORKSPACE_ID=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.laWorkspace.value -o tsv)
+```
 
 ## Build the microservice images
 
@@ -104,8 +109,6 @@ az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./workload/src/shipping/p
 ## Deploy the managed cluster and related resources
 
 ```bash
-export LOG_ANALYTICS_WORKSPACE_ID=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.laWorkspace.value -o tsv)
-
 az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name managed-cluster-deployment  --template-file azuredeploy.bicep \
 --parameters deliveryIdName=uid-delivery \
             ingestionIdName=uid-ingestion \
