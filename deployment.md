@@ -219,7 +219,7 @@ export DELIVERY_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${LO
 
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $DELIVERY_KEYVAULT_ID
 
-#wait for role assignment to finish.
+# Wait for the role assignment to finish propagating.
 sleep 30
 az keyvault secret set --name Delivery-Ingress-Tls-Key --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
 az keyvault secret set --name Delivery-Ingress-Tls-Crt --vault-name $DELIVERY_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.crt)"
