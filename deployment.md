@@ -100,7 +100,6 @@ az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./workload/src/shipping/p
 ## Deploy the managed cluster and related resources
 
 ```bash
-
 export LOG_ANALYTICS_WORKSPACE_ID=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.laWorkspace.value -o tsv)
 
 az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name managed-cluster-deployment  --template-file azuredeploy.bicep \
