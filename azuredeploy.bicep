@@ -33,9 +33,6 @@ param osType string = 'Linux'
 @maxValue(1023)
 param osDiskSizeGB int = 0
 
-//@description('The version of Kubernetes. It must be supported in the target location.')
-//param kubernetesVersion string
-
 param logAnalyticsWorkspaceID string
 
 var managedIdentityOperatorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'f1a07417-d97a-45cb-824c-7a7467783830')
@@ -80,7 +77,6 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-previ
     environment: 'shared cluster'
   }
   properties: {
-//    kubernetesVersion: kubernetesVersion
     nodeResourceGroup: nodeResourceGroupName
     dnsPrefix: aksClusterName
     agentPoolProfiles: [
