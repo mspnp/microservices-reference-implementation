@@ -67,7 +67,7 @@ ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
 
 ### Steps
 
-1. Build and push the Delivery service container image to ACR.
+1. Build and push the Delivery service container image to the container registry.
 
 ```bash
 az acr build -r $ACR_NAME -t $ACR_SERVER/delivery:0.1.0 ./workload/src/shipping/delivery/.
