@@ -152,7 +152,7 @@ export TENANT_ID=$(az account show --query tenantId --output tsv)
 export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
 ```
 
-### Create manage identity federations for microservices. 
+### Create managed identity federations for microservices
 ```
 # Setup managed identity for delivery microservice to trust your Kubernetes service account
 az identity federated-credential create --name credential-for-delivery --identity-name uid-delivery --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:delivery-sa-v0.1.0
