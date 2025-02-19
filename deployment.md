@@ -38,7 +38,7 @@ az login
 az deployment sub create --name workload-stamp-prereqs --location ${LOCATION} --template-file ./workload/workload-stamp-prereqs.bicep --parameters resourceGroupLocation=${LOCATION}
 ```
 
-:book: This pre-flight Bicep template creates two resource groups. Additionally five User Identites are provisioned that will be later associated to every containerized microservice. This is because they will need Azure RBAC roles over the Azure KeyVault to read secrets in runtime. The resources will be created on the resouce group location and each resource group will contain the region as part of their names
+:book: This pre-flight Bicep file creates two resource groups. Additionally five User identities are provisioned that will be later associated to every containerized microservice. This is because they will need Azure RBAC roles over the Azure Key Vault to read secrets at runtime. The resources will be created in the resource group's location, and each resource group will contain the region name as part of its name.
 
 ### Get the workload user assigned identities
 
