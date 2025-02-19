@@ -79,7 +79,7 @@ az acr build -r $ACR_NAME -t $ACR_SERVER/delivery:0.1.0 ./workload/src/shipping/
 az acr build -r $ACR_NAME -t $ACR_SERVER/ingestion:0.1.0 ./workload/src/shipping/ingestion/.
 ```
 
-3. Build and push the Workflow service container image to ACR.
+3. Build and push the Workflow service container image to the container registry.
 
 ```bash
 az acr build -r $ACR_NAME -t $ACR_SERVER/workflow:0.1.0 ./workload/src/shipping/workflow/.
