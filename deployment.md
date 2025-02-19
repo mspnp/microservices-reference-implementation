@@ -171,7 +171,7 @@ az identity federated-credential create --name credential-for-dronescheduler --i
 
 ```
 
-### Collect details of managed ingress controller. 
+### Collect details of the managed ingress controller
 
 ```bash
 
