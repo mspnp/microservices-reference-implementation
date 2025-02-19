@@ -249,7 +249,7 @@ helm install delivery-v0.1.0-dev delivery-v0.1.0.tgz \
      --namespace backend-dev \
      --dependency-update
 
-# Verify the helm deployment status. 
+# Verify the Helm deployment status. 
 helm status delivery-v0.1.0-dev --namespace backend-dev
 ```
 
