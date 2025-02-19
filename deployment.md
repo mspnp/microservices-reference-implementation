@@ -338,7 +338,7 @@ export INGESTION_KEYVAULT_ID=$(az resource show -g rg-shipping-dronedelivery-${L
 # The current user is given permission to import secrets and then it is deleted right after the secret creation command is executed
 az role assignment create --role 'Key Vault Secrets Officer' --assignee $SIGNED_IN_OBJECT_ID --scope $INGESTION_KEYVAULT_ID
 
-# wait a while for the role propagation to finish. 
+# Wait for the role assignment to finish propagating.
 sleep 30
 az keyvault secret set --name Ingestion-Ingress-Tls-Key --vault-name $INGESTION_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.key)"
 az keyvault secret set --name Ingestion-Ingress-Tls-Crt --vault-name $INGESTION_KEYVAULT_NAME --value "$(cat ingestion-ingress-tls.crt)"
