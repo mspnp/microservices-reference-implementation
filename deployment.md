@@ -113,7 +113,7 @@ az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name manag
             logAnalyticsWorkspaceID=$LOG_ANALYTICS_WORKSPACE_ID
 ```
 
-### Get the cluster name output from Azure Deploy.
+### Get the cluster name output from the Azure deployment
 
 ```bash
 export CLUSTER_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n managed-cluster-deployment --query properties.outputs.aksClusterName.value -o tsv)
