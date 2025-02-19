@@ -3,13 +3,17 @@
 ## Prerequisites
 
 - Azure subscription
-  > Important: The user initiating the deployment process must have access to the **Microsoft.Authorization/roleAssignments/write** permission. For more information, see [the Container Insights doc](https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-troubleshoot#authorization-error-during-onboarding-or-update-operation)
+  > Important: The user initiating the deployment process must have access to the **Microsoft.Authorization/roleAssignments/write** permission. For more information, see [the Container Insights documentation](https://docs.microsoft.com/azure/azure-monitor/insights/container-insights-troubleshoot#authorization-error-during-onboarding-or-update-operation)
 - [Azure CLI 2.53.1 or newer](https://docs.microsoft.com/cli/azure/install-azure-cli)
 - [JQ](https://stedolan.github.io/jq/download/)
-- Kubectl 
-(az aks install-cli)
+- Kubectl
+```bash
+az aks install-cli
+````
 - Helm
-(curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash)
+```bash
+curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+````
 
 ## Clone or download this repo locally.
 
