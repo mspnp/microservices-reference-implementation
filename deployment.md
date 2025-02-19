@@ -130,7 +130,7 @@ az aks get-credentials --resource-group=rg-shipping-dronedelivery-${LOCATION} --
 kubectl create namespace backend-dev
 ```
 
-### Configure RBAC permissions for Azure application insights. 
+### Configure RBAC permissions for Azure Application Insights
 
 ```bash
 
