@@ -210,8 +210,6 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 
 ## Deploy the Delivery service
 
-Extract resource details from deployment.
-
 ```bash
 export COSMOSDB_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.deliveryCosmosDbName.value -o tsv) && \
 export DATABASE_NAME="${COSMOSDB_NAME}-db" && \
@@ -262,8 +260,6 @@ helm status delivery-v0.1.0-dev --namespace backend-dev
 
 ## Deploy the Package service
 
-Extract resource details from deployment.
-
 ```bash
 export PACKAGE_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.packageKeyVaultName.value -o tsv)
 export PACKAGE_ID_CLIENT_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-package --query clientId -o tsv)
@@ -294,8 +290,6 @@ helm status package-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Deploy the Workflow service
-
-Extract resource details from deployment.
 
 ```bash
 export WORKFLOW_KEYVAULT_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.workflowKeyVaultName.value -o tsv)
@@ -332,8 +326,6 @@ helm status workflow-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Deploy the Ingestion service
-
-Extract resource details and pod identity outputs from deployment.
 
 ```bash
 export INGESTION_QUEUE_NAMESPACE=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.ingestionQueueNamespace.value -o tsv) && \
@@ -381,8 +373,6 @@ helm status ingestion-v0.1.0-dev --namespace backend-dev
 ```
 
 ## Deploy DroneScheduler service
-
-Extract resource details from deployment.
 
 ```bash
 export DRONESCHEDULER_KEYVAULT_URI=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.droneSchedulerKeyVaultUri.value -o tsv)
