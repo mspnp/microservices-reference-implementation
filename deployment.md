@@ -161,19 +161,19 @@ export SIGNED_IN_OBJECT_ID=$(az ad signed-in-user show --query 'id' -o tsv)
 
 ### Create managed identity federations for microservices
 ```
-# Setup managed identity for delivery microservice to trust your Kubernetes service account
+# Set up the Delivery microservice's managed identity to trust your Kubernetes service account.
 az identity federated-credential create --name credential-for-delivery --identity-name uid-delivery --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:delivery-sa-v0.1.0
 
-# Setup managed identity for package microservice to trust your Kubernetes service account
+# Set up the Package microservice's managed identity to trust your Kubernetes service account.
 az identity federated-credential create --name credential-for-package --identity-name uid-package --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:package-sa-v0.1.0
 
-# Setup your managed identity to trust your Kubernetes service account
+# Set up the Workflow microservice's managed identity to trust your Kubernetes service account.
 az identity federated-credential create --name credential-for-workflow --identity-name uid-workflow --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:workflow-sa-v0.1.0
 
-# Setup your managed identity to trust your Kubernetes service account
+# Set up the Ingestion microservice's managed identity to trust your Kubernetes service account.
 az identity federated-credential create --name credential-for-ingestion --identity-name uid-ingestion --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:ingestion-sa-v0.1.0
 
-# Setup your managed identity to trust your Kubernetes service account
+# Set up the Drone Scheduler microservice's managed identity to trust your Kubernetes service account.
 az identity federated-credential create --name credential-for-dronescheduler --identity-name uid-dronescheduler --resource-group rg-shipping-dronedelivery-${LOCATION} --issuer ${AKS_OIDC_ISSUER} --subject system:serviceaccount:backend-dev:dronescheduler-sa-v0.1.0
 
 ```
