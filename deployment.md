@@ -79,33 +79,33 @@ export LOG_ANALYTICS_WORKSPACE_ID=$(az deployment group show -g rg-shipping-dron
 
 1. Build and push the Delivery service container image to the container registry.
 
-```bash
-az acr build -r $ACR_NAME -t $ACR_SERVER/delivery:0.1.0 ./workload/src/shipping/delivery/.
-```
+   ```bash
+   az acr build -r $ACR_NAME -t $ACR_SERVER/delivery:0.1.0 ./workload/src/shipping/delivery/.
+   ```
 
 2. Build and push the Ingestion service container image to the container registry.
 
-```bash
-az acr build -r $ACR_NAME -t $ACR_SERVER/ingestion:0.1.0 ./workload/src/shipping/ingestion/.
-```
+   ```bash
+   az acr build -r $ACR_NAME -t $ACR_SERVER/ingestion:0.1.0 ./workload/src/shipping/ingestion/.
+   ```
 
 3. Build and push the Workflow service container image to the container registry.
 
-```bash
-az acr build -r $ACR_NAME -t $ACR_SERVER/workflow:0.1.0 ./workload/src/shipping/workflow/.
-```
+   ```bash
+   az acr build -r $ACR_NAME -t $ACR_SERVER/workflow:0.1.0 ./workload/src/shipping/workflow/.
+   ```
 
 4. Build and push the DroneScheduler service container image to the container registry.
 
-```bash
-az acr build -r $ACR_NAME -f ./workload/src/shipping/dronescheduler/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 ./workload/src/shipping/.
-```
+   ```bash
+   az acr build -r $ACR_NAME -f ./workload/src/shipping/dronescheduler/Dockerfile -t $ACR_SERVER/dronescheduler:0.1.0 ./workload/src/shipping/.
+   ```
 
 5. Build and push the Package service container image to the container registry.
 
-```bash
-az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./workload/src/shipping/package/.
-```
+   ```bash
+   az acr build -r $ACR_NAME -t $ACR_SERVER/package:0.1.0 ./workload/src/shipping/package/.
+   ```
 
 ## Deploy the managed cluster and related resources
 
