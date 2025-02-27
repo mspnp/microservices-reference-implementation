@@ -26,9 +26,9 @@ The deployment steps shown here use Bash shell commands. On Windows, you can use
 
 Set environment variables.
 
-```bash
-export LOCATION=eastus2
-```
+   ```bash
+   export LOCATION=eastus2
+   ```
 
 ### Log in to Azure CLI
 
