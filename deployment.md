@@ -7,13 +7,13 @@
 - [Azure CLI 2.53.1 or newer](https://docs.microsoft.com/cli/azure/install-azure-cli)
 - [JQ](https://stedolan.github.io/jq/download/)
 - Kubectl
-```bash
-az aks install-cli
-```
+    ```bash
+    az aks install-cli
+    ```
 - Helm
-```bash
-curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
-```
+    ```bash
+    curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+    ```
 
 ## Clone or download this repo locally.
 
