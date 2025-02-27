@@ -17,10 +17,10 @@
 
 ## Clone or download this repo locally.
 
-    ```bash
+```bash
         git clone --recurse-submodules https://github.com/mspnp/microservices-reference-implementation.git && \
         cd microservices-reference-implementation/
-    ```
+```
 
 The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
 
@@ -66,6 +66,7 @@ az deployment group create -f ./workload/workload-stamp.bicep -g rg-shipping-dro
 ACR_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.acrName.value -o tsv)
 ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
 ```
+
 ### Assign Log Analytics Workspace variables
 
 ```bash
