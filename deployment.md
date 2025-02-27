@@ -17,10 +17,10 @@
 
 ## Clone or download this repo locally.
 
-```bash
-        git clone --recurse-submodules https://github.com/mspnp/microservices-reference-implementation.git && \
-        cd microservices-reference-implementation/
-```
+   ```bash
+   git clone --recurse-submodules https://github.com/mspnp/microservices-reference-implementation.git && \
+   cd microservices-reference-implementation/
+   ```
 
 The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
 
