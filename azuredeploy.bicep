@@ -22,13 +22,6 @@ param ingestionIdName string
 @description('Name of the package managed identity')
 param packageIdName string
 
-@description('Client ID (used by cloudprovider)')
-param servicePrincipalClientId string
-
-@description('The Service Principal Client Secret.')
-@secure()
-param servicePrincipalClientSecret string
-
 @description('The type of operating system.')
 @allowed([
   'Linux'
@@ -40,30 +33,16 @@ param osType string = 'Linux'
 @maxValue(1023)
 param osDiskSizeGB int = 0
 
-@description('The version of Kubernetes. It must be supported in the target location.')
-param kubernetesVersion string
+param logAnalyticsWorkspaceID string
 
-@description('Type of the storage account that will store Redis Cache.')
-@allowed([
-  'Standard_LRS'
-  'Standard_ZRS'
-  'Standard_GRS'
-])
-param deliveryRedisStorageType string = 'Standard_LRS'
-
-var clusterNamePrefix = 'aks'
 var managedIdentityOperatorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'f1a07417-d97a-45cb-824c-7a7467783830')
-var deliveryRedisStorageName = 'rsto${uniqueString(resourceGroup().id)}'
 var nestedACRDeploymentName = 'azuredeploy-acr-${acrResourceGroupName}'
-var aksLogAnalyticsNamePrefix = 'logsAnalytics'
 var monitoringMetricsPublisherRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '3913510d-42f4-4e42-8a64-420c390055eb')
+var contributorRoleId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')
 var nodeResourceGroupName = 'rg-${aksClusterName}-nodepools'
-var aksClusterName = uniqueString(clusterNamePrefix, resourceGroup().id)
+var aksClusterName = 'aks-${uniqueString(resourceGroup().id)}'
 var agentCount = 2
 var agentVMSize = 'Standard_D2_v2'
-var workspaceName = 'la-${uniqueString(aksLogAnalyticsNamePrefix, resourceGroup().id)}'
-var workspaceSku = 'pergb2018'
-var workspaceRetentionInDays = 0
 
 module nestedACRDeployment './azuredeploy_nested_nestedACRDeployment.bicep' = {
   name: nestedACRDeploymentName
@@ -74,24 +53,21 @@ module nestedACRDeployment './azuredeploy_nested_nestedACRDeployment.bicep' = {
   }
 }
 
-resource workspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
-  name: workspaceName
-  location: location
-  properties: {
-    retentionInDays: workspaceRetentionInDays
-    sku: {
-      name: workspaceSku
-    }
-    features: {
-      searchVersion: 1
-    }
-  }
-}
-
 // The control plane identity used by the cluster. Used for networking access (VNET joining and DNS updating)
 resource miClusterControlPlane 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: 'mi-${aksClusterName}-controlplane'
   location: location
+}
+
+//provide contributor role to the RG to AKS managed identity. 
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(resourceGroup().id, miClusterControlPlane.id)
+  scope: resourceGroup()
+  properties: {
+    principalId: miClusterControlPlane.properties.principalId
+    roleDefinitionId: contributorRoleId
+    principalType: 'ServicePrincipal'
+  }
 }
 
 resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-preview' = {
@@ -101,7 +77,6 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-previ
     environment: 'shared cluster'
   }
   properties: {
-    kubernetesVersion: kubernetesVersion
     nodeResourceGroup: nodeResourceGroupName
     dnsPrefix: aksClusterName
     agentPoolProfiles: [
@@ -122,14 +97,10 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-previ
         mode: 'User'
       }
     ]
-    servicePrincipalProfile: {
-      clientId: servicePrincipalClientId
-      secret: servicePrincipalClientSecret
-    }
     addonProfiles: {
       omsagent: {
         config: {
-          logAnalyticsWorkspaceResourceID: workspace.id
+          logAnalyticsWorkspaceResourceID: logAnalyticsWorkspaceID
         }
         enabled: true
       }
@@ -173,20 +144,6 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-previ
     userAssignedIdentities: {
       '${miClusterControlPlane.id}': {}
     }
-  }
-
-}
-
-resource deliveryRedisStorage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
-  name: deliveryRedisStorageName
-  sku: {
-    name: deliveryRedisStorageType
-  }
-  kind: 'Storage'
-  location: location
-  tags: {
-    displayName: 'Storage account for inflight deliveries'
-    app: 'fabrikam-delivery'
   }
 }
 
