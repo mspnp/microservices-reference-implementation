@@ -55,18 +55,12 @@ INGESTION_ID_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCA
 
 ```bash
 az deployment group create -f ./workload/workload-stamp.bicep -g rg-shipping-dronedelivery-${LOCATION} -p droneSchedulerPrincipalId=$DRONESCHEDULER_PRINCIPAL_ID -p workflowPrincipalId=$WORKFLOW_PRINCIPAL_ID -p deliveryPrincipalId=$DELIVERY_PRINCIPAL_ID -p ingestionPrincipalId=$INGESTION_ID_PRINCIPAL_ID -p packagePrincipalId=$PACKAGE_ID_PRINCIPAL_ID
-```
 
-### Assign Azure Container Registry variables
-
-```bash
+# Assign Azure Container Registry variables
 ACR_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.acrName.value -o tsv)
 ACR_SERVER=$(az acr show -n $ACR_NAME --query loginServer -o tsv)
-```
 
-### Assign Log Analytics Workspace variables
-
-```bash
+# Assign Log Analytics Workspace variables
 export LOG_ANALYTICS_WORKSPACE_ID=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n workload-stamp --query properties.outputs.laWorkspace.value -o tsv)
 ```
 
