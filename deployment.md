@@ -40,19 +40,16 @@ az login
 
 ```bash
 az deployment sub create --name workload-stamp-prereqs --location ${LOCATION} --template-file ./workload/workload-stamp-prereqs.bicep --parameters resourceGroupLocation=${LOCATION}
-```
 
-:book: This pre-flight Bicep file creates two resource groups. Additionally five User identities are provisioned that will be later associated to every containerized microservice. This is because they will need Azure RBAC roles over the Azure Key Vault to read secrets at runtime. The resources will be created in the resource group's location, and each resource group will contain the region name as part of its name.
-
-### Get the workload user assigned identities
-
-```bash
+# Get the workload user assigned identities
 DELIVERY_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-delivery --query principalId -o tsv) && \
 DRONESCHEDULER_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-dronescheduler --query principalId -o tsv) && \
 WORKFLOW_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-workflow --query principalId -o tsv) && \
 PACKAGE_ID_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-package --query principalId -o tsv) && \
 INGESTION_ID_PRINCIPAL_ID=$(az identity show -g rg-shipping-dronedelivery-${LOCATION} -n uid-ingestion --query principalId -o tsv)
 ```
+
+:book: This pre-flight Bicep file creates two resource groups. Additionally five User identities are provisioned that will be later associated to every containerized microservice. This is because they will need Azure RBAC roles over the Azure Key Vault to read secrets at runtime. The resources will be created in the resource group's location, and each resource group will contain the region name as part of its name.
 
 ### Deploy the workload related resources
 
