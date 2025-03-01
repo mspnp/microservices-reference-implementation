@@ -110,11 +110,8 @@ az deployment group create -g rg-shipping-dronedelivery-${LOCATION} --name manag
             acrResourceGroupName=rg-shipping-dronedelivery-${LOCATION}-acr \
             acrName=$ACR_NAME \
             logAnalyticsWorkspaceID=$LOG_ANALYTICS_WORKSPACE_ID
-```
 
-### Get the AKS cluster name from the Azure deployment output
-
-```bash
+# Get the AKS cluster name from the Azure deployment output
 export CLUSTER_NAME=$(az deployment group show -g rg-shipping-dronedelivery-${LOCATION} -n managed-cluster-deployment --query properties.outputs.aksClusterName.value -o tsv)
 ```
 
