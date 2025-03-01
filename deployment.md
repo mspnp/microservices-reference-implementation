@@ -24,17 +24,17 @@
 
 The deployment steps shown here use Bash shell commands. On Windows, you can use the [Windows Subsystem for Linux](https://docs.microsoft.com/windows/wsl/about) to run Bash.
 
-Set environment variables.
-
-   ```bash
-   export LOCATION=eastus2
-   ```
-
 ### Log in to Azure CLI
 
 ```bash
 az login
 ```
+
+### Set deployment location
+
+   ```bash
+   export LOCATION=eastus2
+   ```
 
 ### Deploy the workload's prerequisites
 
