@@ -412,9 +412,10 @@ helm status dronescheduler-v0.1.0-dev --namespace backend-dev
 kubectl get pods -n backend-dev --watch
 ```
 
-## Verify that all the microservice pods are ready and are in the running state.
+## Verify that all the microservice pods are ready and are in the running state, and that the ingress routes are deployed.
 ```
-kubectl get pods -n backend-dev --watch
+kubectl get pods -n backend-dev
+kubectl get ing -n backend-dev
 ```
 
 ## Validate the application is running
