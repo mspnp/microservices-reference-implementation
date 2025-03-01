@@ -243,8 +243,11 @@ helm install delivery-v0.1.0-dev delivery-v0.1.0.tgz \
      --namespace backend-dev \
      --dependency-update
 
-# Verify the Helm deployment status. 
+# Verify the Helm deployment status 
 helm status delivery-v0.1.0-dev --namespace backend-dev
+
+# Verify that the delivery microservice pod is in running state (Ctrl+C to quit)
+kubectl get pods -n backend-dev --watch
 ```
 
 ## Deploy the Package service
@@ -274,8 +277,11 @@ helm install package-v0.1.0-dev package-v0.1.0.tgz \
      --namespace backend-dev \
      --dependency-update
 
-# Verify the pod is created
+# Verify the Helm deployment status
 helm status package-v0.1.0-dev --namespace backend-dev
+
+# Verify that the package microservice pod is in running state (Ctrl+C to quit)
+kubectl get pods -n backend-dev --watch
 ```
 
 ## Deploy the Workflow service
@@ -310,8 +316,11 @@ helm install workflow-v0.1.0-dev workflow-v0.1.0.tgz \
      --namespace backend-dev \
      --dependency-update
 
-# Verify the pod is created
+# Verify the Helm deployment status
 helm status workflow-v0.1.0-dev --namespace backend-dev
+
+# Verify that the workflow microservice pod is in running state (Ctrl+C to quit)
+kubectl get pods -n backend-dev --watch
 ```
 
 ## Deploy the Ingestion service
@@ -357,8 +366,11 @@ helm install ingestion-v0.1.0-dev ingestion-v0.1.0.tgz \
      --namespace backend-dev \
      --dependency-update
 
-# Verify the pod is created
+# Verify the Helm deployment status
 helm status ingestion-v0.1.0-dev --namespace backend-dev
+
+# Verify that the ingestion microservice pod is in running state (Ctrl+C to quit)
+kubectl get pods -n backend-dev --watch
 ```
 
 ## Deploy DroneScheduler service
@@ -393,8 +405,11 @@ helm install dronescheduler-v0.1.0-dev dronescheduler-v0.1.0.tgz \
      --namespace backend-dev \
      --dependency-update
 
-# Verify the pod is created
+# Verify the Helm deployment status
 helm status dronescheduler-v0.1.0-dev --namespace backend-dev
+
+# Verify that the drone scheduler microservice pod is in running state (Ctrl+C to quit)
+kubectl get pods -n backend-dev --watch
 ```
 
 ## Verify that all the microservice pods are ready and are in the running state.
