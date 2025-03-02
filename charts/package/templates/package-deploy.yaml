@@ -101,6 +101,11 @@ spec:
             secretKeyRef:
               name: package-secrets
               key: appinsights-ikey
+        - name: APPINSIGHTS_CONNECTION_STRING
+          valueFrom:
+            secretKeyRef:
+              name: package-secrets
+              key: appinsights-connstr
         - name: LOG_LEVEL
           value: {{ .Values.log.level }}
         - name: CONTAINER_NAME
